@@ -5,8 +5,8 @@ variable "vault_addr" {
 
 # One entry per Supabase project. The projects themselves are created by hand
 # (their admin passwords are in Vault at <vault_prefix>/supabase-admin); this
-# root only configures them and publishes connection secrets. Replace the
-# placeholder refs with the new projects' refs before the first db-plan.
+# root only configures them and publishes connection secrets. Both are in the
+# "Milwaukee School of Engineering" org (created 2026-11-19).
 variable "environments" {
   type = map(object({
     project_ref  = string
@@ -14,11 +14,11 @@ variable "environments" {
   }))
   default = {
     production = {
-      project_ref  = "<production-project-ref>"
+      project_ref  = "hdxumncrbngpwaedmonr"
       vault_prefix = "deployments/hacksgiving"
     }
     staging = {
-      project_ref  = "<staging-project-ref>"
+      project_ref  = "lkclzkolfiegzhejsagd"
       vault_prefix = "deployments/hacksgiving/staging"
     }
   }

@@ -1,0 +1,10 @@
+# gitleaks config for secret-scan (CI): the default rules, plus allowlists for
+# values that are public by design. Add one only after checking the value
+# really is public.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Auth0 Native app client ids: bundled into the app (PKCE, no client secret)"
+regexTarget = "line"
+regexes = ['''EXPO_PUBLIC_AUTH0_CLIENT_ID=[A-Za-z0-9]{32}''']

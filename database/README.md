@@ -5,9 +5,9 @@ the schema ([ADR 0003](../docs/decisions/0003-alembic-migrations.md)); every
 revision runs explicit SQL. Same migrations everywhere:
 
 - **Local dev and tests**: `compose.yaml`, a pgvector Postgres container.
-- **Staging and production**: two Supabase projects, `hacksgiving staging`
-  and `hacksgiving` (create them by hand, then put their refs in
-  `terraform/variables.tf`). Only Postgres is used: no Supabase Auth, and
+- **Staging and production**: two Supabase projects in the "Milwaukee
+  School of Engineering" org, `hacksgiving staging` (`lkclzkolfiegzhejsagd`)
+  and `hacksgiving` (`hdxumncrbngpwaedmonr`), both us-east-1. Only Postgres is used: no Supabase Auth, and
   the Data API is off.
 
 ## Layout

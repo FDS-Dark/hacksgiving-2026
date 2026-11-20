@@ -106,25 +106,22 @@ GitLab OIDC; see [`SECURITY.md`](SECURITY.md#secrets).
 
 ## Before the first deploy
 
-None of this exists yet; the pipeline's deploy jobs fail until it does.
+Then, on `main`: `db-plan` → `db-apply` → `migrate-production` →
+`tf-apply` (manual jobs, in that order); `staging` deploys on its own.
 
-1. ~~Register~~ (vault-config MR !17) `austinkoske/personal/hacksgiving-2026` in
+1. ~~Register~~ (vault-config MR !17, applied 2026-11-19) `austinkoske/personal/hacksgiving-2026` in
    `infra/vault-config/vault-app-projects.tf` (creates the `hacksgiving`
    namespace, its ci-deployer, and the `gitlab-hacksgiving-ci`,
    `gitlab-hacksgiving-database-ci` and `eso-hacksgiving` roles).
-2. Create the two Supabase projects. Put their refs in
-   `database/terraform/variables.tf`, and store their admin passwords at
-   `secret/deployments/hacksgiving[/staging]/supabase-admin` and a Supabase
-   access token at `secret/deployments/hacksgiving/supabase-terraform`
-   ([`database/README.md`](database/README.md#supabase)).
+2. ~~Supabase projects and admin passwords~~ (done 2026-11-19). Still
+   needed: a Supabase access token at
+   `secret/deployments/hacksgiving/supabase-terraform`
+   ([`database/README.md`](database/README.md#supabase-access-token)).
 3. ~~Seed `secret/deployments/hacksgiving/app` and `.../staging/app` with
    `jwt_secret`.~~ (done 2026-11-19)
-4. ~~Auth0 Terraform M2M app~~ (done 2026-11-19: **Hacksgiving Terraform**
-   in Cooli's tenant, stored at `secret/deployments/hacksgiving/auth0-terraform`;
-   [`auth0/terraform/README.md`](auth0/terraform/README.md)). After
-   `auth0-apply`: set `terraform/` var `auth0_domain`, fill the Auth0 values
-   in `apps/mobile/.env.production` and `.env.staging`, and seed
-   `secret/deployments/hacksgiving/e2e`.
+4. ~~Auth0~~ (done 2026-11-19): **Hacksgiving Terraform** in Cooli's
+   tenant, `auth0-apply` run, `auth0_domain` and the app's Auth0 values set,
+   `secret/deployments/hacksgiving/e2e` seeded.
 5. ~~Create a protected `staging` branch, and a `gitlab-deploy-token`
    (read_registry) on the project.~~ (done 2026-11-19)
 

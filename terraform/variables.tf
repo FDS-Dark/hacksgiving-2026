@@ -59,8 +59,8 @@ variable "app_secret_path" {
 variable "auth0_domain" {
   type        = string
   description = "Auth0 tenant domain (auth0/terraform output domain). Empty falls back to HS256 with jwt_secret."
-  # Set to the new tenant's domain once auth0/terraform has been applied.
-  default = ""
+  # Cooli's tenant, which Hacksgiving shares (auth0/terraform).
+  default = "dev-3wpn13zh30l6orpi.us.auth0.com"
 }
 
 variable "auth0_audience" {
