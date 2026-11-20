@@ -2,6 +2,7 @@
 `{"code": ..., "message": ..., "request_id": ...}`, and every
 response, failures included, carries `X-Request-ID`."""
 
+
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
