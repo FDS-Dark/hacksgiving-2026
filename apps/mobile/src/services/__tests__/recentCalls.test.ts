@@ -33,4 +33,11 @@ describe('recent calls', () => {
     expect(miles).toBeGreaterThan(0.6);
     expect(miles).toBeLessThan(0.8);
   });
+
+  it('keeps a safety alert even when the city row has no embedded coordinates', () => {
+    const html = `<table><tr><td>P2611200904</td><td>11/20/2026 02:47 PM</td><td>2300 W HIGHLAND BLVD MKE</td><td>3</td><td>Sexual Assault</td><td>Advised</td></tr></table>`;
+    expect(parseRecentCalls(html)).toEqual([
+      expect.objectContaining({ id: 'P2611200904', nature: 'Sexual Assault', district: '3' }),
+    ]);
+  });
 });

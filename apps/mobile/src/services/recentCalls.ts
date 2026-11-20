@@ -17,8 +17,8 @@ const ALERT_TERMS = [
 export type RecentCall = {
   id: string;
   occurredAt: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   district: string;
   nature: string;
   status: string;
@@ -68,10 +68,7 @@ export function parseRecentCalls(html: string): RecentCall[] {
     if (cells.length < 6) continue;
     const [id, occurredAt, location, district, nature, status] = cells;
     if (!/^P\d+$/i.test(id) || !ALERT_TERMS.some((term) => nature.toLowerCase().includes(term))) continue;
-    const coordinates = coordinatesOf(location);
-    if (!coordinates) continue;
-
-    calls.set(id, { id, occurredAt, district, nature, status, ...coordinates });
+    calls.set(id, { id, occurredAt, district, nature, status, ...coordinatesOf(location) });
   }
 
   return [...calls.values()];

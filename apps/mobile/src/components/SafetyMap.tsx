@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Circle, Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 
 import { Txt } from '@/components/ui';
 import type { SafetyPoint } from '@/services/publicSafety';
@@ -31,12 +31,6 @@ function heatCells(points: SafetyPoint[]): HeatCell[] {
   return [...cells.values()];
 }
 
-function heatColor(count: number) {
-  if (count >= 10) return 'rgba(177, 30, 30, 0.42)';
-  if (count >= 5) return 'rgba(223, 94, 24, 0.36)';
-  return 'rgba(239, 180, 37, 0.28)';
-}
-
 export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[]; recentCalls?: RecentCall[] }) {
   const theme = useTheme();
   const cells = useMemo(() => heatCells(points), [points]);
@@ -52,22 +46,33 @@ export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[];
         toolbarEnabled={false}
         accessibilityLabel="Interactive Milwaukee map showing recent public safety activity"
       >
-        {cells.map((cell) => (
-          <Circle
+        {cells.map((cell) => {
+          const size = Math.min(76, 38 + cell.count * 4);
+          return (
+          <Marker
             key={cell.id}
-            center={{ latitude: cell.latitude, longitude: cell.longitude }}
-            radius={Math.min(900, 280 + cell.count * 55)}
-            fillColor={heatColor(cell.count)}
-            strokeColor="rgba(166, 27, 27, 0.10)"
-            strokeWidth={1}
-          />
-        ))}
+            coordinate={{ latitude: cell.latitude, longitude: cell.longitude }}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
+            zIndex={1}
+          >
+            <View style={[styles.heatOuter, { width: size, height: size, borderRadius: size / 2 }]}>
+              <View style={[styles.heatMiddle, { width: size * 0.68, height: size * 0.68, borderRadius: size }]}>
+                <View style={[styles.heatCore, { width: size * 0.32, height: size * 0.32, borderRadius: size }]} />
+              </View>
+            </View>
+          </Marker>
+          );
+        })}
         {reports.map((report) => (
           <Marker key={report.id} coordinate={report} title="Community report" description="Unverified, generalized location">
             <View style={[styles.reportMarker, { borderColor: theme.surface }]} />
           </Marker>
         ))}
-        {recentCalls.slice(0, 30).map((call) => (
+        {recentCalls
+          .filter((call): call is RecentCall & { latitude: number; longitude: number } => call.latitude !== undefined && call.longitude !== undefined)
+          .slice(0, 30)
+          .map((call) => (
           <Marker
             key={call.id}
             coordinate={call}
@@ -103,6 +108,9 @@ const styles = StyleSheet.create({
   legend: { position: 'absolute', left: space.sm, bottom: space.sm, gap: 4, borderRadius: radius.sm, padding: space.sm },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   gradient: { width: 12, height: 12, borderRadius: 6 },
+  heatOuter: { backgroundColor: 'rgba(177,30,30,0.28)', alignItems: 'center', justifyContent: 'center' },
+  heatMiddle: { backgroundColor: 'rgba(232,91,23,0.42)', alignItems: 'center', justifyContent: 'center' },
+  heatCore: { backgroundColor: 'rgba(255,205,45,0.82)' },
   callDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#B11E1E' },
   communityDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#247A63' },
   reportMarker: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: '#247A63' },
