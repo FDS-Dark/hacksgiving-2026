@@ -282,6 +282,16 @@ build-api:
 
 validate:
   stage: b-tf-plan
+  # Read-only, so safe to rerun: a failure is usually a dropped provider
+  # download on the runners' flaky egress.
+  retry: &plan_retry
+    max: 2
+    when:
+      - script_failure
+      - server_timeout_running
+      - no_updates_running
+      - runner_system_failure
+      - runner_interrupted
   image:
     name: ghcr.io/opentofu/opentofu:1.11.5
     entrypoint: [""]
@@ -299,6 +309,7 @@ validate:
 
 .tf_plan:
   stage: b-tf-plan
+  retry: *plan_retry
   extends: .tf_job
   <<: *vault_id_tokens
   needs:
@@ -415,6 +426,7 @@ tf-apply-staging:
 
 auth0-plan:
   stage: b-tf-plan
+  retry: *plan_retry
   extends: .auth0_tf_job
   needs: []
   script:

@@ -66,6 +66,16 @@
 
 db-plan:
   stage: b-tf-plan
+  # Read-only, so safe to rerun: a failure is usually a dropped provider
+  # download on the runners' flaky egress.
+  retry:
+    max: 2
+    when:
+      - script_failure
+      - server_timeout_running
+      - no_updates_running
+      - runner_system_failure
+      - runner_interrupted
   extends: .db_tf_job
   needs: []
   script:
