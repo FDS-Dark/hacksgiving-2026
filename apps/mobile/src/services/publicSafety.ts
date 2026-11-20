@@ -75,6 +75,7 @@ export function usePublicSafetyPoints() {
     queryKey: ['public-safety-points'],
     queryFn: fetchSafetyPoints,
     staleTime: 1000 * 60 * 15,
+    refetchInterval: 1000 * 60 * 15,
     retry: 1,
   });
 

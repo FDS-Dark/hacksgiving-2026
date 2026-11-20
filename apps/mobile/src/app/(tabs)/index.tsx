@@ -11,6 +11,7 @@ import {
   type SafetyPoint,
   usePublicSafetyPoints,
 } from '@/services/publicSafety';
+import { useRecentCalls } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 
 const REPORT_COLOR = '#247A63';
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const theme = useTheme();
   const { signOut } = useAuth();
   const safety = usePublicSafetyPoints();
+  const calls = useRecentCalls();
   const [active, setActive] = useState<Set<IncidentCategory | 'community-report'>>(
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
@@ -36,6 +38,10 @@ export default function HomeScreen() {
 
   const allPoints = useMemo(() => [...safety.points, ...reports], [reports, safety.points]);
   const visiblePoints = useMemo(() => allPoints.filter((point) => active.has(point.category)), [active, allPoints]);
+  const refresh = () => {
+    safety.refetch();
+    calls.refetch();
+  };
 
   const toggle = (id: IncidentCategory | 'community-report') => {
     setActive((current) => {
@@ -64,7 +70,7 @@ export default function HomeScreen() {
 
   return (
     <>
-      <Screen refreshing={safety.isRefetching} onRefresh={safety.refetch}>
+      <Screen refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
         <View style={styles.brandRow}>
           <View>
             <Txt variant="headline" color={theme.brand}>NearMKE</Txt>
@@ -84,7 +90,7 @@ export default function HomeScreen() {
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
             <Txt variant="section">Recent activity</Txt>
-            <Txt variant="footnote" tone="secondary">Past 30 days</Txt>
+            <Txt variant="footnote" tone="secondary">Live refresh</Txt>
           </View>
           <Chips scroll>
             {INCIDENT_CATEGORIES.map((item) => (
@@ -105,9 +111,9 @@ export default function HomeScreen() {
               onPress={() => toggle('community-report')}
             />
           </Chips>
-          <SafetyMap points={visiblePoints} />
+          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} />
           <Txt variant="footnote" tone="secondary">
-            Official categories from Milwaukee Police Department public data. Locations are rounded to protect privacy; “domestic” is not shown because the source does not provide that public category.
+            Heat areas summarize reported MPD incidents from the past 30 days. Red markers are selected police calls from the delayed live feed—not confirmed crimes. All locations are generalized.
           </Txt>
           {safety.isUsingFallback ? (
             <Notice icon="cloud-offline-outline">Live city data is unavailable, so sample locations are shown. Pull down to retry.</Notice>
