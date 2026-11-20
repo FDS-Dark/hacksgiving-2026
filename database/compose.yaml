@@ -1,0 +1,22 @@
+# Fixed project name: other repos also keep compose files in a database/
+# folder, and the default project name would make them replace each other.
+name: hacksgiving
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.4-pg16
+    container_name: hacksgiving-postgres
+    restart: unless-stopped
+    command: postgres -c hba_file=/etc/postgresql/pg_hba.conf
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./docker/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

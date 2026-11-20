@@ -1,0 +1,39 @@
+# Environment files
+.env
+.env.local
+.env.prod
+**/.env
+**/.env.local
+**/.env.prod
+!**/example.env
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Database runtime
+database/data/
+
+# Terraform
+**/.terraform/
+**/backend.hcl
+**/tfplan*
+*.tfstate
+*.tfstate.*
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

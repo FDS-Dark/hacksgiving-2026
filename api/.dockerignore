@@ -1,0 +1,14 @@
+# Keep local state and secrets out of the image (COPY . .).
+.env
+.env.*
+!.env.example
+.venv*/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+.data/
+scripts/
+.mypy_cache/
+.flake8
+pytest.ini

@@ -1,0 +1,158 @@
+# Database layer: Supabase-hosted Postgres. Included from
+# the root .gitlab-ci.yml, so every variable here is job-scoped: global ones
+# would override the app pipeline's TF_STATE_NAME and VAULT_AUTH_ROLE.
+#
+#   db-plan / db-apply   database/terraform: SSL and Data API settings for
+#                        both projects, the app role's passwords, and the
+#                        db / db-migration secrets in Vault.
+#   migrate-staging      Alembic against staging (automatic on the staging
+#                        branch, after the API tests pass; tf-apply-staging
+#                        waits on it).
+#   migrate-production   Alembic against production (manual, default branch
+#                        only, after the API tests pass; tf-apply waits on it).
+#
+# All run as gitlab-hacksgiving-database-ci (infra/vault-config). The Supabase
+# access token is in Vault at deployments/hacksgiving/supabase-terraform.
+
+.db_vault_login: &db_vault_login
+  - export VAULT_TOKEN="$(curl --silent --show-error --request POST --header 'Content-Type:application/json' --data "{\"role\":\"${VAULT_AUTH_ROLE}\",\"jwt\":\"${VAULT_ID_TOKEN}\"}" "${VAULT_ADDR}/v1/auth/${VAULT_AUTH_PATH}/login" | jq -r '.auth.client_token')"
+  - |
+    if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+      echo "Vault login failed for role $VAULT_AUTH_ROLE. Register $CI_PROJECT_PATH in"
+      echo "infra/vault-config/vault-app-projects.tf."
+      exit 1
+    fi
+
+.db_job:
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: "http://10.10.20.11:8200"
+  variables:
+    VAULT_AUTH_ROLE: "gitlab-hacksgiving-database-ci"
+    DB_TF_STATE_NAME: "hacksgiving-database-prod"
+
+.db_rules: &db_rules
+  - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+    when: never
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    changes:
+      - database/**/*
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH
+    changes:
+      paths:
+        - database/**/*
+      compare_to: refs/heads/main
+
+.db_tf_job:
+  extends: .db_job
+  image:
+    name: ghcr.io/opentofu/opentofu:1.11.5
+    entrypoint: [""]
+  before_script:
+    - apk add --no-cache curl jq
+    - *db_vault_login
+    - |
+      if ! TOKEN_JSON="$(curl --fail-with-body -sS -H "X-Vault-Token:$VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/deployments/hacksgiving/supabase-terraform")"; then
+        echo "Can't read secret/deployments/hacksgiving/supabase-terraform (database/README.md)."
+        exit 1
+      fi
+      export SUPABASE_ACCESS_TOKEN="$(echo "$TOKEN_JSON" | jq -r '.data.data.access_token')"
+      unset TOKEN_JSON
+    - export TF_HTTP_USERNAME="gitlab-ci-token"
+    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
+    - printf 'address        = "%s"\nlock_address   = "%s"\nunlock_address = "%s"\nlock_method    = "POST"\nunlock_method  = "DELETE"\nretry_wait_min = "5"\n' "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${DB_TF_STATE_NAME}" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${DB_TF_STATE_NAME}/lock" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${DB_TF_STATE_NAME}/lock" > database/terraform/backend.hcl
+    - cd database/terraform
+    - tofu init -input=false -reconfigure -backend-config=backend.hcl
+
+db-plan:
+  stage: b-tf-plan
+  extends: .db_tf_job
+  needs: []
+  script:
+    - tofu plan -input=false -out=tfplan
+    - tofu show -no-color tfplan > tfplan.txt
+  # The binary plan holds the database passwords and the Supabase secret
+  # key; only maintainers may download it. tofu show masks them in
+  # tfplan.txt.
+  artifacts:
+    expire_in: 1 day
+    access: maintainer
+    paths:
+      - database/terraform/tfplan
+      - database/terraform/tfplan.txt
+  rules: *db_rules
+
+db-apply:
+  stage: d-tf-apply
+  extends: .db_tf_job
+  needs:
+    - job: db-plan
+      artifacts: true
+  resource_group: hacksgiving-database
+  script:
+    - tofu apply -input=false tfplan
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - database/**/*
+      when: manual
+    - when: never
+
+# Migrations run only once the code they ship with has passed its tests,
+# integration tests (which build a database from these migrations) included.
+.migrate:
+  extends: .db_job
+  stage: c-migrate
+  image: $UV_IMAGE
+  needs:
+    - job: api-test
+  variables:
+    UV_PROJECT_ENVIRONMENT: .venv
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends ca-certificates curl jq >/dev/null
+    - *db_vault_login
+    - |
+      if ! SECRET="$(curl --fail-with-body -sS -H "X-Vault-Token:${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/data/${MIGRATION_SECRET_PATH}")"; then
+        echo "Can't read secret/${MIGRATION_SECRET_PATH}. Has db-apply run?"
+        exit 1
+      fi
+      export HACKSGIVING_MIGRATION_DATABASE_URL="$(echo "$SECRET" | jq -r '.data.data | "postgresql://\(.username | @uri):\(.password | @uri)@\(.host):\(.port)/\(.database)?sslmode=\(.sslmode // "require")"')"
+      export HACKSGIVING_APP_ROLE="$(echo "$SECRET" | jq -r '.data.data.app_username')"
+      export HACKSGIVING_APP_PASSWORD="$(echo "$SECRET" | jq -r '.data.data.app_password')"
+      unset SECRET
+  script:
+    - cd database
+    - bash migrate.sh upgrade head
+    - bash migrate.sh current
+
+migrate-staging:
+  extends: .migrate
+  resource_group: hacksgiving-db-staging
+  environment:
+    name: staging
+    deployment_tier: staging
+  variables:
+    MIGRATION_SECRET_PATH: "deployments/hacksgiving/staging/db-migration"
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $STAGING_BRANCH
+    - when: never
+
+migrate-production:
+  extends: .migrate
+  resource_group: hacksgiving-db-production
+  environment:
+    name: production
+    deployment_tier: production
+  variables:
+    MIGRATION_SECRET_PATH: "deployments/hacksgiving/db-migration"
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - when: never

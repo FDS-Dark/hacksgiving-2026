@@ -1,93 +1,145 @@
-# hacksgiving-2026
+# Hacksgiving
 
+An iPhone app (Expo) with a FastAPI backend on Postgres, built on the same
+stack as Cooli: Auth0 sign-in, Supabase Postgres, k3s behind a Cloudflare
+Tunnel, Vault secrets, and a staging → main GitLab pipeline. Right now it's
+a working skeleton: sign-in, `GET/PATCH /v1/me`, health checks, and a Home
+screen. Features go on top.
 
+- **Security, data handling, known gaps:** [`SECURITY.md`](SECURITY.md)
+- **Decisions** (inherited from Cooli): [`docs/decisions/`](docs/decisions/)
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Layout
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/austinkoske/personal/hacksgiving-2026.git
-git branch -M main
-git push -uf origin main
+apps/mobile/     Expo SDK 58 + React Native + TypeScript (Expo Router):
+                 screens -> domain services -> TanStack Query
+api/             FastAPI: routers -> services -> databridge -> stored functions
+database/        PostgreSQL + pgvector: Alembic migrations, seeds,
+                 and Supabase projects (database/terraform)
+auth0/terraform/ the Auth0 tenant: API, mobile app, E2E app, Action
+terraform/       production deploy: k3s namespace hacksgiving, secrets, DNS
+docs/            decisions
 ```
 
-## Integrate with your tools
+## Environments
 
-* [Set up project integrations](https://gitlab.com/austinkoske/personal/hacksgiving-2026/-/settings/integrations)
+| | API | Database | Auth |
+|---|---|---|---|
+| **Production** | `https://hacksgiving-api.austinkoske.com/v1` (k3s via Cloudflare Tunnel) | Supabase project `hacksgiving` | Auth0 (own tenant) |
+| **Staging** | `https://hacksgiving-api-staging.austinkoske.com/v1` | Supabase project `hacksgiving staging` | same tenant |
+| **Local** | `uvicorn` on your machine | `database/compose.yaml` Postgres | HS256 dev tokens |
 
-## Collaborate with your team
+The iPhone build talks to production (`apps/mobile/.env.production`);
+Expo Go talks to whatever `apps/mobile/.env.local` says.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Local development
 
-## Test and Deploy
+Needs Docker, `uv` and Node 22.
 
-Use the built-in continuous integration in GitLab.
+1. **Database**
+   ```bash
+   cd database
+   cp .env.example .env
+   docker compose up -d postgres
+   ./migrate.sh --local   # Alembic upgrade + the dev user
+   ```
+2. **API**
+   ```bash
+   cd api
+   cp example.env .env
+   uv sync
+   uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   uv run python scripts/dev_token.py   # a token for the seeded dev user
+   ```
+3. **Mobile**
+   ```bash
+   cd apps/mobile
+   cp .env.example .env.local    # API URL (LAN/Tailscale IP on a phone) + dev token
+   npm ci
+   npx expo start                # Expo Go
+   ```
+   To install a standalone build on an iPhone, see
+   [`apps/mobile/README.md`](apps/mobile/README.md#installing-on-an-iphone-no-testflight).
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## Tests
 
-***
+```bash
+cd api
+uv run flake8 . ../database/migrations ../database/seeds
+uv run mypy .
+uv run pytest      # unit tests; integration and smoke tests skip
+HACKSGIVING_TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/postgres uv run pytest
+cd ../apps/mobile && npx tsc --noEmit && npx eslint . --max-warnings=0 && npm test
+```
 
-# Editing this README
+- **Unit (API):** user provisioning and updates against an in-memory
+  stand-in for the stored functions, auth, the error contract, settings.
+- **Unit (app):** the query retry policy, what a failed token refresh does
+  to the session.
+- **Integration:** the API over HTTP against a fresh Postgres per session,
+  built by `alembic upgrade head`, as the least-privileged app role; plus a
+  migration round trip.
+- **Smoke** (`api/tests/smoke`): the deployed API end to end with a real
+  Auth0 token. CI runs it after every staging and production apply.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## CI/CD (`.gitlab-ci.yml`)
 
-## Suggestions for a good README
+| Stage | Jobs |
+|---|---|
+| test | `api-test` (flake8, mypy, OpenAPI contract, pytest), `mobile-test` (generated types, tsc, ESLint, Jest), `secret-scan` (gitleaks), `api-audit` (pip-audit), `mobile-audit` (npm audit) |
+| a-build | `build-api` (image to the GitLab registry) |
+| b-tf-plan | `validate`, `tf-plan` (main and MRs into it), `tf-plan-staging` (everything else), `auth0-plan`, `db-plan` |
+| c-migrate | `migrate-staging` (automatic, `staging` branch), `migrate-production` (manual, `main`); both after `api-test` |
+| d-tf-apply | `tf-apply-staging` (automatic, `staging`), `tf-apply`, `auth0-apply`, `db-apply` (manual, `main`) |
+| e-smoke | `smoke-staging` (after `tf-apply-staging`), `smoke-production` (after `tf-apply`) |
+| f-device | `ios-device-staging`, `ios-device-production` (Mac mini runner, installs on the paired iPhone) |
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Changes go feature branch → `staging` → `main`, both protected. Merging
+into `staging` migrates and deploys staging and smoke-tests it; an MR from
+`staging` into `main` then plans production, and merging it makes the
+production jobs available. Both environments run in the `hacksgiving`
+namespace from one Terraform root with two states (`hacksgiving-k8s-staging`,
+`hacksgiving-k8s-prod`; `terraform/environments/*.tfvars`). One Auth0 tenant
+serves both. Terraform runs only in CI. Secrets come from Vault through
+GitLab OIDC; see [`SECURITY.md`](SECURITY.md#secrets).
 
-## Name
-Choose a self-explaining name for your project.
+## Before the first deploy
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+None of this exists yet; the pipeline's deploy jobs fail until it does.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+1. Register `austinkoske/personal/hacksgiving-2026` in
+   `infra/vault-config/vault-app-projects.tf` (creates the `hacksgiving`
+   namespace, its ci-deployer, and the `gitlab-hacksgiving-ci`,
+   `gitlab-hacksgiving-database-ci` and `eso-hacksgiving` roles).
+2. Create the two Supabase projects. Put their refs in
+   `database/terraform/variables.tf`, and store their admin passwords at
+   `secret/deployments/hacksgiving[/staging]/supabase-admin` and a Supabase
+   access token at `secret/deployments/hacksgiving/supabase-terraform`
+   ([`database/README.md`](database/README.md#supabase)).
+3. Seed `secret/deployments/hacksgiving/app` and `.../staging/app` with
+   `jwt_secret`.
+4. Create an Auth0 tenant and its Terraform M2M app, then store it at
+   `secret/deployments/hacksgiving/auth0-terraform`
+   ([`auth0/terraform/README.md`](auth0/terraform/README.md)). After
+   `auth0-apply`: set `terraform/` var `auth0_domain`, fill the Auth0 values
+   in `apps/mobile/.env.production` and `.env.staging`, and seed
+   `secret/deployments/hacksgiving/e2e`.
+5. Create a protected `staging` branch, and a `gitlab-deploy-token`
+   (read_registry) on the project.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Rules worth knowing before you add code
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- **API:** router → service → databridge → stored function, one domain
+  per file in each layer, Pydantic models between them. No SQL in the API
+  ([ADR 0007](docs/decisions/0007-sql-in-stored-functions.md)); see
+  [`api/README.md`](api/README.md#adding-a-resource).
+- **App:** screens call domain service hooks (`src/services`), which own
+  the API calls and the TanStack Query cache. API types are generated,
+  never written by hand
+  ([ADR 0008](docs/decisions/0008-mobile-services-and-query-cache.md)).
+- Scope every query by the caller's verified id; never accept a user id
+  from a request body.
+- Never commit credentials. `EXPO_PUBLIC_*` values ship inside the app.
+- Add Expo packages with `npx expo install` and read `apps/mobile/AGENTS.md`
+  before touching Expo APIs.

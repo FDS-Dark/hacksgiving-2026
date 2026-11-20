@@ -1,0 +1,8 @@
+.env
+data/
+terraform/.terraform/
+terraform/backend.hcl
+terraform/*.tfplan
+terraform/tfplan*
+*.tfstate
+*.tfstate.*

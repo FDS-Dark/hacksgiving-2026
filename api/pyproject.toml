@@ -1,0 +1,54 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "Hacksgiving API"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]>=0.115.14",
+    "pydantic-settings>=2.10.1",
+    "pyjwt[crypto]>=2.10.1",
+    "sqlalchemy[asyncio]>=2.0.41",
+    "asyncpg>=0.30.0",
+    "python-dotenv>=1.0.1",
+    "alembic>=1.20.1",
+    "psycopg[binary]>=3.3.8",
+    "tzdata>=2026.6",
+    "httpx>=0.25.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "flake8>=7.3.0",
+    "mypy>=1.17.1",
+    "faker>=37.5.3",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "httpx>=0.25.0",
+]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+exclude = ['^\.venv', '^scripts/']
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+# Tests may leave fixtures and helpers unannotated; their bodies are still checked.
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+# response.json() is Any; helpers returning it are fine.
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["asyncpg", "asyncpg.*"]
+ignore_missing_imports = true

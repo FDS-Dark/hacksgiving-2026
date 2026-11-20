@@ -1,0 +1,8 @@
+address        = "https://gitlab.com/api/v4/projects/<PROJECT_ID>/terraform/state/hacksgiving-database-prod"
+lock_address   = "https://gitlab.com/api/v4/projects/<PROJECT_ID>/terraform/state/hacksgiving-database-prod/lock"
+unlock_address = "https://gitlab.com/api/v4/projects/<PROJECT_ID>/terraform/state/hacksgiving-database-prod/lock"
+lock_method    = "POST"
+unlock_method  = "DELETE"
+retry_wait_min = "5"
+username       = "<GITLAB_USERNAME>"
+password       = "<GITLAB_TOKEN>"

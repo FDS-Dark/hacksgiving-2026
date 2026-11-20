@@ -1,0 +1,557 @@
+# GitLab CI for the app layer: builds the api Docker image, then deploys
+# it via OpenTofu to the homelab k3s cluster (see
+# terraform/main.tf). Mirrors the pattern in homelab/docs/SERVICE_PIPELINE.md
+# and arcturus_monorepo's unified multi-Deployment terraform state.
+#
+# Standard: homelab/docs/SERVICE_PIPELINE.md, "Project CI and secrets standard".
+# Requires, before anything can deploy:
+#   1. This project registered in infra/vault-config/vault-app-projects.tf
+#      (one entry: creates the hacksgiving namespace, its ci-deployer account, the
+#      gitlab-<name>-ci, gitlab-<name>-database-ci and eso-<name> roles).
+#      CI deploys with a short-lived namespace-scoped token, never the
+#      cluster-admin kubeconfig.
+#   2. secret/deployments/<name>/app seeded by hand with jwt_secret.
+#   3. database/ applied first: it publishes secret/deployments/<name>/db.
+#   4. secret/deployments/<name>/auth0-terraform seeded by hand with the Auth0
+#      Terraform M2M app (domain, client_id, client_secret) for auth0/terraform.
+#
+# Promotion: feature branch -> staging -> main. Both are protected branches.
+#   feature branches, MRs into staging   tests + plans against staging
+#   staging (after a merge)              migrate-staging, tf-apply-staging and
+#                                        smoke-staging run on their own
+#   MRs from staging into main           tests + plans against production
+#   main (after a merge)                 migrate-production and tf-apply are
+#                                        manual; smoke-production follows
+# auth0-apply and db-apply stay on main only: one Auth0 tenant serves both
+# environments, and database/terraform holds both Supabase projects in one
+# state. Migrations run before the deploy that needs them. resource_group
+# keeps each one serial.
+
+# One pipeline per change: the merge request pipeline while an MR is open,
+# the branch pipeline otherwise.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # The deploy branches always get a branch pipeline, even while an MR
+    # from them is open (staging usually has one open into main).
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_BRANCH == $STAGING_BRANCH
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  tags:
+    - homelab # group runner tag: homelab for austinkoske/*, latentary for latentary/*
+  # The runners' egress drops roughly 1 in 100 connections (measured from a
+  # pod on k3s-4, 2026-11-12), and a dropped download can hang until the job
+  # times out. Every job here normally finishes in under 2 minutes, so fail
+  # fast and retry once when a job hangs or the runner fails. Test failures
+  # are not retried.
+  timeout: 15m
+  retry:
+    max: 1
+    when:
+      - server_timeout_running
+      - no_updates_running
+      - runner_system_failure
+      - runner_interrupted
+
+stages:
+  - test
+  - a-build
+  - b-tf-plan
+  - c-migrate
+  - d-tf-apply
+  - e-smoke
+  - f-device
+
+include:
+  - local: database/.gitlab-ci.yml
+
+variables:
+  TF_ROOT: "terraform"
+  TF_STATE_NAME: "hacksgiving-k8s-prod"
+  TF_ENVIRONMENT: "production" # terraform/environments/<this>.tfvars
+  STAGING_BRANCH: "staging"
+  AUTH0_TF_STATE_NAME: "hacksgiving-auth0"
+  AUTH0_TF_SECRET_PATH: "deployments/hacksgiving/auth0-terraform"
+  VAULT_ADDR: "http://10.10.20.11:8200"
+  VAULT_AUTH_PATH: "jwt-gitlab"
+  VAULT_AUTH_ROLE: "gitlab-hacksgiving-ci"
+  K8S_NAMESPACE: "hacksgiving"
+  API_IMAGE: "$CI_REGISTRY_IMAGE/api:$CI_COMMIT_SHA"
+  UV_IMAGE: "ghcr.io/astral-sh/uv:0.12.13-python3.13-trixie-slim"
+  NODE_IMAGE: "node:22.23.4-bookworm-slim"
+
+# Every job that runs on each change.
+.on_every_change: &on_every_change
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH
+
+# Production changes: the default branch, by hand.
+.production_by_hand: &production_by_hand
+  - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+    when: never
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    when: manual
+  - when: never
+
+# Staging changes: the staging branch, on their own after each merge.
+.staging_on_merge: &staging_on_merge
+  - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+    when: never
+  - if: $CI_COMMIT_BRANCH == $STAGING_BRANCH
+  - when: never
+
+# API lint, types, unit tests and integration tests against a throwaway
+# pgvector database (the test fixtures run the Alembic migrations fresh,
+# including an upgrade/downgrade round trip). Then the contract: the
+# committed OpenAPI document must be what the API produces, because the
+# app's types are generated from it.
+api-test:
+  stage: test
+  image: $UV_IMAGE
+  services:
+    - name: pgvector/pgvector:0.8.4-pg16
+      alias: postgres
+  variables:
+    POSTGRES_USER: hacksgiving_ci
+    POSTGRES_PASSWORD: hacksgiving_ci
+    POSTGRES_DB: postgres
+    HACKSGIVING_TEST_DATABASE_URL: "postgresql://hacksgiving_ci:hacksgiving_ci@postgres:5432/postgres"
+    UV_PROJECT_ENVIRONMENT: .venv
+  script:
+    - cd api
+    - uv sync --frozen
+    - uv run flake8 . ../database/migrations ../database/seeds
+    - uv run mypy .
+    - uv run python scripts/export_openapi.py /tmp/openapi.json
+    - |
+      if ! diff -q /tmp/openapi.json ../apps/mobile/openapi.json >/dev/null; then
+        echo "apps/mobile/openapi.json is out of date. Run, from api/:"
+        echo "  uv run python scripts/export_openapi.py ../apps/mobile/openapi.json"
+        echo "then, from apps/mobile/: npm run gen:api"
+        exit 1
+      fi
+    - uv run python scripts/wait_for_db.py 90
+    - uv run pytest
+  rules: *on_every_change
+
+# Types, lint, unit tests, and generated API types that match openapi.json.
+mobile-test:
+  stage: test
+  image: $NODE_IMAGE
+  variables:
+    # More, longer retries than npm's default (2) for dropped registry reads.
+    npm_config_fetch_retries: "5"
+    npm_config_fetch_retry_maxtimeout: "60000"
+  script:
+    - cd apps/mobile
+    - npm ci --no-audit --no-fund
+    - cp src/api/schema.ts /tmp/schema.committed.ts
+    - npm run gen:api
+    - |
+      if ! diff -q src/api/schema.ts /tmp/schema.committed.ts >/dev/null; then
+        echo "src/api/schema.ts doesn't match openapi.json. Run npm run gen:api and commit it."
+        exit 1
+      fi
+    - npx tsc --noEmit
+    - npx eslint . --max-warnings=0
+    - npx jest --ci
+  rules: *on_every_change
+
+.vault_id_tokens: &vault_id_tokens
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: "http://10.10.20.11:8200"
+
+# ── Security checks ──────────────────────────────────────────────────────
+# Secrets anywhere in history (reviewed false positives: .gitleaksignore).
+secret-scan:
+  stage: test
+  image:
+    name: zricethezav/gitleaks:v8.30.1
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: "0" # the whole history, not just the last commits
+  script:
+    - gitleaks git --redact --no-banner --verbose .
+  rules: *on_every_change
+
+# Known vulnerabilities in the API's locked dependencies.
+api-audit:
+  stage: test
+  image: $UV_IMAGE
+  script:
+    - cd api
+    - uv export --frozen --no-hashes --no-emit-project --format requirements-txt -o /tmp/requirements.txt
+    - uvx pip-audit==2.10.1 --strict -r /tmp/requirements.txt --progress-spinner off
+  rules: *on_every_change
+
+# Known vulnerabilities in what the app ships. Fails on high or critical;
+# accepted moderate findings are listed in SECURITY.md (Dependencies).
+mobile-audit:
+  stage: test
+  image: $NODE_IMAGE
+  script:
+    - cd apps/mobile
+    - npm audit --omit=dev --audit-level=high
+  rules: *on_every_change
+
+build-api:
+  stage: a-build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/api" --dockerfile "${CI_PROJECT_DIR}/api/Dockerfile" --destination "$API_IMAGE" --cache=true --cache-repo "${CI_REGISTRY_IMAGE}/cache/api" --cache-ttl=336h --snapshot-mode=redo --compressed-caching=false
+  rules: *on_every_change
+
+.tf_job:
+  image:
+    name: ghcr.io/opentofu/opentofu:1.11.5
+    entrypoint: [""]
+  before_script:
+    - apk add --no-cache curl jq
+    - export VAULT_TOKEN="$(curl --silent --show-error --request POST --header 'Content-Type:application/json' --data "{\"role\":\"${VAULT_AUTH_ROLE}\",\"jwt\":\"${VAULT_ID_TOKEN}\"}" "${VAULT_ADDR}/v1/auth/${VAULT_AUTH_PATH}/login" | jq -r '.auth.client_token')"
+    - |
+      if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+        echo "Vault login failed for role $VAULT_AUTH_ROLE. Register $CI_PROJECT_PATH in"
+        echo "infra/vault-config/vault-app-projects.tf."
+        exit 1
+      fi
+    # Namespace-scoped deploy credentials: a short-lived ci-deployer token from
+    # Vault's Kubernetes secrets engine, plus the API address and CA (not
+    # secret). See infra/vault-config/vault-app-projects.tf.
+    - |
+      if ! CREDS="$(curl --fail-with-body -sS -X POST -H "X-Vault-Token:$VAULT_TOKEN" --data "{\"kubernetes_namespace\":\"${K8S_NAMESPACE}\"}" "$VAULT_ADDR/v1/k8s/creds/${K8S_NAMESPACE}-deployer")"; then
+        echo "Couldn't get a ${K8S_NAMESPACE}-deployer token from Vault k8s/creds. Is the project"
+        echo "registered in infra/vault-config/vault-app-projects.tf, and applied?"
+        exit 1
+      fi
+      CLUSTER="$(curl --fail-with-body -sS -H "X-Vault-Token:$VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/homelab/k3s/cluster")"
+      jq -n --argjson c "$CLUSTER" --argjson t "$CREDS" --arg ns "$K8S_NAMESPACE" '{
+        apiVersion: "v1", kind: "Config", "current-context": "deploy",
+        clusters: [{name: "k3s", cluster: {server: $c.data.data.server, "certificate-authority-data": $c.data.data.certificate_authority_data}}],
+        users: [{name: "ci-deployer", user: {token: $t.data.service_account_token}}],
+        contexts: [{name: "deploy", context: {cluster: "k3s", user: "ci-deployer", namespace: $ns}}]
+      }' > /tmp/k3s-kubeconfig.yaml
+      unset CREDS CLUSTER
+    - export TF_VAR_kubeconfig_path=/tmp/k3s-kubeconfig.yaml
+    # Image pull credentials for the cluster: the project's read_registry deploy
+    # token named gitlab-deploy-token, which GitLab exposes to jobs as
+    # CI_DEPLOY_USER / CI_DEPLOY_PASSWORD (nothing stored in CI variables).
+    - |
+      if [ -z "${CI_DEPLOY_USER:-}" ] || [ -z "${CI_DEPLOY_PASSWORD:-}" ]; then
+        echo "No gitlab-deploy-token (read_registry) on this project; pods could not pull images."
+        exit 1
+      fi
+      export TF_VAR_registry_username="$CI_DEPLOY_USER" TF_VAR_registry_password="$CI_DEPLOY_PASSWORD"
+    # Cloudflare token for terraform/dns.tf (secret/platform/cloudflare/ci).
+    - |
+      if ! CF="$(curl --fail-with-body -sS -H "X-Vault-Token:$VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/platform/cloudflare/ci")"; then
+        echo "Can't read secret/platform/cloudflare/ci (policy cloudflare-ci-read in infra/vault-config)."
+        exit 1
+      fi
+      export CLOUDFLARE_API_TOKEN="$(echo "$CF" | jq -r '.data.data.api_token')"
+      unset CF
+    - export TF_HTTP_USERNAME="gitlab-ci-token"
+    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
+    - printf 'address        = "%s"\nlock_address   = "%s"\nunlock_address = "%s"\nlock_method    = "POST"\nunlock_method  = "DELETE"\nretry_wait_min = "5"\n' "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}/lock" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${TF_STATE_NAME}/lock" > "${TF_ROOT}/backend.hcl"
+    - cd "${TF_ROOT}"
+    - tofu init -input=false -reconfigure -backend-config=backend.hcl
+
+validate:
+  stage: b-tf-plan
+  image:
+    name: ghcr.io/opentofu/opentofu:1.11.5
+    entrypoint: [""]
+  script:
+    - tofu -chdir=terraform fmt -check -recursive
+    - tofu -chdir=terraform init -backend=false -input=false
+    - tofu -chdir=terraform validate
+    - tofu -chdir=database/terraform fmt -check -recursive
+    - tofu -chdir=database/terraform init -backend=false -input=false
+    - tofu -chdir=database/terraform validate
+    - tofu -chdir=auth0/terraform fmt -check -recursive
+    - tofu -chdir=auth0/terraform init -backend=false -input=false
+    - tofu -chdir=auth0/terraform validate
+  rules: *on_every_change
+
+.tf_plan:
+  stage: b-tf-plan
+  extends: .tf_job
+  <<: *vault_id_tokens
+  needs:
+    - build-api
+  script:
+    - tofu fmt -check -recursive
+    - tofu validate
+    - tofu plan -input=false -var-file="environments/${TF_ENVIRONMENT}.tfvars" -var="api_image=$API_IMAGE" -out=tfplan
+    - tofu show -no-color tfplan > tfplan.txt
+  # The binary plan holds secret values (registry credentials, tokens); only
+  # maintainers may download it. tofu show masks them in tfplan.txt.
+  artifacts:
+    expire_in: 1 day
+    access: maintainer
+    paths:
+      - ${TF_ROOT}/tfplan
+      - ${TF_ROOT}/tfplan.txt
+
+# Production: main, and the MRs that would merge into it.
+tf-plan:
+  extends: .tf_plan
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+
+# Staging: everything else (the staging branch, MRs into it, other branches).
+tf-plan-staging:
+  extends: .tf_plan
+  variables:
+    TF_STATE_NAME: "hacksgiving-k8s-staging"
+    TF_ENVIRONMENT: "staging"
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: never
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
+# The schema first: a deploy never runs code against a database that lacks
+# its migrations. (Migrating with nothing new to apply is a no-op.)
+tf-apply:
+  stage: d-tf-apply
+  extends: .tf_job
+  <<: *vault_id_tokens
+  needs:
+    - job: tf-plan
+      artifacts: true
+    - job: migrate-production
+  resource_group: hacksgiving-k8s-prod
+  environment:
+    name: production
+    deployment_tier: production
+  script:
+    - tofu apply -input=false tfplan
+  rules: *production_by_hand
+
+tf-apply-staging:
+  stage: d-tf-apply
+  extends: .tf_job
+  <<: *vault_id_tokens
+  needs:
+    - job: tf-plan-staging
+      artifacts: true
+    - job: migrate-staging
+  resource_group: hacksgiving-k8s-staging
+  variables:
+    TF_STATE_NAME: "hacksgiving-k8s-staging"
+    TF_ENVIRONMENT: "staging"
+  environment:
+    name: staging
+    deployment_tier: staging
+    url: https://hacksgiving-api-staging.austinkoske.com/health
+  script:
+    - tofu apply -input=false tfplan
+  rules: *staging_on_merge
+
+# ── Auth0 tenant (auth0/terraform) ───────────────────────────────────────
+# Separate state from the k8s deploy, so tenant changes don't need the
+# cluster and can also be applied from a laptop (auth0/terraform/README.md).
+.auth0_tf_job:
+  image:
+    name: ghcr.io/opentofu/opentofu:1.11.5
+    entrypoint: [""]
+  <<: *vault_id_tokens
+  before_script:
+    - apk add --no-cache curl jq
+    - export VAULT_TOKEN="$(curl --silent --show-error --request POST --header 'Content-Type:application/json' --data "{\"role\":\"${VAULT_AUTH_ROLE}\",\"jwt\":\"${VAULT_ID_TOKEN}\"}" "${VAULT_ADDR}/v1/auth/${VAULT_AUTH_PATH}/login" | jq -r '.auth.client_token')"
+    - |
+      if [ -z "$VAULT_TOKEN" ] || [ "$VAULT_TOKEN" = "null" ]; then
+        echo "Vault login failed for role $VAULT_AUTH_ROLE. Register $CI_PROJECT_PATH in"
+        echo "infra/vault-config/vault-app-projects.tf."
+        exit 1
+      fi
+    - |
+      if ! curl --fail-with-body -sS -H "X-Vault-Token:$VAULT_TOKEN" "$VAULT_ADDR/v1/secret/data/${AUTH0_TF_SECRET_PATH}" > /tmp/auth0.json; then
+        echo "Can't read secret/${AUTH0_TF_SECRET_PATH}. Seed it (auth0/terraform/README.md) and"
+        echo "check that $VAULT_AUTH_ROLE's policy in infra/vault-config allows reading it."
+        exit 1
+      fi
+    - export AUTH0_DOMAIN="$(jq -r '.data.data.domain' /tmp/auth0.json)"
+    - export AUTH0_CLIENT_ID="$(jq -r '.data.data.client_id' /tmp/auth0.json)"
+    - export AUTH0_CLIENT_SECRET="$(jq -r '.data.data.client_secret' /tmp/auth0.json)"
+    - rm -f /tmp/auth0.json
+    - export TF_HTTP_USERNAME="gitlab-ci-token"
+    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
+    - printf 'address        = "%s"\nlock_address   = "%s"\nunlock_address = "%s"\nlock_method    = "POST"\nunlock_method  = "DELETE"\nretry_wait_min = "5"\n' "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${AUTH0_TF_STATE_NAME}" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${AUTH0_TF_STATE_NAME}/lock" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${AUTH0_TF_STATE_NAME}/lock" > auth0/terraform/backend.hcl
+    - cd auth0/terraform
+    - tofu init -input=false -reconfigure -backend-config=backend.hcl
+
+auth0-plan:
+  stage: b-tf-plan
+  extends: .auth0_tf_job
+  needs: []
+  script:
+    - tofu plan -input=false -out=tfplan
+    - tofu show -no-color tfplan > tfplan.txt
+  artifacts:
+    expire_in: 1 day
+    access: maintainer
+    paths:
+      - auth0/terraform/tfplan
+      - auth0/terraform/tfplan.txt
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - auth0/terraform/**/*
+    # Merge requests and branches: while they differ from main here, not
+    # just on the push that touched these files.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_BRANCH
+      changes:
+        paths:
+          - auth0/terraform/**/*
+        compare_to: refs/heads/main
+
+auth0-apply:
+  stage: d-tf-apply
+  extends: .auth0_tf_job
+  needs:
+    - job: auth0-plan
+      artifacts: true
+  resource_group: hacksgiving-auth0
+  script:
+    - tofu apply -input=false tfplan
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - auth0/terraform/**/*
+      when: manual
+    - when: never
+
+# ── Post-deploy smoke tests ──────────────────────────────────────────────
+# After every apply: the real API through the tunnel, signed in
+# as the Hacksgiving E2E Auth0 app, against the real database
+# (api/tests/smoke). Failing here means the
+# deploy is broken for users even if every other job passed. Retry this job
+# to re-check production at any time.
+.smoke:
+  stage: e-smoke
+  image: $UV_IMAGE
+  <<: *vault_id_tokens
+  timeout: 10m
+  variables:
+    UV_PROJECT_ENVIRONMENT: .venv
+  script:
+    - cd api
+    - uv sync --frozen
+    # Vault login with the job's ID token, then the E2E credentials into the
+    # environment. Nothing secret is printed: eval runs the output, it
+    # isn't shown.
+    - |
+      eval "$(uv run python - <<'PY'
+      import json, os, shlex, sys, urllib.request
+
+      def call(path, body=None, token=None):
+          req = urllib.request.Request(os.environ["VAULT_ADDR"] + path, json.dumps(body).encode() if body else None,
+                                       {"Content-Type": "application/json", **({"X-Vault-Token": token} if token else {})})
+          return json.load(urllib.request.urlopen(req, timeout=20))
+
+      try:
+          token = call(f"/v1/auth/{os.environ['VAULT_AUTH_PATH']}/login",
+                       {"role": os.environ["VAULT_AUTH_ROLE"], "jwt": os.environ["VAULT_ID_TOKEN"]})["auth"]["client_token"]
+          e2e = call("/v1/secret/data/deployments/hacksgiving/e2e", token=token)["data"]["data"]
+      except Exception as error:
+          sys.exit(f"Can't read secret/deployments/hacksgiving/e2e ({type(error).__name__}); ci_read in infra/vault-config?")
+      for key, name in [("domain", "AUTH0_DOMAIN"), ("client_id", "CLIENT_ID"),
+                        ("client_secret", "CLIENT_SECRET"), ("audience", "AUDIENCE")]:
+          print(f"export HACKSGIVING_SMOKE_{name}={shlex.quote(e2e[key])}")
+      PY
+      )"
+    - uv run pytest tests/smoke -v
+
+smoke-production:
+  extends: .smoke
+  needs:
+    - job: tf-apply
+  variables:
+    HACKSGIVING_SMOKE_BASE_URL: "https://hacksgiving-api.austinkoske.com/v1"
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# The same checks against staging after each staging deploy. The E2E user
+# is provisioned in the staging database on its first request.
+smoke-staging:
+  extends: .smoke
+  needs:
+    - job: tf-apply-staging
+  variables:
+    HACKSGIVING_SMOKE_BASE_URL: "https://hacksgiving-api-staging.austinkoske.com/v1"
+  rules: *staging_on_merge
+
+# ── Install on the iPhone ────────────────────────────────────────────────
+# Builds the app as a signed Release on the Mac mini runner and installs it
+# on the paired iPhone (apps/mobile/scripts/install-device.sh). Staging
+# installs "Hacksgiving Staging" after each staging deploy, production installs
+# "Hacksgiving" after each production deploy, so the app on the phone always
+# matches the API it talks to. The phone must be on the Mac's cable or Wi-Fi
+# (not just Tailscale: Xcode finds phones on the local network only); if it
+# isn't, the job fails in seconds and the pipeline still passes. Retry the
+# job once the phone is connected.
+.ios_device:
+  stage: f-device
+  tags: [macos, ios, macmini]
+  timeout: 45m
+  resource_group: macmini-physical-ios-device
+  variables:
+    GIT_STRATEGY: fetch
+    IOS_DEVICE_ID: "00008140-001C45EE212A801C" # Austin's iPhone 16 Pro
+  before_script:
+    - source /Users/austink/devops-mac/scripts/ci-job-env.sh
+  script:
+    - apps/mobile/scripts/install-device.sh "$INSTALL_VARIANT"
+
+ios-device-staging:
+  extends: .ios_device
+  needs:
+    - job: smoke-staging
+      optional: true
+  variables:
+    INSTALL_VARIANT: staging
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $STAGING_BRANCH
+      allow_failure: true
+    # Any other pipeline: by hand, to try a branch on the phone against staging.
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+    - when: never
+
+ios-device-production:
+  extends: .ios_device
+  needs:
+    - job: smoke-production
+  variables:
+    INSTALL_VARIANT: production
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - when: never

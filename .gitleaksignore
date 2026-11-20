@@ -1,0 +1,4 @@
+# Reviewed gitleaks findings that are not secrets, as <commit>:<file>:<rule>:<line>.
+# EXPO_PUBLIC_AUTH0_CLIENT_ID in apps/mobile/.env.production and .env.staging is
+# the Native app's public client id (PKCE, no secret) and will be flagged once filled in.
+# Add a line here only after checking the value really is public.
