@@ -12,6 +12,16 @@ const ALERT_TERMS = [
   'fight',
   'assault',
   'dead on entry',
+  'sexual assault',
+  'burglary',
+  'entry-building or structure',
+  'theft',
+  'stolen vehicle',
+  'vehicle theft',
+  'arson',
+  'criminal damage',
+  'drug dealing',
+  'reckless vehicle',
 ];
 
 export type RecentCall = {
@@ -86,6 +96,7 @@ export function useRecentCalls() {
     queryFn: fetchRecentCalls,
     refetchInterval: 1000 * 60 * 5,
     staleTime: 1000 * 60 * 4,
+    refetchOnMount: 'always',
     retry: 1,
   });
 }

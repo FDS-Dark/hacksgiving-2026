@@ -38,6 +38,7 @@ export default function HomeScreen() {
 
   const allPoints = useMemo(() => [...safety.points, ...reports], [reports, safety.points]);
   const visiblePoints = useMemo(() => allPoints.filter((point) => active.has(point.category)), [active, allPoints]);
+  const updatedAt = safety.dataUpdatedAt ? new Date(safety.dataUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading';
   const refresh = () => {
     safety.refetch();
     calls.refetch();
@@ -90,7 +91,7 @@ export default function HomeScreen() {
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
             <Txt variant="section">Recent activity</Txt>
-            <Txt variant="footnote" tone="secondary">Live refresh</Txt>
+            <Txt variant="footnote" tone="secondary">Updated {updatedAt}</Txt>
           </View>
           <Chips scroll>
             {INCIDENT_CATEGORIES.map((item) => (

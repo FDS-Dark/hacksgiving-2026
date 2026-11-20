@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Heatmap, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { Txt } from '@/components/ui';
 import type { SafetyPoint } from '@/services/publicSafety';
@@ -13,6 +13,16 @@ const MILWAUKEE_REGION = {
   latitudeDelta: 0.29,
   longitudeDelta: 0.25,
 };
+
+const MUTED_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#e7e9e7' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#4d5558' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f7f8f6' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ccd1cf' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a8d5e5' }] },
+];
 
 type HeatCell = { id: string; latitude: number; longitude: number; count: number };
 
@@ -40,30 +50,24 @@ export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[];
     <View style={[styles.frame, { backgroundColor: theme.surface }]}>
       <MapView
         style={StyleSheet.absoluteFill}
+        provider={PROVIDER_GOOGLE}
         initialRegion={MILWAUKEE_REGION}
+        customMapStyle={MUTED_MAP_STYLE}
         showsCompass
         showsScale
         toolbarEnabled={false}
         accessibilityLabel="Interactive Milwaukee map showing recent public safety activity"
       >
-        {cells.map((cell) => {
-          const size = Math.min(76, 38 + cell.count * 4);
-          return (
-          <Marker
-            key={cell.id}
-            coordinate={{ latitude: cell.latitude, longitude: cell.longitude }}
-            anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={false}
-            zIndex={1}
-          >
-            <View style={[styles.heatOuter, { width: size, height: size, borderRadius: size / 2 }]}>
-              <View style={[styles.heatMiddle, { width: size * 0.68, height: size * 0.68, borderRadius: size }]}>
-                <View style={[styles.heatCore, { width: size * 0.32, height: size * 0.32, borderRadius: size }]} />
-              </View>
-            </View>
-          </Marker>
-          );
-        })}
+        <Heatmap
+          points={cells.map((cell) => ({ latitude: cell.latitude, longitude: cell.longitude, weight: cell.count }))}
+          radius={45}
+          opacity={0.82}
+          gradient={{
+            colors: ['#2A75BB', '#36B37E', '#F4D03F', '#F08A24', '#C62026'],
+            startPoints: [0.08, 0.24, 0.45, 0.68, 0.9],
+            colorMapSize: 256,
+          }}
+        />
         {reports.map((report) => (
           <Marker key={report.id} coordinate={report} title="Community report" description="Unverified, generalized location">
             <View style={[styles.reportMarker, { borderColor: theme.surface }]} />
@@ -85,11 +89,11 @@ export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[];
       </MapView>
 
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
-        <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>30-DAY ACTIVITY</Txt>
+        <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>{points.filter((point) => point.category !== 'community-report').length} INCIDENTS · 30 DAYS</Txt>
         <View style={styles.legendRow}>
-          <View style={[styles.gradient, { backgroundColor: '#EFB425' }]} />
+          <View style={[styles.gradient, { backgroundColor: '#2A75BB' }]} />
           <Txt variant="caption" tone="secondary">Lower</Txt>
-          <View style={[styles.gradient, { backgroundColor: '#B11E1E' }]} />
+          <View style={[styles.gradient, { backgroundColor: '#C62026' }]} />
           <Txt variant="caption" tone="secondary">Higher</Txt>
         </View>
         <View style={styles.legendRow}>
@@ -108,9 +112,6 @@ const styles = StyleSheet.create({
   legend: { position: 'absolute', left: space.sm, bottom: space.sm, gap: 4, borderRadius: radius.sm, padding: space.sm },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   gradient: { width: 12, height: 12, borderRadius: 6 },
-  heatOuter: { backgroundColor: 'rgba(177,30,30,0.28)', alignItems: 'center', justifyContent: 'center' },
-  heatMiddle: { backgroundColor: 'rgba(232,91,23,0.42)', alignItems: 'center', justifyContent: 'center' },
-  heatCore: { backgroundColor: 'rgba(255,205,45,0.82)' },
   callDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#B11E1E' },
   communityDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#247A63' },
   reportMarker: { width: 16, height: 16, borderRadius: 8, borderWidth: 3, backgroundColor: '#247A63' },
