@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { SafetyMap } from '@/components/SafetyMap';
-import { Button, Chip, Chips, Field, Group, Header, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
+import { Button, Chip, Chips, EmptyState, Field, Group, Header, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import {
   INCIDENT_CATEGORIES,
@@ -31,6 +31,7 @@ export default function HomeScreen() {
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
   const [reports, setReports] = useState<SafetyPoint[]>([]);
+  const [selectedIncidents, setSelectedIncidents] = useState<SafetyPoint[] | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [category, setCategory] = useState<IncidentCategory>('assault');
   const [neighborhood, setNeighborhood] = useState(NEIGHBORHOODS[0]);
@@ -112,9 +113,9 @@ export default function HomeScreen() {
               onPress={() => toggle('community-report')}
             />
           </Chips>
-          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} />
+          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} onSelectArea={setSelectedIncidents} />
           <Txt variant="footnote" tone="secondary">
-            Heat areas summarize reported MPD incidents from the past 30 days. Red markers are selected police calls from the delayed live feed—not confirmed crimes. All locations are generalized.
+            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Red markers are delayed police calls—not confirmed crimes. All locations are generalized.
           </Txt>
           {safety.isUsingFallback ? (
             <Notice icon="cloud-offline-outline">Live city data is unavailable, so sample locations are shown. Pull down to retry.</Notice>
@@ -189,6 +190,44 @@ export default function HomeScreen() {
         </View>
 
         <Button label="Add generalized report" icon="location-outline" size="lg" onPress={submitReport} />
+      </Sheet>
+
+      <Sheet
+        visible={selectedIncidents !== null}
+        onClose={() => setSelectedIncidents(null)}
+        title="Recent activity in this area"
+        subtitle="MPD reports within approximately 1.5 miles of the point you selected."
+      >
+        {selectedIncidents?.length ? (
+          <Group footer="Times and classifications come from the public MPD feed and may be revised. Exact addresses and incident numbers are intentionally omitted.">
+            {selectedIncidents.map((point) => {
+              const categoryName = point.category === 'community-report'
+                ? 'Community report'
+                : INCIDENT_CATEGORIES.find((item) => item.id === point.category)?.label ?? 'Reported incident';
+              const time = point.reportedAt
+                ? new Date(point.reportedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+                : point.ageInDays === 0
+                  ? 'Reported today'
+                  : point.ageInDays
+                    ? `Reported ${point.ageInDays} days ago`
+                    : 'Reported within 30 days';
+              return (
+                <Row
+                  key={point.id}
+                  title={categoryName}
+                  subtitle={point.weaponUsed ? `${time} · Weapon detail: ${point.weaponUsed}` : time}
+                  tile={{ icon: 'map-marker-alert', color: '#B42318' }}
+                />
+              );
+            })}
+          </Group>
+        ) : (
+          <EmptyState
+            icon="search-outline"
+            title="No matching reports here"
+            body="Try another nearby heat area or enable additional crime-category filters above the map."
+          />
+        )}
       </Sheet>
     </>
   );
