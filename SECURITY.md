@@ -14,7 +14,7 @@ iPhone app (Expo)  --HTTPS-->  Cloudflare Tunnel  -->  k3s (namespace hacksgivin
    |  Auth0 Universal Login                              hacksgiving-api (FastAPI)
    |  (PKCE, system browser)                              |  Postgres (Supabase, app role)
    v                                                      '  secrets: Vault -> External Secrets
- Auth0 tenant (auth0/terraform)
+ Auth0: Cooli's tenant (auth0/terraform owns Hacksgiving's apps only)
 ```
 
 There are no inbound ports on the home network. The API is reachable only

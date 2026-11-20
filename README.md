@@ -26,7 +26,7 @@ docs/            decisions
 
 | | API | Database | Auth |
 |---|---|---|---|
-| **Production** | `https://hacksgiving-api.austinkoske.com/v1` (k3s via Cloudflare Tunnel) | Supabase project `hacksgiving` | Auth0 (own tenant) |
+| **Production** | `https://hacksgiving-api.austinkoske.com/v1` (k3s via Cloudflare Tunnel) | Supabase project `hacksgiving` | Auth0, Cooli's tenant `dev-3wpn13zh30l6orpi` |
 | **Staging** | `https://hacksgiving-api-staging.austinkoske.com/v1` | Supabase project `hacksgiving staging` | same tenant |
 | **Local** | `uvicorn` on your machine | `database/compose.yaml` Postgres | HS256 dev tokens |
 
@@ -108,7 +108,7 @@ GitLab OIDC; see [`SECURITY.md`](SECURITY.md#secrets).
 
 None of this exists yet; the pipeline's deploy jobs fail until it does.
 
-1. Register `austinkoske/personal/hacksgiving-2026` in
+1. ~~Register~~ (vault-config MR !17) `austinkoske/personal/hacksgiving-2026` in
    `infra/vault-config/vault-app-projects.tf` (creates the `hacksgiving`
    namespace, its ci-deployer, and the `gitlab-hacksgiving-ci`,
    `gitlab-hacksgiving-database-ci` and `eso-hacksgiving` roles).
@@ -117,16 +117,16 @@ None of this exists yet; the pipeline's deploy jobs fail until it does.
    `secret/deployments/hacksgiving[/staging]/supabase-admin` and a Supabase
    access token at `secret/deployments/hacksgiving/supabase-terraform`
    ([`database/README.md`](database/README.md#supabase)).
-3. Seed `secret/deployments/hacksgiving/app` and `.../staging/app` with
-   `jwt_secret`.
-4. Create an Auth0 tenant and its Terraform M2M app, then store it at
-   `secret/deployments/hacksgiving/auth0-terraform`
-   ([`auth0/terraform/README.md`](auth0/terraform/README.md)). After
+3. ~~Seed `secret/deployments/hacksgiving/app` and `.../staging/app` with
+   `jwt_secret`.~~ (done 2026-11-19)
+4. ~~Auth0 Terraform M2M app~~ (done 2026-11-19: **Hacksgiving Terraform**
+   in Cooli's tenant, stored at `secret/deployments/hacksgiving/auth0-terraform`;
+   [`auth0/terraform/README.md`](auth0/terraform/README.md)). After
    `auth0-apply`: set `terraform/` var `auth0_domain`, fill the Auth0 values
    in `apps/mobile/.env.production` and `.env.staging`, and seed
    `secret/deployments/hacksgiving/e2e`.
-5. Create a protected `staging` branch, and a `gitlab-deploy-token`
-   (read_registry) on the project.
+5. ~~Create a protected `staging` branch, and a `gitlab-deploy-token`
+   (read_registry) on the project.~~ (done 2026-11-19)
 
 ## Rules worth knowing before you add code
 

@@ -1,10 +1,7 @@
+# Hacksgiving shares Cooli's tenant (dev-3wpn13zh30l6orpi). This root owns
+# only Hacksgiving's own API, apps and Action; tenant settings (name, login
+# page) belong to Cooli's auth0/terraform, so nothing here changes them.
 data "auth0_tenant" "current" {}
-
-# The name Universal Login shows ("Sign up to Hacksgiving to continue"). The
-# tenant is Hacksgiving's own, so this root may own its settings.
-resource "auth0_tenant" "tenant" {
-  friendly_name = var.tenant_name
-}
 
 # ── API (resource server) ────────────────────────────────────────────────
 # The FastAPI service verifies RS256 access tokens for this audience against

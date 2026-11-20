@@ -1,9 +1,9 @@
 # Auth0 tenant
 
-OpenTofu for Hacksgiving's own Auth0 tenant (create it by hand first, then
-bootstrap below):
-
-- The tenant's display name, **Hacksgiving**, shown on the Universal Login pages.
+OpenTofu for Hacksgiving's resources in **Cooli's Auth0 tenant**
+(`dev-3wpn13zh30l6orpi.us.auth0.com`). The tenant itself (its display name,
+login page) belongs to Cooli's `auth0/terraform`; this root never changes
+tenant settings. It owns:
 
 - **Hacksgiving API** (resource server). RS256, offline access, identifier
   `https://api.hacksgiving.app`.
@@ -45,8 +45,9 @@ vault kv put secret/deployments/hacksgiving/auth0-terraform domain=<tenant> clie
   client_secret="$(auth0 apps show <id> --reveal-secrets --json | jq -r .client_secret)"
 ```
 
-Everything else in the tenant (the API, the mobile app, the Action, the
-display name) is created by this root. Auth0's own Default App and the
+Everything else of Hacksgiving's (the API, the mobile apps, the E2E app,
+the Action) is created by this root. **Hacksgiving Terraform** was created
+this way on 2026-11-19, without the `update:tenant_settings` scope. Auth0's own Default App and the
 default Google connection are left alone; the mobile app only enables
 email + password.
 

@@ -1,9 +1,3 @@
-variable "tenant_name" {
-  type        = string
-  description = "Tenant display name on the Universal Login pages."
-  default     = "Hacksgiving"
-}
-
 variable "api_identifier" {
   type        = string
   description = "Auth0 API identifier, i.e. the access-token audience. The mobile app (EXPO_PUBLIC_AUTH0_AUDIENCE) and the API (APP__JWT__AUDIENCE, terraform/ var.auth0_audience) must use the same value. Changing it after users sign in invalidates their tokens."
