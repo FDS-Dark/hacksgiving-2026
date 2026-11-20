@@ -69,6 +69,13 @@ include:
   - local: database/.gitlab-ci.yml
 
 variables:
+  # The runners' egress drops connections now and then (see default:). Retry
+  # the git fetch, artifact/cache transfers and the runner's own setup steps
+  # (helper image pull) instead of failing the job on a network blip.
+  GET_SOURCES_ATTEMPTS: "3"
+  ARTIFACT_DOWNLOAD_ATTEMPTS: "3"
+  RESTORE_CACHE_ATTEMPTS: "3"
+  EXECUTOR_JOB_SECTION_ATTEMPTS: "3"
   TF_ROOT: "terraform"
   TF_STATE_NAME: "hacksgiving-k8s-prod"
   TF_ENVIRONMENT: "production" # terraform/environments/<this>.tfvars
@@ -207,6 +214,16 @@ build-api:
     - mkdir -p /kaniko/.docker
     - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
     - /kaniko/executor --context "${CI_PROJECT_DIR}/api" --dockerfile "${CI_PROJECT_DIR}/api/Dockerfile" --destination "$API_IMAGE" --cache=true --cache-repo "${CI_REGISTRY_IMAGE}/cache/api" --cache-ttl=336h --snapshot-mode=redo --compressed-caching=false
+  # The build is deterministic, so a failure is almost always a dropped
+  # registry connection (kaniko can't retry a layer pull itself).
+  retry:
+    max: 2
+    when:
+      - script_failure
+      - server_timeout_running
+      - no_updates_running
+      - runner_system_failure
+      - runner_interrupted
   rules: *on_every_change
 
 .tf_job:
