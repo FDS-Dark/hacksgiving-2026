@@ -11,6 +11,10 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Nearby</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} md="map" />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="alerts">
+        <NativeTabs.Trigger.Label>Alerts</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
