@@ -13,7 +13,11 @@ variable "native_callback_urls" {
 variable "dev_callback_urls" {
   type        = list(string)
   description = "Expo Go redirect URIs, exp://<metro host>:8081/--/auth, for Hacksgiving Mobile (dev) only. The sign-in screen shows the exact value in dev."
-  default     = ["exp://100.102.172.1:8081/--/auth"]
+  # One per teammate's Tailscale address. Auth0 has no wildcard for IPs.
+  default = [
+    "exp://100.102.172.1:8081/--/auth",
+    "exp://100.107.6.4:8081/--/auth",
+  ]
 }
 
 variable "name_claim" {
