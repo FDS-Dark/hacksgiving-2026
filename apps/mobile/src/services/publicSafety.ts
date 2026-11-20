@@ -2,8 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 
 export const INCIDENT_CATEGORIES = [
   { id: 'homicide', label: 'Homicide', layer: 0, color: '#A61B1B' },
+  { id: 'arson', label: 'Arson', layer: 1, color: '#B93815' },
   { id: 'sex-offense', label: 'Sex offense', layer: 2, color: '#7A4EAB' },
+  { id: 'criminal-damage', label: 'Property damage', layer: 3, color: '#7F5D3B' },
   { id: 'robbery', label: 'Robbery', layer: 4, color: '#D76B18' },
+  { id: 'burglary', label: 'Burglary', layer: 5, color: '#B77A18' },
+  { id: 'theft', label: 'Theft', layer: 6, color: '#2877A8' },
+  { id: 'vehicle-theft', label: 'Vehicle theft', layer: 7, color: '#176B87' },
+  { id: 'vehicle-entry', label: 'Vehicle break-in', layer: 8, color: '#4B7892' },
   { id: 'assault', label: 'Assault', layer: 9, color: '#D6A21F' },
 ] as const;
 
@@ -76,6 +82,7 @@ export function usePublicSafetyPoints() {
     queryFn: fetchSafetyPoints,
     staleTime: 1000 * 60 * 15,
     refetchInterval: 1000 * 60 * 15,
+    refetchOnMount: 'always',
     retry: 1,
   });
 
