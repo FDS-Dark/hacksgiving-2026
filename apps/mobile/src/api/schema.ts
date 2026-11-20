@@ -50,6 +50,27 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Request
+         * @description Picks the ComForce MKE service for a free-text request for help.
+         *     Signed-in callers only, so the OpenAI key can't be spent by anyone.
+         */
+        post: operations["route_request_v1_route_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -81,6 +102,31 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** RouteRequest */
+        RouteRequest: {
+            /** Message */
+            message: string;
+        };
+        /** RouteResponse */
+        RouteResponse: {
+            /**
+             * Also Relevant
+             * @default []
+             */
+            also_relevant: components["schemas"]["Service"][];
+            /** Follow Up Question */
+            follow_up_question: string | null;
+            /** Reason */
+            reason: string;
+            service: components["schemas"]["Service"];
+            /** Urgent */
+            urgent: boolean;
+        };
+        /**
+         * Service
+         * @enum {string}
+         */
+        Service: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "unclear";
         /** UpdateMeRequest */
         UpdateMeRequest: {
             /** Display Name */
@@ -172,6 +218,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    route_request_v1_route_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RouteResponse"];
                 };
             };
             /** @description Validation Error */
