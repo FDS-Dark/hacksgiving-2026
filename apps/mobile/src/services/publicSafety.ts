@@ -21,6 +21,8 @@ export type SafetyPoint = {
   latitude: number;
   longitude: number;
   ageInDays?: number;
+  reportedAt?: string;
+  weaponUsed?: string;
   reportedCategory?: IncidentCategory;
   note?: string;
   source: 'Milwaukee Police Department' | 'Community report';
@@ -28,7 +30,7 @@ export type SafetyPoint = {
 
 type GeoJsonFeature = {
   geometry?: { coordinates?: [number, number] };
-  properties?: { DAYSPASSED?: number };
+  properties?: { DAYSPASSED?: number; REPORTEDDATETIME?: number | string; WEAPONUSED?: string };
 };
 
 type GeoJsonResponse = { features?: GeoJsonFeature[] };
@@ -46,7 +48,7 @@ const FALLBACK_POINTS: SafetyPoint[] = [
 async function fetchCategory(category: (typeof INCIDENT_CATEGORIES)[number]): Promise<SafetyPoint[]> {
   const params = new URLSearchParams({
     where: 'DAYSPASSED <= 30',
-    outFields: 'DAYSPASSED',
+    outFields: 'DAYSPASSED,REPORTEDDATETIME,WEAPONUSED',
     returnGeometry: 'true',
     outSR: '4326',
     geometryPrecision: '2',
@@ -60,12 +62,16 @@ async function fetchCategory(category: (typeof INCIDENT_CATEGORIES)[number]): Pr
   return (data.features ?? []).flatMap((feature, index) => {
     const coordinates = feature.geometry?.coordinates;
     if (!coordinates || !Number.isFinite(coordinates[0]) || !Number.isFinite(coordinates[1])) return [];
+    const reported = feature.properties?.REPORTEDDATETIME;
+    const reportedDate = reported === undefined ? null : new Date(reported);
     return [{
       id: `${category.id}-${index}-${coordinates.join('-')}`,
       category: category.id,
       longitude: coordinates[0],
       latitude: coordinates[1],
       ageInDays: feature.properties?.DAYSPASSED,
+      reportedAt: reportedDate && !Number.isNaN(reportedDate.getTime()) ? reportedDate.toISOString() : undefined,
+      weaponUsed: feature.properties?.WEAPONUSED?.trim() || undefined,
       source: 'Milwaukee Police Department' as const,
     }];
   });

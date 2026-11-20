@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Heatmap, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Circle, Marker, type MapPressEvent } from 'react-native-maps';
 
 import { Txt } from '@/components/ui';
 import type { SafetyPoint } from '@/services/publicSafety';
 import type { RecentCall } from '@/services/recentCalls';
+import { milesBetween } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 
 const MILWAUKEE_REGION = {
@@ -14,20 +15,10 @@ const MILWAUKEE_REGION = {
   longitudeDelta: 0.25,
 };
 
-const MUTED_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#e7e9e7' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#4d5558' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#f7f8f6' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ccd1cf' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a8d5e5' }] },
-];
-
 type HeatCell = { id: string; latitude: number; longitude: number; count: number };
 
 function heatCells(points: SafetyPoint[]): HeatCell[] {
-  const size = 0.012;
+  const size = 0.018;
   const cells = new Map<string, HeatCell>();
   for (const point of points) {
     if (point.category === 'community-report') continue;
@@ -41,33 +32,50 @@ function heatCells(points: SafetyPoint[]): HeatCell[] {
   return [...cells.values()];
 }
 
-export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[]; recentCalls?: RecentCall[] }) {
+export function SafetyMap({
+  points,
+  recentCalls = [],
+  onSelectArea,
+}: {
+  points: SafetyPoint[];
+  recentCalls?: RecentCall[];
+  onSelectArea?: (points: SafetyPoint[]) => void;
+}) {
   const theme = useTheme();
+  const [selectedCoordinate, setSelectedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
   const cells = useMemo(() => heatCells(points), [points]);
   const reports = points.filter((point) => point.category === 'community-report');
+
+  const selectArea = (event: MapPressEvent) => {
+    const coordinate = event.nativeEvent.coordinate;
+    setSelectedCoordinate(coordinate);
+    const selected = points
+      .filter((point) => point.category !== 'community-report' && milesBetween(coordinate, point) <= 1.5)
+      .sort((a, b) => (a.ageInDays ?? 31) - (b.ageInDays ?? 31))
+      .slice(0, 25);
+    onSelectArea?.(selected);
+  };
 
   return (
     <View style={[styles.frame, { backgroundColor: theme.surface }]}>
       <MapView
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
         initialRegion={MILWAUKEE_REGION}
-        customMapStyle={MUTED_MAP_STYLE}
         showsCompass
         showsScale
         toolbarEnabled={false}
+        onPress={selectArea}
         accessibilityLabel="Interactive Milwaukee map showing recent public safety activity"
       >
-        <Heatmap
-          points={cells.map((cell) => ({ latitude: cell.latitude, longitude: cell.longitude, weight: cell.count }))}
-          radius={45}
-          opacity={0.82}
-          gradient={{
-            colors: ['#2A75BB', '#36B37E', '#F4D03F', '#F08A24', '#C62026'],
-            startPoints: [0.08, 0.24, 0.45, 0.68, 0.9],
-            colorMapSize: 256,
-          }}
-        />
+        {cells.flatMap((cell) => {
+          const center = { latitude: cell.latitude, longitude: cell.longitude };
+          const radius = Math.min(1900, 850 + cell.count * 55);
+          return [
+            <Circle key={`${cell.id}-outer`} center={center} radius={radius} fillColor="rgba(42,117,187,0.12)" strokeColor="transparent" />,
+            <Circle key={`${cell.id}-middle`} center={center} radius={radius * 0.66} fillColor="rgba(244,208,63,0.19)" strokeColor="transparent" />,
+            <Circle key={`${cell.id}-hot`} center={center} radius={radius * 0.34} fillColor="rgba(198,32,38,0.34)" strokeColor="transparent" />,
+          ];
+        })}
         {reports.map((report) => (
           <Marker key={report.id} coordinate={report} title="Community report" description="Unverified, generalized location">
             <View style={[styles.reportMarker, { borderColor: theme.surface }]} />
@@ -86,6 +94,7 @@ export function SafetyMap({ points, recentCalls = [] }: { points: SafetyPoint[];
             <View style={[styles.callMarker, { borderColor: theme.surface }]} />
           </Marker>
         ))}
+        {selectedCoordinate ? <Marker coordinate={selectedCoordinate} pinColor="#1F5F8B" title="Selected area" /> : null}
       </MapView>
 
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
