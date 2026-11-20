@@ -4,6 +4,222 @@
  */
 
 export interface paths {
+    "/v1/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Cases
+         * @description The case queue. Filters combine; open cases first, then by priority
+         *     (critical first), then newest. `q` matches the case number, title,
+         *     description or location.
+         */
+        get: operations["list_cases_v1_cases_get"];
+        put?: never;
+        /**
+         * Create Case
+         * @description A case a worker opens: a phone call, a walk-in, an incident.
+         */
+        post: operations["create_case_v1_cases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Activity
+         * @description The latest updates across all cases, newest first.
+         */
+        get: operations["recent_activity_v1_cases_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Case Insights
+         * @description Dashboard numbers, counted from the cases themselves.
+         */
+        get: operations["case_insights_v1_cases_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Case
+         * @description A case with its full history and referrals.
+         */
+        get: operations["get_case_v1_cases__case_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Case
+         * @description Triage and progress: status, priority, category, assignee (null to
+         *     unassign) and details. Each change is recorded in the history.
+         */
+        patch: operations["update_case_v1_cases__case_id__patch"];
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/assist/draft-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Message
+         * @description A draft update to the requester, for the worker to edit and send (as a
+         *     public update). Never sent by itself. 503 when AI isn't configured.
+         */
+        post: operations["draft_message_v1_cases__case_id__assist_draft_message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/assist/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest Resources
+         * @description Resources that fit the case, each with a reason, chosen only from the
+         *     resource directory. Without AI (`method: rules`), the resources in the
+         *     case's category.
+         */
+        post: operations["suggest_resources_v1_cases__case_id__assist_resources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/assist/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Summarize Case
+         * @description A short summary of the case and its history. 503 when AI isn't configured.
+         */
+        post: operations["summarize_case_v1_cases__case_id__assist_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Referral
+         * @description Connect the case with a community resource. 409 if it's already on it.
+         */
+        post: operations["add_referral_v1_cases__case_id__referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/referrals/{referral_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Referral
+         * @description Track a referral: suggested, shared, accepted, completed or declined,
+         *     and record its outcome.
+         */
+        patch: operations["update_referral_v1_cases__case_id__referrals__referral_id__patch"];
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Case Update
+         * @description An internal note (default), or with `visibility: public` a message
+         *     the requester sees on their request.
+         */
+        post: operations["add_case_update_v1_cases__case_id__updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -50,6 +266,96 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List My Requests
+         * @description The caller's own requests, newest first.
+         */
+        get: operations["list_my_requests_v1_requests_get"];
+        put?: never;
+        /**
+         * Submit Request
+         * @description Ask ComForce MKE for help. The request becomes a case in the worker
+         *     queue with status new. Leave `category` out to have it sorted
+         *     automatically (when AI routing is configured; otherwise it is `other`).
+         */
+        post: operations["submit_request_v1_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Request
+         * @description One of the caller's requests, with its public updates (status changes
+         *     and messages from ComForce). 404 for anyone else's.
+         */
+        get: operations["get_my_request_v1_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Resources
+         * @description Active resources, real ones before samples. `q` matches the name,
+         *     description or neighborhood. Rows with `is_sample: true` are
+         *     demonstration data, not real services.
+         */
+        get: operations["list_resources_v1_resources_get"];
+        put?: never;
+        /**
+         * Create Resource
+         * @description Add a resource to the directory. Staff only.
+         */
+        post: operations["create_resource_v1_resources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/resources/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Resource */
+        get: operations["get_resource_v1_resources__resource_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/route": {
         parameters: {
             query?: never;
@@ -71,10 +377,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/staff/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim First Admin
+         * @description Makes the caller the first staff admin. Works only while nobody is
+         *     staff yet (409 after that); from then on admins add workers.
+         */
+        post: operations["claim_first_admin_v1_staff_bootstrap_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staff/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Staff Status
+         * @description The caller's role, so the app knows whether to open the worker portal.
+         */
+        get: operations["my_staff_status_v1_staff_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staff/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Users
+         * @description Everyone who has signed in, staff first. Admins only.
+         */
+        get: operations["list_users_v1_staff_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staff/users/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Role
+         * @description Make someone a worker or admin, or back to a member. Admins only, and
+         *     not for their own role.
+         */
+        put: operations["set_role_v1_staff_users__user_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/staff/workers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Workers
+         * @description Everyone a case can be assigned to, with their open case counts.
+         */
+        get: operations["list_workers_v1_staff_workers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AddCaseUpdateRequest
+         * @description An internal note, or (visibility public) a message the requester will
+         *     see on their request.
+         */
+        AddCaseUpdateRequest: {
+            /** Content */
+            content: string;
+            /** @default internal */
+            visibility?: components["schemas"]["Visibility"];
+        };
+        /** AddReferralRequest */
+        AddReferralRequest: {
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /** @default suggested */
+            status?: components["schemas"]["ReferralStatus"];
+        };
         /**
          * AppUser
          * @description The authenticated caller as a Hacksgiving user (app.users).
@@ -97,11 +526,399 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** Case */
+        Case: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["CaseKind"];
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Location */
+            location: string | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Number */
+            number: number;
+            priority: components["schemas"]["CasePriority"];
+            /** Referral Count */
+            referral_count: number;
+            /** Requester Id */
+            requester_id: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            source: components["schemas"]["CaseSource"];
+            status: components["schemas"]["CaseStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * CaseCategory
+         * @description ComForce MKE's services (models/routing.py Service), plus other.
+         * @enum {string}
+         */
+        CaseCategory: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "other";
+        /** CaseDetail */
+        CaseDetail: {
+            case: components["schemas"]["Case"];
+            /** Referrals */
+            referrals: components["schemas"]["Referral"][];
+            /** Updates */
+            updates: components["schemas"]["CaseUpdate"][];
+        };
+        /**
+         * CaseInsights
+         * @description Everything on the dashboard, computed from the case tables.
+         */
+        CaseInsights: {
+            /** By Category */
+            by_category: components["schemas"]["CategoryCount"][];
+            /** By Status */
+            by_status: components["schemas"]["StatusCount"][];
+            /** Recent Activity */
+            recent_activity: components["schemas"]["CaseUpdate"][];
+            stats: components["schemas"]["CaseStats"];
+        };
+        /**
+         * CaseKind
+         * @enum {string}
+         */
+        CaseKind: "request" | "incident";
+        /**
+         * CasePriority
+         * @enum {string}
+         */
+        CasePriority: "low" | "medium" | "high" | "critical";
+        /**
+         * CaseSource
+         * @enum {string}
+         */
+        CaseSource: "public" | "worker";
+        /** CaseStats */
+        CaseStats: {
+            /** Active */
+            active: number;
+            /** Avg Resolution Hours */
+            avg_resolution_hours: number | null;
+            /** Awaiting Resources */
+            awaiting_resources: number;
+            /** High Priority Active */
+            high_priority_active: number;
+            /** New */
+            new: number;
+            /** Opened Last 7 Days */
+            opened_last_7_days: number;
+            /** Resolved */
+            resolved: number;
+            /** Resolved Last 7 Days */
+            resolved_last_7_days: number;
+            /** Total */
+            total: number;
+            /** Unassigned Active */
+            unassigned_active: number;
+        };
+        /**
+         * CaseStatus
+         * @enum {string}
+         */
+        CaseStatus: "new" | "in_progress" | "awaiting_resources" | "resolved" | "closed";
+        /** CaseSummary */
+        CaseSummary: {
+            /** Next Steps */
+            next_steps: string[];
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * CaseUpdate
+         * @description One entry in a case's history: a note, a message to the requester, or
+         *     a change the system recorded.
+         */
+        CaseUpdate: {
+            /** Author Id */
+            author_id: string | null;
+            /** Author Name */
+            author_name: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            update_type: components["schemas"]["UpdateType"];
+            visibility: components["schemas"]["Visibility"];
+        };
+        /** CategoryCount */
+        CategoryCount: {
+            /** Active */
+            active: number;
+            category: components["schemas"]["CaseCategory"];
+            /** Total */
+            total: number;
+        };
+        /**
+         * CreateCaseRequest
+         * @description A case a worker opens (a phone call, a walk-in, an incident).
+         */
+        CreateCaseRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            /** @default other */
+            category?: components["schemas"]["CaseCategory"];
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            /** @default request */
+            kind?: components["schemas"]["CaseKind"];
+            /** Latitude */
+            latitude?: number | null;
+            /** Location */
+            location?: string | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** @default medium */
+            priority?: components["schemas"]["CasePriority"];
+            /** Title */
+            title: string;
+        };
+        /** CreateResourceRequest */
+        CreateResourceRequest: {
+            /** Address */
+            address?: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            /** Hours */
+            hours?: string | null;
+            /** Name */
+            name: string;
+            /** Neighborhood */
+            neighborhood?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Website */
+            website?: string | null;
+        };
+        /**
+         * DraftMessage
+         * @description A message to the requester. Sent only if a worker posts it as a
+         *     public update.
+         */
+        DraftMessage: {
+            /** Message */
+            message: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** PublicRequest */
+        PublicRequest: {
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Location */
+            location: string | null;
+            /** Number */
+            number: number;
+            /** Resolved At */
+            resolved_at: string | null;
+            status: components["schemas"]["CaseStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PublicRequestDetail */
+        PublicRequestDetail: {
+            request: components["schemas"]["PublicRequest"];
+            /** Updates */
+            updates: components["schemas"]["PublicRequestUpdate"][];
+        };
+        /** PublicRequestUpdate */
+        PublicRequestUpdate: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            update_type: components["schemas"]["UpdateType"];
+        };
+        /** Referral */
+        Referral: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome */
+            outcome: string | null;
+            resource_category: components["schemas"]["CaseCategory"];
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /** Resource Is Sample */
+            resource_is_sample: boolean;
+            /** Resource Name */
+            resource_name: string;
+            /** Resource Phone */
+            resource_phone: string | null;
+            /** Resource Website */
+            resource_website: string | null;
+            status: components["schemas"]["ReferralStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ReferralStatus
+         * @enum {string}
+         */
+        ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /** Resource */
+        Resource: {
+            /** Active */
+            active: boolean;
+            /** Address */
+            address: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** Hours */
+            hours: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Sample */
+            is_sample: boolean;
+            /** Name */
+            name: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Website */
+            website: string | null;
+        };
+        /** ResourceSuggestion */
+        ResourceSuggestion: {
+            /** Reason */
+            reason: string;
+            resource: components["schemas"]["Resource"];
+        };
+        /** ResourceSuggestions */
+        ResourceSuggestions: {
+            method: components["schemas"]["SuggestionMethod"];
+            /** Suggestions */
+            suggestions: components["schemas"]["ResourceSuggestion"][];
+        };
+        /**
+         * Role
+         * @enum {string}
+         */
+        Role: "member" | "worker" | "admin";
         /** RouteRequest */
         RouteRequest: {
             /** Message */
@@ -127,12 +944,128 @@ export interface components {
          * @enum {string}
          */
         Service: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "unclear";
+        /** SetRoleRequest */
+        SetRoleRequest: {
+            role: components["schemas"]["Role"];
+        };
+        /** StaffMember */
+        StaffMember: {
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            role: components["schemas"]["Role"];
+        };
+        /**
+         * StaffStatus
+         * @description The caller's own standing, for the app to decide what to show.
+         */
+        StaffStatus: {
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Admin */
+            is_admin: boolean;
+            /** Is Worker */
+            is_worker: boolean;
+            role: components["schemas"]["Role"];
+        };
+        /** StatusCount */
+        StatusCount: {
+            status: components["schemas"]["CaseStatus"];
+            /** Total */
+            total: number;
+        };
+        /**
+         * SubmitRequest
+         * @description A community member asking for help. Who they are comes from their
+         *     sign-in. Priority, status and assignee are for workers to set: a body
+         *     that sends them (or any unknown field) is rejected with 422.
+         */
+        SubmitRequest: {
+            /** @description Leave out to let ComForce sort it (the AI router, when it's configured). */
+            category?: components["schemas"]["CaseCategory"] | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** Description */
+            description: string;
+            /** Latitude */
+            latitude?: number | null;
+            /** Location */
+            location?: string | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * SuggestionMethod
+         * @enum {string}
+         */
+        SuggestionMethod: "ai" | "rules";
+        /**
+         * UpdateCaseRequest
+         * @description Only the fields sent change. Send `assigned_worker_id: null` to
+         *     unassign.
+         */
+        UpdateCaseRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            category?: components["schemas"]["CaseCategory"] | null;
+            /** Description */
+            description?: string | null;
+            kind?: components["schemas"]["CaseKind"] | null;
+            /** Location */
+            location?: string | null;
+            priority?: components["schemas"]["CasePriority"] | null;
+            status?: components["schemas"]["CaseStatus"] | null;
+            /** Title */
+            title?: string | null;
+        };
         /** UpdateMeRequest */
         UpdateMeRequest: {
             /** Display Name */
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /** UpdateReferralRequest */
+        UpdateReferralRequest: {
+            /** Outcome */
+            outcome?: string | null;
+            status?: components["schemas"]["ReferralStatus"] | null;
+        };
+        /**
+         * UpdateType
+         * @enum {string}
+         */
+        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral";
+        /** UserSummary */
+        UserSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            role: components["schemas"]["Role"];
         };
         /** ValidationError */
         ValidationError: {
@@ -147,6 +1080,24 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * Visibility
+         * @enum {string}
+         */
+        Visibility: "internal" | "public";
+        /** Worker */
+        Worker: {
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Open Cases */
+            open_cases: number;
+            role: components["schemas"]["Role"];
+        };
     };
     responses: never;
     parameters: never;
@@ -156,6 +1107,395 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_cases_v1_cases_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["CaseStatus"] | null;
+                priority?: components["schemas"]["CasePriority"] | null;
+                category?: components["schemas"]["CaseCategory"] | null;
+                kind?: components["schemas"]["CaseKind"] | null;
+                assigned_worker_id?: string | null;
+                unassigned?: boolean;
+                open_only?: boolean;
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Case"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_case_v1_cases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Case"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recent_activity_v1_cases_activity_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseUpdate"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    case_insights_v1_cases_insights_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseInsights"];
+                };
+            };
+        };
+    };
+    get_case_v1_cases__case_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_case_v1_cases__case_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Case"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_message_v1_cases__case_id__assist_draft_message_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_resources_v1_cases__case_id__assist_resources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResourceSuggestions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summarize_case_v1_cases__case_id__assist_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_referral_v1_cases__case_id__referrals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReferralRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Referral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_referral_v1_cases__case_id__referrals__referral_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReferralRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Referral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_case_update_v1_cases__case_id__updates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCaseUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_check_v1_health_get: {
         parameters: {
             query?: never;
@@ -231,6 +1571,186 @@ export interface operations {
             };
         };
     };
+    list_my_requests_v1_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequest"][];
+                };
+            };
+        };
+    };
+    submit_request_v1_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_request_v1_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_resources_v1_resources_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                category?: components["schemas"]["CaseCategory"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_resource_v1_resources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_resource_v1_resources__resource_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     route_request_v1_route_post: {
         parameters: {
             query?: never;
@@ -260,6 +1780,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_first_admin_v1_staff_bootstrap_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMember"];
+                };
+            };
+        };
+    };
+    my_staff_status_v1_staff_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffStatus"];
+                };
+            };
+        };
+    };
+    list_users_v1_staff_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSummary"][];
+                };
+            };
+        };
+    };
+    set_role_v1_staff_users__user_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMember"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_workers_v1_staff_workers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Worker"][];
                 };
             };
         };

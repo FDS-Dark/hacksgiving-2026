@@ -1,6 +1,44 @@
 {
   "components": {
     "schemas": {
+      "AddCaseUpdateRequest": {
+        "description": "An internal note, or (visibility public) a message the requester will\nsee on their request.",
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility",
+            "default": "internal"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "AddCaseUpdateRequest",
+        "type": "object"
+      },
+      "AddReferralRequest": {
+        "properties": {
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferralStatus",
+            "default": "suggested"
+          }
+        },
+        "required": [
+          "resource_id"
+        ],
+        "title": "AddReferralRequest",
+        "type": "object"
+      },
       "AppUser": {
         "description": "The authenticated caller as a Hacksgiving user (app.users).",
         "properties": {
@@ -44,6 +82,734 @@
         "title": "AppUser",
         "type": "object"
       },
+      "Case": {
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "assigned_worker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "referral_count": {
+            "title": "Referral Count",
+            "type": "integer"
+          },
+          "requester_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requester Id"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CaseSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "kind",
+          "title",
+          "description",
+          "category",
+          "priority",
+          "status",
+          "source",
+          "location",
+          "latitude",
+          "longitude",
+          "contact_name",
+          "contact_phone",
+          "contact_email",
+          "requester_id",
+          "assigned_worker_id",
+          "assigned_worker_name",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "resolved_at",
+          "referral_count",
+          "last_activity_at"
+        ],
+        "title": "Case",
+        "type": "object"
+      },
+      "CaseCategory": {
+        "description": "ComForce MKE's services (models/routing.py Service), plus other.",
+        "enum": [
+          "homelessness",
+          "missing_persons",
+          "meal_programs",
+          "violence_prevention",
+          "transportation",
+          "incident_deescalation",
+          "burial_assistance",
+          "bridge_to_employment",
+          "other"
+        ],
+        "title": "CaseCategory",
+        "type": "string"
+      },
+      "CaseDetail": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/Case"
+          },
+          "referrals": {
+            "items": {
+              "$ref": "#/components/schemas/Referral"
+            },
+            "title": "Referrals",
+            "type": "array"
+          },
+          "updates": {
+            "items": {
+              "$ref": "#/components/schemas/CaseUpdate"
+            },
+            "title": "Updates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "case",
+          "updates",
+          "referrals"
+        ],
+        "title": "CaseDetail",
+        "type": "object"
+      },
+      "CaseInsights": {
+        "description": "Everything on the dashboard, computed from the case tables.",
+        "properties": {
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "By Category",
+            "type": "array"
+          },
+          "by_status": {
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            },
+            "title": "By Status",
+            "type": "array"
+          },
+          "recent_activity": {
+            "items": {
+              "$ref": "#/components/schemas/CaseUpdate"
+            },
+            "title": "Recent Activity",
+            "type": "array"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/CaseStats"
+          }
+        },
+        "required": [
+          "stats",
+          "by_category",
+          "by_status",
+          "recent_activity"
+        ],
+        "title": "CaseInsights",
+        "type": "object"
+      },
+      "CaseKind": {
+        "enum": [
+          "request",
+          "incident"
+        ],
+        "title": "CaseKind",
+        "type": "string"
+      },
+      "CasePriority": {
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ],
+        "title": "CasePriority",
+        "type": "string"
+      },
+      "CaseSource": {
+        "enum": [
+          "public",
+          "worker"
+        ],
+        "title": "CaseSource",
+        "type": "string"
+      },
+      "CaseStats": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "avg_resolution_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Resolution Hours"
+          },
+          "awaiting_resources": {
+            "title": "Awaiting Resources",
+            "type": "integer"
+          },
+          "high_priority_active": {
+            "title": "High Priority Active",
+            "type": "integer"
+          },
+          "new": {
+            "title": "New",
+            "type": "integer"
+          },
+          "opened_last_7_days": {
+            "title": "Opened Last 7 Days",
+            "type": "integer"
+          },
+          "resolved": {
+            "title": "Resolved",
+            "type": "integer"
+          },
+          "resolved_last_7_days": {
+            "title": "Resolved Last 7 Days",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unassigned_active": {
+            "title": "Unassigned Active",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "new",
+          "high_priority_active",
+          "awaiting_resources",
+          "unassigned_active",
+          "resolved",
+          "opened_last_7_days",
+          "resolved_last_7_days",
+          "avg_resolution_hours"
+        ],
+        "title": "CaseStats",
+        "type": "object"
+      },
+      "CaseStatus": {
+        "enum": [
+          "new",
+          "in_progress",
+          "awaiting_resources",
+          "resolved",
+          "closed"
+        ],
+        "title": "CaseStatus",
+        "type": "string"
+      },
+      "CaseSummary": {
+        "properties": {
+          "next_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "next_steps"
+        ],
+        "title": "CaseSummary",
+        "type": "object"
+      },
+      "CaseUpdate": {
+        "description": "One entry in a case's history: a note, a message to the requester, or\na change the system recorded.",
+        "properties": {
+          "author_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "update_type": {
+            "$ref": "#/components/schemas/UpdateType"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "author_id",
+          "author_name",
+          "update_type",
+          "visibility",
+          "content",
+          "created_at"
+        ],
+        "title": "CaseUpdate",
+        "type": "object"
+      },
+      "CategoryCount": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "total",
+          "active"
+        ],
+        "title": "CategoryCount",
+        "type": "object"
+      },
+      "CreateCaseRequest": {
+        "description": "A case a worker opens (a phone call, a walk-in, an incident).",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "default": "other"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind",
+            "default": "request"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority",
+            "default": "medium"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "CreateCaseRequest",
+        "type": "object"
+      },
+      "CreateResourceRequest": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "name",
+          "category"
+        ],
+        "title": "CreateResourceRequest",
+        "type": "object"
+      },
+      "DraftMessage": {
+        "description": "A message to the requester. Sent only if a worker posts it as a\npublic update.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "DraftMessage",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -56,6 +822,395 @@
         },
         "title": "HTTPValidationError",
         "type": "object"
+      },
+      "PublicRequest": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "title",
+          "description",
+          "category",
+          "status",
+          "location",
+          "created_at",
+          "updated_at",
+          "resolved_at"
+        ],
+        "title": "PublicRequest",
+        "type": "object"
+      },
+      "PublicRequestDetail": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/PublicRequest"
+          },
+          "updates": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRequestUpdate"
+            },
+            "title": "Updates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "request",
+          "updates"
+        ],
+        "title": "PublicRequestDetail",
+        "type": "object"
+      },
+      "PublicRequestUpdate": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "update_type": {
+            "$ref": "#/components/schemas/UpdateType"
+          }
+        },
+        "required": [
+          "id",
+          "update_type",
+          "content",
+          "created_at"
+        ],
+        "title": "PublicRequestUpdate",
+        "type": "object"
+      },
+      "Referral": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "resource_category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_is_sample": {
+            "title": "Resource Is Sample",
+            "type": "boolean"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "resource_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Phone"
+          },
+          "resource_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Website"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferralStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "resource_id",
+          "resource_name",
+          "resource_category",
+          "resource_phone",
+          "resource_website",
+          "resource_is_sample",
+          "status",
+          "outcome",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Referral",
+        "type": "object"
+      },
+      "ReferralStatus": {
+        "enum": [
+          "suggested",
+          "shared",
+          "accepted",
+          "completed",
+          "declined"
+        ],
+        "title": "ReferralStatus",
+        "type": "string"
+      },
+      "Resource": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_sample": {
+            "title": "Is Sample",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "description",
+          "address",
+          "neighborhood",
+          "phone",
+          "website",
+          "hours",
+          "is_sample",
+          "active",
+          "created_at"
+        ],
+        "title": "Resource",
+        "type": "object"
+      },
+      "ResourceSuggestion": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/Resource"
+          }
+        },
+        "required": [
+          "resource",
+          "reason"
+        ],
+        "title": "ResourceSuggestion",
+        "type": "object"
+      },
+      "ResourceSuggestions": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/SuggestionMethod"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceSuggestion"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "method",
+          "suggestions"
+        ],
+        "title": "ResourceSuggestions",
+        "type": "object"
+      },
+      "Role": {
+        "enum": [
+          "member",
+          "worker",
+          "admin"
+        ],
+        "title": "Role",
+        "type": "string"
       },
       "RouteRequest": {
         "properties": {
@@ -130,6 +1285,325 @@
         "title": "Service",
         "type": "string"
       },
+      "SetRoleRequest": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "SetRoleRequest",
+        "type": "object"
+      },
+      "StaffMember": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "role"
+        ],
+        "title": "StaffMember",
+        "type": "object"
+      },
+      "StaffStatus": {
+        "description": "The caller's own standing, for the app to decide what to show.",
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_admin": {
+            "title": "Is Admin",
+            "type": "boolean"
+          },
+          "is_worker": {
+            "title": "Is Worker",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "role",
+          "is_worker",
+          "is_admin"
+        ],
+        "title": "StaffStatus",
+        "type": "object"
+      },
+      "StatusCount": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "total"
+        ],
+        "title": "StatusCount",
+        "type": "object"
+      },
+      "SubmitRequest": {
+        "additionalProperties": false,
+        "description": "A community member asking for help. Who they are comes from their\nsign-in. Priority, status and assignee are for workers to set: a body\nthat sends them (or any unknown field) is rejected with 422.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Leave out to let ComForce sort it (the AI router, when it's configured)."
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "SubmitRequest",
+        "type": "object"
+      },
+      "SuggestionMethod": {
+        "enum": [
+          "ai",
+          "rules"
+        ],
+        "title": "SuggestionMethod",
+        "type": "string"
+      },
+      "UpdateCaseRequest": {
+        "description": "Only the fields sent change. Send `assigned_worker_id: null` to\nunassign.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CasePriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "UpdateCaseRequest",
+        "type": "object"
+      },
       "UpdateMeRequest": {
         "properties": {
           "display_name": {
@@ -158,6 +1632,85 @@
           }
         },
         "title": "UpdateMeRequest",
+        "type": "object"
+      },
+      "UpdateReferralRequest": {
+        "properties": {
+          "outcome": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferralStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UpdateReferralRequest",
+        "type": "object"
+      },
+      "UpdateType": {
+        "enum": [
+          "created",
+          "note",
+          "message",
+          "status_change",
+          "priority_change",
+          "category_change",
+          "assignment",
+          "referral"
+        ],
+        "title": "UpdateType",
+        "type": "string"
+      },
+      "UserSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "role",
+          "created_at"
+        ],
+        "title": "UserSummary",
         "type": "object"
       },
       "ValidationError": {
@@ -199,6 +1752,49 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "Visibility": {
+        "enum": [
+          "internal",
+          "public"
+        ],
+        "title": "Visibility",
+        "type": "string"
+      },
+      "Worker": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "open_cases": {
+            "title": "Open Cases",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "role",
+          "open_cases"
+        ],
+        "title": "Worker",
+        "type": "object"
       }
     }
   },
@@ -209,6 +1805,696 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/cases": {
+      "get": {
+        "description": "The case queue. Filters combine; open cases first, then by priority\n(critical first), then newest. `q` matches the case number, title,\ndescription or location.",
+        "operationId": "list_cases_v1_cases_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CasePriority"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assigned_worker_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assigned Worker Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unassigned",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unassigned",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "open_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Open Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Case"
+                  },
+                  "title": "Response List Cases V1 Cases Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Cases",
+        "tags": [
+          "cases"
+        ]
+      },
+      "post": {
+        "description": "A case a worker opens: a phone call, a walk-in, an incident.",
+        "operationId": "create_case_v1_cases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/activity": {
+      "get": {
+        "description": "The latest updates across all cases, newest first.",
+        "operationId": "recent_activity_v1_cases_activity_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CaseUpdate"
+                  },
+                  "title": "Response Recent Activity V1 Cases Activity Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recent Activity",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/insights": {
+      "get": {
+        "description": "Dashboard numbers, counted from the cases themselves.",
+        "operationId": "case_insights_v1_cases_insights_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseInsights"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Case Insights",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}": {
+      "get": {
+        "description": "A case with its full history and referrals.",
+        "operationId": "get_case_v1_cases__case_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Case",
+        "tags": [
+          "cases"
+        ]
+      },
+      "patch": {
+        "description": "Triage and progress: status, priority, category, assignee (null to\nunassign) and details. Each change is recorded in the history.",
+        "operationId": "update_case_v1_cases__case_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Case"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/assist/draft-message": {
+      "post": {
+        "description": "A draft update to the requester, for the worker to edit and send (as a\npublic update). Never sent by itself. 503 when AI isn't configured.",
+        "operationId": "draft_message_v1_cases__case_id__assist_draft_message_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftMessage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Message",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/assist/resources": {
+      "post": {
+        "description": "Resources that fit the case, each with a reason, chosen only from the\nresource directory. Without AI (`method: rules`), the resources in the\ncase's category.",
+        "operationId": "suggest_resources_v1_cases__case_id__assist_resources_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceSuggestions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Resources",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/assist/summary": {
+      "post": {
+        "description": "A short summary of the case and its history. 503 when AI isn't configured.",
+        "operationId": "summarize_case_v1_cases__case_id__assist_summary_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summarize Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/referrals": {
+      "post": {
+        "description": "Connect the case with a community resource. 409 if it's already on it.",
+        "operationId": "add_referral_v1_cases__case_id__referrals_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddReferralRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Referral",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/referrals/{referral_id}": {
+      "patch": {
+        "description": "Track a referral: suggested, shared, accepted, completed or declined,\nand record its outcome.",
+        "operationId": "update_referral_v1_cases__case_id__referrals__referral_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReferralRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Referral",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/updates": {
+      "post": {
+        "description": "An internal note (default), or with `visibility: public` a message\nthe requester sees on their request.",
+        "operationId": "add_case_update_v1_cases__case_id__updates_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCaseUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseUpdate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Case Update",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
     "/v1/health": {
       "get": {
         "description": "Liveness only: no database round-trip and no deployment metadata.",
@@ -297,6 +2583,270 @@
         ]
       }
     },
+    "/v1/requests": {
+      "get": {
+        "description": "The caller's own requests, newest first.",
+        "operationId": "list_my_requests_v1_requests_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicRequest"
+                  },
+                  "title": "Response List My Requests V1 Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List My Requests",
+        "tags": [
+          "requests"
+        ]
+      },
+      "post": {
+        "description": "Ask ComForce MKE for help. The request becomes a case in the worker\nqueue with status new. Leave `category` out to have it sorted\nautomatically (when AI routing is configured; otherwise it is `other`).",
+        "operationId": "submit_request_v1_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/requests/{request_id}": {
+      "get": {
+        "description": "One of the caller's requests, with its public updates (status changes\nand messages from ComForce). 404 for anyone else's.",
+        "operationId": "get_my_request_v1_requests__request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get My Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/resources": {
+      "get": {
+        "description": "Active resources, real ones before samples. `q` matches the name,\ndescription or neighborhood. Rows with `is_sample: true` are\ndemonstration data, not real services.",
+        "operationId": "list_resources_v1_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Resource"
+                  },
+                  "title": "Response List Resources V1 Resources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Resources",
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "description": "Add a resource to the directory. Staff only.",
+        "operationId": "create_resource_v1_resources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/resources/{resource_id}": {
+      "get": {
+        "operationId": "get_resource_v1_resources__resource_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
     "/v1/route": {
       "post": {
         "description": "Picks the ComForce MKE service for a free-text request for help.\nSigned-in callers only, so the OpenAI key can't be spent by anyone.",
@@ -336,6 +2886,156 @@
         "summary": "Route Request",
         "tags": [
           "routing"
+        ]
+      }
+    },
+    "/v1/staff/bootstrap": {
+      "post": {
+        "description": "Makes the caller the first staff admin. Works only while nobody is\nstaff yet (409 after that); from then on admins add workers.",
+        "operationId": "claim_first_admin_v1_staff_bootstrap_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Claim First Admin",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/me": {
+      "get": {
+        "description": "The caller's role, so the app knows whether to open the worker portal.",
+        "operationId": "my_staff_status_v1_staff_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Staff Status",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/users": {
+      "get": {
+        "description": "Everyone who has signed in, staff first. Admins only.",
+        "operationId": "list_users_v1_staff_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserSummary"
+                  },
+                  "title": "Response List Users V1 Staff Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/users/{user_id}/role": {
+      "put": {
+        "description": "Make someone a worker or admin, or back to a member. Admins only, and\nnot for their own role.",
+        "operationId": "set_role_v1_staff_users__user_id__role_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffMember"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Role",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/workers": {
+      "get": {
+        "description": "Everyone a case can be assigned to, with their open case counts.",
+        "operationId": "list_workers_v1_staff_workers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Worker"
+                  },
+                  "title": "Response List Workers V1 Staff Workers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Workers",
+        "tags": [
+          "staff"
         ]
       }
     }
