@@ -13,9 +13,12 @@ import jwt
 from fastapi import Depends, HTTPException, Request, status
 
 from databridge.executor import PostgresExecutor
+from openai import AsyncOpenAI
+
 from databridge.user import UserDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from models.user import AppUser, TokenClaims
+from services.rout_request import RoutingService
 from services.user import UserService
 from settings import config
 
@@ -36,6 +39,14 @@ def get_executor() -> PostgresExecutor:
 @cache
 def get_user_service() -> UserService:
     return UserService(UserDatabridge(get_executor()))
+
+
+@cache
+def get_routing_service() -> RoutingService:
+    if not config.openai.api_key:
+        raise RuntimeError("APP__OPENAI__API_KEY is not set")
+    client = AsyncOpenAI(api_key=config.openai.api_key, timeout=config.openai.timeout, max_retries=1)
+    return RoutingService(client.responses, config.openai.model)
 
 
 # --- Identity -------------------------------------------------------------------

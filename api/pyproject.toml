@@ -15,6 +15,7 @@ dependencies = [
     "psycopg[binary]>=3.3.8",
     "tzdata>=2026.6",
     "httpx>=0.25.0",
+    "openai>=3.57.0",
 ]
 
 [dependency-groups]

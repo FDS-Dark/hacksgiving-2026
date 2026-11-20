@@ -57,6 +57,79 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "RouteRequest": {
+        "properties": {
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "RouteRequest",
+        "type": "object"
+      },
+      "RouteResponse": {
+        "properties": {
+          "also_relevant": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            },
+            "title": "Also Relevant",
+            "type": "array"
+          },
+          "follow_up_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Question"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "service": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "urgent": {
+            "title": "Urgent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "service",
+          "also_relevant",
+          "urgent",
+          "reason",
+          "follow_up_question"
+        ],
+        "title": "RouteResponse",
+        "type": "object"
+      },
+      "Service": {
+        "enum": [
+          "homelessness",
+          "missing_persons",
+          "meal_programs",
+          "violence_prevention",
+          "transportation",
+          "incident_deescalation",
+          "burial_assistance",
+          "bridge_to_employment",
+          "unclear"
+        ],
+        "title": "Service",
+        "type": "string"
+      },
       "UpdateMeRequest": {
         "properties": {
           "display_name": {
@@ -221,6 +294,48 @@
         "summary": "Update Me",
         "tags": [
           "user"
+        ]
+      }
+    },
+    "/v1/route": {
+      "post": {
+        "description": "Picks the ComForce MKE service for a free-text request for help.\nSigned-in callers only, so the OpenAI key can't be spent by anyone.",
+        "operationId": "route_request_v1_route_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Request",
+        "tags": [
+          "routing"
         ]
       }
     }
