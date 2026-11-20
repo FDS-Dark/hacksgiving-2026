@@ -334,6 +334,9 @@ tf-plan:
   rules:
     - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
       when: never
+    # Its Vault roles accept protected refs (staging, main) only.
+    - if: $CI_COMMIT_REF_PROTECTED != "true"
+      when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
 
@@ -345,6 +348,9 @@ tf-plan-staging:
     TF_ENVIRONMENT: "staging"
   rules:
     - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    # Its Vault roles accept protected refs (staging, main) only.
+    - if: $CI_COMMIT_REF_PROTECTED != "true"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: never
@@ -440,6 +446,9 @@ auth0-plan:
       - auth0/terraform/tfplan.txt
   rules:
     - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    # Its Vault roles accept protected refs (staging, main) only.
+    - if: $CI_COMMIT_REF_PROTECTED != "true"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
