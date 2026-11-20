@@ -37,3 +37,6 @@ database/data/
 *.swp
 .idea/
 .vscode/
+
+# Supabase CLI link state (supabase link)
+supabase/.temp/
