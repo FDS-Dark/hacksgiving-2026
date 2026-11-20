@@ -11,6 +11,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { ApiError, setAccessTokenProvider, setUnauthorizedHandler } from '@/api/client';
 import { appScheme } from '@/lib/appScheme';
@@ -110,9 +111,21 @@ function expiryOf(session: Session): number | undefined {
 
 const now = () => Math.floor(Date.now() / 1000);
 
+/** Where the session is kept: the Keychain/Keystore on devices. SecureStore
+ * has no web implementation, so the web build uses localStorage. That is
+ * readable by any script on the page, the usual trade-off for a browser app
+ * that holds its own refresh token. */
+const store = Platform.OS === 'web'
+  ? {
+      get: async (key: string) => globalThis.localStorage?.getItem(key) ?? null,
+      set: async (key: string, value: string) => globalThis.localStorage?.setItem(key, value),
+      remove: async (key: string) => globalThis.localStorage?.removeItem(key),
+    }
+  : { get: SecureStore.getItemAsync, set: SecureStore.setItemAsync, remove: SecureStore.deleteItemAsync };
+
 async function loadSession(): Promise<Session | null> {
   try {
-    const raw = await SecureStore.getItemAsync(SESSION_KEY);
+    const raw = await store.get(SESSION_KEY);
     return raw ? (JSON.parse(raw) as Session) : null;
   } catch {
     return null;
@@ -120,8 +133,8 @@ async function loadSession(): Promise<Session | null> {
 }
 
 async function saveSession(session: Session | null) {
-  if (session) await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(session));
-  else await SecureStore.deleteItemAsync(SESSION_KEY);
+  if (session) await store.set(SESSION_KEY, JSON.stringify(session));
+  else await store.remove(SESSION_KEY);
 }
 
 let discoveryPromise: Promise<AuthSession.DiscoveryDocument> | null = null;

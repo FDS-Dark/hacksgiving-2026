@@ -1,44 +1,44 @@
-import { useColorScheme } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
 
 /**
- * Hacksgiving design tokens. One palette per color scheme; every component reads
- * colors through useTheme() so dark mode is automatic.
+ * Design tokens, taken from the Community Task Force MKE website
+ * (comforcemilwaukee.com). One palette per color scheme; every component
+ * reads colors through useTheme() so dark mode is automatic.
  *
- * Mostly neutral. Color is only used where it means something:
- * - accent (blue): things you can tap.
- * - brand (green): the wordmark, and "plenty of time left".
- * - soon (amber) / today (red): food to use first. Red is also destructive.
- * - storage kinds: each kind of place (fridge, freezer, pantry, other) has
- *   its own color, used on its icon tiles and filters, so a place reads the
- *   same everywhere.
- * See docs/design/redesign-brief.md.
+ * - brand / accent (ComForce green): the logo, links, primary buttons.
+ * - red: the short "red rule" accent under headings and cards, and urgent things.
+ * - charcoal: dark bands (stats, footer).
  */
 
 const light = {
   scheme: 'light' as 'light' | 'dark',
-  /** Grouped background behind lists. */
-  bg: '#F2F4F5',
-  /** Rows, sheets. */
+  /** Page background (the site's "paper"). */
+  bg: '#F7F9F8',
+  /** Cards, header bar, sheets. */
   surface: '#FFFFFF',
-  /** Inputs, steppers, unselected filters, pressed rows. */
-  fill: '#E8ECEE',
-  separator: 'rgba(20,32,38,0.13)',
-  text: '#141A1D',
-  textSecondary: '#5A6569',
+  /** Inputs, unselected filters, pressed rows. */
+  fill: '#E8F3ED',
+  /** Hairlines and card borders (the site's "line"). */
+  separator: '#DCE4E0',
+  text: '#141A1F',
+  textSecondary: '#5D666D',
   textTertiary: '#8C979B',
-  accent: '#1F5F8B',
-  accentSoft: 'rgba(31,95,139,0.10)',
+  accent: '#0F6B3A',
+  accentPressed: '#0A5830',
+  accentSoft: 'rgba(15,107,58,0.10)',
   onAccent: '#FFFFFF',
-  brand: '#2F6B4F',
-  fresh: '#2F6B4F',
+  brand: '#0F6B3A',
+  red: '#E92626',
+  /** Dark bands: stats, footer. Stays dark in both schemes. */
+  charcoal: '#10191B',
+  onCharcoal: '#FFFFFF',
   soon: '#9A5800',
-  today: '#B42318',
   danger: '#B42318',
   dangerSoft: 'rgba(180,35,24,0.09)',
   warningSoft: 'rgba(154,88,0,0.10)',
-  freshSoft: 'rgba(47,107,79,0.11)',
   overlay: 'rgba(10,16,20,0.4)',
-  kinds: { fridge: '#2E78B7', freezer: '#22909E', pantry: '#B9741A', other: '#7468AE' },
+  /** Card drop shadow (CSS box-shadow syntax). */
+  shadow: '0 18px 45px rgba(16, 25, 27, 0.10)',
   /** Glyphs on colored tiles. */
   onTile: '#FFFFFF',
 };
@@ -47,26 +47,27 @@ export type Theme = typeof light;
 
 const dark: Theme = {
   scheme: 'dark',
-  bg: '#0D1113',
-  surface: '#181D20',
-  fill: '#252B2E',
-  separator: 'rgba(235,242,245,0.14)',
-  text: '#ECF0F1',
-  textSecondary: '#9BA6AA',
-  textTertiary: '#687377',
-  accent: '#72B2DE',
-  accentSoft: 'rgba(114,178,222,0.14)',
-  onAccent: '#0D1113',
-  brand: '#86C29F',
-  fresh: '#86C29F',
+  bg: '#0E1517',
+  surface: '#172225',
+  fill: '#1F2D30',
+  separator: 'rgba(220,228,224,0.14)',
+  text: '#EEF2F0',
+  textSecondary: '#A3ADA8',
+  textTertiary: '#6E7975',
+  accent: '#4DBB7E',
+  accentPressed: '#3FA36C',
+  accentSoft: 'rgba(77,187,126,0.14)',
+  onAccent: '#0E1517',
+  brand: '#4DBB7E',
+  red: '#FF5A5A',
+  charcoal: '#0A1012',
+  onCharcoal: '#FFFFFF',
   soon: '#E5A64A',
-  today: '#F0796D',
   danger: '#F0796D',
   dangerSoft: 'rgba(240,121,109,0.14)',
   warningSoft: 'rgba(229,166,74,0.14)',
-  freshSoft: 'rgba(134,194,159,0.14)',
   overlay: 'rgba(0,0,0,0.55)',
-  kinds: { fridge: '#3F8DCF', freezer: '#2EA6B3', pantry: '#C98A2E', other: '#8A7FC4' },
+  shadow: '0 18px 45px rgba(0, 0, 0, 0.35)',
   onTile: '#FFFFFF',
 };
 
@@ -77,11 +78,14 @@ export function useTheme(): Theme {
 /** 4pt grid. 16 is the screen margin and the row inset. */
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 
-export const radius = { sm: 8, md: 10, lg: 12 };
+/** The site uses 7–8px corners on buttons and cards. */
+export const radius = { sm: 7, md: 8, lg: 12 };
 
-/** The only custom face, and only for the wordmark. Everything else is the
- *  system font (SF Pro on iOS, Roboto on Android). */
-export const WORDMARK_FONT = 'BricolageGrotesque_700Bold';
+/** Widest the content gets on large screens (the site's .container). */
+export const MAX_CONTENT_WIDTH = 1290;
+
+/** Headlines and big numbers are set in Georgia, like the site. */
+export const SERIF = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia, "Times New Roman", serif' });
 
 /** iOS text styles at their default Dynamic Type sizes. */
 export const type = {

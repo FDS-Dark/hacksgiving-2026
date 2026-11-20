@@ -1,10 +1,12 @@
-import { Button, ErrorBanner, Group, Header, Loading, Notice, Row, Screen } from '@/components/ui';
+import { Button, ErrorBanner, Group, Loading, Notice, Row } from '@/components/ui';
+import { Page } from '@/components/Page';
+import { SectionHeading } from '@/components/brand';
 import { useAuth } from '@/lib/auth';
 import { useApiHealth } from '@/services/health';
 import { useMe } from '@/services/user';
 
-/** The signed-in user, as the API sees them. A starting point for real screens. */
-export default function HomeScreen() {
+/** The signed-in user, as the API sees them, and sign out. Opened from the header's account button. */
+export default function AccountScreen() {
   const { signOut, mode } = useAuth();
   const health = useApiHealth();
   const me = useMe();
@@ -15,8 +17,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <Screen refreshing={me.isRefetching} onRefresh={refresh}>
-      <Header title="Hacksgiving" subtitle={me.data?.display_name ? `Hi, ${me.data.display_name}.` : null} />
+    <Page refreshing={me.isRefetching} onRefresh={refresh} contentStyle={{ maxWidth: 640 }}>
+      <SectionHeading title="Account" kicker={me.data?.display_name ? `Hi, ${me.data.display_name}.` : undefined} />
 
       {health.error ? <Notice icon="cloud-offline-outline">Can’t reach the API right now.</Notice> : null}
       {me.error ? <ErrorBanner error={me.error} onRetry={refresh} /> : null}
@@ -24,7 +26,7 @@ export default function HomeScreen() {
       {me.isPending ? (
         <Loading />
       ) : me.data ? (
-        <Group header="Account">
+        <Group header="Profile">
           <Row title="Name" detail={me.data.display_name ?? 'Not set'} />
           <Row title="Time zone" detail={me.data.timezone} />
           <Row title="Signed in with" detail={mode === 'dev' ? 'Dev token' : 'Auth0'} />
@@ -32,6 +34,6 @@ export default function HomeScreen() {
       ) : null}
 
       <Button label="Sign out" variant="plain" onPress={signOut} />
-    </Screen>
+    </Page>
   );
 }
