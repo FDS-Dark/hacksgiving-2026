@@ -9,6 +9,7 @@ import errors
 from dependencies import get_executor
 from logging_setup import configure_logging
 from routers.health import router as health
+from routers.routing import router as routing
 from routers.user import router as user
 from settings import config
 
@@ -44,7 +45,7 @@ app.add_middleware(
 
 errors.install(app)
 
-for router in (health, user):
+for router in (health, user, routing):
     app.include_router(router, prefix="/v1")
 
 

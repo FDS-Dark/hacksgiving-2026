@@ -71,6 +71,15 @@ class LoggingConfig(BaseModel):
     format: Literal["json", "text"] = Field(default="text")
 
 
+class OpenAIConfig(BaseModel):
+    """The model that routes requests for help (services/rout_request.py)."""
+
+    api_key: str | None = Field(default=None)
+    model: str = Field(default="gpt-5.4-mini")
+    # Seconds before a routing call gives up.
+    timeout: float = Field(default=20.0)
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP__", env_nested_delimiter="__", extra="ignore"
@@ -83,6 +92,7 @@ class AppConfig(BaseSettings):
     jwt: JWTConfig = Field(default_factory=JWTConfig)
     environment: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(
