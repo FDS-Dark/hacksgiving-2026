@@ -65,8 +65,12 @@ resource "auth0_client" "mobile_dev" {
   is_first_party  = true
   oidc_conformant = true
 
-  callbacks   = var.dev_callback_urls
-  grant_types = ["authorization_code", "refresh_token"]
+  # Expo Go (exp://) plus the Expo web dev server, which redirects to
+  # <origin>/auth and exchanges the code from the browser (hence CORS).
+  callbacks       = concat(var.dev_callback_urls, [for o in var.dev_web_origins : "${o}/auth"])
+  allowed_origins = var.dev_web_origins
+  web_origins     = var.dev_web_origins
+  grant_types     = ["authorization_code", "refresh_token"]
 
   jwt_configuration {
     alg = "RS256"

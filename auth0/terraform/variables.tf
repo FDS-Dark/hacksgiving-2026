@@ -20,6 +20,12 @@ variable "dev_callback_urls" {
   ]
 }
 
+variable "dev_web_origins" {
+  type        = list(string)
+  description = "Origins the Expo web build runs on in development (npx expo start --web). Each gets <origin>/auth as a callback on Hacksgiving Mobile (dev), and is allowed to call Auth0's token endpoint from the browser."
+  default     = ["http://localhost:8081"]
+}
+
 variable "name_claim" {
   type        = string
   description = "Namespaced access-token claim the post-login Action fills with the user's name. Must match the API's APP__JWT__NAME_CLAIM (default in api/settings.py)."
