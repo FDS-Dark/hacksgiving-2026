@@ -628,6 +628,26 @@ export interface paths {
         patch: operations["update_task_v1_tasks__task_id__patch"];
         trace?: never;
     };
+    "/v1/voice/app-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * App Capabilities
+         * @description The public app actions a phone agent may accurately describe.
+         */
+        get: operations["app_capabilities_v1_voice_app_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/dashboard": {
         parameters: {
             query?: never;
@@ -784,6 +804,26 @@ export interface paths {
         get: operations["resources_v1_voice_resources_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Voice Request
+         * @description Use the app's classifier and keep its structured route on the call.
+         */
+        post: operations["route_voice_request_v1_voice_route_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1645,6 +1685,27 @@ export interface components {
          * @enum {string}
          */
         Visibility: "internal" | "public";
+        /** VoiceAppCapabilities */
+        VoiceAppCapabilities: {
+            /** Features */
+            features: string[];
+            /** Handoff Steps */
+            handoff_steps: string[];
+            /** Limitations */
+            limitations: string[];
+            /** Services */
+            services: components["schemas"]["VoiceAppService"][];
+        };
+        /** VoiceAppService */
+        VoiceAppService: {
+            /** App Destination */
+            app_destination: string;
+            /** Description */
+            description: string;
+            key: components["schemas"]["Service"];
+            /** Name */
+            name: string;
+        };
         /** VoiceDashboard */
         VoiceDashboard: {
             /** Active Referrals */
@@ -1739,6 +1800,34 @@ export interface components {
             slug: string;
             /** Transfer Approved */
             transfer_approved: boolean;
+        };
+        /** VoiceRouteRequest */
+        VoiceRouteRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Message */
+            message: string;
+        };
+        /** VoiceRouteResponse */
+        VoiceRouteResponse: {
+            /** Also Relevant */
+            also_relevant: components["schemas"]["Service"][];
+            /** Also Relevant Names */
+            also_relevant_names: string[];
+            /**
+             * App Destination
+             * @default Get Help
+             */
+            app_destination: string;
+            /** Follow Up Question */
+            follow_up_question: string | null;
+            /** Reason */
+            reason: string;
+            service: components["schemas"]["Service"];
+            /** Service Name */
+            service_name: string;
+            /** Urgent */
+            urgent: boolean;
         };
         /** WebhookAccepted */
         WebhookAccepted: {
@@ -2813,6 +2902,37 @@ export interface operations {
             };
         };
     };
+    app_capabilities_v1_voice_app_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceAppCapabilities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dashboard_v1_voice_dashboard_get: {
         parameters: {
             query?: never;
@@ -3069,6 +3189,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceResource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    route_voice_request_v1_voice_route_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRouteResponse"];
                 };
             };
             /** @description Validation Error */

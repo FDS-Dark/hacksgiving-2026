@@ -97,16 +97,25 @@ def build_agent_payload(
         "conversation_config": {
             "agent": {
                 "first_message": (
-                    "Hi, I'm an AI community resource navigator working with ComForce MKE. "
-                    "If anyone is in immediate danger, please hang up and call 911 now. "
-                    "Otherwise, how can I help?"
+                    "Hi, this is the ComForce MKE Community Response Navigator, "
+                    "powered by AI. I connect Milwaukee callers with community "
+                    "resources. If anyone is in immediate danger, hang up and call "
+                    "911. How can I help?"
                 ),
                 "language": "en",
                 "prompt": {
                     "prompt": prompt,
                     "tool_ids": list(tool_ids),
                     "built_in_tools": {
-                        "transfer_to_number": transfer_tool(destinations)
+                        "transfer_to_number": transfer_tool(destinations),
+                        "end_call": {
+                            "name": "end_call",
+                            "description": (
+                                "End the call immediately after telling a caller who "
+                                "mentions immediate danger to hang up and call 911."
+                            ),
+                            "params": {"system_tool_type": "end_call"},
+                        },
                     },
                 },
             }

@@ -2432,6 +2432,73 @@
         "title": "Visibility",
         "type": "string"
       },
+      "VoiceAppCapabilities": {
+        "properties": {
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "handoff_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Handoff Steps",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceAppService"
+            },
+            "title": "Services",
+            "type": "array"
+          }
+        },
+        "required": [
+          "services",
+          "features",
+          "handoff_steps",
+          "limitations"
+        ],
+        "title": "VoiceAppCapabilities",
+        "type": "object"
+      },
+      "VoiceAppService": {
+        "properties": {
+          "app_destination": {
+            "title": "App Destination",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "description",
+          "app_destination"
+        ],
+        "title": "VoiceAppService",
+        "type": "object"
+      },
       "VoiceDashboard": {
         "properties": {
           "active_referrals": {
@@ -2662,6 +2729,89 @@
           "last_verified_at"
         ],
         "title": "VoiceResource",
+        "type": "object"
+      },
+      "VoiceRouteRequest": {
+        "properties": {
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "message"
+        ],
+        "title": "VoiceRouteRequest",
+        "type": "object"
+      },
+      "VoiceRouteResponse": {
+        "properties": {
+          "also_relevant": {
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            },
+            "title": "Also Relevant",
+            "type": "array"
+          },
+          "also_relevant_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Also Relevant Names",
+            "type": "array"
+          },
+          "app_destination": {
+            "default": "Get Help",
+            "title": "App Destination",
+            "type": "string"
+          },
+          "follow_up_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Question"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "service": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "service_name": {
+            "title": "Service Name",
+            "type": "string"
+          },
+          "urgent": {
+            "title": "Urgent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "service",
+          "service_name",
+          "also_relevant",
+          "also_relevant_names",
+          "urgent",
+          "reason",
+          "follow_up_question",
+          "app_destination"
+        ],
+        "title": "VoiceRouteResponse",
         "type": "object"
       },
       "WebhookAccepted": {
@@ -4379,6 +4529,56 @@
         ]
       }
     },
+    "/v1/voice/app-capabilities": {
+      "get": {
+        "description": "The public app actions a phone agent may accurately describe.",
+        "operationId": "app_capabilities_v1_voice_app_capabilities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceAppCapabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "App Capabilities",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/dashboard": {
       "get": {
         "operationId": "dashboard_v1_voice_dashboard_get",
@@ -4812,6 +5012,66 @@
           }
         },
         "summary": "Resources",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/route": {
+      "post": {
+        "description": "Use the app's classifier and keep its structured route on the call.",
+        "operationId": "route_voice_request_v1_voice_route_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceRouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceRouteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Voice Request",
         "tags": [
           "voice"
         ]

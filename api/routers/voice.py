@@ -3,7 +3,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from dependencies import get_current_user, get_voice_service, require_tool_secret
+from dependencies import (
+    get_current_user,
+    get_routing_service,
+    get_voice_service,
+    require_tool_secret,
+)
 from models.user import AppUser
 from models.voice import (
     ClaimHandoffRequest,
@@ -17,12 +22,30 @@ from models.voice import (
     VoiceResource,
     VoiceDashboard,
     VoiceFollowUp,
+    VoiceAppCapabilities,
+    VoiceAppService,
+    VoiceRouteRequest,
+    VoiceRouteResponse,
     WebhookAccepted,
 )
+from models.routing import SERVICE_DESCRIPTIONS, Service
+from services.routing import RoutingService
 from services.voice import VoiceService
 from settings import config
 
 router = APIRouter(prefix="/voice", tags=["voice"])
+
+SERVICE_NAMES: dict[Service, str] = {
+    Service.HOMELESSNESS: "Housing & Shelter",
+    Service.MISSING_PERSONS: "Missing Persons",
+    Service.MEAL_PROGRAMS: "Meals & Food",
+    Service.VIOLENCE_PREVENTION: "Violence Prevention",
+    Service.TRANSPORTATION: "Transportation",
+    Service.INCIDENT_DEESCALATION: "De-escalation",
+    Service.BURIAL_ASSISTANCE: "Burial Assistance",
+    Service.BRIDGE_TO_EMPLOYMENT: "Bridge to Employment",
+    Service.UNCLEAR: "General Support",
+}
 
 
 @router.post("/webhooks/elevenlabs", response_model=WebhookAccepted)
@@ -51,6 +74,79 @@ async def resources(
 ) -> list[VoiceResource]:
     """Return allowlisted routes; only approved destinations expose a number."""
     return await service.resources(category, language)
+
+
+@router.get(
+    "/app-capabilities",
+    response_model=VoiceAppCapabilities,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def app_capabilities() -> VoiceAppCapabilities:
+    """The public app actions a phone agent may accurately describe."""
+    services = [
+        VoiceAppService(
+            key=key,
+            name=SERVICE_NAMES[key],
+            description=description,
+            app_destination=f"Get Help > {SERVICE_NAMES[key]}",
+        )
+        for key, description in SERVICE_DESCRIPTIONS.items()
+        if key != Service.UNCLEAR
+    ]
+    return VoiceAppCapabilities(
+        services=services,
+        features=[
+            "Get Help submits a signed-in request to the appropriate ComForce service queue.",
+            "Safety Map shows generalized public-safety information and is not monitored for emergencies.",
+            "Alerts shows private connected-call follow-ups plus public incident updates while the app is open.",
+            "Me > Phone calls connects a call with a one-time eight-character handoff code.",
+            "Me > Volunteer and jobs opens the official ComForce MKE website.",
+        ],
+        handoff_steps=[
+            "Ask the phone navigator to save the call to the app.",
+            "Write down the eight-character code; it expires after 15 minutes and works once.",
+            "Sign in to the mobile app and tap Me in the bottom navigation.",
+            "Under Phone calls, enter the code and tap Connect call.",
+            "A successful claim shows Call connected; open Alerts to see the ComForce notification.",
+            "If a retry says invalid, expired, or already claimed after success, "
+            "the one-time code was already consumed.",
+        ],
+        limitations=[
+            "The phone navigator cannot sign in, submit an authenticated Get Help "
+            "request, or read private account data for the caller.",
+            "The app routes employment needs to Bridge to Employment and links to "
+            "the official ComForce website, but has no native live job-listing feed.",
+            "Call notifications are in-app follow-ups, not operating-system push notifications.",
+            "Never invent a department, opportunity, resource, or app capability that a tool did not return.",
+        ],
+    )
+
+
+@router.post(
+    "/route",
+    response_model=VoiceRouteResponse,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def route_voice_request(
+    body: VoiceRouteRequest,
+    routing: RoutingService = Depends(get_routing_service),
+    voice: VoiceService = Depends(get_voice_service),
+) -> VoiceRouteResponse:
+    """Use the app's classifier and keep its structured route on the call."""
+    routed = await routing.route(body.message)
+    stored_category = (
+        "other" if routed.service == Service.UNCLEAR else routed.service.value
+    )
+    await voice.record_route(body.conversation_id, stored_category, routed.urgent)
+    return VoiceRouteResponse(
+        service=routed.service,
+        service_name=SERVICE_NAMES[routed.service],
+        also_relevant=routed.also_relevant,
+        also_relevant_names=[SERVICE_NAMES[item] for item in routed.also_relevant],
+        urgent=routed.urgent,
+        reason=routed.reason,
+        follow_up_question=routed.follow_up_question,
+    )
 
 
 @router.post(

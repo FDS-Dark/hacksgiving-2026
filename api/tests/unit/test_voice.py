@@ -10,6 +10,9 @@ import pytest
 from databridge.voice import VoiceDatabridge
 from errors import ApiError
 from models.voice import OutcomeStatus, VoiceReferralStatus
+from models.routing import RouteResponse, Service
+from models.voice import VoiceRouteRequest
+from routers.voice import app_capabilities, route_voice_request
 from services.voice import VoiceService, verify_elevenlabs_signature
 from tests.unit.fakes import FakeFunctions
 
@@ -119,6 +122,57 @@ async def test_live_referral_begins_call_before_post_call_webhook():
     )
     assert result.id == referral["id"]
     assert db.called("voice_referral_create")[0]["call_id"] == call["id"]
+
+
+async def test_shared_app_route_is_persisted_without_free_text():
+    call = _call_row("conv-route")
+    db = FakeFunctions(voice_call_ingest=[call])
+    await VoiceService(VoiceDatabridge(db), db).record_route(
+        "conv-route", "bridge_to_employment", False
+    )
+    persisted = db.called("voice_call_ingest")[0]
+    assert persisted["need_category"] == "bridge_to_employment"
+    assert persisted["urgency_tier"] == "routine"
+    assert "message" not in persisted
+
+
+async def test_voice_route_uses_app_classifier_and_records_category():
+    routed = RouteResponse(
+        service=Service.BRIDGE_TO_EMPLOYMENT,
+        also_relevant=[Service.TRANSPORTATION],
+        urgent=False,
+        reason="They want help finding work.",
+    )
+
+    class Routing:
+        async def route(self, message: str):
+            assert message == "I need job training"
+            return routed
+
+    class Voice:
+        recorded = None
+
+        async def record_route(self, conversation_id: str, category: str, urgent: bool):
+            self.recorded = (conversation_id, category, urgent)
+
+    voice = Voice()
+    result = await route_voice_request(
+        VoiceRouteRequest(
+            conversation_id="conv-employment", message="I need job training"
+        ),
+        Routing(),
+        voice,
+    )
+    assert result.service_name == "Bridge to Employment"
+    assert result.app_destination == "Get Help"
+    assert voice.recorded == ("conv-employment", "bridge_to_employment", False)
+
+
+async def test_app_capabilities_explain_handoff_and_job_limit():
+    result = await app_capabilities()
+    assert any(item.name == "Bridge to Employment" for item in result.services)
+    assert any("works once" in step for step in result.handoff_steps)
+    assert any("no native live job-listing" in item for item in result.limitations)
 
 
 async def test_unknown_referral_outcome_is_a_clean_not_found():
