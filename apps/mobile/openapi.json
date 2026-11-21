@@ -5219,6 +5219,93 @@
         ]
       }
     },
+    "/v1/voice/opportunities": {
+      "get": {
+        "description": "Open jobs and volunteer postings from the same directory as the app.",
+        "operationId": "opportunities_v1_voice_opportunities_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OpportunityKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Opportunity"
+                  },
+                  "title": "Response Opportunities V1 Voice Opportunities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Opportunities",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/referrals": {
       "post": {
         "operationId": "create_referral_v1_voice_referrals_post",
