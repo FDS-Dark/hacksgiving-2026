@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/BrandLogo';
-import { NAV_ITEMS, type NavItem } from '@/lib/navigation';
+import { useNavItems, type NavItem } from '@/lib/navigation';
 import { MAX_CONTENT_WIDTH, space, useTheme } from '@/theme/tokens';
 
 /** At this width and up the links sit in one row beside the logo, like the website. */
@@ -22,6 +22,7 @@ export function AppHeader() {
   const { width } = useWindowDimensions();
   const pathname = usePathname();
   const wide = width >= WIDE;
+  const navItems = useNavItems();
 
   return (
     <View style={[styles.header, { paddingTop: insets.top, backgroundColor: theme.surface, borderBottomColor: theme.separator }]}>
@@ -32,7 +33,7 @@ export function AppHeader() {
 
         {wide ? (
           <View style={styles.linksWide}>
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
             ))}
           </View>
@@ -45,7 +46,7 @@ export function AppHeader() {
 
       {wide ? null : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.linksNarrow}>
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
           ))}
         </ScrollView>
