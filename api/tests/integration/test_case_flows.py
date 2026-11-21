@@ -124,3 +124,23 @@ async def test_only_the_first_staff_member_can_bootstrap(api, people):
     # people already made someone a worker, so nobody else can claim admin.
     response = await api.post("/v1/staff/bootstrap", headers=people["member"])
     assert response.status_code == 409
+
+
+async def test_resources_have_coordinates(api, people):
+    worker = people["worker"]
+    samples = (await api.get("/v1/resources", headers=worker)).json()
+    assert samples and all(r["latitude"] is not None and r["longitude"] is not None
+                           for r in samples if r["is_sample"])
+
+    created = await api.post("/v1/resources", headers=worker, json={
+        "name": "Corner Pantry", "category": "meal_programs", "latitude": 43.05, "longitude": -87.95,
+    })
+    assert created.status_code == 201
+    assert (created.json()["latitude"], created.json()["longitude"]) == (43.05, -87.95)
+    fetched = (await api.get(f"/v1/resources/{created.json()['id']}", headers=worker)).json()
+    assert (fetched["latitude"], fetched["longitude"]) == (43.05, -87.95)
+
+    off_the_map = await api.post("/v1/resources", headers=worker, json={
+        "name": "Nowhere", "category": "other", "latitude": 95,
+    })
+    assert off_the_map.status_code == 422

@@ -78,5 +78,10 @@ resource "vault_kv_secret_v2" "runtime" {
     database = var.database_name
     username = "${var.app_role}.${each.value.project_ref}"
     password = random_password.app[each.key].result
+    # Supabase Storage for voice debriefs (storage.tf). Here rather than a path
+    # of its own: CI's Vault role may write only <prefix>/db and /db-migration.
+    storage_supabase_url = "https://${each.value.project_ref}.supabase.co"
+    storage_secret_key   = supabase_apikey.storage[each.key].api_key
+    storage_bucket       = var.storage_bucket
   })
 }

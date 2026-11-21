@@ -1,6 +1,7 @@
 /**
- * TanStack Query: the app's one cache of server data. Every query key is
- * built by `keys`, so a mutation can invalidate exactly what it changed.
+ * TanStack Query: the app's one cache of server data. Each domain's service
+ * (services/<domain>.ts) builds its own query keys, so a mutation can
+ * invalidate exactly what it changed.
  */
 import { focusManager, QueryClient } from '@tanstack/react-query';
 import { AppState, Platform } from 'react-native';
@@ -26,8 +27,3 @@ export const queryClient = new QueryClient({
 AppState.addEventListener('change', (state) => {
   if (Platform.OS !== 'web') focusManager.setFocused(state === 'active');
 });
-
-export const keys = {
-  health: ['health'] as const,
-  me: ['me'] as const,
-};

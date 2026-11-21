@@ -16,6 +16,9 @@ dependencies = [
     "tzdata>=2026.6",
     "httpx>=0.25.0",
     "openai>=3.57.0",
+    "boto3>=1.44.9",
+    "openpyxl>=3.1.5",
+    "gtfs-realtime-bindings>=3.0.0",
 ]
 
 [dependency-groups]
@@ -27,6 +30,8 @@ dev = [
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "httpx>=0.25.0",
+    "boto3-stubs[s3]>=1.44.9",
+    "types-openpyxl>=3.1.5.20261017",
 ]
 
 [tool.mypy]
@@ -49,6 +54,10 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 # response.json() is Any; helpers returning it are fine.
 warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["google.transit", "google.transit.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["asyncpg", "asyncpg.*"]

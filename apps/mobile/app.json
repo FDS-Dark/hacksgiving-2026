@@ -31,7 +31,20 @@
       "expo-status-bar",
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location only while the app is open: to show nearby safety alerts and to fill in where you are when you ask for help."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone to record a debrief. The recording is deleted as soon as it is turned into text.",
+          "enableBackgroundRecording": false
+        }
+      ]
     ],
     "scheme": "hacksgiving",
     "experiments": {

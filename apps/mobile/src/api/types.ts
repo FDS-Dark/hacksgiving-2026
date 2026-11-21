@@ -36,6 +36,31 @@ export type Resource = Schemas['Resource'];
 export type CreateResource = Schemas['CreateResourceRequest'];
 export type CaseSummary = Schemas['CaseSummary'];
 export type ResourceSuggestions = Schemas['ResourceSuggestions'];
+
+// ── Volunteer, job and education opportunities ─────────────────────────────
+export type Opportunity = Schemas['Opportunity'];
+export type OpportunityKind = Schemas['OpportunityKind'];
+export type CreateOpportunity = Schemas['CreateOpportunityRequest'];
+export type Audience = Schemas['Audience'];
+export type Cost = Schemas['Cost'];
+export type OpportunityOrigin = Schemas['OpportunityOrigin'];
+export const OPPORTUNITY_KINDS = ['job', 'education', 'volunteer'] as const satisfies readonly OpportunityKind[];
+export const AUDIENCES = [
+  'second_chance',
+  'unhoused',
+  'no_experience',
+  'no_id_required',
+  'youth',
+] as const satisfies readonly Audience[];
+export const COSTS = ['free', 'low_cost', 'paid'] as const satisfies readonly Cost[];
+/** Opportunities staff post by hand; everything else came from the data loader. */
+export const MANUAL_SOURCE = 'manual';
+
+// ── Public data (the data loader, docs/data-loader.md) ────────────────────────
+export type IncidentPoint = Schemas['IncidentPoint'];
+export type DispatchCall = Schemas['DispatchCall'];
+export type TransitNearby = Schemas['TransitNearby'];
+export type WeatherAlert = Schemas['WeatherAlert'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];
@@ -44,6 +69,33 @@ export type UserSummary = Schemas['UserSummary'];
 export type SubmitRequest = Schemas['SubmitRequest'];
 export type PublicRequest = Schemas['PublicRequest'];
 export type PublicRequestDetail = Schemas['PublicRequestDetail'];
+export type PublicRequestUpdate = Schemas['PublicRequestUpdate'];
+export type AnonymousRequestReceipt = Schemas['AnonymousRequestReceipt'];
+export type ReplyRequest = Schemas['ReplyRequest'];
+export type ContactMethod = Schemas['ContactMethod'];
+export type Task = Schemas['Task'];
+export type RouteRequest = Schemas['RouteRequest'];
+export type RouteResponse = Schemas['RouteResponse'];
+export type Service = Schemas['Service'];
+/** The API's Record (a Phantom debrief); named so it doesn't shadow TypeScript's Record. */
+export type DebriefRecord = Schemas['Record'];
+export type RecordStatus = Schemas['RecordStatus'];
+export type RecordStage = Schemas['RecordStage'];
+export type Extraction = Schemas['Extraction'];
+export type CreateRecord = Schemas['CreateRecordRequest'];
+export type ConfirmRecord = Schemas['ConfirmRecordRequest'];
+export type ConfirmedRecord = Schemas['ConfirmedRecord'];
+export type JobStat = Schemas['JobStat'];
+export type VoiceUpload = Schemas['VoiceUpload'];
+export type TaskStatus = Schemas['TaskStatus'];
+export type CreateTask = Schemas['CreateTaskRequest'];
+export type UpdateTask = Schemas['UpdateTaskRequest'];
+export type TaskFilters = NonNullable<operations['list_tasks_v1_tasks_get']['parameters']['query']>;
+export type ClaimHandoff = Schemas['ClaimHandoffRequest'];
+export type VoiceFollowUp = Schemas['VoiceFollowUp'];
+export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
+export type VoiceCallReview = Schemas['VoiceCallReview'];
+export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

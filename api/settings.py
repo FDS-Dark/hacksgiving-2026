@@ -72,12 +72,123 @@ class LoggingConfig(BaseModel):
 
 
 class OpenAIConfig(BaseModel):
-    """The model that routes requests for help (services/rout_request.py)."""
+    """The model that routes requests for help (services/routing.py)."""
 
     api_key: str | None = Field(default=None)
     model: str = Field(default="gpt-5.4-mini")
     # Seconds before a routing call gives up.
     timeout: float = Field(default=20.0)
+    # Speech to text for voice debriefs (services/transcription.py).
+    transcription_model: str = Field(default="gpt-4o-transcribe")
+
+
+class StorageConfig(BaseModel):
+    """Object storage for Phantom's audio (adapters/storage.py). Audio lives
+    there only until it's transcribed.
+
+    - `supabase` (production): Supabase Storage's own API, with a secret API
+      key that database/terraform creates and writes to Vault.
+    - `s3` (local): any S3-compatible store, here the `storage` container from
+      database/compose.yaml.
+    """
+
+    backend: Literal["s3", "supabase"] = Field(default="s3")
+    bucket: str = Field(default="phantom-audio")
+    # Create the private bucket on startup if it's missing (safe to repeat).
+    create_bucket: bool = Field(default=False)
+    # How long a signed upload URL works (S3; Supabase's last two hours,
+    # which the sweeper covers).
+    upload_url_seconds: int = Field(default=540, ge=60, le=3600)
+    # OpenAI's transcription limit is 25 MB; a 10-minute debrief at 64 kbps is ~5 MB.
+    max_audio_bytes: int = Field(default=24 * 1024 * 1024, ge=1024)
+    # The sweeper deletes any audio older than this, whatever its record says.
+    max_audio_age_seconds: int = Field(default=3600, ge=300)
+
+    # supabase: https://<project_ref>.supabase.co and a secret key (sb_secret_...).
+    supabase_url: str | None = Field(default=None)
+    supabase_secret_key: str | None = Field(default=None)
+
+    # s3: where the API and worker reach it, and where the phone uploads to
+    # when that differs (locally: this PC's Tailscale address).
+    endpoint_url: str | None = Field(default=None)
+    public_endpoint_url: str | None = Field(default=None)
+    region: str = Field(default="us-east-1")
+    access_key_id: str | None = Field(default=None)
+    secret_access_key: str | None = Field(default=None)
+
+    @property
+    def configured(self) -> bool:
+        if self.backend == "supabase":
+            return bool(self.supabase_url and self.supabase_secret_key)
+        return bool(self.endpoint_url and self.access_key_id and self.secret_access_key)
+
+
+class WorkerConfig(BaseModel):
+    """The background worker (python -m worker): how many jobs it runs at
+    once, how long it holds a job, and its liveness port for k8s."""
+
+    concurrency: int = Field(default=4, ge=1, le=64)
+    # Longer than the slowest stage's timeout (services/pipeline.py).
+    lease_seconds: int = Field(default=150, ge=30, le=3600)
+    # Not 8081: that is Expo's dev server port. k8s sets APP__WORKER__HEALTH_PORT.
+    health_port: int = Field(default=8090)
+    # Records stuck in processing with no live job this long are failed.
+    stalled_record_seconds: int = Field(default=600, ge=60)
+    # Finished jobs are kept this many days (dead ones 4x longer).
+    keep_jobs_days: int = Field(default=7, ge=1)
+
+
+class VoiceConfig(BaseModel):
+    """Server-only credentials for anonymous voice entry points."""
+
+    elevenlabs_webhook_secret: str = Field(default="")
+    tool_secret: str = Field(default="")
+
+
+class LoaderConfig(BaseModel):
+    """The data loader (api/loader, docs/data-loader.md): where to look, and
+    the sources' credentials. A source without credentials is skipped."""
+
+    # Job and training searches: a "City, ST" place and a radius in miles.
+    location: str = Field(default="Milwaukee, WI")
+    radius_miles: int = Field(default=25, ge=1, le=100)
+    # Directory downloads (no search): keep rows in this state whose ZIP code
+    # starts with one of these. 530-532 is the Milwaukee metro.
+    state: str = Field(default="WI")
+    zip_prefixes: list[str] = Field(default_factory=lambda: ["530", "531", "532"])
+    # Postings older than this many days aren't fetched.
+    max_age_days: int = Field(default=30, ge=1, le=60)
+    # At most this many rows per source and run.
+    max_per_source: int = Field(default=500, ge=1, le=2000)
+    timeout: float = Field(default=30.0)
+
+    # USAJOBS (developer.usajobs.gov): an API key and the email address it
+    # was requested with, which USAJOBS wants as the User-Agent.
+    usajobs_api_key: str = Field(default="")
+    usajobs_email: str = Field(default="")
+    # CareerOneStop Web API (careeronestop.org/Developers): the user id and
+    # token from registration. Jobs and training programs need them; the
+    # American Job Center and reentry directories are public downloads.
+    careeronestop_user_id: str = Field(default="")
+    careeronestop_token: str = Field(default="")
+    # Job search terms; "0" means every job in the area.
+    careeronestop_job_keywords: list[str] = Field(default_factory=lambda: ["0"])
+
+    # Public data (docs/real-data-sources.md). NIBRS: how many days back each
+    # nightly run refreshes (the source edits records for weeks).
+    nibrs_window_days: int = Field(default=90, ge=7, le=730)
+    # Dispatch calls (MPD, MFD) are kept this long, then deleted.
+    signal_ttl_hours: int = Field(default=24, ge=1, le=168)
+    # NWS forecast zones: Milwaukee County and its lakeshore zone.
+    nws_zones: list[str] = Field(default_factory=lambda: ["WIC079", "WIZ066"])
+    # CDC PLACES: Milwaukee County.
+    county_fips: str = Field(default="55079")
+    # FBI Crime Data Explorer: an api.data.gov key (optional; it answers
+    # without one), and how many months back.
+    fbi_api_key: str = Field(default="")
+    fbi_months: int = Field(default=24, ge=1, le=120)
+    # Seconds between live runs in --watch mode (MPD/MFD calls, alerts).
+    live_every_seconds: int = Field(default=300, ge=60)
 
 
 class AppConfig(BaseSettings):
@@ -93,6 +204,10 @@ class AppConfig(BaseSettings):
     environment: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
+    voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    worker: WorkerConfig = Field(default_factory=WorkerConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
+    loader: LoaderConfig = Field(default_factory=LoaderConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(

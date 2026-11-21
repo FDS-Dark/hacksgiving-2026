@@ -11,27 +11,8 @@ from uuid import UUID
 from pydantic import ConfigDict, Field, StringConstraints, model_validator
 
 from models.base import ApiModel
-
-
-class CaseCategory(StrEnum):
-    """ComForce MKE's services (models/routing.py Service), plus other."""
-
-    HOMELESSNESS = "homelessness"
-    MISSING_PERSONS = "missing_persons"
-    MEAL_PROGRAMS = "meal_programs"
-    VIOLENCE_PREVENTION = "violence_prevention"
-    TRANSPORTATION = "transportation"
-    INCIDENT_DEESCALATION = "incident_deescalation"
-    BURIAL_ASSISTANCE = "burial_assistance"
-    BRIDGE_TO_EMPLOYMENT = "bridge_to_employment"
-    OTHER = "other"
-
-
-class CasePriority(StrEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+from models.case_enums import CaseCategory, CasePriority
+from models.task import Task
 
 
 class CaseStatus(StrEnum):
@@ -64,11 +45,21 @@ class UpdateType(StrEnum):
     CATEGORY_CHANGE = "category_change"
     ASSIGNMENT = "assignment"
     REFERRAL = "referral"
+    # The requester answering on their own request.
+    REPLY = "reply"
 
 
 class Visibility(StrEnum):
     INTERNAL = "internal"
     PUBLIC = "public"
+
+
+class ContactMethod(StrEnum):
+    """How a resident wants to be reached. `none`: don't reach out at all."""
+
+    CALL = "call"
+    TEXT = "text"
+    NONE = "none"
 
 
 class ReferralStatus(StrEnum):
@@ -117,6 +108,12 @@ class Case(ApiModel):
     resolved_at: datetime | None = None
     referral_count: int
     last_activity_at: datetime
+    # How the requester wants to be reached; None when nobody asked (cases a
+    # worker opens).
+    contact_method: ContactMethod | None = None
+    # "It's safe to call or leave a voicemail" (or to text). False means be
+    # careful: no voicemail, and don't say why you're calling to someone else.
+    safe_to_contact: bool | None = None
 
 
 class CaseUpdate(ApiModel):
@@ -155,6 +152,7 @@ class CaseDetail(ApiModel):
     case: Case
     updates: list[CaseUpdate]
     referrals: list[Referral]
+    tasks: list[Task]
 
 
 class CreateCaseRequest(ApiModel):
@@ -249,33 +247,7 @@ class CaseInsights(ApiModel):
     recent_activity: list[CaseUpdate]
 
 
-# --- Referrals and resources -----------------------------------------------------
-
-
-class Resource(ApiModel):
-    id: UUID
-    name: str
-    category: CaseCategory
-    description: str
-    address: str | None = None
-    neighborhood: str | None = None
-    phone: str | None = None
-    website: str | None = None
-    hours: str | None = None
-    is_sample: bool
-    active: bool
-    created_at: datetime
-
-
-class CreateResourceRequest(ApiModel):
-    name: Title
-    category: CaseCategory
-    description: LongText = ""
-    address: Location | None = None
-    neighborhood: ContactField | None = None
-    phone: ContactField | None = None
-    website: ContactField | None = None
-    hours: ContactField | None = None
+# --- Referrals -------------------------------------------------------------------
 
 
 class AddReferralRequest(ApiModel):
@@ -315,6 +287,18 @@ class SubmitRequest(ApiModel):
     contact_name: ContactField | None = None
     contact_phone: ContactField | None = None
     contact_email: ContactField | None = None
+    contact_method: ContactMethod | None = Field(
+        default=None, description="Call or text needs `contact_phone`. Leave out when the form didn't ask."
+    )
+    safe_to_contact: bool | None = Field(
+        default=None, description="It's safe to call or leave a voicemail (or to text)."
+    )
+
+    @model_validator(mode="after")
+    def _reachable(self) -> "SubmitRequest":
+        if self.contact_method in (ContactMethod.CALL, ContactMethod.TEXT) and not (self.contact_phone or "").strip():
+            raise ValueError("A phone number is needed to call or text")
+        return self
 
 
 class PublicRequest(ApiModel):
@@ -340,3 +324,23 @@ class PublicRequestUpdate(ApiModel):
 class PublicRequestDetail(ApiModel):
     request: PublicRequest
     updates: list[PublicRequestUpdate]
+
+
+class AnonymousRequestReceipt(ApiModel):
+    """A request sent without an account. The access code is shown once:
+    with the request's number it is the only way back to the request."""
+
+    request: PublicRequest
+    access_code: str
+
+
+Reply = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+
+class ReplyRequest(ApiModel):
+    """The requester's answer on their own request. Staff see it in the case
+    history."""
+
+    model_config = ConfigDict(extra="forbid", json_schema_serialization_defaults_required=True)
+
+    content: Reply

@@ -7,11 +7,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from dependencies import get_case_service, get_current_user, get_current_worker
-from models.case import CaseCategory, CreateResourceRequest, Resource
+from dependencies import get_current_user, get_current_worker, get_resource_service
+from models.case_enums import CaseCategory
+from models.resource import CreateResourceRequest, Resource
 from models.staff import StaffMember
 from models.user import AppUser
-from services.case import CaseService
+from services.resource import ResourceService
 
 router = APIRouter(prefix="/resources", tags=["resources"])
 
@@ -21,28 +22,28 @@ async def list_resources(
     q: Annotated[str | None, Query(max_length=200)] = None,
     category: CaseCategory | None = None,
     _: AppUser = Depends(get_current_user),
-    service: CaseService = Depends(get_case_service),
+    service: ResourceService = Depends(get_resource_service),
 ) -> list[Resource]:
     """Active resources, real ones before samples. `q` matches the name,
     description or neighborhood. Rows with `is_sample: true` are
     demonstration data, not real services."""
-    return await service.list_resources(q, category)
+    return await service.search(q, category)
 
 
 @router.get("/{resource_id}", response_model=Resource)
 async def get_resource(
     resource_id: UUID,
     _: AppUser = Depends(get_current_user),
-    service: CaseService = Depends(get_case_service),
+    service: ResourceService = Depends(get_resource_service),
 ) -> Resource:
-    return await service.get_resource(resource_id)
+    return await service.get(resource_id)
 
 
 @router.post("", response_model=Resource, status_code=status.HTTP_201_CREATED)
 async def create_resource(
     body: CreateResourceRequest,
     worker: StaffMember = Depends(get_current_worker),
-    service: CaseService = Depends(get_case_service),
+    service: ResourceService = Depends(get_resource_service),
 ) -> Resource:
     """Add a resource to the directory. Staff only."""
-    return await service.create_resource(worker, body)
+    return await service.create(worker, body)

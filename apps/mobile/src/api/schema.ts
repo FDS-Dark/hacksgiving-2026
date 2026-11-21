@@ -199,6 +199,28 @@ export interface paths {
         patch: operations["update_referral_v1_cases__case_id__referrals__referral_id__patch"];
         trace?: never;
     };
+    "/v1/cases/{case_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Task
+         * @description Add a task to the case, optionally due at a time and assigned to a
+         *     worker (422 if they aren't staff). Without an assignee it follows the
+         *     case. Noted in the case history.
+         */
+        post: operations["add_task_v1_cases__case_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/updates": {
         parameters: {
             query?: never;
@@ -240,6 +262,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/jobs/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Job Stats
+         * @description Jobs by kind and status: everything queued, running or dead, and what
+         *     finished in the last day. `oldest_run_at` on queued work shows a backlog.
+         */
+        get: operations["job_stats_v1_jobs_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -264,6 +307,413 @@ export interface paths {
          *     An email address is never kept as a name.
          */
         patch: operations["update_me_v1_me_patch"];
+        trace?: never;
+    };
+    "/v1/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Opportunities
+         * @description Open opportunities: staff postings first, then the newest. `q`
+         *     matches the title, organization, description or location.
+         */
+        get: operations["list_opportunities_v1_opportunities_get"];
+        put?: never;
+        /**
+         * Create Opportunity
+         * @description Post a volunteer, job or education opportunity. Staff only.
+         */
+        post: operations["create_opportunity_v1_opportunities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/opportunities/{opportunity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Opportunity
+         * @description One opportunity. A closed one is 404 except to staff.
+         */
+        get: operations["get_opportunity_v1_opportunities__opportunity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Opportunity
+         * @description Close (`active: false`) or reopen a posting. Staff only.
+         */
+        patch: operations["update_opportunity_v1_opportunities__opportunity_id__patch"];
+        trace?: never;
+    };
+    "/v1/public-data/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calls
+         * @description Delayed dispatch calls (MPD 30-90 minutes, MFD 15-105): not confirmed
+         *     incidents. Sensitive call types are never listed.
+         */
+        get: operations["calls_v1_public_data_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/community-needs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Community Needs
+         * @description CDC PLACES modeled estimates of health-related social needs by tract
+         *     (yearly). Context only: never for prioritizing people.
+         */
+        get: operations["community_needs_v1_public_data_community_needs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/crime-trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Crime Trends
+         * @description FBI monthly totals and rates for MPD, Wisconsin and the US.
+         */
+        get: operations["crime_trends_v1_public_data_crime_trends_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Incidents
+         * @description MPD-reviewed incidents (NIBRS, updated daily, may lag weeks), newest
+         *     first, each at about 1 km and with the app's map category.
+         */
+        get: operations["incidents_v1_public_data_incidents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/incidents/by-tract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Incidents By Tract
+         * @description Incident counts per census tract; tracts with fewer than 5 are left out.
+         */
+        get: operations["incidents_by_tract_v1_public_data_incidents_by_tract_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sources
+         * @description Each source's latest loader run and when it last succeeded.
+         */
+        get: operations["sources_v1_public_data_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/transit/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transit Nearby
+         * @description The nearest MCTS stops, their next arrivals and any service alerts.
+         */
+        get: operations["transit_nearby_v1_public_data_transit_nearby_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/weather-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Weather Alerts
+         * @description National Weather Service alerts in effect for Milwaukee County.
+         */
+        get: operations["weather_alerts_v1_public_data_weather_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Anonymous Request
+         * @description Ask ComForce MKE for help without signing in. Same body as
+         *     `POST /v1/requests`. Keep the access code: it's shown only this once.
+         *     429 after a few requests from one address in an hour.
+         */
+        post: operations["submit_anonymous_request_v1_public_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Anonymous Request
+         * @description A request sent without an account, with its public updates. 404 for
+         *     a wrong number or code alike.
+         */
+        get: operations["get_anonymous_request_v1_public_requests__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To Anonymous Request
+         * @description Answer on a request sent without an account.
+         */
+        post: operations["reply_to_anonymous_request_v1_public_requests__number__replies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Records
+         * @description The caller's records, newest first.
+         */
+        get: operations["my_records_v1_records_get"];
+        put?: never;
+        /**
+         * Create Record
+         * @description Capture a typed debrief. 202: it's processed in the background; poll
+         *     `GET /records/{id}` until `status` is `ready` (or `failed`).
+         */
+        post: operations["create_record_v1_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Voice Record
+         * @description Start a voice debrief: a record waiting for its audio, and a one-time
+         *     URL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.
+         *     The audio is deleted as soon as it's transcribed. 503 when voice isn't
+         *     set up on the server.
+         */
+        post: operations["start_voice_record_v1_records_voice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Record */
+        get: operations["get_record_v1_records__record_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Discard Record
+         * @description Throw a record away; its text is deleted. A case it became stays.
+         */
+        delete: operations["discard_record_v1_records__record_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Record
+         * @description Open a case from the reviewed record (assigned to the caller), with its
+         *     planned tasks plus the ones sent here. Calling it again returns the same
+         *     case.
+         */
+        post: operations["confirm_record_v1_records__record_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry Record
+         * @description Process a failed record again, from the stage it stopped at.
+         */
+        post: operations["retry_record_v1_records__record_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/uploaded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Voice Uploaded
+         * @description The recording is uploaded: it's transcribed, redacted and read in the
+         *     background. Poll `GET /records/{id}` as for a typed debrief.
+         */
+        post: operations["voice_uploaded_v1_records__record_id__uploaded_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/requests": {
@@ -307,6 +757,27 @@ export interface paths {
         get: operations["get_my_request_v1_requests__request_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/requests/{request_id}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To My Request
+         * @description Answer on one of the caller's requests (shown to them and to staff).
+         *     404 for anyone else's.
+         */
+        post: operations["reply_to_my_request_v1_requests__request_id__replies_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -479,10 +950,394 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tasks
+         * @description Open tasks by due time (soonest first). `mine` keeps the caller's:
+         *     tasks assigned to them, and unassigned tasks on cases they hold.
+         */
+        get: operations["list_tasks_v1_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Task
+         * @description Mark a task done (or open again), or hand it to another worker
+         *     (`assigned_worker_id: null` gives it back to whoever holds the case).
+         *     Finishing a task is noted in the case history.
+         */
+        patch: operations["update_task_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/v1/voice/app-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * App Capabilities
+         * @description The public app actions a phone agent may accurately describe.
+         */
+        get: operations["app_capabilities_v1_voice_app_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_v1_voice_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Follow Ups */
+        get: operations["follow_ups_v1_voice_follow_ups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Handoff
+         * @description Create a short-lived code the agent can read aloud to the caller.
+         */
+        post: operations["create_handoff_v1_voice_handoffs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Handoff
+         * @description Attach one call to the signed-in account without storing a phone number.
+         */
+        post: operations["claim_handoff_v1_voice_handoffs_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Impact */
+        get: operations["impact_v1_voice_impact_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Opportunities
+         * @description Open jobs and volunteer postings from the same directory as the app.
+         */
+        get: operations["opportunities_v1_voice_opportunities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Referrals
+         * @description Reviewed resources referred during calls linked to this account.
+         */
+        get: operations["my_referrals_v1_voice_referrals_get"];
+        put?: never;
+        /** Create Referral */
+        post: operations["create_referral_v1_voice_referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Referral */
+        get: operations["my_referral_v1_voice_referrals__referral_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Outcome */
+        post: operations["record_outcome_v1_voice_referrals__referral_id__outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/responder-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Responder Outcome */
+        post: operations["record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Voice Request
+         * @description Create a consented anonymous Get Help case from approved fields only.
+         */
+        post: operations["submit_voice_request_v1_voice_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resources
+         * @description Return allowlisted routes; only approved destinations expose a number.
+         */
+        get: operations["resources_v1_voice_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Voice Request
+         * @description Use the app's classifier and keep its structured route on the call.
+         */
+        post: operations["route_voice_request_v1_voice_route_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/staff/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Staff Call Reviews
+         * @description Structured call outcomes for ComForce review; never transcripts.
+         */
+        get: operations["staff_call_reviews_v1_voice_staff_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/staff/calls/{call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Staff Call Review */
+        get: operations["staff_call_review_v1_voice_staff_calls__call_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/webhooks/elevenlabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Elevenlabs Webhook
+         * @description Accept signed post-call analysis; verify bytes before parsing JSON.
+         */
+        post: operations["elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveReferral */
+        ActiveReferral: {
+            /** Category */
+            category: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Resource Name */
+            resource_name: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
         /**
          * AddCaseUpdateRequest
          * @description An internal note, or (visibility public) a message the requester will
@@ -503,6 +1358,16 @@ export interface components {
             resource_id: string;
             /** @default suggested */
             status?: components["schemas"]["ReferralStatus"];
+        };
+        /**
+         * AnonymousRequestReceipt
+         * @description A request sent without an account. The access code is shown once:
+         *     with the request's number it is the only way back to the request.
+         */
+        AnonymousRequestReceipt: {
+            /** Access Code */
+            access_code: string;
+            request: components["schemas"]["PublicRequest"];
         };
         /**
          * AppUser
@@ -526,6 +1391,13 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /**
+         * Audience
+         * @description Who a posting is open to, beyond everyone: staff tag their own postings,
+         *     and an import is tagged when its source says so.
+         * @enum {string}
+         */
+        Audience: "second_chance" | "unhoused" | "no_experience" | "no_id_required" | "youth";
         /** Case */
         Case: {
             /** Assigned Worker Id */
@@ -535,6 +1407,7 @@ export interface components {
             category: components["schemas"]["CaseCategory"];
             /** Contact Email */
             contact_email: string | null;
+            contact_method: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name: string | null;
             /** Contact Phone */
@@ -574,6 +1447,8 @@ export interface components {
             requester_id: string | null;
             /** Resolved At */
             resolved_at: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
             source: components["schemas"]["CaseSource"];
             status: components["schemas"]["CaseStatus"];
             /** Title */
@@ -595,6 +1470,8 @@ export interface components {
             case: components["schemas"]["Case"];
             /** Referrals */
             referrals: components["schemas"]["Referral"][];
+            /** Tasks */
+            tasks: components["schemas"]["Task"][];
             /** Updates */
             updates: components["schemas"]["CaseUpdate"][];
         };
@@ -703,6 +1580,81 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ClaimHandoffRequest */
+        ClaimHandoffRequest: {
+            /** Code */
+            code: string;
+        };
+        /** CommunityMeasure */
+        CommunityMeasure: {
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Measure */
+            measure: string;
+            /** Measure Id */
+            measure_id: string;
+            /** Tract Geoid */
+            tract_geoid: string;
+            /** Value */
+            value: number | null;
+            /** Year */
+            year: number;
+        };
+        /**
+         * ConfirmRecordRequest
+         * @description The author's reviewed version of the extraction: this becomes the case.
+         */
+        ConfirmRecordRequest: {
+            /** @default other */
+            category?: components["schemas"]["CaseCategory"];
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** @default request */
+            kind?: components["schemas"]["CaseKind"];
+            /** Location */
+            location?: string | null;
+            /** @default medium */
+            priority?: components["schemas"]["CasePriority"];
+            /**
+             * Summary
+             * @default
+             */
+            summary?: string;
+            /**
+             * Tasks
+             * @default []
+             */
+            tasks?: components["schemas"]["ConfirmTask"][];
+            /** Title */
+            title: string;
+        };
+        /** ConfirmTask */
+        ConfirmTask: {
+            /** Due In Hours */
+            due_in_hours?: number | null;
+            /** Title */
+            title: string;
+        };
+        /** ConfirmedRecord */
+        ConfirmedRecord: {
+            case: components["schemas"]["Case"];
+            record: components["schemas"]["Record"];
+        };
+        /**
+         * ContactMethod
+         * @description How a resident wants to be reached. `none`: don't reach out at all.
+         * @enum {string}
+         */
+        ContactMethod: "call" | "text" | "none";
+        /**
+         * Cost
+         * @enum {string}
+         */
+        Cost: "free" | "low_cost" | "paid";
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -736,6 +1688,68 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** CreateHandoffRequest */
+        CreateHandoffRequest: {
+            /** Caller Id */
+            caller_id?: string | null;
+            /** Conversation Id */
+            conversation_id: string;
+        };
+        /** CreateOpportunityRequest */
+        CreateOpportunityRequest: {
+            /**
+             * Apply Url
+             * @description An http(s) link to apply or sign up.
+             */
+            apply_url?: string | null;
+            /** Audiences */
+            audiences?: components["schemas"]["Audience"][];
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** @description Mostly for education: free, low cost or paid. */
+            cost?: components["schemas"]["Cost"] | null;
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location?: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Pay
+             * @description Jobs: the pay, e.g. '$17/hour'.
+             */
+            pay?: string | null;
+            /**
+             * Schedule
+             * @description When: hours, days, or the commitment.
+             */
+            schedule?: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * CreateRecordRequest
+         * @description A typed debrief. (Voice records upload audio first; see the pipeline.)
+         */
+        CreateRecordRequest: {
+            /** Text */
+            text: string;
+        };
+        /** CreateReferralRequest */
+        CreateReferralRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Resource Slug */
+            resource_slug: string;
+            /** @default offered */
+            status?: components["schemas"]["VoiceReferralStatus"];
+        };
         /** CreateResourceRequest */
         CreateResourceRequest: {
             /** Address */
@@ -748,6 +1762,10 @@ export interface components {
             description?: string;
             /** Hours */
             hours?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
@@ -758,6 +1776,62 @@ export interface components {
             website?: string | null;
         };
         /**
+         * CreateTaskRequest
+         * @description A task a worker adds to a case. Without `assigned_worker_id` it
+         *     follows the case (whoever holds it).
+         */
+        CreateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** CrimeTrendPoint */
+        CrimeTrendPoint: {
+            /** Measure */
+            measure: string;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Offense */
+            offense: string;
+            /** Series */
+            series: string;
+            /** Value */
+            value: number | null;
+        };
+        /**
+         * DispatchCall
+         * @description A delayed dispatch call: not a confirmed incident.
+         */
+        DispatchCall: {
+            /** Call Number */
+            call_number: string;
+            /** Category */
+            category: string;
+            /** City */
+            city: string | null;
+            /** District */
+            district: string | null;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string | null;
+        };
+        /**
          * DraftMessage
          * @description A message to the requester. Sent only if a worker posts it as a
          *     public update.
@@ -766,11 +1840,212 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ExtractedTask */
+        ExtractedTask: {
+            /**
+             * Due In Hours
+             * @description How soon it should be done, in hours from now, if the record makes that clear; else null.
+             */
+            due_in_hours: number | null;
+            /**
+             * Title
+             * @description A short, concrete next step for ComForce staff, as an imperative.
+             */
+            title: string;
+        };
+        /**
+         * Extraction
+         * @description The AI's reading of a record. Suggestions only: the author reviews and
+         *     edits all of it before a case is created.
+         */
+        Extraction: {
+            /** @description The ComForce service that should own this. */
+            category: components["schemas"]["CaseCategory"];
+            /** @description request: someone needs help. incident: something happened that staff responded to. */
+            kind: components["schemas"]["CaseKind"];
+            /**
+             * Location
+             * @description A street, intersection or neighborhood named in the record; else null.
+             */
+            location: string | null;
+            /** @description critical or high only if someone may be in danger or the need is tonight. */
+            priority: components["schemas"]["CasePriority"];
+            /**
+             * Risk Flags
+             * @description Short safety concerns staff should see ('weapon mentioned', 'children present'). Empty if none.
+             */
+            risk_flags: string[];
+            /**
+             * Summary
+             * @description Two to four plain sentences: what happened and what the person needs. No names.
+             */
+            summary: string;
+            /**
+             * Tasks
+             * @description Up to five follow-ups the record clearly calls for. Empty if none.
+             */
+            tasks: components["schemas"]["ExtractedTask"][];
+            /**
+             * Title
+             * @description A short title for the case, under 80 characters, with no names.
+             */
+            title: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HandoffCode */
+        HandoffCode: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ImpactCategory */
+        ImpactCategory: {
+            /** Category */
+            category: string;
+            /** Count */
+            count: number;
+        };
+        /** ImpactSummary */
+        ImpactSummary: {
+            /** Categories */
+            categories: components["schemas"]["ImpactCategory"][];
+            /** Emergency Redirects */
+            emergency_redirects: number;
+            /** Follow Ups Completed */
+            follow_ups_completed: number;
+            /** Referrals Offered */
+            referrals_offered: number;
+            /** Total Calls */
+            total_calls: number;
+            /** Transfers Connected */
+            transfers_connected: number;
+        };
+        /**
+         * IncidentPoint
+         * @description A reviewed incident, generalized to about 1 km.
+         */
+        IncidentPoint: {
+            /**
+             * Category
+             * @description The app's map category, from the NIBRS codes.
+             */
+            category: string | null;
+            /** District */
+            district: string | null;
+            /**
+             * Incident At
+             * Format: date-time
+             */
+            incident_at: string;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Offense Codes */
+            offense_codes: string[];
+            /** Weapons */
+            weapons: string[];
+        };
+        /**
+         * JobStat
+         * @description One kind and status in the queue: how many, and the oldest one due.
+         */
+        JobStat: {
+            /** Kind */
+            kind: string;
+            /** Oldest Run At */
+            oldest_run_at: string | null;
+            status: components["schemas"]["JobStatus"];
+            /** Total */
+            total: number;
+        };
+        /**
+         * JobStatus
+         * @enum {string}
+         */
+        JobStatus: "queued" | "running" | "done" | "dead";
+        /** Opportunity */
+        Opportunity: {
+            /** Active */
+            active: boolean;
+            /** Apply Url */
+            apply_url: string | null;
+            /** Audiences */
+            audiences: components["schemas"]["Audience"][];
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            cost: components["schemas"]["Cost"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Expires At
+             * @description When applications close, if the source says.
+             */
+            expires_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location: string | null;
+            /** Organization */
+            organization: string;
+            /** Pay */
+            pay: string | null;
+            /**
+             * Posted At
+             * @description Imports: when the source posted it.
+             */
+            posted_at: string | null;
+            /** Schedule */
+            schedule: string | null;
+            /**
+             * Source
+             * @description 'manual' for staff postings, else the import's source.
+             * @default manual
+             */
+            source: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * OpportunityKind
+         * @enum {string}
+         */
+        OpportunityKind: "volunteer" | "job" | "education";
+        /**
+         * OpportunityOrigin
+         * @description A list filter: staff postings, imported ones, or (no filter) both.
+         * @enum {string}
+         */
+        OpportunityOrigin: "manual" | "imported";
+        /**
+         * OutcomeStatus
+         * @enum {string}
+         */
+        OutcomeStatus: "connected" | "voicemail" | "no_answer" | "declined" | "unavailable" | "follow_up_needed" | "completed";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -823,6 +2098,63 @@ export interface components {
             id: string;
             update_type: components["schemas"]["UpdateType"];
         };
+        /** Record */
+        Record: {
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /** Case Id */
+            case_id: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            extraction: components["schemas"]["Extraction"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Raw Text */
+            raw_text: string | null;
+            source: components["schemas"]["RecordSource"];
+            stage: components["schemas"]["RecordStage"];
+            status: components["schemas"]["RecordStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** RecordOutcomeRequest */
+        RecordOutcomeRequest: {
+            /** Reason Code */
+            reason_code?: string | null;
+            status: components["schemas"]["OutcomeStatus"];
+        };
+        /**
+         * RecordSource
+         * @enum {string}
+         */
+        RecordSource: "text" | "audio";
+        /**
+         * RecordStage
+         * @description Where a record is in the pipeline. Each stage is one job kind.
+         * @enum {string}
+         */
+        RecordStage: "upload" | "transcribe" | "redact" | "extract" | "done";
+        /**
+         * RecordStatus
+         * @enum {string}
+         */
+        RecordStatus: "processing" | "ready" | "confirming" | "confirmed" | "failed" | "discarded";
         /** Referral */
         Referral: {
             /**
@@ -865,11 +2197,41 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ReferralOutcome */
+        ReferralOutcome: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            status: components["schemas"]["OutcomeStatus"];
+        };
         /**
          * ReferralStatus
          * @enum {string}
          */
         ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /**
+         * ReplyRequest
+         * @description The requester's answer on their own request. Staff see it in the case
+         *     history.
+         */
+        ReplyRequest: {
+            /** Content */
+            content: string;
+        };
         /** Resource */
         Resource: {
             /** Active */
@@ -893,12 +2255,22 @@ export interface components {
             id: string;
             /** Is Sample */
             is_sample: boolean;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
             neighborhood: string | null;
             /** Phone */
             phone: string | null;
+            /**
+             * Source
+             * @description 'manual' for staff-entered, else the import's source.
+             * @default manual
+             */
+            source: string;
             /** Website */
             website: string | null;
         };
@@ -948,6 +2320,26 @@ export interface components {
         SetRoleRequest: {
             role: components["schemas"]["Role"];
         };
+        /** SourceHealth */
+        SourceHealth: {
+            /** Detail */
+            detail: string;
+            /** Fetched */
+            fetched: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+            /** Target */
+            target: string;
+        };
         /** StaffMember */
         StaffMember: {
             /** Display Name */
@@ -994,6 +2386,8 @@ export interface components {
             category?: components["schemas"]["CaseCategory"] | null;
             /** Contact Email */
             contact_email?: string | null;
+            /** @description Call or text needs `contact_phone`. Leave out when the form didn't ask. */
+            contact_method?: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name?: string | null;
             /** Contact Phone */
@@ -1006,6 +2400,11 @@ export interface components {
             location?: string | null;
             /** Longitude */
             longitude?: number | null;
+            /**
+             * Safe To Contact
+             * @description It's safe to call or leave a voicemail (or to text).
+             */
+            safe_to_contact?: boolean | null;
             /** Title */
             title?: string | null;
         };
@@ -1014,6 +2413,134 @@ export interface components {
          * @enum {string}
          */
         SuggestionMethod: "ai" | "rules";
+        /**
+         * Task
+         * @description A piece of work on a case: generated when the case comes in
+         *     (services/task.py), or added by a worker.
+         */
+        Task: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            case_category: components["schemas"]["CaseCategory"];
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            case_priority: components["schemas"]["CasePriority"];
+            /** Case Title */
+            case_title: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Completed By */
+            completed_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Detail */
+            detail: string;
+            /** Due At */
+            due_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "open" | "done";
+        /** TractCount */
+        TractCount: {
+            /** Incidents */
+            incidents: number;
+            /** Tract Geoid */
+            tract_geoid: string;
+            /** Tract Name */
+            tract_name: string | null;
+        };
+        /** TransitAlert */
+        TransitAlert: {
+            /** Active Until */
+            active_until: string | null;
+            /** Description */
+            description: string;
+            /** Effect */
+            effect: string | null;
+            /** Header */
+            header: string;
+            /** Id */
+            id: string;
+            /** Routes */
+            routes: string[];
+            /** Url */
+            url: string | null;
+        };
+        /** TransitArrival */
+        TransitArrival: {
+            /**
+             * Arrives At
+             * Format: date-time
+             */
+            arrives_at: string;
+            /** Minutes */
+            minutes: number;
+            /** Route Id */
+            route_id: string;
+            /** Route Name */
+            route_name: string | null;
+        };
+        /** TransitNearby */
+        TransitNearby: {
+            /** Alerts */
+            alerts: components["schemas"]["TransitAlert"][];
+            /**
+             * Arrivals Live
+             * @description false when the live arrivals feed couldn't be read.
+             */
+            arrivals_live: boolean;
+            /**
+             * Attribution
+             * @default Transit data from MCTS. Not sponsored or operated by MTS or MCTS.
+             */
+            attribution: string;
+            /** Stops */
+            stops: components["schemas"]["TransitStop"][];
+        };
+        /** TransitStop */
+        TransitStop: {
+            /** Arrivals */
+            arrivals: components["schemas"]["TransitArrival"][];
+            /** Code */
+            code: string | null;
+            /** Distance M */
+            distance_m: number;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Route Names */
+            route_names: string[];
+            /** Routes */
+            routes: string[];
+            /** Stop Id */
+            stop_id: string;
+        };
         /**
          * UpdateCaseRequest
          * @description Only the fields sent change. Send `assigned_worker_id: null` to
@@ -1040,6 +2567,14 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /** UpdateOpportunityRequest */
+        UpdateOpportunityRequest: {
+            /**
+             * Active
+             * @description false closes the posting (hidden from residents); true reopens it.
+             */
+            active: boolean;
+        };
         /** UpdateReferralRequest */
         UpdateReferralRequest: {
             /** Outcome */
@@ -1047,10 +2582,25 @@ export interface components {
             status?: components["schemas"]["ReferralStatus"] | null;
         };
         /**
+         * UpdateTaskRequest
+         * @description Only the fields sent change. Send `assigned_worker_id: null` to hand
+         *     the task back to whoever holds the case.
+         */
+        UpdateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            status?: components["schemas"]["TaskStatus"] | null;
+        };
+        /**
          * UpdateType
          * @enum {string}
          */
-        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral";
+        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral" | "reply";
+        /**
+         * UrgencyTier
+         * @enum {string}
+         */
+        UrgencyTier: "emergency" | "urgent" | "routine";
         /** UserSummary */
         UserSummary: {
             /**
@@ -1085,6 +2635,321 @@ export interface components {
          * @enum {string}
          */
         Visibility: "internal" | "public";
+        /** VoiceAppCapabilities */
+        VoiceAppCapabilities: {
+            /** Features */
+            features: string[];
+            /** Handoff Steps */
+            handoff_steps: string[];
+            /** Limitations */
+            limitations: string[];
+            /** Services */
+            services: components["schemas"]["VoiceAppService"][];
+        };
+        /** VoiceAppService */
+        VoiceAppService: {
+            /** App Destination */
+            app_destination: string;
+            /** Description */
+            description: string;
+            key: components["schemas"]["Service"];
+            /** Name */
+            name: string;
+        };
+        /** VoiceCallReview */
+        VoiceCallReview: {
+            /** Callback Consent */
+            callback_consent: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Disposition */
+            disposition: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Need Category */
+            need_category: string | null;
+            /** Referral Count */
+            referral_count: number;
+            /** Referral Names */
+            referral_names: string[];
+            /** Request Id */
+            request_id: string | null;
+            /** Request Number */
+            request_number: number | null;
+            /** Started At */
+            started_at: string | null;
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
+        /** VoiceCallReviewDetail */
+        VoiceCallReviewDetail: {
+            call: components["schemas"]["VoiceCallReview"];
+            /** Referrals */
+            referrals: components["schemas"]["VoiceReferralDetail"][];
+        };
+        /** VoiceCaseReceipt */
+        VoiceCaseReceipt: {
+            /** Access Code */
+            access_code: string;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Number */
+            request_number: number;
+            /** Status */
+            status: string;
+        };
+        /**
+         * VoiceCaseRequest
+         * @description A minimal request the caller explicitly approved for ComForce staff.
+         */
+        VoiceCaseRequest: {
+            /** Approved Summary */
+            approved_summary: string;
+            /** Caller Id */
+            caller_id?: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Consent
+             * @constant
+             */
+            consent: true;
+            /** @default none */
+            contact_method?: components["schemas"]["ContactMethod"];
+            /** Conversation Id */
+            conversation_id: string;
+            /** General Location */
+            general_location?: string | null;
+            /** Safe To Contact */
+            safe_to_contact?: boolean | null;
+        };
+        /** VoiceDashboard */
+        VoiceDashboard: {
+            /** Active Referrals */
+            active_referrals: components["schemas"]["ActiveReferral"][];
+            /** Routes */
+            routes: components["schemas"]["VoiceResource"][];
+            stats: components["schemas"]["ImpactSummary"];
+        };
+        /** VoiceFollowUp */
+        VoiceFollowUp: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /** Disposition */
+            disposition: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Linked At
+             * Format: date-time
+             */
+            linked_at: string;
+            /** Need Category */
+            need_category: string | null;
+            /** Resources */
+            resources: string[];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
+        /** VoiceReferral */
+        VoiceReferral: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+        };
+        /** VoiceReferralDetail */
+        VoiceReferralDetail: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Languages */
+            languages: string[];
+            /** Need Category */
+            need_category: string | null;
+            /** Outcome Reason Code */
+            outcome_reason_code: string | null;
+            outcome_status: components["schemas"]["OutcomeStatus"] | null;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Resource Category */
+            resource_category: string;
+            /** Resource Description */
+            resource_description: string;
+            /** Resource Name */
+            resource_name: string;
+            /** Resource Slug */
+            resource_slug: string;
+            /** Service Area */
+            service_area: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+        };
+        /**
+         * VoiceReferralStatus
+         * @enum {string}
+         */
+        VoiceReferralStatus: "offered" | "accepted" | "transfer_attempted" | "connected" | "declined" | "unavailable";
+        /** VoiceResource */
+        VoiceResource: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Languages */
+            languages: string[];
+            /**
+             * Last Verified At
+             * Format: date-time
+             */
+            last_verified_at: string;
+            /** Name */
+            name: string;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Service Area */
+            service_area: string;
+            /** Slug */
+            slug: string;
+            /** Transfer Approved */
+            transfer_approved: boolean;
+        };
+        /** VoiceRouteRequest */
+        VoiceRouteRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Message */
+            message: string;
+        };
+        /** VoiceRouteResponse */
+        VoiceRouteResponse: {
+            /** Also Relevant */
+            also_relevant: components["schemas"]["Service"][];
+            /** Also Relevant Names */
+            also_relevant_names: string[];
+            /**
+             * App Destination
+             * @default Get Help
+             */
+            app_destination: string;
+            /** Follow Up Question */
+            follow_up_question: string | null;
+            /** Reason */
+            reason: string;
+            service: components["schemas"]["Service"];
+            /** Service Name */
+            service_name: string;
+            /** Urgent */
+            urgent: boolean;
+        };
+        /**
+         * VoiceUpload
+         * @description Where the app uploads a voice debrief: PUT the audio to `upload_url`
+         *     with this Content-Type, then call `POST /records/{id}/uploaded`.
+         */
+        VoiceUpload: {
+            /** Content Type */
+            content_type: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Max Bytes */
+            max_bytes: number;
+            record: components["schemas"]["Record"];
+            /** Upload Url */
+            upload_url: string;
+        };
+        /** WeatherAlert */
+        WeatherAlert: {
+            /** Area */
+            area: string | null;
+            /** Description */
+            description: string;
+            /** Effective At */
+            effective_at: string | null;
+            /** Event */
+            event: string;
+            /** Expires At */
+            expires_at: string | null;
+            /** Headline */
+            headline: string | null;
+            /** Id */
+            id: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Severity */
+            severity: string | null;
+            /** Urgency */
+            urgency: string | null;
+            /** Url */
+            url: string | null;
+        };
+        /** WebhookAccepted */
+        WebhookAccepted: {
+            /**
+             * Duplicate
+             * @default false
+             */
+            duplicate: boolean;
+            /**
+             * Status
+             * @default received
+             */
+            status: string;
+        };
         /** Worker */
         Worker: {
             /** Display Name */
@@ -1461,6 +3326,41 @@ export interface operations {
             };
         };
     };
+    add_task_v1_cases__case_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_case_update_v1_cases__case_id__updates_post: {
         parameters: {
             query?: never;
@@ -1518,6 +3418,26 @@ export interface operations {
             };
         };
     };
+    job_stats_v1_jobs_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStat"][];
+                };
+            };
+        };
+    };
     get_me_v1_me_get: {
         parameters: {
             query?: never;
@@ -1558,6 +3478,718 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_opportunities_v1_opportunities_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                kind?: components["schemas"]["OpportunityKind"] | null;
+                /** @description Only postings open to this audience. */
+                audience?: components["schemas"]["Audience"] | null;
+                /** @description manual: staff postings; imported: from the data loader. */
+                origin?: components["schemas"]["OpportunityOrigin"] | null;
+                /** @description Staff only; ignored for everyone else. */
+                include_closed?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_opportunity_v1_opportunities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_opportunity_v1_opportunities__opportunity_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_opportunity_v1_opportunities__opportunity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calls_v1_public_data_calls_get: {
+        parameters: {
+            query?: {
+                source?: string | null;
+                hours?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DispatchCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    community_needs_v1_public_data_community_needs_get: {
+        parameters: {
+            query?: {
+                tract_geoid?: string | null;
+                measure_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityMeasure"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crime_trends_v1_public_data_crime_trends_get: {
+        parameters: {
+            query?: {
+                offense?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrimeTrendPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    incidents_v1_public_data_incidents_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    incidents_by_tract_v1_public_data_incidents_by_tract_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                /** @description A NIBRS code, e.g. 13A. */
+                offense_code?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TractCount"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sources_v1_public_data_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceHealth"][];
+                };
+            };
+        };
+    };
+    transit_nearby_v1_public_data_transit_nearby_get: {
+        parameters: {
+            query: {
+                latitude: number;
+                longitude: number;
+                radius_m?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransitNearby"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    weather_alerts_v1_public_data_weather_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherAlert"][];
+                };
+            };
+        };
+    };
+    submit_anonymous_request_v1_public_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnonymousRequestReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_anonymous_request_v1_public_requests__number__get: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_anonymous_request_v1_public_requests__number__replies_post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_records_v1_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"][];
+                };
+            };
+        };
+    };
+    create_record_v1_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_voice_record_v1_records_voice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceUpload"];
+                };
+            };
+        };
+    };
+    get_record_v1_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_record_v1_records__record_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_record_v1_records__record_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmedRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_record_v1_records__record_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    voice_uploaded_v1_records__record_id__uploaded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
                 };
             };
             /** @description Validation Error */
@@ -1642,6 +4274,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_my_request_v1_requests__request_id__replies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
                 };
             };
             /** @description Validation Error */
@@ -1895,6 +4562,601 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Worker"][];
+                };
+            };
+        };
+    };
+    list_tasks_v1_tasks_get: {
+        parameters: {
+            query?: {
+                case_id?: string | null;
+                mine?: boolean;
+                open_only?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    app_capabilities_v1_voice_app_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceAppCapabilities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_v1_voice_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceDashboard"];
+                };
+            };
+        };
+    };
+    follow_ups_v1_voice_follow_ups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"][];
+                };
+            };
+        };
+    };
+    create_handoff_v1_voice_handoffs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoffCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_handoff_v1_voice_handoffs_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    impact_v1_voice_impact_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpactSummary"];
+                };
+            };
+        };
+    };
+    opportunities_v1_voice_opportunities_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                kind?: components["schemas"]["OpportunityKind"] | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_referrals_v1_voice_referrals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferralDetail"][];
+                };
+            };
+        };
+    };
+    create_referral_v1_voice_referrals_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReferralRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_referral_v1_voice_referrals__referral_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferralDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_outcome_v1_voice_referrals__referral_id__outcome_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_voice_request_v1_voice_requests_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCaseReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resources_v1_voice_resources_get: {
+        parameters: {
+            query?: {
+                category?: string | null;
+                language?: string | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceResource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    route_voice_request_v1_voice_route_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRouteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_call_reviews_v1_voice_staff_calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCallReview"][];
+                };
+            };
+        };
+    };
+    staff_call_review_v1_voice_staff_calls__call_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCallReviewDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAccepted"];
                 };
             };
         };

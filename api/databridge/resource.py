@@ -1,7 +1,10 @@
+from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
-from models.case import CaseCategory, CreateResourceRequest, Referral, ReferralStatus, Resource
+from models.case_enums import CaseCategory
+from models.loader import ImportedResource, SyncResult
+from models.resource import CreateResourceRequest, Resource
 
 
 class ResourceDatabridge(Databridge):
@@ -18,22 +21,22 @@ class ResourceDatabridge(Databridge):
             "resource_create",
             name=body.name, category=body.category, description=body.description, address=body.address or None,
             neighborhood=body.neighborhood or None, phone=body.phone or None, website=body.website or None,
-            hours=body.hours or None, created_by=created_by,
+            hours=body.hours or None, latitude=body.latitude, longitude=body.longitude, created_by=created_by,
         ))
 
-    async def list_referrals(self, case_id: UUID) -> list[Referral]:
-        return [Referral(**row) for row in await self._rows("referral_list", case_id=case_id)]
+    # --- The data loader (api/loader) ------------------------------------------
 
-    async def add_referral(
-        self, case_id: UUID, resource_id: UUID, status: ReferralStatus, actor_id: UUID
-    ) -> Referral | None:
-        row = await self._first("referral_add", case_id=case_id, resource_id=resource_id, status=status,
-                                actor_id=actor_id)
-        return Referral(**row) if row else None
+    async def sync_upsert(self, item: ImportedResource, seen_at: datetime) -> SyncResult:
+        row = await self._one(
+            "resource_sync_upsert",
+            source=item.source, external_id=item.external_id, name=item.name, category=item.category,
+            description=item.description or "", address=item.address, neighborhood=item.neighborhood,
+            phone=item.phone, website=item.website, hours=item.hours, latitude=item.latitude,
+            longitude=item.longitude, seen_at=seen_at,
+        )
+        return SyncResult(row["result"])
 
-    async def update_referral(
-        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID
-    ) -> Referral | None:
-        row = await self._first("referral_update", case_id=case_id, referral_id=referral_id, status=status,
-                                outcome=outcome, actor_id=actor_id)
-        return Referral(**row) if row else None
+    async def sync_retire(self, source: str, seen_before: datetime) -> int:
+        """Closes `source`'s open resources last seen before `seen_before`."""
+        row = await self._one("resource_sync_retire", source=source, seen_before=seen_before)
+        return int(row["retired"])

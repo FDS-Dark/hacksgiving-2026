@@ -13,23 +13,26 @@ from pydantic import ValidationError
 from databridge.case import CaseDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
+from databridge.task import TaskDatabridge
 from dependencies import get_current_user, get_staff_service
 from errors import ApiError
 from main import app
 from models.case import (
     AddCaseUpdateRequest,
-    CaseCategory,
     CaseDetail,
     SubmitRequest,
     UpdateCaseRequest,
     UpdateReferralRequest,
     Visibility,
 )
+from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
 from models.user import AppUser
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
+from services.resource import ResourceService
 from services.staff import StaffService
+from services.task import TaskService
 from tests.helpers import auth_header
 from tests.unit.fakes import FakeFunctions
 
@@ -66,6 +69,7 @@ def resource_row(**overrides: Any) -> dict[str, Any]:
     return {
         "id": uuid4(), "name": "Ride to Care (Sample)", "category": "transportation", "description": "Rides",
         "address": None, "neighborhood": None, "phone": None, "website": None, "hours": None,
+        "latitude": None, "longitude": None,
         "is_sample": True, "active": True, "created_at": NOW, "created_by": None, "updated_at": NOW,
     } | overrides
 
@@ -75,7 +79,10 @@ def staff_row(user_id: UUID, role: str) -> dict[str, Any]:
 
 
 def service(db: FakeFunctions) -> CaseService:
-    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), StaffService(StaffDatabridge(db)))
+    staff = StaffService(StaffDatabridge(db))
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+    )
 
 
 def worker(user_id: UUID | None = None) -> StaffMember:
@@ -87,24 +94,24 @@ def worker(user_id: UUID | None = None) -> StaffMember:
 
 async def test_a_submission_is_triaged_and_an_urgent_one_is_high_priority(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], case_add_update=[update_row(case)],
-                       request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], case_add_update=[update_row(case)],
+                       request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         return Triage(category=CaseCategory.HOMELESSNESS, urgent=True, reason="Evicted today.")
 
     await service(db).submit_request(sample_user, SubmitRequest(description="We were evicted"), triage)
 
-    (created,) = db.called("case_create")
-    assert (created["category"], created["priority"], created["source"]) == ("homelessness", "high", "public")
-    assert created["requester_id"] == sample_user.id and created["assigned_worker_id"] is None
+    (created,) = db.called("request_create")
+    assert (created["category"], created["priority"]) == ("homelessness", "high")
+    assert created["requester_id"] == sample_user.id and created["access_code_hash"] is None
     (note,) = db.called("case_add_update")
     assert note["visibility"] == "internal" and "Evicted today." in note["content"]
 
 
 async def test_a_failing_triage_never_blocks_a_submission(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         raise TimeoutError
@@ -112,13 +119,13 @@ async def test_a_failing_triage_never_blocks_a_submission(sample_user: AppUser):
     request = await service(db).submit_request(sample_user, SubmitRequest(description="help"), triage)
 
     assert request.id == case["id"]
-    assert db.called("case_create")[0]["category"] == "other"
+    assert db.called("request_create")[0]["category"] == "other"
     assert db.called("case_add_update") == []
 
 
 async def test_a_chosen_category_skips_triage(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         raise AssertionError("not called")
@@ -126,7 +133,7 @@ async def test_a_chosen_category_skips_triage(sample_user: AppUser):
     body = SubmitRequest(description="Need groceries", category=CaseCategory.MEAL_PROGRAMS)
     await service(db).submit_request(sample_user, body, triage)
 
-    assert db.called("case_create")[0]["category"] == "meal_programs"
+    assert db.called("request_create")[0]["category"] == "meal_programs"
 
 
 @pytest.mark.parametrize("field", ["priority", "status", "assigned_worker_id", "requester_id"])
@@ -240,11 +247,12 @@ async def test_the_case_api_is_staff_only(sample_user: AppUser):
                 await client.get("/v1/cases", headers=auth_header()),
                 await client.get("/v1/cases/insights", headers=auth_header()),
                 await client.patch(f"/v1/cases/{uuid4()}", headers=auth_header(), json={"status": "closed"}),
+                await client.post(f"/v1/cases/{uuid4()}/tasks", headers=auth_header(), json={"title": "Call back"}),
                 await client.get("/v1/staff/users", headers=auth_header()),
             ]
     finally:
         app.dependency_overrides.clear()
-    assert [r.status_code for r in responses] == [403, 403, 403, 403]
+    assert [r.status_code for r in responses] == [403, 403, 403, 403, 403]
 
 
 # --- AI assistance -------------------------------------------------------------------
@@ -254,7 +262,7 @@ def detail_with(case: dict[str, Any], updates: list[dict[str, Any]], referrals=(
     from models.case import Case, CaseUpdate, Referral
 
     return CaseDetail(case=Case(**case), updates=[CaseUpdate(**u) for u in updates],
-                      referrals=[Referral(**r) for r in referrals])
+                      referrals=[Referral(**r) for r in referrals], tasks=[])
 
 
 def test_the_model_never_sees_contact_details_and_drafts_never_see_internal_notes():
@@ -280,7 +288,7 @@ def test_rule_based_suggestions_fit_the_category_and_skip_what_is_already_referr
                 "resource_category": "transportation", "resource_phone": None, "resource_website": None,
                 "resource_is_sample": True, "status": "suggested", "outcome": None, "created_by": None,
                 "created_at": NOW, "updated_at": NOW}
-    from models.case import Resource
+    from models.resource import Resource
 
     result = rule_based_suggestions(detail_with(case, [], [referral]),
                                     [Resource(**r) for r in (ride, bus, food, hub)])
@@ -299,7 +307,7 @@ class FakeResponses:
 
 async def test_the_assistant_drops_resources_that_are_not_in_the_directory():
     from models.assist import PickedResource, RecommendationOutput
-    from models.case import Resource
+    from models.resource import Resource
 
     case = case_row()
     real = Resource(**resource_row())
@@ -326,3 +334,43 @@ async def test_an_unavailable_model_is_a_503_not_a_500():
 
 def test_internal_visibility_is_the_default():
     assert AddCaseUpdateRequest(content="x").visibility == Visibility.INTERNAL
+
+
+# --- Resources -----------------------------------------------------------------------
+
+
+async def test_a_new_resource_keeps_its_coordinates():
+    from models.resource import CreateResourceRequest
+
+    db = FakeFunctions(resource_create=lambda p: [resource_row(latitude=p["latitude"], longitude=p["longitude"])])
+    body = CreateResourceRequest(name="Pantry", category="meal_programs", latitude=43.07, longitude=-87.91)
+
+    resource = await ResourceService(ResourceDatabridge(db)).create(worker(), body)
+
+    (sent,) = db.called("resource_create")
+    assert (sent["latitude"], sent["longitude"]) == (43.07, -87.91)
+    assert (resource.latitude, resource.longitude) == (43.07, -87.91)
+
+
+async def test_a_resource_without_coordinates_sends_none():
+    from models.resource import CreateResourceRequest
+
+    db = FakeFunctions(resource_create=[resource_row()])
+
+    resource = await ResourceService(ResourceDatabridge(db)).create(
+        worker(), CreateResourceRequest(name="Hotline", category="other")
+    )
+
+    (sent,) = db.called("resource_create")
+    assert sent["latitude"] is None and sent["longitude"] is None
+    assert resource.latitude is None and resource.longitude is None
+
+
+@pytest.mark.parametrize(
+    "coordinates", [{"latitude": 91}, {"latitude": -90.5}, {"longitude": 180.1}, {"longitude": -181}]
+)
+def test_resource_coordinates_must_be_on_the_globe(coordinates: dict[str, float]):
+    from models.resource import CreateResourceRequest
+
+    with pytest.raises(ValidationError):
+        CreateResourceRequest(name="Pantry", category="meal_programs", **coordinates)

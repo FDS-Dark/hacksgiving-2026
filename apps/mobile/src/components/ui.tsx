@@ -4,7 +4,6 @@ import * as Haptics from 'expo-haptics';
 import { Children, Fragment, isValidElement, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,7 +14,6 @@ import {
   Text,
   TextInput,
   View,
-  type ListRenderItem,
   type StyleProp,
   type TextInputProps,
   type TextProps,
@@ -107,73 +105,6 @@ export function Screen({
     >
       {children}
     </ScrollView>
-  );
-}
-
-/** A screen whose body is a long list: rows render as they scroll into
- *  view. Everything above the rows goes in `header`; wrap each row in
- *  <GroupItem> so the rows read as one grouped list. */
-export function ListScreen<T>({
-  header,
-  data,
-  renderItem,
-  keyExtractor,
-  empty,
-  footer,
-  refreshing,
-  onRefresh,
-}: {
-  header: ReactNode;
-  data: readonly T[];
-  renderItem: ListRenderItem<T>;
-  keyExtractor: (item: T) => string;
-  empty?: ReactNode;
-  footer?: ReactNode;
-  refreshing?: boolean;
-  onRefresh?: () => void;
-}) {
-  const theme = useTheme();
-  const padding = useScreenPadding();
-  return (
-    <FlatList
-      style={{ flex: 1, backgroundColor: theme.bg }}
-      contentContainerStyle={padding}
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      data={data}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      ListHeaderComponent={<View style={{ gap: space.lg, marginBottom: space.lg }}>{header}</View>}
-      ListEmptyComponent={empty ? <>{empty}</> : undefined}
-      ListFooterComponent={footer ? <View style={{ marginTop: space.xl }}>{footer}</View> : undefined}
-      refreshControl={refresher(theme, refreshing, onRefresh)}
-    />
-  );
-}
-
-/** The row above a large title: navigation-bar buttons on either side. */
-export function TopBar({ left, right }: { left?: ReactNode; right?: ReactNode }) {
-  return (
-    <View style={styles.topBar}>
-      <View style={styles.topBarSide}>{left}</View>
-      <View style={[styles.topBarSide, { justifyContent: 'flex-end' }]}>{right}</View>
-    </View>
-  );
-}
-
-/** A screen's large title, with an optional line under it. */
-export function Header({ title, subtitle }: { title: string; subtitle?: string | null }) {
-  return (
-    <View style={{ gap: 2, marginTop: -space.sm }}>
-      <Txt variant="largeTitle" accessibilityRole="header" numberOfLines={2}>
-        {title}
-      </Txt>
-      {subtitle ? (
-        <Txt variant="subhead" tone="secondary">
-          {subtitle}
-        </Txt>
-      ) : null}
-    </View>
   );
 }
 
@@ -437,35 +368,6 @@ export function Button({
   );
 }
 
-/** A bare icon button, as in a navigation bar. */
-export function IconButton({
-  icon,
-  onPress,
-  label,
-  color,
-  disabled,
-}: {
-  icon: IconName;
-  onPress: () => void;
-  label: string;
-  color?: string;
-  disabled?: boolean;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={6}
-      style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.5 }, disabled && { opacity: 0.4 }]}
-    >
-      <Ionicons name={icon} size={24} color={color ?? theme.accent} />
-    </Pressable>
-  );
-}
-
 /** A filter or choice token. */
 export function Chip({
   label,
@@ -546,54 +448,6 @@ export function Field({ label, icon, style, ...rest }: TextInputProps & { label?
           style={[styles.fieldInput, { color: theme.text }, style]}
         />
       </View>
-    </View>
-  );
-}
-
-/** − value + control for decimal amounts. */
-export function Stepper({
-  value,
-  onChange,
-  step = 1,
-  min = 0,
-  unit,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  step?: number;
-  min?: number;
-  unit?: string;
-}) {
-  const theme = useTheme();
-  const n = Number(value) || 0;
-  const set = (next: number) => {
-    tap();
-    onChange(String(Math.max(min, Math.round(next * 100) / 100)));
-  };
-  return (
-    <View style={[styles.stepper, { backgroundColor: theme.fill }]}>
-      <Pressable onPress={() => set(n - step)} hitSlop={6} style={styles.stepperButton} accessibilityRole="button" accessibilityLabel="Decrease">
-        <Ionicons name="remove" size={22} color={theme.accent} />
-      </Pressable>
-      <View style={[styles.stepperValue, { borderColor: theme.separator }]}>
-        <TextInput
-          value={value}
-          onChangeText={onChange}
-          keyboardType="decimal-pad"
-          accessibilityLabel="Amount"
-          selectTextOnFocus
-          selectionColor={theme.accent}
-          style={[type.headline, styles.stepperInput, { color: theme.text }]}
-        />
-        {unit && unit !== 'count' ? (
-          <Txt variant="subhead" tone="secondary">
-            {unit}
-          </Txt>
-        ) : null}
-      </View>
-      <Pressable onPress={() => set(n + step)} hitSlop={6} style={styles.stepperButton} accessibilityRole="button" accessibilityLabel="Increase">
-        <Ionicons name="add" size={22} color={theme.accent} />
-      </Pressable>
     </View>
   );
 }

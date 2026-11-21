@@ -1,173 +1,166 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Redirect, router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BrandLogo } from '@/components/BrandLogo';
-import { Container, Page } from '@/components/Page';
-import { Display, Green, LinkButton, RedRule, Ribbon, SectionHeading } from '@/components/brand';
-import { NAV_ITEMS, type NavItem } from '@/lib/navigation';
-import { SERIF, radius, space, useTheme } from '@/theme/tokens';
+import type { CaseCategory, PublicRequest } from '@/api/types';
+import { Page } from '@/components/Page';
+import { Card, RequestProgress, StatusChip, ResidentHeader, isOpenStatus } from '@/components/resident';
+import type { IconName } from '@/components/ui';
+import { prefersCommunityView } from '@/lib/viewMode';
+import { useResidentRequest, useResidentRequests } from '@/services/requests';
+import { useResources } from '@/services/resources';
+import { useIsStaff } from '@/services/staff';
+import { useMe } from '@/services/user';
+import { radius, space, useTheme } from '@/theme/tokens';
+import { callPhone } from '@/lib/phone';
 
-/** From the "trust row" and stats band on comforcemilwaukee.com. */
-const VALUES = [
-  { icon: 'location' as const, title: 'Community Driven', detail: 'Resident Focused' },
-  { icon: 'time' as const, title: 'Always Ready', detail: '24/7 Response Mindset' },
-  { icon: 'people' as const, title: 'Stronger Together', detail: 'Building Better Futures' },
+/** The four "Find support" tiles on Home; each opens Nearby filtered to its category. */
+const SUPPORT: { category: CaseCategory; label: string; icon: IconName }[] = [
+  { category: 'homelessness', label: 'Shelter', icon: 'bed-outline' },
+  { category: 'meal_programs', label: 'Meals', icon: 'restaurant-outline' },
+  { category: 'transportation', label: 'Rides', icon: 'bus-outline' },
+  { category: 'bridge_to_employment', label: 'Jobs & training', icon: 'briefcase-outline' },
 ];
 
-const STATS = [
-  { number: '10K+', label: 'Residents Served', small: 'Across Milwaukee' },
-  { number: '75+', label: 'Community Initiatives', small: '& Projects' },
-  { number: '24/7', label: 'Response & Support', small: 'When It Matters Most' },
-  { number: '300+', label: 'Volunteers & Partners', small: 'Stronger Together' },
-];
+/** Staff skip the resident home and land on their work (Figma "Today"), unless they switched views. */
+export default function HomeRoute() {
+  const isStaff = useIsStaff();
+  if (isStaff && !prefersCommunityView()) return <Redirect href="/staff" />;
+  return <HomeScreen />;
+}
 
-export default function HomeScreen() {
+/** Figma "Step 3 · Resident · Home": getting help first, then your open request, then support nearby. */
+function HomeScreen() {
   const theme = useTheme();
-  const { width } = useWindowDimensions();
-  const wide = width >= 900;
-  const columns = width >= 1100 ? 3 : width >= 640 ? 2 : 1;
+  const me = useMe();
+  const list = useResidentRequests();
+  const resources = useResources();
+  const open = list.requests.find((r) => isOpenStatus(r.status));
+  const first = me.data?.display_name?.trim().split(/\s+/)[0];
+
+  const count = (category: CaseCategory) => (resources.data ?? []).filter((r) => r.category === category).length;
 
   return (
-    <Page bleed>
-      {/* Hero */}
-      <View style={{ backgroundColor: theme.surface }}>
-        <Container style={[styles.hero, wide && styles.heroWide]}>
-          <View style={[styles.heroCopy, wide && { flex: 1.2 }]}>
-            <Ribbon>We Empower. We Protect. We Uplift.</Ribbon>
-            <Display size={wide ? 60 : 40}>
-              Building Safer, <Green>Stronger</Green> Communities in <Green>Milwaukee</Green>
-            </Display>
-            <Text style={[styles.lede, { color: theme.textSecondary }]}>
-              Find jobs and volunteer opportunities, connect with resources, and get the support you and your family need to thrive.
-            </Text>
-            <View style={styles.actions}>
-              <LinkButton href="/opportunities" label="Find Opportunities" />
-              <LinkButton href="/resources" label="Get Resources" variant="outline" />
+    <Page
+      refreshing={list.isRefetching}
+      onRefresh={() => {
+        list.refetch();
+        resources.refetch();
+      }}
+      contentStyle={{ maxWidth: 560, gap: space.lg }}
+    >
+      <ResidentHeader kicker="COMFORCE MKE" title={first ? `Hi, ${first}` : 'Hi there'} />
+
+      <Pressable onPress={() => router.push('/help')} accessibilityRole="button" accessibilityLabel="Get help now" style={({ pressed }) => pressed && { opacity: 0.8 }}>
+        <Card style={{ gap: space.sm }}>
+          <View style={styles.row}>
+            <Ionicons name="help-buoy-outline" size={26} color={theme.accent} />
+            <Text style={[styles.helpTitle, { color: theme.text }]}>Get help now</Text>
+            <View style={[styles.go, { backgroundColor: theme.fill }]}>
+              <Ionicons name="chevron-forward" size={18} color={theme.text} />
             </View>
           </View>
+          <Text style={[styles.body, { color: theme.textSecondary }]}>
+            Shelter tonight, food, a ride, or a safe place to talk. Tell us what is going on.
+          </Text>
+        </Card>
+      </Pressable>
 
-          {wide ? (
-            <View style={[styles.heroCard, { backgroundColor: theme.bg, borderColor: theme.separator }]}>
-              <BrandLogo mark width={120} />
-              <Text style={[styles.heroCardTitle, { color: theme.text }]}>Serving Milwaukee</Text>
-              <Text style={[styles.heroCardBody, { color: theme.textSecondary }]}>With Compassion, Courage & Commitment</Text>
-              <RedRule />
-            </View>
-          ) : null}
-        </Container>
+      <Pressable
+        onPress={() => callPhone('911')}
+        accessibilityRole="button"
+        accessibilityLabel="In danger right now? Call 911"
+        style={({ pressed }) => [styles.danger, { backgroundColor: theme.dangerSoft }, pressed && { opacity: 0.8 }]}
+      >
+        <Ionicons name="call-outline" size={16} color={theme.danger} />
+        <Text style={[styles.dangerText, { color: theme.danger }]}>In danger right now? Call 911</Text>
+        <Text style={[styles.dangerCall, { color: theme.danger }]}>Call</Text>
+      </Pressable>
 
-        <Container style={[styles.values, { borderTopColor: theme.separator }]}>
-          {VALUES.map((v) => (
-            <View key={v.title} style={styles.value}>
-              <View style={[styles.valueIcon, { backgroundColor: theme.accentSoft }]}>
-                <Ionicons name={v.icon} size={18} color={theme.accent} />
-              </View>
-              <View>
-                <Text style={[styles.valueTitle, { color: theme.text }]}>{v.title}</Text>
-                <Text style={[styles.valueDetail, { color: theme.textSecondary }]}>{v.detail}</Text>
-              </View>
-            </View>
-          ))}
-        </Container>
-      </View>
+      {open ? <OpenRequest request={open} /> : null}
 
-      {/* Sections: the same places as the header bar, with a line on each. */}
-      <Container style={styles.section}>
-        <SectionHeading title="How Can We Help?" kicker="Everything ComForce MKE offers, in one place." />
-        <View style={styles.grid}>
-          {NAV_ITEMS.map((item) => (
-            <View key={item.href} style={{ width: `${100 / columns}%`, padding: space.sm }}>
-              <SectionCard item={item} />
-            </View>
-          ))}
+      <View style={{ gap: space.sm }}>
+        <View style={styles.row}>
+          <Text style={[styles.section, { color: theme.text }]} accessibilityRole="header">
+            Find support
+          </Text>
+          <Text onPress={() => router.replace('/nearby')} accessibilityRole="link" style={[styles.link, { color: theme.accent }]}>
+            See all
+          </Text>
         </View>
-      </Container>
-
-      {/* Stats band */}
-      <View style={{ backgroundColor: theme.charcoal }}>
-        <Container style={[styles.stats, { flexDirection: width >= 640 ? 'row' : 'column' }]}>
-          {STATS.map((s) => (
-            <View key={s.label} style={styles.stat}>
-              <Text style={[styles.statNumber, { color: theme.onCharcoal }]}>{s.number}</Text>
-              <Text style={[styles.statLabel, { color: theme.onCharcoal }]}>{s.label}</Text>
-              <Text style={styles.statSmall}>{s.small}</Text>
-            </View>
-          ))}
-        </Container>
+        <View style={styles.tiles}>
+          {SUPPORT.map((s) => {
+            const n = count(s.category);
+            return (
+              <Pressable
+                key={s.category}
+                onPress={() => router.replace({ pathname: '/nearby', params: { category: s.category } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${s.label}, ${n} places`}
+                style={({ pressed }) => [styles.tile, { backgroundColor: theme.surface, borderColor: theme.separator }, pressed && { opacity: 0.7 }]}
+              >
+                <Ionicons name={s.icon} size={22} color={theme.accent} />
+                <Text style={[styles.tileTitle, { color: theme.text }]}>{s.label}</Text>
+                <Text style={[styles.small, { color: theme.textSecondary }]}>
+                  {resources.isPending ? ' ' : `${n} place${n === 1 ? '' : 's'}`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-
-      {/* Call to action */}
-      <Container style={styles.cta}>
-        <Display size={wide ? 36 : 28}>
-          Ready to <Green>get involved?</Green>
-        </Display>
-        <Text style={[styles.lede, { color: theme.textSecondary, textAlign: 'center' }]}>
-          Volunteer, find work, or lend a hand. Together, we create a safer, stronger MKE.
-        </Text>
-        <LinkButton href="/opportunities" label="See Opportunities" />
-      </Container>
     </Page>
   );
 }
 
-/** A tappable card in the site's "service card" style: icon, title, line, red rule. */
-function SectionCard({ item }: { item: NavItem }) {
+/** "Your request" (Figma home card): status, progress, and the newest message from ComForce. */
+function OpenRequest({ request }: { request: PublicRequest }) {
   const theme = useTheme();
-  const [hovered, setHovered] = useState(false);
+  const detail = useResidentRequest(request.id);
+  const message = [...(detail.data?.updates ?? [])].reverse().find((u) => u.update_type === 'message');
   return (
     <Pressable
-      onPress={() => router.navigate(item.href)}
-      accessibilityRole="link"
-      accessibilityLabel={`${item.label}. ${item.blurb}`}
-      onHoverIn={() => setHovered(true)}
-      onHoverOut={() => setHovered(false)}
-      style={({ pressed }) => [
-        styles.card,
-        {
-          backgroundColor: theme.surface,
-          borderColor: hovered ? theme.accent : theme.separator,
-          boxShadow: theme.shadow,
-          transform: [{ translateY: hovered ? -2 : 0 }],
-        },
-        pressed && { opacity: 0.7 },
-      ]}
+      onPress={() => router.push({ pathname: '/help/request/[id]', params: { id: request.id } })}
+      accessibilityRole="button"
+      accessibilityLabel={`Your request #${request.number}: ${request.title}`}
+      style={({ pressed }) => pressed && { opacity: 0.8 }}
     >
-      <Ionicons name={item.icon} size={36} color={theme.accent} />
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>{item.label}</Text>
-        <Text style={[styles.cardBody, { color: theme.textSecondary }]}>{item.blurb}</Text>
-        <RedRule width={26} style={{ marginTop: space.md }} />
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={theme.textTertiary} />
+      <Card style={{ gap: 10 }}>
+        <View style={styles.row}>
+          <Text style={[styles.kicker, { color: theme.textSecondary }]}>YOUR REQUEST · #{request.number}</Text>
+          <StatusChip status={request.status} />
+        </View>
+        <Text style={[styles.requestTitle, { color: theme.text }]} numberOfLines={2}>
+          {request.title}
+        </Text>
+        <RequestProgress status={request.status} />
+        {message ? (
+          <View style={[styles.row, { alignItems: 'flex-start' }]}>
+            <Ionicons name="chatbubble-outline" size={14} color={theme.textSecondary} style={{ marginTop: 2 }} />
+            <Text style={[styles.small, { color: theme.text, flex: 1 }]} numberOfLines={2}>
+              {message.content}
+            </Text>
+          </View>
+        ) : null}
+      </Card>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { paddingVertical: space.xxl, gap: space.xxl },
-  heroWide: { flexDirection: 'row', alignItems: 'center', paddingVertical: 64 },
-  heroCopy: { gap: space.lg },
-  lede: { fontSize: 17, lineHeight: 26, maxWidth: 560 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, marginTop: space.sm },
-  heroCard: { flex: 0.8, alignItems: 'center', gap: space.sm, padding: 40, borderWidth: 1, borderRadius: radius.md },
-  heroCardTitle: { fontFamily: SERIF, fontSize: 28, fontWeight: '700', marginTop: space.md },
-  heroCardBody: { fontSize: 16, textAlign: 'center' },
-  values: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xl, paddingVertical: space.xl, borderTopWidth: StyleSheet.hairlineWidth },
-  value: { flexDirection: 'row', alignItems: 'center', gap: space.md, minWidth: 200 },
-  valueIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  valueTitle: { fontSize: 15, fontWeight: '800' },
-  valueDetail: { fontSize: 13 },
-  section: { paddingTop: 48, paddingBottom: 40, gap: space.lg },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -space.sm },
-  card: { flexDirection: 'row', alignItems: 'center', gap: space.lg, padding: space.xl, borderWidth: 1, borderRadius: radius.md, minHeight: 130 },
-  cardTitle: { fontSize: 18, fontWeight: '800' },
-  cardBody: { fontSize: 15, lineHeight: 21, marginTop: 2 },
-  stats: { paddingVertical: 40, gap: space.xl, justifyContent: 'space-between' },
-  stat: { flex: 1, gap: 2 },
-  statNumber: { fontFamily: SERIF, fontSize: 44, lineHeight: 46, fontWeight: '900' },
-  statLabel: { fontSize: 16, fontWeight: '800', marginTop: space.xs },
-  statSmall: { fontSize: 13, color: 'rgba(255,255,255,0.65)' },
-  cta: { alignItems: 'center', gap: space.lg, paddingVertical: 56 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, justifyContent: 'space-between' },
+  helpTitle: { flex: 1, fontSize: 22, fontWeight: '800' },
+  go: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  body: { fontSize: 15, lineHeight: 21 },
+  danger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
+  dangerText: { fontSize: 14, fontWeight: '600', flex: 1 },
+  dangerCall: { fontSize: 14, fontWeight: '800' },
+  section: { fontSize: 17, fontWeight: '800' },
+  link: { fontSize: 14, fontWeight: '700' },
+  kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, flex: 1 },
+  requestTitle: { fontSize: 18, fontWeight: '700' },
+  small: { fontSize: 13, lineHeight: 18 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tile: { flexBasis: '47%', flexGrow: 1, gap: 6, padding: space.md, borderWidth: 1, borderRadius: 14 },
+  tileTitle: { fontSize: 16, fontWeight: '700' },
 });

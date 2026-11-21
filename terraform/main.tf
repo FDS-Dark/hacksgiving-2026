@@ -113,8 +113,9 @@ resource "kubernetes_manifest" "hacksgiving_db_es" {
   }
 }
 
-# Seed manually: vault kv put secret/deployments/hacksgiving/app jwt_secret="..."
-# Unused once auth0_domain is set, but the key must still exist.
+# Seed manually with jwt_secret plus independent voice secrets. The JWT value
+# is unused once auth0_domain is set, but all keys must still exist so External
+# Secrets can render the deployment Secret.
 resource "kubernetes_manifest" "hacksgiving_jwt_es" {
   manifest = {
     apiVersion = "external-secrets.io/v1beta1"
@@ -131,7 +132,9 @@ resource "kubernetes_manifest" "hacksgiving_jwt_es" {
         template = {
           engineVersion = "v2"
           data = {
-            APP__JWT__SECRET = "{{ .jwt_secret }}"
+            APP__JWT__SECRET                      = "{{ .jwt_secret }}"
+            APP__VOICE__ELEVENLABS_WEBHOOK_SECRET = "{{ .elevenlabs_webhook_secret }}"
+            APP__VOICE__TOOL_SECRET               = "{{ .voice_tool_secret }}"
           }
         }
       }
@@ -208,8 +211,15 @@ resource "kubernetes_deployment" "hacksgiving_api" {
           env_from {
             secret_ref { name = "${local.api_name}-jwt" }
           }
+          # Voice debriefs (storage.tf). Optional: without it voice is off.
+          env_from {
+            secret_ref {
+              name     = local.storage_secret_name
+              optional = true
+            }
+          }
           dynamic "env" {
-            for_each = local.api_env
+            for_each = merge(local.api_env, local.storage_env)
             content {
               name  = env.key
               value = env.value
