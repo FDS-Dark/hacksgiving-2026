@@ -5,6 +5,9 @@ ComForce MKE's app: a FastAPI backend (`api/`), Postgres migrations
 staff side. Each person runs the whole stack on their own machine and tests
 on their own phone with Expo Go.
 
+**Picking up the work?** Read `docs/handoff.md` first: what's built, what's
+half deployed, what's unverified, and what's next.
+
 ## Run it locally
 
 Do these in order; each step ends on a check.
