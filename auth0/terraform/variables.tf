@@ -17,6 +17,7 @@ variable "dev_callback_urls" {
   default = [
     "exp://100.102.172.1:8081/--/auth",
     "exp://100.107.6.4:8081/--/auth",
+    "exp://100.70.127.16:8081/--/auth",
   ]
 }
 
