@@ -42,6 +42,10 @@ resource "kubernetes_deployment" "hacksgiving_worker" {
     name      = local.worker_name
     namespace = local.namespace
   }
+  # Don't hold the whole apply on the worker: it serves no traffic, and until
+  # openai_api_key is in Vault its pod waits for the Secret. It starts on its
+  # own once the key is there (External Secrets refreshes hourly).
+  wait_for_rollout = false
   spec {
     replicas = var.worker_replicas
     selector { match_labels = { app = local.worker_name } }
