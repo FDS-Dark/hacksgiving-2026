@@ -69,6 +69,7 @@ def resource_row(**overrides: Any) -> dict[str, Any]:
     return {
         "id": uuid4(), "name": "Ride to Care (Sample)", "category": "transportation", "description": "Rides",
         "address": None, "neighborhood": None, "phone": None, "website": None, "hours": None,
+        "latitude": None, "longitude": None,
         "is_sample": True, "active": True, "created_at": NOW, "created_by": None, "updated_at": NOW,
     } | overrides
 
@@ -246,11 +247,12 @@ async def test_the_case_api_is_staff_only(sample_user: AppUser):
                 await client.get("/v1/cases", headers=auth_header()),
                 await client.get("/v1/cases/insights", headers=auth_header()),
                 await client.patch(f"/v1/cases/{uuid4()}", headers=auth_header(), json={"status": "closed"}),
+                await client.post(f"/v1/cases/{uuid4()}/tasks", headers=auth_header(), json={"title": "Call back"}),
                 await client.get("/v1/staff/users", headers=auth_header()),
             ]
     finally:
         app.dependency_overrides.clear()
-    assert [r.status_code for r in responses] == [403, 403, 403, 403]
+    assert [r.status_code for r in responses] == [403, 403, 403, 403, 403]
 
 
 # --- AI assistance -------------------------------------------------------------------
@@ -332,3 +334,43 @@ async def test_an_unavailable_model_is_a_503_not_a_500():
 
 def test_internal_visibility_is_the_default():
     assert AddCaseUpdateRequest(content="x").visibility == Visibility.INTERNAL
+
+
+# --- Resources -----------------------------------------------------------------------
+
+
+async def test_a_new_resource_keeps_its_coordinates():
+    from models.resource import CreateResourceRequest
+
+    db = FakeFunctions(resource_create=lambda p: [resource_row(latitude=p["latitude"], longitude=p["longitude"])])
+    body = CreateResourceRequest(name="Pantry", category="meal_programs", latitude=43.07, longitude=-87.91)
+
+    resource = await ResourceService(ResourceDatabridge(db)).create(worker(), body)
+
+    (sent,) = db.called("resource_create")
+    assert (sent["latitude"], sent["longitude"]) == (43.07, -87.91)
+    assert (resource.latitude, resource.longitude) == (43.07, -87.91)
+
+
+async def test_a_resource_without_coordinates_sends_none():
+    from models.resource import CreateResourceRequest
+
+    db = FakeFunctions(resource_create=[resource_row()])
+
+    resource = await ResourceService(ResourceDatabridge(db)).create(
+        worker(), CreateResourceRequest(name="Hotline", category="other")
+    )
+
+    (sent,) = db.called("resource_create")
+    assert sent["latitude"] is None and sent["longitude"] is None
+    assert resource.latitude is None and resource.longitude is None
+
+
+@pytest.mark.parametrize(
+    "coordinates", [{"latitude": 91}, {"latitude": -90.5}, {"longitude": 180.1}, {"longitude": -181}]
+)
+def test_resource_coordinates_must_be_on_the_globe(coordinates: dict[str, float]):
+    from models.resource import CreateResourceRequest
+
+    with pytest.raises(ValidationError):
+        CreateResourceRequest(name="Pantry", category="meal_programs", **coordinates)

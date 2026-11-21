@@ -1,4 +1,5 @@
 import type { Case } from '@/api/types';
+import { isOpenCase, isUrgentCase } from '@/lib/queue';
 
 export type AttentionReason = 'urgent' | 'new' | 'unassigned';
 
@@ -7,17 +8,14 @@ export interface AttentionItem {
   reason: AttentionReason;
 }
 
-const isOpen = (c: Case) => c.status !== 'resolved' && c.status !== 'closed';
-const isUrgent = (c: Case) => c.priority === 'critical' || c.priority === 'high';
-
 /**
- * The dashboard's "Needs attention" list: urgent open cases first, then new
+ * Today's "Needs attention" list: urgent open cases first, then new
  * (untriaged) ones, then anything still unassigned. Each case shows once,
  * under its most pressing reason. Keeps the API's order within each group
  * (most urgent, then newest).
  */
 export function needsAttention(cases: readonly Case[], limit = 5): AttentionItem[] {
-  const open = cases.filter(isOpen);
+  const open = cases.filter(isOpenCase);
   const seen = new Set<string>();
   const out: AttentionItem[] = [];
   const take = (reason: AttentionReason, match: (c: Case) => boolean) => {
@@ -29,7 +27,7 @@ export function needsAttention(cases: readonly Case[], limit = 5): AttentionItem
       }
     }
   };
-  take('urgent', isUrgent);
+  take('urgent', isUrgentCase);
   take('new', (c) => c.status === 'new');
   take('unassigned', (c) => !c.assigned_worker_id);
   return out;

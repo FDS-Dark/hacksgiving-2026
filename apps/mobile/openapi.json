@@ -940,6 +940,32 @@
             ],
             "title": "Hours"
           },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
           "name": {
             "maxLength": 160,
             "minLength": 1,
@@ -988,6 +1014,46 @@
           "category"
         ],
         "title": "CreateResourceRequest",
+        "type": "object"
+      },
+      "CreateTaskRequest": {
+        "description": "A task a worker adds to a case. Without `assigned_worker_id` it\nfollows the case (whoever holds it).",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "CreateTaskRequest",
         "type": "object"
       },
       "DraftMessage": {
@@ -1486,6 +1552,28 @@
             "title": "Is Sample",
             "type": "boolean"
           },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1534,6 +1622,8 @@
           "phone",
           "website",
           "hours",
+          "latitude",
+          "longitude",
           "is_sample",
           "active",
           "created_at"
@@ -3269,6 +3359,60 @@
           }
         },
         "summary": "Update Referral",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/tasks": {
+      "post": {
+        "description": "Add a task to the case, optionally due at a time and assigned to a\nworker (422 if they aren't staff). Without an assignee it follows the\ncase. Noted in the case history.",
+        "operationId": "add_task_v1_cases__case_id__tasks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Task",
         "tags": [
           "cases"
         ]

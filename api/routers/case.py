@@ -5,7 +5,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from dependencies import get_case_assistant, get_case_service, get_current_worker, get_resource_service
+from dependencies import (
+    get_case_assistant,
+    get_case_service,
+    get_current_worker,
+    get_resource_service,
+    get_task_service,
+)
 from models.assist import CaseSummary, DraftMessage, ResourceSuggestions
 from models.case import (
     AddCaseUpdateRequest,
@@ -21,10 +27,12 @@ from models.case import (
     UpdateReferralRequest,
 )
 from models.staff import StaffMember
+from models.task import CreateTaskRequest, Task
 from services import case_assist
 from services.case import CaseService
 from services.case_assist import CaseAssistant
 from services.resource import ResourceService
+from services.task import TaskService
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -103,6 +111,19 @@ async def add_case_update(
     """An internal note (default), or with `visibility: public` a message
     the requester sees on their request."""
     return await service.add_update(worker, case_id, body)
+
+
+@router.post("/{case_id}/tasks", response_model=Task, status_code=status.HTTP_201_CREATED)
+async def add_task(
+    case_id: UUID,
+    body: CreateTaskRequest,
+    worker: StaffMember = Depends(get_current_worker),
+    service: TaskService = Depends(get_task_service),
+) -> Task:
+    """Add a task to the case, optionally due at a time and assigned to a
+    worker (422 if they aren't staff). Without an assignee it follows the
+    case. Noted in the case history."""
+    return await service.add(worker, case_id, body)
 
 
 @router.post("/{case_id}/referrals", response_model=Referral, status_code=status.HTTP_201_CREATED)

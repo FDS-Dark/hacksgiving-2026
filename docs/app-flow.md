@@ -165,17 +165,18 @@ flowchart LR
 |---|---|---|---|
 | Launch / Welcome | everyone | 0 | **built** (splash in `_layout.tsx`, `/sign-in`) |
 | Resident tabs: Home, Requests, Nearby, Me | resident | 0 / 1 | **built** (`/`, `/requests`, `/nearby`, `/me`) |
-| Place details | resident | 1 | **built** (`/nearby/[id]`); no map of places yet: resources have no coordinates |
+| Nearby map + Place details | resident | 1 | **built** (`/nearby`, `/place/[id]`); resources have coordinates since 0009 |
 | Get help (form) | resident | 1 | have (`/help`, works signed out) |
 | Request received | resident | 1 | have (`/help/received`) |
-| My request (thread) | resident | 1 | have (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
+| My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
 | Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
 | Notifications ask, notification settings | resident | 2 | new (no push yet) |
 | New record (text, then voice) | worker | 1 / 3 | new |
 | Review extraction | worker | 3 | new |
 | My tasks | worker | 1 | new |
 | Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
-| Case detail (history, tasks) | staff | 1 | **built** without tasks (`/staff/cases/[id]`) |
+| Case (tasks, history, referrals, guide), Update sheet, Message resident | staff | 1 | **built** to Figma S3–S5 (`/staff/cases/[id]`, `/staff/cases/[id]/messages`) |
+| New case | staff | 1 | **built** to Figma S6 (`/staff/cases/new`), with suggested service and urgency from `/v1/route` |
 | On-call toggle / schedule | worker, admin | 2 | new |
 | Push → accept / hand off | on-call | 2 | new |
 | Insights | admin | 3 | **built** from case stats (`/staff/insights`); patterns wait on step 3 |
@@ -191,7 +192,7 @@ flowchart LR
 | `cases` | one request or incident | have |
 | `case_updates` | history, notes, public messages | have |
 | `resources`, `case_referrals` | partner directory, referrals | have |
-| `tasks` | generated work items per case | have (API; no screen yet) |
+| `tasks` | generated work items per case | have (API, and the case's Tasks tab; workers can add tasks) |
 | `records` | captured text / transcript + extraction (no audio kept) | new |
 | `on_call_shifts`, `push_tokens` | who's on call, where to notify | new |
 | `shares` | what was shared with whom, when | new |

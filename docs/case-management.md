@@ -143,6 +143,10 @@ ride). Due in 1 h and 24 h, or 15 min and 2 h when the case is high priority
 or an incident / missing person. A task with no assignee follows the case's.
 `CaseDetail` includes `tasks`. Rules first; AI can replace `plan_tasks` later.
 
+Workers add their own with `POST /v1/cases/{case_id}/tasks` (`title`,
+optional `due_at` and `assigned_worker_id`); it logs an internal note on
+the case. `PATCH /v1/tasks/{id}` finishes or reopens one.
+
 ## AI rules (services/case_assist.py)
 
 - Suggestions only: the AI never changes a case, sends a message or closes anything.

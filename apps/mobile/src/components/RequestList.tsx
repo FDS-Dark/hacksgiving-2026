@@ -9,7 +9,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PublicRequest } from '@/api/types';
 import { BigButton, Card, Input, RequestProgress, StatusChip, isOpenStatus, requestHeading, updatedAgo } from '@/components/resident';
-import { Button, Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
+import { CaseListSkeleton } from '@/components/Skeleton';
+import { Button, Chip, Chips, EmptyState, ErrorBanner } from '@/components/ui';
 import { useFindRequest, useForgetRequest, useResidentRequests } from '@/services/requests';
 import { space, useTheme } from '@/theme/tokens';
 
@@ -18,7 +19,7 @@ export function RequestList() {
   const forget = useForgetRequest();
   const [show, setShow] = useState<'open' | 'closed'>('open');
 
-  if (list.isPending) return <Loading label="Loading your requests" />;
+  if (list.isPending) return <CaseListSkeleton rows={3} />;
 
   const open = list.requests.filter((r) => isOpenStatus(r.status));
   const closed = list.requests.filter((r) => !isOpenStatus(r.status));

@@ -343,7 +343,12 @@ export function isOpenStatus(status: CaseStatus) {
 
 /** Where a request stands, as steps for the progress bar (Figma R1). */
 const STEP: Record<CaseStatus, number> = { new: 1, in_progress: 2, awaiting_resources: 3, resolved: 4, closed: 4 };
-const REQUEST_STEPS = 4;
+export const REQUEST_STEPS = 4;
+
+/** Which of the four steps a request is on (1 = received). */
+export function requestStep(status: CaseStatus) {
+  return STEP[status];
+}
 
 /** Four segments, filled up to where the request stands. */
 export function RequestProgress({ status }: { status: CaseStatus }) {

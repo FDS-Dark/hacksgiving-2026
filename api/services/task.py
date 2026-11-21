@@ -11,7 +11,7 @@ from databridge.task import TaskDatabridge
 from errors import ApiError, not_found
 from models.case import Case, ContactMethod
 from models.case_enums import CaseCategory, CasePriority
-from models.task import Task, TaskFilters, UpdateTaskRequest
+from models.task import CreateTaskRequest, Task, TaskFilters, UpdateTaskRequest
 from models.staff import StaffMember
 from services.staff import StaffService
 
@@ -131,12 +131,23 @@ class TaskService:
             limit=filters.limit,
         )
 
+    async def add(self, worker: StaffMember, case_id: UUID, body: CreateTaskRequest) -> Task:
+        """A task a worker adds by hand; noted in the case history."""
+        await self._check_assignee(body.assigned_worker_id)
+        task = await self.tasks.add(case_id, body.title, body.due_at, body.assigned_worker_id, worker.id)
+        if task is None:
+            raise not_found("case")
+        return task
+
     async def update(self, worker: StaffMember, task_id: UUID, changes: UpdateTaskRequest) -> Task:
         if not changes.model_fields_set:
             raise ApiError(422, "no_changes", "Send at least one field to change")
-        if changes.assigned_worker_id is not None and not await self.staff.is_worker(changes.assigned_worker_id):
-            raise ApiError(422, "not_a_worker", "Tasks can only be assigned to ComForce staff")
+        await self._check_assignee(changes.assigned_worker_id)
         task = await self.tasks.update(task_id, worker.id, changes.status, changes.assigned_worker_id, changes.unassign)
         if task is None:
             raise not_found("task")
         return task
+
+    async def _check_assignee(self, worker_id: UUID | None) -> None:
+        if worker_id is not None and not await self.staff.is_worker(worker_id):
+            raise ApiError(422, "not_a_worker", "Tasks can only be assigned to ComForce staff")

@@ -2,9 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { Case } from '@/api/types';
 import { Page } from '@/components/Page';
-import { ErrorBanner, Loading } from '@/components/ui';
+import { RefreshError } from '@/components/RefreshError';
+import { CaseListSkeleton, TilesSkeleton } from '@/components/Skeleton';
+import { CaseLine } from '@/components/staff/CaseLine';
+import { ErrorBanner } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
 import { needsAttention } from '@/lib/attention';
@@ -46,30 +48,31 @@ export default function TodayScreen() {
         </Pressable>
       </View>
 
-      {insights.error ? <ErrorBanner error={insights.error} onRetry={refresh} /> : null}
+      {insights.error && !insights.data ? <ErrorBanner error={insights.error} onRetry={refresh} /> : null}
+      <RefreshError query={open} what="your cases" />
       {stats ? (
         <View style={styles.tiles}>
-          <StatTile label="Active" value={stats.active} onPress={() => router.push('/staff/cases?open=1')} />
-          <StatTile label="New" value={stats.new} color={statusColor(theme, 'new')} onPress={() => router.push('/staff/cases?status=new')} />
-          <StatTile label="Urgent" value={stats.high_priority_active} color={theme.danger} onPress={() => router.push('/staff/cases?open=1&urgent=1')} />
+          <StatTile label="Active" value={stats.active} onPress={() => router.push('/staff/cases?view=open')} />
+          <StatTile label="New" value={stats.new} color={statusColor(theme, 'new')} onPress={() => router.push('/staff/cases?view=new')} />
+          <StatTile label="Urgent" value={stats.high_priority_active} color={theme.danger} onPress={() => router.push('/staff/cases?view=urgent')} />
           <StatTile
             label="Unassigned"
             value={stats.unassigned_active}
             color={priorityColor(theme, 'high')}
-            onPress={() => router.push('/staff/cases?open=1&assigned=unassigned')}
+            onPress={() => router.push('/staff/cases?view=unassigned')}
           />
         </View>
       ) : insights.isPending ? (
-        <Loading />
+        <TilesSkeleton />
       ) : null}
 
       {open.isPending ? (
-        <Loading />
-      ) : open.error ? (
+        <CaseListSkeleton rows={4} />
+      ) : !open.data ? (
         <ErrorBanner error={open.error} onRetry={() => open.refetch()} />
       ) : (
         <>
-          <Section title="Assigned to you" link={mine.length ? `${mine.length} open` : undefined} href="/staff/cases?open=1&assigned=mine">
+          <Section title="Assigned to you" link={mine.length ? `${mine.length} open` : undefined} href="/staff/cases?view=mine">
             {mine.length ? (
               mine.slice(0, 5).map((c) => (
                 <CaseLine key={c.id} item={c} color={priorityColor(theme, c.priority)} line={`${CATEGORY_LABEL[c.category]} · updated ${timeAgo(c.last_activity_at)}`} />
@@ -79,7 +82,7 @@ export default function TodayScreen() {
             )}
           </Section>
 
-          <Section title="Needs attention" link="Queue" href="/staff/cases?open=1">
+          <Section title="Needs attention" link="Queue" href="/staff/cases?view=open">
             {needsAttention(open.data).map(({ item: c, reason }) => {
               const color = reason === 'urgent' ? theme.danger : reason === 'new' ? statusColor(theme, 'new') : priorityColor(theme, 'high');
               const line =
@@ -117,29 +120,6 @@ function Section({ title, link, href, children }: { title: string; link?: string
   );
 }
 
-/** One case as a row with a colored rule: the reason it's here, in the rule's color. */
-function CaseLine({ item: c, color, line }: { item: Case; color: string; line: string }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/staff/cases/[id]', params: { id: c.id } })}
-      accessibilityRole="link"
-      accessibilityLabel={`Case ${c.number}: ${c.title}. ${line}`}
-      style={({ pressed }) => [styles.line, { backgroundColor: theme.surface, borderColor: theme.separator }, pressed && { opacity: 0.7 }]}
-    >
-      <View style={[styles.rule, { backgroundColor: color }]} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[type.subhead, { color: theme.text, fontWeight: '600' }]} numberOfLines={1}>
-          #{c.number} {c.title}
-        </Text>
-        <Text style={[type.caption, { color }]} numberOfLines={1}>
-          {line}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
-    </Pressable>
-  );
-}
 
 function Quiet({ icon, text }: { icon: 'person-outline' | 'checkmark-circle'; text: string }) {
   const theme = useTheme();
@@ -157,7 +137,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800' },
   tiles: { flexDirection: 'row', gap: 8 },
   sectionHead: { flexDirection: 'row', alignItems: 'center' },
-  line: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: space.md },
-  rule: { width: 4, height: 34, borderRadius: 2 },
   quiet: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
 });

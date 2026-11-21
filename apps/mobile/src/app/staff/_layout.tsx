@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +34,9 @@ export default function StaffLayout() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const status = useStaffStatus();
+  const pathname = usePathname();
+  // Flows with their own bottom bar (Figma S5 composer, S6 New case) cover the tabs.
+  const fullScreen = pathname === '/staff/cases/new' || pathname.endsWith('/messages');
 
   let body;
   if (status.isPending) body = <Loading label="Checking your staff access" />;
@@ -46,13 +49,14 @@ export default function StaffLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="cases/index" />
           <Stack.Screen name="cases/new" />
-          <Stack.Screen name="cases/[id]" />
+          <Stack.Screen name="cases/[id]/index" />
+          <Stack.Screen name="cases/[id]/messages" />
           <Stack.Screen name="map" />
           <Stack.Screen name="me" />
           <Stack.Screen name="team" />
           <Stack.Screen name="insights" />
         </Stack>
-        <TabBar tabs={TABS} />
+        {fullScreen ? null : <TabBar tabs={TABS} />}
       </>
     );
   }

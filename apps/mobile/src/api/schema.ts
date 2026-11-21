@@ -199,6 +199,28 @@ export interface paths {
         patch: operations["update_referral_v1_cases__case_id__referrals__referral_id__patch"];
         trace?: never;
     };
+    "/v1/cases/{case_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Task
+         * @description Add a task to the case, optionally due at a time and assigned to a
+         *     worker (422 if they aren't staff). Without an assignee it follows the
+         *     case. Noted in the case history.
+         */
+        post: operations["add_task_v1_cases__case_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/updates": {
         parameters: {
             query?: never;
@@ -1120,6 +1142,10 @@ export interface components {
             description?: string;
             /** Hours */
             hours?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
@@ -1128,6 +1154,19 @@ export interface components {
             phone?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /**
+         * CreateTaskRequest
+         * @description A task a worker adds to a case. Without `assigned_worker_id` it
+         *     follows the case (whoever holds it).
+         */
+        CreateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Title */
+            title: string;
         };
         /**
          * DraftMessage
@@ -1338,6 +1377,10 @@ export interface components {
             id: string;
             /** Is Sample */
             is_sample: boolean;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
@@ -2073,6 +2116,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Referral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_task_v1_cases__case_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
                 };
             };
             /** @description Validation Error */

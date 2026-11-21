@@ -113,3 +113,34 @@ async def test_workers_see_and_close_the_tasks_on_cases_they_hold(api, worker):
 
     member = auth_header(f"auth0|{uuid4().hex}")
     assert (await api.get("/v1/tasks", headers=member)).status_code == 403
+
+
+async def test_a_worker_adds_a_task_to_a_case(api, worker):
+    request = (await api.post("/v1/public/requests", json={
+        "description": "Need a ride to court on Monday.", "category": "transportation", "contact_method": "none",
+    })).json()["request"]
+    header = worker["header"]
+    member = auth_header(f"auth0|{uuid4().hex}")
+    member_id = (await api.get("/v1/me", headers=member)).json()["id"]
+
+    added = await api.post(f"/v1/cases/{request['id']}/tasks", headers=header, json={
+        "title": "Confirm the court date", "due_at": "2026-11-23T09:00:00Z", "assigned_worker_id": worker["id"],
+    })
+    assert added.status_code == 201
+    task = added.json()
+    assert (task["case_id"], task["title"], task["status"]) == (request["id"], "Confirm the court date", "open")
+    assert (task["assigned_worker_id"], task["created_by"]) == (worker["id"], worker["id"])
+    assert task["due_at"].startswith("2026-11-23T09:00:00")
+
+    case = (await api.get(f"/v1/cases/{request['id']}", headers=header)).json()
+    assert task["id"] in [t["id"] for t in case["tasks"]]
+    assert case["updates"][-1]["content"] == "Task added: Confirm the court date"
+    assert case["updates"][-1]["visibility"] == "internal"
+
+    missing = await api.post(f"/v1/cases/{uuid4()}/tasks", headers=header, json={"title": "x"})
+    to_member = await api.post(f"/v1/cases/{request['id']}/tasks", headers=header,
+                               json={"title": "x", "assigned_worker_id": member_id})
+    by_member = await api.post(f"/v1/cases/{request['id']}/tasks", headers=member, json={"title": "x"})
+    assert (missing.status_code, missing.json()["code"]) == (404, "case_not_found")
+    assert (to_member.status_code, to_member.json()["code"]) == (422, "not_a_worker")
+    assert by_member.status_code == 403
