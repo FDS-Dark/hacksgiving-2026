@@ -41,32 +41,40 @@ Expo Go talks to whatever `apps/mobile/.env.local` says.
 
 ## Local development
 
-Needs Docker, `uv` and Node 22.
+Needs Docker (running), `uv`, Node 22, Expo Go on your phone, and ideally
+Tailscale (the team's Auth0 sign-in callbacks are registered per Tailscale
+IP).
 
-1. **Database**
-   ```bash
-   cd database
-   cp .env.example .env
-   docker compose up -d postgres
-   ./migrate.sh --local   # Alembic upgrade + the dev user
-   ```
-2. **API**
-   ```bash
-   cd api
-   cp example.env .env
-   uv sync
-   uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   uv run python scripts/dev_token.py   # a token for the seeded dev user
-   ```
-3. **Mobile**
-   ```bash
-   cd apps/mobile
-   cp .env.example .env.local    # API URL (LAN/Tailscale IP on a phone) + dev token
-   npm ci
-   npx expo start                # Expo Go
-   ```
-   To install a standalone build on an iPhone, see
-   [`apps/mobile/README.md`](apps/mobile/README.md#installing-on-an-iphone-no-testflight).
+```bash
+scripts/dev-setup.sh   # once, and again after pulls that change env files or migrations
+scripts/dev.sh         # API + background worker + Expo; Ctrl+C stops all three
+```
+
+Then scan the QR code with your phone. That's the whole app, on your machine:
+the resident and staff apps, and Phantom debriefs (typed and voice).
+
+`dev-setup.sh` creates `database/.env`, `api/.env` and
+`apps/mobile/.env.local` from the examples (or adds what's missing to yours,
+never overwriting), fills in your Tailscale or LAN IP for the phone, starts
+Postgres and the local storage container, runs the migrations and installs
+dependencies. It then tells you what's left, which is usually two things:
+
+- **`APP__OPENAI__API_KEY` in `api/.env`**: debriefs and the "Suggest" button
+  need it (it isn't in git).
+- **Your Auth0 callback**, if your IP is new: add `exp://<your IP>:8081/--/auth`
+  to `dev_callback_urls` in `auth0/terraform/variables.tf` and let CI apply it.
+
+The pieces separately, if you'd rather:
+
+```bash
+cd database && docker compose up -d && ./migrate.sh --local        # Postgres + storage, migrations, dev user
+cd api && uv sync && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+cd api && uv run python -m worker                                 # background jobs (debriefs)
+cd apps/mobile && npm ci && npx expo start                         # Expo Go
+```
+
+To install a standalone build on an iPhone, see
+[`apps/mobile/README.md`](apps/mobile/README.md#installing-on-an-iphone-no-testflight).
 
 ## Tests
 
