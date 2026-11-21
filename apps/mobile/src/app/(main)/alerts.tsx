@@ -133,7 +133,7 @@ export default function AlertsScreen() {
       ) : calls.data?.length ? (
         <Group
           header={`Live dispatch feed · ${calls.data.length}`}
-          footer="Safety-related calls from the last two hours, refreshed every two minutes. Locations are shown by block only."
+          footer="Safety-related calls from the last two hours, updated every five minutes. Locations are shown by block only."
         >
           {calls.data.slice(0, 8).map((call) => (
             <Row

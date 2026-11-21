@@ -1,7 +1,7 @@
 /**
  * The general 911-call picture under the safety map: totals, calls per hour,
  * category / district / call-type breakdowns, and the latest calls. All of it
- * comes from GET /v1/safety/calls (ingested from MPD every two minutes).
+ * comes from GET /v1/safety/calls (the API ingests MPD's page every five minutes).
  *
  * Charts follow one rule set: thin bars with 4px rounded ends, values in text
  * ink, a single hue for magnitude (districts, hours) and the map's fixed

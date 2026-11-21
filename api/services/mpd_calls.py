@@ -1,8 +1,8 @@
 """Milwaukee Police Department calls for service: scrape, geocode, store,
 summarize.
 
-Ingestion (`MpdCallService.ingest`, run every two minutes by
-scripts/ingest_mpd_calls.py) reads the MPD page, parses its one table,
+Ingestion (`MpdCallService.ingest`, run every five minutes by the API's
+background loop, services/mpd_scheduler.py) reads the MPD page, parses its one table,
 places each call on the map, and upserts by call number. The page lists
 calls 30-90 minutes after dispatch and only refreshes every five minutes, so
 most runs only update statuses.
@@ -189,6 +189,20 @@ def parse_calls_page(page: str) -> list[ParsedCall]:
     return list(calls.values())
 
 
+class MpdRateLimited(RuntimeError):
+    """The city answered with its 'Unreasonable amount of requests' row."""
+
+
+_RATE_LIMIT = re.compile(r"unreasonable amount of requests|current limit is \d+", re.I)
+
+
+def is_rate_limited(page: str) -> bool:
+    """The page allows 10 requests per 30 minutes per IP; past that its one
+    table row reads 'You have made 14 calls in the last 30 minutes, current
+    limit is 10.' with nature 'Unreasonable amount of requests'."""
+    return bool(_RATE_LIMIT.search(page))
+
+
 # ── Categories ───────────────────────────────────────────────────────────────
 
 # First match wins, so the specific terms come before the general ones.
@@ -292,7 +306,11 @@ class MpdCallService:
         """One scrape. Records the run (ok or not); a failure re-raises."""
         rows_seen = 0
         try:
-            parsed = parse_calls_page(await source.fetch_calls_page())
+            page = await source.fetch_calls_page()
+            if is_rate_limited(page):
+                raise MpdRateLimited(
+                    "MPD rate limit: over 10 requests in 30 minutes from this IP; slow the interval")
+            parsed = parse_calls_page(page)
             rows_seen = len(parsed)
             if rows_seen == 0:
                 # The table has never been empty at any hour; an empty parse

@@ -153,6 +153,10 @@ locals {
       # production (the clients are native); staging allows the Expo web
       # dev server, for the worker portal on a laptop.
       APP__CORS_ORIGINS = jsonencode(var.cors_origins)
+      # The API scrapes MPD's 911-call page itself (services/mpd_scheduler.py).
+      # The city allows 10 requests per 30 minutes per IP and both environments
+      # leave the cluster from the same address: 6 + 3 per 30 minutes.
+      APP__MPD_INGEST__INTERVAL_SECONDS = local.is_production ? "300" : "600"
     },
     var.auth0_domain == "" ? {} : {
       APP__JWT__ALGORITHM = "RS256"

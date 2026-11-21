@@ -93,8 +93,12 @@ class MpdIngestConfig(BaseModel):
     takes for calls to appear in the app."""
 
     enabled: bool = Field(default=True)
-    # The city page refreshes every five minutes; two is enough to catch each update promptly.
-    interval_seconds: int = Field(default=120, ge=30)
+    # The city page refreshes every five minutes, and it allows 10 requests
+    # per 30 minutes per IP address; past that it returns a "too many
+    # requests" row instead of calls. Five minutes is 6 per 30; never go
+    # under three (10 per 30), and remember every environment that shares an
+    # IP address shares the limit.
+    interval_seconds: int = Field(default=300, ge=180)
 
 
 class AppConfig(BaseSettings):

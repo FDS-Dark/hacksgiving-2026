@@ -54,6 +54,35 @@ async def test_a_failed_scrape_does_not_stop_the_loop():
     assert run["ok"] is False
 
 
+RATE_LIMITED = (
+    "<table><tbody><tr><td>17952985</td><td>11/21/2026 04:02:19 PM</td>"
+    "<td><h3 style='color: red;'>Milwaukee: You have made 14 calls in the last 30 minutes, "
+    "current limit is 10.</h3></td>"
+    "<td>-1</td><td>Unreasonable amount of requests</td>"
+    "<td><h3>You will be denied results until your number of calls is a reasonable number</h3></td>"
+    "</tr></tbody></table>"
+)
+
+
+async def test_the_city_rate_limit_is_recorded_as_such():
+    loop, fake = loop_with([{"claimed": True}])
+    assert await loop.tick(Client(page=RATE_LIMITED)) is True
+    [run] = fake.called("mpd_ingest_record")
+    assert run["ok"] is False and "rate limit" in run["error"]
+    assert fake.called("mpd_calls_upsert") == []
+
+
+def test_the_interval_cannot_break_the_city_limit():
+    import pytest
+    from pydantic import ValidationError
+
+    from settings import MpdIngestConfig
+
+    assert MpdIngestConfig().interval_seconds == 300
+    with pytest.raises(ValidationError):
+        MpdIngestConfig(interval_seconds=120)
+
+
 async def test_an_unmigrated_database_is_skipped_not_fatal():
     def missing(_):
         raise RuntimeError("function app.mpd_ingest_claim does not exist")

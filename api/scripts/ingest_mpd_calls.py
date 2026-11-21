@@ -1,12 +1,14 @@
 """Scrapes the Milwaukee Police Department calls-for-service page into the
 database (services/mpd_calls.py).
 
-    uv run python scripts/ingest_mpd_calls.py              # once (the CronJob)
-    uv run python scripts/ingest_mpd_calls.py --every 120  # loop, for local dev
+    uv run python scripts/ingest_mpd_calls.py              # once
+    uv run python scripts/ingest_mpd_calls.py --every 300  # loop
 
-In production a Kubernetes CronJob (terraform/main.tf) runs it once every
-two minutes with the API's own database credentials. Exit code 1 when the
-run failed; the failure is also recorded in app.mpd_ingest_runs."""
+Normally you don't need this: the API runs the same ingestion in the
+background (services/mpd_scheduler.py). Mind the city's limit of 10 requests
+per 30 minutes per IP address, which this script and a running API share.
+Exit code 1 when the run failed; the failure is also recorded in
+app.mpd_ingest_runs."""
 
 import argparse
 import asyncio

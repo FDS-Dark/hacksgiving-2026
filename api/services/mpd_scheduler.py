@@ -2,7 +2,8 @@
 to be started for calls to appear in the app.
 
 The loop starts with the API (main.py's lifespan), ingests right away, then
-every `interval_seconds`. With several API processes (replicas, or uvicorn
+every `interval_seconds` (five minutes: the city allows 10 requests per 30
+minutes per IP address, see settings.MpdIngestConfig). With several API processes (replicas, or uvicorn
 workers) each one runs the loop, but only the one that claims the database
 lease (migration 0012) scrapes on a given tick. A failed tick is logged and
 recorded; the loop carries on."""
@@ -14,7 +15,7 @@ import logging
 from collections.abc import Awaitable, Callable
 
 from adapters.mpd import MpdClient
-from services.mpd_calls import MpdCallService
+from services.mpd_calls import MpdCallService, MpdRateLimited
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,10 @@ class MpdIngestLoop:
             return False
         try:
             result = await self.service.ingest(client, client)
+        except MpdRateLimited as e:
+            # Recovers by itself once older requests age out of the city's 30-minute window.
+            logger.warning("%s (interval %ss)", e, self.interval)
+            return True
         except Exception:
             logger.exception("MPD ingest failed; retrying in %ss", self.interval)
             return True

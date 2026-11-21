@@ -1,6 +1,6 @@
 """Public safety data the resident app maps: recent Milwaukee Police
-Department calls for service, ingested every two minutes
-(scripts/ingest_mpd_calls.py)."""
+Department calls for service, ingested every five minutes by the API's
+background loop (services/mpd_scheduler.py)."""
 
 from typing import Annotated
 

@@ -1,6 +1,6 @@
 /**
  * Milwaukee Police Department calls for service, from our API
- * (GET /v1/safety/calls). The API ingests the city's page every two minutes,
+ * (GET /v1/safety/calls). The API ingests the city's page every five minutes,
  * geocodes each call to its block, and summarizes the window; the app no
  * longer scrapes the city page itself.
  */
@@ -101,8 +101,8 @@ export const callKeys = {
   window: (hours: number) => ['mpd-calls', hours] as const,
 };
 
-/** Every call in the window, with its summary. Refreshes every two minutes,
- *  matching the ingestion schedule. */
+/** Every call in the window, with its summary. Polls our API (not the city)
+ *  every two minutes, so a new ingest shows up within a couple of minutes. */
 export function useCallFeed(hours: number) {
   return useQuery({
     queryKey: callKeys.window(hours),
