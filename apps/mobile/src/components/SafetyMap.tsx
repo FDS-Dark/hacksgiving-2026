@@ -81,6 +81,9 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
 html,body,#map{height:100%;width:100%;margin:0;background:#e9edef} .leaflet-control-attribution{font-size:9px}
 .leaflet-popup-content-wrapper{border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.leaflet-popup-content{margin:12px 14px;line-height:1.35}
 .pin-title{font-size:14px;font-weight:700;margin-bottom:4px}.pin-time{font-size:12px;color:#4f5b60}.pin-detail{font-size:11px;color:#6f797d;margin-top:4px}
+.crime-pin{width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 7px rgba(12,30,40,.35);display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+.crime-pin.live{border-color:#182126}.crime-pin span{transform:rotate(45deg);color:#fff;font-size:15px;font-weight:800;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.selected-area{width:27px;height:27px;border-radius:50%;background:#c62026;border:6px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);box-sizing:border-box}
 </style></head><body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
@@ -88,12 +91,14 @@ html,body,#map{height:100%;width:100%;margin:0;background:#e9edef} .leaflet-cont
 const heat=${safeJson(heat)}; const incidents=${safeJson(recentPins)}; const calls=${safeJson(callPins)};
 const map=L.map('map',{zoomControl:true,minZoom:10,maxZoom:18}).setView([43.045,-87.95],11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap · MPD public data'}).addTo(map);
-if(L.heatLayer){L.heatLayer(heat,{radius:34,blur:26,maxZoom:15,minOpacity:.28,gradient:{.12:'#2a75bb',.32:'#36b37e',.52:'#f4d03f',.72:'#f08a24',1:'#c62026'}}).addTo(map);}
+if(L.heatLayer){L.heatLayer(heat,{radius:38,blur:29,maxZoom:15,minOpacity:.3,gradient:{.12:'#2a75bb',.32:'#36b37e',.52:'#f4d03f',.72:'#f08a24',1:'#c62026'}}).addTo(map);}
 else{heat.forEach(p=>L.circle([p[0],p[1]],{radius:700,stroke:false,fillColor:'#e54b25',fillOpacity:.22}).addTo(map));}
-function addPin(pin,live){const marker=L.circleMarker([pin.lat,pin.lng],{radius:live?7:5,color:live?'#141a1d':'#fff',weight:live?3:2,fillColor:pin.color,fillOpacity:.96});marker.bindPopup('<div class="pin-title">'+escapeHtml(pin.label)+'</div><div class="pin-time">'+escapeHtml(pin.time)+'</div><div class="pin-detail">'+escapeHtml(pin.detail)+(live?' · Unconfirmed call':' · Generalized location')+'</div>');marker.addTo(map);}
+function pinGlyph(label,live){if(live)return '◉';const s=String(label).toLowerCase();if(s.includes('vehicle'))return '◆';if(s.includes('theft')||s.includes('burglary'))return '▣';if(s.includes('assault'))return '⚠';if(s.includes('robbery'))return '●';return '•';}
+function addPin(pin,live){const icon=L.divIcon({className:'',html:'<div class="crime-pin '+(live?'live':'')+'" style="background:'+pin.color+'"><span>'+pinGlyph(pin.label,live)+'</span></div>',iconSize:[32,40],iconAnchor:[16,38],popupAnchor:[0,-34]});const marker=L.marker([pin.lat,pin.lng],{icon});marker.bindPopup('<div class="pin-title">'+escapeHtml(pin.label)+'</div><div class="pin-time">'+escapeHtml(pin.time)+'</div><div class="pin-detail">'+escapeHtml(pin.detail)+(live?' · Unconfirmed call':' · Generalized location')+'</div>');marker.addTo(map);}
 function escapeHtml(text){return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 incidents.forEach(p=>addPin(p,false)); calls.forEach(p=>addPin(p,true));
-map.on('click',e=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'area',latitude:e.latlng.lat,longitude:e.latlng.lng})));
+let selectedMarker=L.marker([43.045,-87.95],{icon:L.divIcon({className:'',html:'<div class="selected-area"></div>',iconSize:[27,27],iconAnchor:[13,13]),interactive:false}).addTo(map);
+map.on('click',e=>{selectedMarker.setLatLng(e.latlng);window.ReactNativeWebView.postMessage(JSON.stringify({type:'area',latitude:e.latlng.lat,longitude:e.latlng.lng}));});
 </script></body></html>`;
 }
 
@@ -139,26 +144,17 @@ export function SafetyMap({
         style={styles.webview}
       />
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
-        <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
-          {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · 30 DAYS
-        </Txt>
-        <View style={styles.legendRow}>
-          <View style={[styles.gradient, { backgroundColor: '#2A75BB' }]} />
-          <Txt variant="caption" tone="secondary">Lower</Txt>
-          <View style={[styles.gradient, { backgroundColor: '#C62026' }]} />
-          <Txt variant="caption" tone="secondary">Higher</Txt>
-        </View>
-        <Txt variant="caption" tone="secondary">Colored pins: recent reports · outlined pins: dispatch</Txt>
-        <Txt variant="caption" tone="secondary">Tap the map or a pin for details</Txt>
+        <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>30-DAY DENSITY</Txt>
+        <View style={styles.heatScale} />
+        <Txt variant="caption" tone="secondary">lower  →  higher</Txt>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  frame: { height: 480, borderRadius: radius.lg, overflow: 'hidden' },
+  frame: { height: 540, overflow: 'hidden' },
   webview: { flex: 1, backgroundColor: '#E9EDEF' },
-  legend: { position: 'absolute', left: space.sm, bottom: space.sm, gap: 4, borderRadius: radius.sm, padding: space.sm },
-  legendRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  gradient: { width: 12, height: 12, borderRadius: 6 },
+  legend: { position: 'absolute', left: space.sm, bottom: 48, gap: 3, borderRadius: radius.sm, paddingHorizontal: space.sm, paddingVertical: 6 },
+  heatScale: { width: 112, height: 7, borderRadius: 4, backgroundColor: '#36B37E', borderLeftWidth: 28, borderLeftColor: '#2A75BB', borderRightWidth: 36, borderRightColor: '#C62026' },
 });
