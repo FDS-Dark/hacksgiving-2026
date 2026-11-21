@@ -49,7 +49,7 @@ async def list_users(
     return await service.list_users()
 
 
-@router.put("/users/{user_id}/role", response_model=StaffMember)
+@router.patch("/users/{user_id}/role", response_model=StaffMember)
 async def set_role(
     user_id: UUID,
     body: SetRoleRequest,

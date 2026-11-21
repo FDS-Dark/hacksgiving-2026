@@ -43,6 +43,7 @@ function RootStack() {
           gave up with "Maximum update depth exceeded". */}
       <Stack.Protected guard={signedIn} redirectTo="/sign-in">
         <Stack.Screen name="(main)" />
+        <Stack.Screen name="worker" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn} redirectTo="/">
         <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />

@@ -446,17 +446,17 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         /**
          * Set Role
          * @description Make someone a worker or admin, or back to a member. Admins only, and
          *     not for their own role.
          */
-        put: operations["set_role_v1_staff_users__user_id__role_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        patch: operations["set_role_v1_staff_users__user_id__role_patch"];
         trace?: never;
     };
     "/v1/staff/workers": {
@@ -1844,7 +1844,7 @@ export interface operations {
             };
         };
     };
-    set_role_v1_staff_users__user_id__role_put: {
+    set_role_v1_staff_users__user_id__role_patch: {
         parameters: {
             query?: never;
             header?: never;

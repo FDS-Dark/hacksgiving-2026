@@ -54,16 +54,27 @@ through the Cloudflare Tunnel at `https://hacksgiving-api.austinkoske.com/v1`
   the `app` schema only (migration 0002), never as the owner. On Supabase,
   migration 0004 revokes `anon`/`authenticated` default privileges in
   `public`, and `database/terraform` turns the Data API off.
+- **Staff:** `/v1/cases`, `/v1/staff` and adding resources need
+  `app.users.role` worker or admin (`get_current_worker`); role changes
+  need admin. The first staff admin claims the role once per database
+  (`POST /v1/staff/bootstrap`, 409 afterwards), so claim it right after a
+  deploy. Public submissions can't set priority, status or assignee (422).
 - Integration tests run as that same role (`api/tests/integration/`).
 
 ## Data we hold
 
 | Data | Where | Notes |
 |---|---|---|
-| Auth0 `sub`, display name, timezone | Postgres `app.users` | No email or password; Auth0 holds credentials. A name that is an email address is never stored (API, app and Auth0 Action) |
+| Auth0 `sub`, display name, timezone, role | Postgres `app.users` | No email or password; Auth0 holds credentials. A name that is an email address is never stored (API, app and Auth0 Action) |
+| Requests for help and incidents: description, location, optional contact name, phone and email | Postgres `app.cases` | Contact details are shown to ComForce staff only; the requester's own view (`request_*` functions) leaves them out |
+| Case notes, messages, status history, referrals | `app.case_updates`, `app.case_referrals` | Internal notes are staff only; the requester sees only updates marked public |
 
 Third parties that receive data: **Auth0** (sign-in), **Supabase**
-(database), **Cloudflare** (TLS termination for the tunnel).
+(database), **Cloudflare** (TLS termination for the tunnel), and **OpenAI**
+when `APP__OPENAI__API_KEY` is set: the text of a request for help (routing
+and triage), and for AI case assistance the case text, history and the
+resource list. Never a requester's contact details; drafts leave out the
+internal notes too (`api/services/case_assist.py`). Calls use `store=False`.
 
 ## Input handling
 
@@ -127,7 +138,10 @@ accepted moderate findings here.
 
 - **No account deletion or data export.** Required before App Store
   release (App Store Review Guideline 5.1.1(v)).
-- **No API rate limiting** beyond Cloudflare's defaults.
+- **No API rate limiting** beyond Cloudflare's defaults, including on
+  `POST /v1/requests`.
+- **Staff bootstrap is first come, first served** on each fresh database;
+  claim it before sharing the app.
 - Supabase backup/PITR settings have not been reviewed.
 - Check that `gitlab-hacksgiving-ci` and `gitlab-hacksgiving-database-ci`
   (in `infra/vault-config`) accept protected refs only, so only `staging`

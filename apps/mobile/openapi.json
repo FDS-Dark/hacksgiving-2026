@@ -2960,9 +2960,9 @@
       }
     },
     "/v1/staff/users/{user_id}/role": {
-      "put": {
+      "patch": {
         "description": "Make someone a worker or admin, or back to a member. Admins only, and\nnot for their own role.",
-        "operationId": "set_role_v1_staff_users__user_id__role_put",
+        "operationId": "set_role_v1_staff_users__user_id__role_patch",
         "parameters": [
           {
             "in": "path",
