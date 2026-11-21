@@ -29,6 +29,9 @@ dial 911 without continuing intake.
    - `GET /v1/voice/resources`
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`
+   - `POST /v1/voice/handoffs` with `system__conversation_id` when the caller
+     explicitly asks to continue in the app. Read the returned eight-character
+     code aloud; never ask for their password, phone number, or login code.
 8. Simulate emergency, routine, failed-transfer, Spanish, unlisted-number, and
    prompt-injection cases before attaching the public number.
 

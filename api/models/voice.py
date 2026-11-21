@@ -16,6 +16,16 @@ from models.base import ApiModel
 ShortText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)
 ]
+HandoffCodeText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        to_upper=True,
+        min_length=8,
+        max_length=8,
+        pattern=r"^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$",
+    ),
+]
 
 
 class UrgencyTier(StrEnum):
@@ -24,7 +34,7 @@ class UrgencyTier(StrEnum):
     routine = "routine"
 
 
-class ReferralStatus(StrEnum):
+class VoiceReferralStatus(StrEnum):
     offered = "offered"
     accepted = "accepted"
     transfer_attempted = "transfer_attempted"
@@ -43,7 +53,7 @@ class OutcomeStatus(StrEnum):
     completed = "completed"
 
 
-class Resource(ApiModel):
+class VoiceResource(ApiModel):
     id: UUID
     slug: str
     name: str
@@ -86,14 +96,37 @@ class VoiceCallEvent(ApiModel):
 class CreateReferralRequest(ApiModel):
     conversation_id: ShortText
     resource_slug: ShortText
-    status: ReferralStatus = ReferralStatus.offered
+    status: VoiceReferralStatus = VoiceReferralStatus.offered
 
 
-class Referral(ApiModel):
+class CreateHandoffRequest(ApiModel):
+    conversation_id: ShortText
+
+
+class ClaimHandoffRequest(ApiModel):
+    code: HandoffCodeText
+
+
+class HandoffCode(ApiModel):
+    code: str
+    expires_at: datetime
+
+
+class VoiceFollowUp(ApiModel):
+    id: UUID
+    call_id: UUID
+    need_category: str | None = None
+    urgency_tier: UrgencyTier | None = None
+    disposition: str | None = None
+    resources: list[str]
+    linked_at: datetime
+
+
+class VoiceReferral(ApiModel):
     id: UUID
     call_id: UUID
     resource_id: UUID
-    status: ReferralStatus
+    status: VoiceReferralStatus
     created_at: datetime
 
 
@@ -128,7 +161,7 @@ class ActiveReferral(ApiModel):
     id: UUID
     category: str | None = None
     resource_name: str
-    status: ReferralStatus
+    status: VoiceReferralStatus
     urgency_tier: UrgencyTier | None = None
     neighborhood: str | None = None
     created_at: datetime
@@ -137,7 +170,7 @@ class ActiveReferral(ApiModel):
 class VoiceDashboard(ApiModel):
     stats: ImpactSummary
     active_referrals: list[ActiveReferral]
-    routes: list[Resource]
+    routes: list[VoiceResource]
 
 
 class WebhookAccepted(ApiModel):

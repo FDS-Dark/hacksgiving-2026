@@ -9,7 +9,7 @@ import pytest
 
 from databridge.voice import VoiceDatabridge
 from errors import ApiError
-from models.voice import OutcomeStatus, ReferralStatus
+from models.voice import OutcomeStatus, VoiceReferralStatus
 from services.voice import VoiceService, verify_elevenlabs_signature
 from tests.unit.fakes import FakeFunctions
 
@@ -112,7 +112,7 @@ async def test_live_referral_begins_call_before_post_call_webhook():
         voice_referral_create=[referral],
     )
     result = await VoiceService(VoiceDatabridge(db), db).create_referral(
-        "conv-live", "comforce", ReferralStatus.offered
+        "conv-live", "comforce", VoiceReferralStatus.offered
     )
     assert result.id == referral["id"]
     assert db.called("voice_referral_create")[0]["call_id"] == call["id"]
@@ -123,5 +123,43 @@ async def test_unknown_referral_outcome_is_a_clean_not_found():
     with pytest.raises(ApiError) as error:
         await VoiceService(VoiceDatabridge(db), db).record_outcome(
             uuid4(), OutcomeStatus.connected, None
+        )
+    assert error.value.status_code == 404
+
+
+async def test_handoff_code_links_a_call_without_a_phone_number(monkeypatch):
+    call = _call_row("conv-handoff")
+    follow_up = {
+        "id": uuid4(),
+        "call_id": call["id"],
+        "need_category": "violence-mediation",
+        "urgency_tier": "urgent",
+        "disposition": "comforce_handoff",
+        "resources": ["ComForce MKE"],
+        "linked_at": NOW,
+    }
+    db = FakeFunctions(
+        voice_call_get_by_conversation=[call],
+        voice_handoff_create=[{"expires_at": NOW}],
+        voice_handoff_claim=[follow_up],
+    )
+    monkeypatch.setattr("services.voice.secrets.choice", lambda _: "A")
+    service = VoiceService(VoiceDatabridge(db), db)
+
+    handoff = await service.create_handoff("conv-handoff", "tool-secret")
+    claimed = await service.claim_handoff(uuid4(), handoff.code, "tool-secret")
+
+    assert handoff.code == "AAAAAAAA"
+    assert claimed.call_id == call["id"]
+    persisted = repr(db.calls)
+    assert "phone" not in persisted
+    assert "AAAAAAAA" not in persisted
+
+
+async def test_handoff_rejects_an_expired_or_reused_code():
+    db = FakeFunctions(voice_handoff_claim=[])
+    with pytest.raises(ApiError) as error:
+        await VoiceService(VoiceDatabridge(db), db).claim_handoff(
+            uuid4(), "ABCDEFGH", "tool-secret"
         )
     assert error.value.status_code == 404

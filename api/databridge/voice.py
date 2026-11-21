@@ -7,24 +7,25 @@ from models.voice import (
     ActiveReferral,
     ImpactCategory,
     ImpactSummary,
-    Referral,
+    VoiceReferral,
     ReferralOutcome,
-    ReferralStatus,
-    Resource,
+    VoiceReferralStatus,
+    VoiceResource,
     VoiceCall,
     VoiceCallEvent,
     VoiceDashboard,
+    VoiceFollowUp,
 )
 
 
 class VoiceDatabridge(Databridge):
     async def resources(
         self, category: str | None, language: str | None
-    ) -> list[Resource]:
+    ) -> list[VoiceResource]:
         rows = await self._rows(
             "voice_resource_list", category=category, language=language
         )
-        return [Resource(**row) for row in rows]
+        return [VoiceResource(**row) for row in rows]
 
     async def ingest_call(
         self,
@@ -86,15 +87,43 @@ class VoiceDatabridge(Databridge):
         return VoiceCallEvent(**row) if row else None
 
     async def create_referral(
-        self, call_id: UUID, resource_slug: str, status: ReferralStatus
-    ) -> Referral | None:
+        self, call_id: UUID, resource_slug: str, status: VoiceReferralStatus
+    ) -> VoiceReferral | None:
         row = await self._first(
             "voice_referral_create",
             call_id=call_id,
             resource_slug=resource_slug,
             status=status,
         )
-        return Referral(**row) if row else None
+        return VoiceReferral(**row) if row else None
+
+    async def create_handoff(
+        self, call_id: UUID, code_hash: str, expires_at: datetime
+    ) -> datetime:
+        row = await self._one(
+            "voice_handoff_create",
+            call_id=call_id,
+            code_hash=code_hash,
+            expires_at=expires_at,
+        )
+        stored_expiry = row["expires_at"]
+        if not isinstance(stored_expiry, datetime):
+            raise RuntimeError("voice_handoff_create returned an invalid expiry")
+        return stored_expiry
+
+    async def claim_handoff(
+        self, code_hash: str, user_id: UUID
+    ) -> VoiceFollowUp | None:
+        row = await self._first(
+            "voice_handoff_claim", code_hash=code_hash, user_id=user_id
+        )
+        return VoiceFollowUp(**row) if row else None
+
+    async def follow_ups(self, user_id: UUID) -> list[VoiceFollowUp]:
+        return [
+            VoiceFollowUp(**row)
+            for row in await self._rows("voice_follow_up_list", user_id=user_id)
+        ]
 
     async def record_outcome(
         self, referral_id: UUID, status: str, reason_code: str | None

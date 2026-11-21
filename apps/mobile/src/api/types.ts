@@ -44,6 +44,8 @@ export type UserSummary = Schemas['UserSummary'];
 export type SubmitRequest = Schemas['SubmitRequest'];
 export type PublicRequest = Schemas['PublicRequest'];
 export type PublicRequestDetail = Schemas['PublicRequestDetail'];
+export type ClaimHandoff = Schemas['ClaimHandoffRequest'];
+export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

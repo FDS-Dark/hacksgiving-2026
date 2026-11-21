@@ -20,6 +20,9 @@ FUNCTIONS = (
     "voice_call_event_append",
     "voice_referral_create",
     "voice_referral_outcome_record",
+    "voice_handoff_create",
+    "voice_handoff_claim",
+    "voice_follow_up_list",
     "voice_impact_summary",
     "voice_impact_categories",
     "voice_active_referrals",
@@ -34,6 +37,7 @@ def downgrade() -> None:
     op.execute("\n".join(f"DROP FUNCTION app.{name};" for name in FUNCTIONS))
     op.execute("DROP TABLE app.voice_referral_outcomes")
     op.execute("DROP TABLE app.voice_referrals")
+    op.execute("DROP TABLE app.voice_handoffs")
     op.execute("DROP TABLE app.voice_call_events")
     op.execute("DROP TABLE app.voice_calls")
     op.execute("DROP TABLE app.voice_resources")
