@@ -20,6 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.job import JobDatabridge
+from databridge.record import RecordDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.opportunity import OpportunityDatabridge
@@ -29,6 +31,8 @@ from dependencies import (
     get_case_assistant,
     get_case_service,
     get_opportunity_service,
+    get_job_service,
+    get_record_service,
     get_resource_service,
     get_staff_service,
     get_task_service,
@@ -40,6 +44,8 @@ from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
 from services.opportunity import OpportunityService
+from services.job import JobService
+from services.record import RecordService
 from services.resource import ResourceService
 from services.staff import StaffService
 from services.task import TaskService
@@ -156,6 +162,10 @@ async def api(database):
         get_opportunity_service: lambda: OpportunityService(OpportunityDatabridge(executor)),
         get_triager: lambda: None,
         get_case_assistant: lambda: None,
+        get_record_service: lambda: RecordService(
+            RecordDatabridge(executor), JobDatabridge(executor), executor, cases, tasks
+        ),
+        get_job_service: lambda: JobService(JobDatabridge(executor)),
     })
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

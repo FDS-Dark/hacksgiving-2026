@@ -15,9 +15,12 @@ from fastapi import Depends, Header, HTTPException, Request, status
 
 from openai import AsyncOpenAI
 
+from adapters.storage import AudioStorage, make_audio_storage
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
 from databridge.opportunity import OpportunityDatabridge
+from databridge.job import JobDatabridge
+from databridge.record import RecordDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -28,6 +31,8 @@ from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
+from services.job import JobService
+from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
 from services.resource import ResourceService
@@ -82,6 +87,32 @@ def get_case_service() -> CaseService:
 @cache
 def get_opportunity_service() -> OpportunityService:
     return OpportunityService(OpportunityDatabridge(get_executor()))
+
+
+@cache
+def get_record_service() -> RecordService:
+    executor = get_executor()
+    return RecordService(
+        RecordDatabridge(executor),
+        JobDatabridge(executor),
+        executor,
+        get_case_service(),
+        get_task_service(),
+        get_audio_storage(),
+        max_audio_bytes=config.storage.max_audio_bytes,
+        upload_url_seconds=config.storage.upload_url_seconds,
+    )
+
+
+@cache
+def get_audio_storage() -> AudioStorage | None:
+    """Object storage for voice debriefs; None (voice off) when not configured."""
+    return make_audio_storage(config.storage)
+
+
+@cache
+def get_job_service() -> JobService:
+    return JobService(JobDatabridge(get_executor()))
 
 
 @cache

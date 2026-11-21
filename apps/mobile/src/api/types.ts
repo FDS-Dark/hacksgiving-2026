@@ -58,6 +58,16 @@ export type Task = Schemas['Task'];
 export type RouteRequest = Schemas['RouteRequest'];
 export type RouteResponse = Schemas['RouteResponse'];
 export type Service = Schemas['Service'];
+/** The API's Record (a Phantom debrief); named so it doesn't shadow TypeScript's Record. */
+export type DebriefRecord = Schemas['Record'];
+export type RecordStatus = Schemas['RecordStatus'];
+export type RecordStage = Schemas['RecordStage'];
+export type Extraction = Schemas['Extraction'];
+export type CreateRecord = Schemas['CreateRecordRequest'];
+export type ConfirmRecord = Schemas['ConfirmRecordRequest'];
+export type ConfirmedRecord = Schemas['ConfirmedRecord'];
+export type JobStat = Schemas['JobStat'];
+export type VoiceUpload = Schemas['VoiceUpload'];
 export type TaskStatus = Schemas['TaskStatus'];
 export type CreateTask = Schemas['CreateTaskRequest'];
 export type UpdateTask = Schemas['UpdateTaskRequest'];

@@ -11,11 +11,11 @@ import { showCommunityView } from '@/lib/viewMode';
 import { useBootstrapStaff, useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
-/** Figma "App shell v2" staff tabs. Record sits raised in the middle; Team and Insights live under Me. */
+/** Figma "App shell v2" staff tabs. Record (a Phantom debrief) sits raised in the middle; Team and Insights live under Me. */
 const TABS: TabItem[] = [
   { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' },
-  { label: 'Queue', href: '/staff/cases', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/staff/cases') && p !== '/staff/cases/new' },
-  { label: 'Record', push: '/staff/cases/new', icon: 'mic-outline', iconActive: 'mic', raised: true, match: (p) => p === '/staff/cases/new' },
+  { label: 'Queue', href: '/staff/cases', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/staff/cases') },
+  { label: 'Record', push: '/staff/records/new', icon: 'mic-outline', iconActive: 'mic', raised: true, match: (p) => p.startsWith('/staff/records') },
   { label: 'Map', href: '/staff/map', icon: 'location-outline', iconActive: 'location', match: (p) => p.startsWith('/staff/map') },
   {
     label: 'Me',
@@ -36,8 +36,8 @@ export default function StaffLayout() {
   const insets = useSafeAreaInsets();
   const status = useStaffStatus();
   const pathname = usePathname();
-  // Flows with their own bottom bar (Figma S5 composer, S6 New case) cover the tabs.
-  const fullScreen = pathname === '/staff/cases/new' || pathname.endsWith('/messages');
+  // Flows with their own bottom bar (S5 composer, S6 New case, a new debrief) cover the tabs.
+  const fullScreen = pathname === '/staff/cases/new' || pathname === '/staff/records/new' || pathname.endsWith('/messages');
 
   let body;
   if (status.isPending) body = <Loading label="Checking your staff access" />;
@@ -52,6 +52,8 @@ export default function StaffLayout() {
           <Stack.Screen name="cases/new" />
           <Stack.Screen name="cases/[id]/index" />
           <Stack.Screen name="cases/[id]/messages" />
+          <Stack.Screen name="records/new" />
+          <Stack.Screen name="records/[id]" />
           <Stack.Screen name="map" />
           <Stack.Screen name="me" />
           <Stack.Screen name="team" />

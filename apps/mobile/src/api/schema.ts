@@ -262,6 +262,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/jobs/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Job Stats
+         * @description Jobs by kind and status: everything queued, running or dead, and what
+         *     finished in the last day. `oldest_run_at` on queued work shows a backlog.
+         */
+        get: operations["job_stats_v1_jobs_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me": {
         parameters: {
             query?: never;
@@ -394,6 +415,138 @@ export interface paths {
          * @description Answer on a request sent without an account.
          */
         post: operations["reply_to_anonymous_request_v1_public_requests__number__replies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Records
+         * @description The caller's records, newest first.
+         */
+        get: operations["my_records_v1_records_get"];
+        put?: never;
+        /**
+         * Create Record
+         * @description Capture a typed debrief. 202: it's processed in the background; poll
+         *     `GET /records/{id}` until `status` is `ready` (or `failed`).
+         */
+        post: operations["create_record_v1_records_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Voice Record
+         * @description Start a voice debrief: a record waiting for its audio, and a one-time
+         *     URL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.
+         *     The audio is deleted as soon as it's transcribed. 503 when voice isn't
+         *     set up on the server.
+         */
+        post: operations["start_voice_record_v1_records_voice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Record */
+        get: operations["get_record_v1_records__record_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Discard Record
+         * @description Throw a record away; its text is deleted. A case it became stays.
+         */
+        delete: operations["discard_record_v1_records__record_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Record
+         * @description Open a case from the reviewed record (assigned to the caller), with its
+         *     planned tasks plus the ones sent here. Calling it again returns the same
+         *     case.
+         */
+        post: operations["confirm_record_v1_records__record_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry Record
+         * @description Process a failed record again, from the stage it stopped at.
+         */
+        post: operations["retry_record_v1_records__record_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/records/{record_id}/uploaded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Voice Uploaded
+         * @description The recording is uploaded: it's transcribed, redacted and read in the
+         *     background. Poll `GET /records/{id}` as for a typed debrief.
+         */
+        post: operations["voice_uploaded_v1_records__record_id__uploaded_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1185,6 +1338,48 @@ export interface components {
             code: string;
         };
         /**
+         * ConfirmRecordRequest
+         * @description The author's reviewed version of the extraction: this becomes the case.
+         */
+        ConfirmRecordRequest: {
+            /** @default other */
+            category?: components["schemas"]["CaseCategory"];
+            /** Contact Name */
+            contact_name?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /** @default request */
+            kind?: components["schemas"]["CaseKind"];
+            /** Location */
+            location?: string | null;
+            /** @default medium */
+            priority?: components["schemas"]["CasePriority"];
+            /**
+             * Summary
+             * @default
+             */
+            summary?: string;
+            /**
+             * Tasks
+             * @default []
+             */
+            tasks?: components["schemas"]["ConfirmTask"][];
+            /** Title */
+            title: string;
+        };
+        /** ConfirmTask */
+        ConfirmTask: {
+            /** Due In Hours */
+            due_in_hours?: number | null;
+            /** Title */
+            title: string;
+        };
+        /** ConfirmedRecord */
+        ConfirmedRecord: {
+            case: components["schemas"]["Case"];
+            record: components["schemas"]["Record"];
+        };
+        /**
          * ContactMethod
          * @description How a resident wants to be reached. `none`: don't reach out at all.
          * @enum {string}
@@ -1264,6 +1459,14 @@ export interface components {
             /** Title */
             title: string;
         };
+        /**
+         * CreateRecordRequest
+         * @description A typed debrief. (Voice records upload audio first; see the pipeline.)
+         */
+        CreateRecordRequest: {
+            /** Text */
+            text: string;
+        };
         /** CreateReferralRequest */
         CreateReferralRequest: {
             /** Conversation Id */
@@ -1320,6 +1523,57 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ExtractedTask */
+        ExtractedTask: {
+            /**
+             * Due In Hours
+             * @description How soon it should be done, in hours from now, if the record makes that clear; else null.
+             */
+            due_in_hours: number | null;
+            /**
+             * Title
+             * @description A short, concrete next step for ComForce staff, as an imperative.
+             */
+            title: string;
+        };
+        /**
+         * Extraction
+         * @description The AI's reading of a record. Suggestions only: the author reviews and
+         *     edits all of it before a case is created.
+         */
+        Extraction: {
+            /** @description The ComForce service that should own this. */
+            category: components["schemas"]["CaseCategory"];
+            /** @description request: someone needs help. incident: something happened that staff responded to. */
+            kind: components["schemas"]["CaseKind"];
+            /**
+             * Location
+             * @description A street, intersection or neighborhood named in the record; else null.
+             */
+            location: string | null;
+            /** @description critical or high only if someone may be in danger or the need is tonight. */
+            priority: components["schemas"]["CasePriority"];
+            /**
+             * Risk Flags
+             * @description Short safety concerns staff should see ('weapon mentioned', 'children present'). Empty if none.
+             */
+            risk_flags: string[];
+            /**
+             * Summary
+             * @description Two to four plain sentences: what happened and what the person needs. No names.
+             */
+            summary: string;
+            /**
+             * Tasks
+             * @description Up to five follow-ups the record clearly calls for. Empty if none.
+             */
+            tasks: components["schemas"]["ExtractedTask"][];
+            /**
+             * Title
+             * @description A short title for the case, under 80 characters, with no names.
+             */
+            title: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1357,6 +1611,24 @@ export interface components {
             /** Transfers Connected */
             transfers_connected: number;
         };
+        /**
+         * JobStat
+         * @description One kind and status in the queue: how many, and the oldest one due.
+         */
+        JobStat: {
+            /** Kind */
+            kind: string;
+            /** Oldest Run At */
+            oldest_run_at: string | null;
+            status: components["schemas"]["JobStatus"];
+            /** Total */
+            total: number;
+        };
+        /**
+         * JobStatus
+         * @enum {string}
+         */
+        JobStatus: "queued" | "running" | "done" | "dead";
         /** Opportunity */
         Opportunity: {
             /** Active */
@@ -1458,12 +1730,63 @@ export interface components {
             id: string;
             update_type: components["schemas"]["UpdateType"];
         };
+        /** Record */
+        Record: {
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /** Case Id */
+            case_id: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            extraction: components["schemas"]["Extraction"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Raw Text */
+            raw_text: string | null;
+            source: components["schemas"]["RecordSource"];
+            stage: components["schemas"]["RecordStage"];
+            status: components["schemas"]["RecordStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** RecordOutcomeRequest */
         RecordOutcomeRequest: {
             /** Reason Code */
             reason_code?: string | null;
             status: components["schemas"]["OutcomeStatus"];
         };
+        /**
+         * RecordSource
+         * @enum {string}
+         */
+        RecordSource: "text" | "audio";
+        /**
+         * RecordStage
+         * @description Where a record is in the pipeline. Each stage is one job kind.
+         * @enum {string}
+         */
+        RecordStage: "upload" | "transcribe" | "redact" | "extract" | "done";
+        /**
+         * RecordStatus
+         * @enum {string}
+         */
+        RecordStatus: "processing" | "ready" | "confirming" | "confirmed" | "failed" | "discarded";
         /** Referral */
         Referral: {
             /**
@@ -1984,6 +2307,22 @@ export interface components {
             /** Urgent */
             urgent: boolean;
         };
+        /**
+         * VoiceUpload
+         * @description Where the app uploads a voice debrief: PUT the audio to `upload_url`
+         *     with this Content-Type, then call `POST /records/{id}/uploaded`.
+         */
+        VoiceUpload: {
+            /** Content Type */
+            content_type: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Max Bytes */
+            max_bytes: number;
+            record: components["schemas"]["Record"];
+            /** Upload Url */
+            upload_url: string;
+        };
         /** WebhookAccepted */
         WebhookAccepted: {
             /**
@@ -2465,6 +2804,26 @@ export interface operations {
             };
         };
     };
+    job_stats_v1_jobs_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStat"][];
+                };
+            };
+        };
+    };
     get_me_v1_me_get: {
         parameters: {
             query?: never;
@@ -2745,6 +3104,238 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRequestUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_records_v1_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"][];
+                };
+            };
+        };
+    };
+    create_record_v1_records_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_voice_record_v1_records_voice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceUpload"];
+                };
+            };
+        };
+    };
+    get_record_v1_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_record_v1_records__record_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_record_v1_records__record_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmedRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_record_v1_records__record_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    voice_uploaded_v1_records__record_id__uploaded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Record"];
                 };
             };
             /** @description Validation Error */

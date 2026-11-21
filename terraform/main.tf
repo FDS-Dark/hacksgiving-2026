@@ -211,8 +211,15 @@ resource "kubernetes_deployment" "hacksgiving_api" {
           env_from {
             secret_ref { name = "${local.api_name}-jwt" }
           }
+          # Voice debriefs (storage.tf). Optional: without it voice is off.
+          env_from {
+            secret_ref {
+              name     = local.storage_secret_name
+              optional = true
+            }
+          }
           dynamic "env" {
-            for_each = local.api_env
+            for_each = merge(local.api_env, local.storage_env)
             content {
               name  = env.key
               value = env.value

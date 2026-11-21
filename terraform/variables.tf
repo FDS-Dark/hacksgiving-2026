@@ -74,3 +74,15 @@ variable "cors_origins" {
   description = "Browser origins the API accepts cross-origin requests from. Empty in production."
   default     = []
 }
+
+variable "worker_replicas" {
+  type        = number
+  default     = 1
+  description = "Background worker pods (api/worker). Safe to raise: jobs are claimed with SKIP LOCKED."
+}
+
+variable "worker_concurrency" {
+  type        = number
+  default     = 4
+  description = "Jobs each worker pod runs at once."
+}

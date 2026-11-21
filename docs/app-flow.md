@@ -150,7 +150,11 @@ flowchart LR
 
 ### 3. Phantom-style capture + insights (domestic violence focus)
 - Record a debrief → transcribe → extract (the Phantom pattern), feeding step 1's spine.
-- Domestic-violence safeguards: no audio kept after transcription, names stripped before the AI sees text,
+- Built: typed and voice debriefs go through a background pipeline (transcribe, redact, extract) into a
+  reviewed case (ADR 0009, `api/worker`). Voice uploads to a private bucket and is deleted once transcribed.
+- Domestic-violence safeguards: no audio kept after transcription, names we can spot (cues like "named",
+  "her son", titles) plus phones and emails removed before the extraction model reads the text (best effort:
+  a bare name can slip through; for voice, the audio itself goes to the transcription service),
   DV cases staff-only, a quick-exit button on resident screens.
 - Insights: trends across records (by category, neighborhood, time; repeat addresses; response time).
 
@@ -171,8 +175,8 @@ flowchart LR
 | My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
 | Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
 | Notifications ask, notification settings | resident | 2 | new (no push yet) |
-| New record (text, then voice) | worker | 1 / 3 | new |
-| Review extraction | worker | 3 | new |
+| New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`, the Record tab) |
+| Review extraction | worker | 3 | **built** (`/staff/records/[id]`), with "Your debriefs" on Today |
 | My tasks | worker | 1 | new |
 | Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
 | Case (tasks, history, referrals, guide), Update sheet, Message resident | staff | 1 | **built** to Figma S3–S5 (`/staff/cases/[id]`, `/staff/cases/[id]/messages`) |
@@ -193,7 +197,7 @@ flowchart LR
 | `case_updates` | history, notes, public messages | have |
 | `resources`, `case_referrals` | partner directory, referrals | have |
 | `tasks` | generated work items per case | have (API, and the case's Tasks tab; workers can add tasks) |
-| `records` | captured text / transcript + extraction (no audio kept) | new |
+| `records` | captured text / transcript + extraction (no audio kept) | have (0011), with `jobs`, the background queue |
 | `on_call_shifts`, `push_tokens` | who's on call, where to notify | new |
 | `shares` | what was shared with whom, when | new |
 | `training_*` | modules, completion | new |

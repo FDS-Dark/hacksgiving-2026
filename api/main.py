@@ -6,11 +6,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import errors
-from dependencies import get_executor
+from dependencies import get_audio_storage, get_executor
 from logging_setup import configure_logging
 from routers.case import router as cases
 from routers.health import router as health
 from routers.opportunity import router as opportunities
+from routers.job import router as jobs
+from routers.record import router as records
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
@@ -26,6 +28,11 @@ configure_logging(config.logging)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Make the private audio bucket if it's missing, so the first voice
+    # upload works (the worker does the same; it's safe to repeat).
+    storage = get_audio_storage()
+    if storage is not None and config.storage.create_bucket:
+        await storage.ensure_bucket()
     yield
     if get_executor.cache_info().currsize:
         await get_executor().dispose()
@@ -53,7 +60,10 @@ app.add_middleware(
 
 errors.install(app)
 
-for router in (health, user, routing, requests, public_requests, cases, tasks, resources, opportunities, staff, voice):
+for router in (
+    health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
+    staff, voice, records, jobs,
+):
     app.include_router(router, prefix="/v1")
 
 

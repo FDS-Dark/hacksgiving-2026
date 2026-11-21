@@ -720,6 +720,129 @@
         "title": "ClaimHandoffRequest",
         "type": "object"
       },
+      "ConfirmRecordRequest": {
+        "description": "The author's reviewed version of the extraction: this becomes the case.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "default": "other"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind",
+            "default": "request"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority",
+            "default": "medium"
+          },
+          "summary": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Summary",
+            "type": "string"
+          },
+          "tasks": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConfirmTask"
+            },
+            "maxItems": 10,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ConfirmRecordRequest",
+        "type": "object"
+      },
+      "ConfirmTask": {
+        "properties": {
+          "due_in_hours": {
+            "anyOf": [
+              {
+                "maximum": 336.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due In Hours"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ConfirmTask",
+        "type": "object"
+      },
+      "ConfirmedRecord": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/Case"
+          },
+          "record": {
+            "$ref": "#/components/schemas/Record"
+          }
+        },
+        "required": [
+          "record",
+          "case"
+        ],
+        "title": "ConfirmedRecord",
+        "type": "object"
+      },
       "ContactMethod": {
         "description": "How a resident wants to be reached. `none`: don't reach out at all.",
         "enum": [
@@ -987,6 +1110,22 @@
         "title": "CreateOpportunityRequest",
         "type": "object"
       },
+      "CreateRecordRequest": {
+        "description": "A typed debrief. (Voice records upload audio first; see the pipeline.)",
+        "properties": {
+          "text": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "CreateRecordRequest",
+        "type": "object"
+      },
       "CreateReferralRequest": {
         "properties": {
           "conversation_id": {
@@ -1178,6 +1317,100 @@
         "title": "DraftMessage",
         "type": "object"
       },
+      "ExtractedTask": {
+        "properties": {
+          "due_in_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How soon it should be done, in hours from now, if the record makes that clear; else null.",
+            "title": "Due In Hours"
+          },
+          "title": {
+            "description": "A short, concrete next step for ComForce staff, as an imperative.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "due_in_hours"
+        ],
+        "title": "ExtractedTask",
+        "type": "object"
+      },
+      "Extraction": {
+        "description": "The AI's reading of a record. Suggestions only: the author reviews and\nedits all of it before a case is created.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "description": "The ComForce service that should own this."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind",
+            "description": "request: someone needs help. incident: something happened that staff responded to."
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A street, intersection or neighborhood named in the record; else null.",
+            "title": "Location"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority",
+            "description": "critical or high only if someone may be in danger or the need is tonight."
+          },
+          "risk_flags": {
+            "description": "Short safety concerns staff should see ('weapon mentioned', 'children present'). Empty if none.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Risk Flags",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Two to four plain sentences: what happened and what the person needs. No names.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "tasks": {
+            "description": "Up to five follow-ups the record clearly calls for. Empty if none.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractedTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "description": "A short title for the case, under 80 characters, with no names.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "kind",
+          "category",
+          "priority",
+          "location",
+          "risk_flags",
+          "tasks"
+        ],
+        "title": "Extraction",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1274,6 +1507,52 @@
         ],
         "title": "ImpactSummary",
         "type": "object"
+      },
+      "JobStat": {
+        "description": "One kind and status in the queue: how many, and the oldest one due.",
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "oldest_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Run At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "status",
+          "total",
+          "oldest_run_at"
+        ],
+        "title": "JobStat",
+        "type": "object"
+      },
+      "JobStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "done",
+          "dead"
+        ],
+        "title": "JobStatus",
+        "type": "string"
       },
       "Opportunity": {
         "properties": {
@@ -1541,6 +1820,111 @@
         "title": "PublicRequestUpdate",
         "type": "object"
       },
+      "Record": {
+        "properties": {
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "extraction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Extraction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Text"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RecordSource"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/RecordStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecordStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "source",
+          "status",
+          "stage",
+          "raw_text",
+          "extraction",
+          "case_id",
+          "error",
+          "created_at",
+          "updated_at",
+          "confirmed_at"
+        ],
+        "title": "Record",
+        "type": "object"
+      },
       "RecordOutcomeRequest": {
         "properties": {
           "reason_code": {
@@ -1565,6 +1949,38 @@
         ],
         "title": "RecordOutcomeRequest",
         "type": "object"
+      },
+      "RecordSource": {
+        "enum": [
+          "text",
+          "audio"
+        ],
+        "title": "RecordSource",
+        "type": "string"
+      },
+      "RecordStage": {
+        "description": "Where a record is in the pipeline. Each stage is one job kind.",
+        "enum": [
+          "upload",
+          "transcribe",
+          "redact",
+          "extract",
+          "done"
+        ],
+        "title": "RecordStage",
+        "type": "string"
+      },
+      "RecordStatus": {
+        "enum": [
+          "processing",
+          "ready",
+          "confirming",
+          "confirmed",
+          "failed",
+          "discarded"
+        ],
+        "title": "RecordStatus",
+        "type": "string"
       },
       "Referral": {
         "properties": {
@@ -3066,6 +3482,39 @@
         "title": "VoiceRouteResponse",
         "type": "object"
       },
+      "VoiceUpload": {
+        "description": "Where the app uploads a voice debrief: PUT the audio to `upload_url`\nwith this Content-Type, then call `POST /records/{id}/uploaded`.",
+        "properties": {
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "max_bytes": {
+            "title": "Max Bytes",
+            "type": "integer"
+          },
+          "record": {
+            "$ref": "#/components/schemas/Record"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record",
+          "upload_url",
+          "content_type",
+          "max_bytes",
+          "expires_in_seconds"
+        ],
+        "title": "VoiceUpload",
+        "type": "object"
+      },
       "WebhookAccepted": {
         "properties": {
           "duplicate": {
@@ -3900,6 +4349,32 @@
         ]
       }
     },
+    "/v1/jobs/stats": {
+      "get": {
+        "description": "Jobs by kind and status: everything queued, running or dead, and what\nfinished in the last day. `oldest_run_at` on queued work shows a backlog.",
+        "operationId": "job_stats_v1_jobs_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/JobStat"
+                  },
+                  "title": "Response Job Stats V1 Jobs Stats Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Job Stats",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "description": "The signed-in user; the first call provisions them.",
@@ -4346,6 +4821,321 @@
         "summary": "Reply To Anonymous Request",
         "tags": [
           "requests"
+        ]
+      }
+    },
+    "/v1/records": {
+      "get": {
+        "description": "The caller's records, newest first.",
+        "operationId": "my_records_v1_records_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Record"
+                  },
+                  "title": "Response My Records V1 Records Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Records",
+        "tags": [
+          "records"
+        ]
+      },
+      "post": {
+        "description": "Capture a typed debrief. 202: it's processed in the background; poll\n`GET /records/{id}` until `status` is `ready` (or `failed`).",
+        "operationId": "create_record_v1_records_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/voice": {
+      "post": {
+        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server.",
+        "operationId": "start_voice_record_v1_records_voice_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceUpload"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Voice Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}": {
+      "delete": {
+        "description": "Throw a record away; its text is deleted. A case it became stays.",
+        "operationId": "discard_record_v1_records__record_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discard Record",
+        "tags": [
+          "records"
+        ]
+      },
+      "get": {
+        "operationId": "get_record_v1_records__record_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/confirm": {
+      "post": {
+        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. Calling it again returns the same\ncase.",
+        "operationId": "confirm_record_v1_records__record_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/retry": {
+      "post": {
+        "description": "Process a failed record again, from the stage it stopped at.",
+        "operationId": "retry_record_v1_records__record_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/uploaded": {
+      "post": {
+        "description": "The recording is uploaded: it's transcribed, redacted and read in the\nbackground. Poll `GET /records/{id}` as for a typed debrief.",
+        "operationId": "voice_uploaded_v1_records__record_id__uploaded_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Voice Uploaded",
+        "tags": [
+          "records"
         ]
       }
     },
