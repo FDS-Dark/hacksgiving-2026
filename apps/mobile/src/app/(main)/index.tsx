@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 import { BrandLogo } from '@/components/BrandLogo';
 import { Container, Page } from '@/components/Page';
 import { Display, Green, RedRule, Ribbon, SectionHeading } from '@/components/brand';
-import { NAV_ITEMS, type NavItem } from '@/lib/navigation';
+import { useNavItems, type NavItem } from '@/lib/navigation';
 import { SERIF, radius, space, useTheme } from '@/theme/tokens';
 
 /** From the "trust row" and stats band on comforcemilwaukee.com. */
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const wide = width >= 900;
   const columns = width >= 1100 ? 3 : width >= 640 ? 2 : 1;
+  const navItems = useNavItems();
 
   return (
     <Page bleed>
@@ -70,11 +71,11 @@ export default function HomeScreen() {
       </View>
 
       {/* Sections: the same places as the header bar, with a line on each. */}
-      {NAV_ITEMS.length ? (
+      {navItems.length ? (
         <Container style={styles.section}>
           <SectionHeading title="How Can We Help?" kicker="Everything ComForce MKE offers, in one place." />
           <View style={styles.grid}>
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <View key={item.href} style={{ width: `${100 / columns}%`, padding: space.sm }}>
                 <SectionCard item={item} />
               </View>
