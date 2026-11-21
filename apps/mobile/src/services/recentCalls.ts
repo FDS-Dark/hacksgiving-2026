@@ -101,15 +101,22 @@ export const callKeys = {
   window: (hours: number) => ['mpd-calls', hours] as const,
 };
 
-/** Every call in the window, with its summary. Polls our API (not the city)
- *  every two minutes, so a new ingest shows up within a couple of minutes. */
+/** How often the app asks our API for calls. This is our own server, so
+ *  the city's rate limit doesn't apply; a new ingest shows within 30 seconds.
+ *  React Query pauses polling while the app is in the background. */
+export const CALL_REFRESH_MS = 30_000;
+
+/** MPD's own publishing delay, shown wherever calls appear. */
+export const CALL_DELAY_NOTE = 'MPD publishes calls 30–90 min after dispatch';
+
+/** Every call in the window, with its summary. */
 export function useCallFeed(hours: number) {
   return useQuery({
     queryKey: callKeys.window(hours),
     queryFn: () => callsApi.list(hours),
     select: toCallFeed,
-    refetchInterval: 1000 * 60 * 2,
-    staleTime: 1000 * 60,
+    refetchInterval: CALL_REFRESH_MS,
+    staleTime: CALL_REFRESH_MS / 2,
     retry: 1,
   });
 }
@@ -120,8 +127,8 @@ export function useRecentCalls() {
     queryKey: callKeys.window(2),
     queryFn: () => callsApi.list(2),
     select: (data: MpdCalls) => data.calls.map(toRecentCall).filter(isAlertCall),
-    refetchInterval: 1000 * 60 * 2,
-    staleTime: 1000 * 60,
+    refetchInterval: CALL_REFRESH_MS,
+    staleTime: CALL_REFRESH_MS / 2,
     retry: 1,
   });
 }

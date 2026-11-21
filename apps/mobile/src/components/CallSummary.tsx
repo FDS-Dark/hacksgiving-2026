@@ -7,12 +7,14 @@
  * ink, a single hue for magnitude (districts, hours) and the map's fixed
  * category colors only where the bar stands for a category.
  */
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Segmented } from '@/components/Segmented';
 import { Button, Group, Notice, Row, Txt, tap } from '@/components/ui';
 import {
+  CALL_DELAY_NOTE,
   CALL_WINDOWS,
   callCategory,
   type CallCategory,
@@ -144,6 +146,12 @@ export function CallSummary({
         <Txt variant="section">911 calls</Txt>
         <Txt variant="footnote" tone="secondary">{updated ? `MPD · updated ${updated}` : loading ? 'Loading' : ''}</Txt>
       </View>
+      <View style={[styles.delay, { backgroundColor: theme.warningSoft }]}>
+        <Ionicons name="time-outline" size={16} color={theme.soon} />
+        <Txt variant="footnote" style={{ flex: 1 }}>
+          Not live: {CALL_DELAY_NOTE}. The app checks for new calls every 30 seconds.
+        </Txt>
+      </View>
       <Segmented options={CALL_WINDOWS} value={window} onChange={onWindowChange} label="Time window" />
 
       {error ? (
@@ -258,6 +266,7 @@ export function CallSummary({
 
 const styles = StyleSheet.create({
   heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  delay: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.sm, paddingHorizontal: space.md, borderRadius: radius.md },
   stats: { flexDirection: 'row', gap: space.sm },
   stat: { flex: 1, gap: 2, padding: space.md, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth },
   statValue: { fontVariant: ['tabular-nums'] },

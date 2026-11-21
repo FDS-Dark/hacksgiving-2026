@@ -135,6 +135,7 @@ export function SafetyMap({
             {recentCalls.filter((call) => call.latitude !== undefined).length} 911 CALLS ON THE MAP
           </Txt>
           <Txt variant="caption" tone="secondary">Pin color: call type · tap a pin for details</Txt>
+          <Txt variant="caption" tone="secondary">Delayed 30–90 min by MPD · not live</Txt>
         </View>
       ) : (
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
@@ -148,7 +149,7 @@ export function SafetyMap({
           <View style={[styles.gradient, { backgroundColor: '#C62026' }]} />
           <Txt variant="caption" tone="secondary">Higher</Txt>
         </View>
-        <Txt variant="caption" tone="secondary">Small pins: reports · dark-ringed pins: 911 calls</Txt>
+        <Txt variant="caption" tone="secondary">Small pins: reports · dark-ringed pins: 911 calls (30–90 min delay)</Txt>
         <Txt variant="caption" tone="secondary">Tap the map or a pin for details</Txt>
       </View>
       )}
