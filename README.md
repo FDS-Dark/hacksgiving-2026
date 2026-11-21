@@ -41,6 +41,8 @@ Expo Go talks to whatever `apps/mobile/.env.local` says.
 
 ## Local development
 
+Using a coding agent? Point it at [`AGENTS.md`](AGENTS.md): setup steps with checks, and the gotchas.
+
 Needs Docker (running), `uv`, Node 22, Expo Go on your phone, and ideally
 Tailscale (the team's Auth0 sign-in callbacks are registered per Tailscale
 IP).
