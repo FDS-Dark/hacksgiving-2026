@@ -15,6 +15,9 @@ const NAV: { label: string; href: Href; match: (path: string) => boolean; icon: 
   { label: 'Dashboard', href: '/worker', match: (p) => p === '/worker', icon: 'grid-outline' },
   { label: 'Cases', href: '/worker/cases', match: (p) => p.startsWith('/worker/cases'), icon: 'file-tray-full-outline' },
   { label: 'Resources', href: '/worker/resources', match: (p) => p.startsWith('/worker/resources'), icon: 'library-outline' },
+  { label: 'Insights', href: '/worker/insights', match: (p) => p.startsWith('/worker/insights'), icon: 'bulb-outline' },
+  { label: 'Response', href: '/worker/response', match: (p) => p.startsWith('/worker/response'), icon: 'pulse-outline' },
+  { label: 'Info hub', href: '/worker/info', match: (p) => p.startsWith('/worker/info'), icon: 'folder-open-outline' },
   { label: 'Team', href: '/worker/team', match: (p) => p.startsWith('/worker/team'), icon: 'people-outline' },
 ];
 
@@ -38,6 +41,9 @@ export default function WorkerLayout() {
         <Stack.Screen name="cases/new" />
         <Stack.Screen name="cases/[id]" />
         <Stack.Screen name="resources" />
+        <Stack.Screen name="insights" />
+        <Stack.Screen name="response" />
+        <Stack.Screen name="info" />
         <Stack.Screen name="team" />
       </Stack>
     );
@@ -55,7 +61,8 @@ function WorkerHeader({ name, role, showNav }: { name?: string | null; role?: ke
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const pathname = usePathname();
-  const wide = width >= 900;
+  // Seven links plus the brand and account need about 1200px; below that they scroll in a row.
+  const wide = width >= 1200;
 
   const links = NAV.map((item) => <NavLink key={item.label} item={item} active={item.match(pathname)} />);
 

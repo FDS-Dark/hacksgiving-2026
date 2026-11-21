@@ -43,17 +43,10 @@ export default function AccountScreen() {
           accessory="chevron"
           onPress={() => router.navigate('/training')}
         />
-        <Row
-          title="Admin"
-          subtitle="For ComForce staff and partners"
-          icon="settings-outline"
-          accessory="chevron"
-          onPress={() => router.navigate('/admin')}
-        />
         {/* ComForce staff: the worker portal (it checks access itself). */}
         <Row
           title="ComForce staff portal"
-          subtitle="Cases, resources and your team"
+          subtitle="Cases, insights, response, info hub and your team"
           icon="briefcase-outline"
           accessory="chevron"
           onPress={() => router.navigate('/worker')}

@@ -13,6 +13,20 @@ All paths are under `/v1`, need a signed-in Auth0 access token
 Types by name: `apps/mobile/src/api/types.ts`. Ready-made TanStack hooks:
 `apps/mobile/src/services/cases.ts`.
 
+## The portal's pages
+
+| Page | Data |
+|---|---|
+| Dashboard, Cases, Resources, Team (workers and access) | Live, from the API below |
+| Insights | Case actions are live (`/cases/insights`); budget, funding, programs, volunteers are sample data |
+| Response | Rapid response and EMS charts: sample data until dispatch records are connected |
+| Info hub | Staff and partner posts, kept on the device for now (`lib/admin.tsx`) |
+| Team: training compliance, partners | Sample data (`lib/directory.ts`) |
+
+Staff in the portal can also turn on admin mode (Info hub → **Post an
+opportunity**) to manage postings on the community Opportunities page;
+it only shows for staff.
+
 ## Who can do what
 
 | Role (`app.users.role`) | Can |

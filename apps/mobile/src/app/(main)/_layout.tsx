@@ -2,7 +2,6 @@ import { Slot } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppHeader } from '@/components/AppHeader';
-import { AdminProvider } from '@/lib/admin';
 import { useTheme } from '@/theme/tokens';
 
 /**
@@ -12,11 +11,9 @@ import { useTheme } from '@/theme/tokens';
 export default function MainLayout() {
   const theme = useTheme();
   return (
-    <AdminProvider>
-      <View style={{ flex: 1, backgroundColor: theme.bg }}>
-        <AppHeader />
-        <Slot />
-      </View>
-    </AdminProvider>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <AppHeader />
+      <Slot />
+    </View>
   );
 }

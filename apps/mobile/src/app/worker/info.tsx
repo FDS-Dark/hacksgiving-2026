@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
@@ -76,6 +77,7 @@ export default function InfoHubScreen() {
 }
 
 function PostList({ posts, onOpen, onNew }: { posts: InfoPost[]; onOpen: (id: string) => void; onNew: () => void }) {
+  const { setAdminMode } = useAdmin();
   const [folder, setFolder] = useState<string>(ALL);
   const [query, setQuery] = useState('');
   const [showExpired, setShowExpired] = useState(false);
@@ -91,7 +93,6 @@ function PostList({ posts, onOpen, onNew }: { posts: InfoPost[]; onOpen: (id: st
 
   return (
     <Page contentStyle={{ maxWidth: 900 }}>
-      <BackLink label="Admin" href="/admin" />
       <SectionHeading title="Info Hub" kicker="Announcements, guides, contacts, and forms for staff and partners." />
 
       {toConfirm ? (
@@ -105,6 +106,16 @@ function PostList({ posts, onOpen, onNew }: { posts: InfoPost[]; onOpen: (id: st
           <Field icon="search" placeholder="Search posts and tags" value={query} onChangeText={setQuery} autoCapitalize="none" />
         </View>
         <Button label="New post" icon="add-circle-outline" onPress={onNew} />
+        {/* Postings are managed in place on the community Opportunities page. */}
+        <Button
+          label="Post an opportunity"
+          icon="briefcase-outline"
+          variant="tinted"
+          onPress={() => {
+            setAdminMode(true);
+            router.navigate('/opportunities');
+          }}
+        />
       </View>
 
       <Chips scroll>

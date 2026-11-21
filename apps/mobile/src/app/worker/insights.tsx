@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
-import { BackLink } from '@/components/admin/BackLink';
 import { DivergingColumns, RankedBars } from '@/components/charts/Bars';
 import { ChartCard, Legend, StatTile } from '@/components/charts/ChartCard';
 import { MeterList } from '@/components/charts/Figures';
@@ -12,6 +11,7 @@ import { SectionHeading } from '@/components/brand';
 import { Button, Chip, Chips, FieldLabel, Group, Notice, Row, Txt } from '@/components/ui';
 import { useAdmin } from '@/lib/admin';
 import { STAFF } from '@/lib/directory';
+import { useInsights } from '@/services/cases';
 import { ANNUAL_BUDGET, FUNDING_GOAL, PERIODS, VOLUNTEER_HOUR_VALUE, buildInsights, money, sampleBusiness, type Insight, type Period } from '@/lib/insights';
 import { STATUS, useChartTheme } from '@/theme/chart';
 import { radius, space, useTheme } from '@/theme/tokens';
@@ -27,14 +27,15 @@ export default function InsightsScreen() {
   const theme = useTheme();
   const chart = useChartTheme();
   const { width } = useWindowDimensions();
-  const { requests, postings, posts, setAdminMode } = useAdmin();
+  const { postings, posts, setAdminMode } = useAdmin();
+  const cases = useInsights().data?.stats;
   const [period, setPeriod] = useState<Period>('month');
   const [area, setArea] = useState<string>(ALL);
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
   const [showDone, setShowDone] = useState(false);
 
   const data = useMemo(() => sampleBusiness(period), [period]);
-  const insights = useMemo(() => buildInsights(data, { requests, postings, posts, staff: STAFF }), [data, requests, postings, posts]);
+  const insights = useMemo(() => buildInsights(data, { cases, postings, posts, staff: STAFF }), [data, cases, postings, posts]);
   const active = insights.filter((i) => !done.has(i.id));
   const areas = [ALL, ...new Set(insights.map((i) => i.area))];
   const shown = (showDone ? insights : active).filter((i) => area === ALL || i.area === area);
@@ -58,11 +59,10 @@ export default function InsightsScreen() {
 
   return (
     <Page contentStyle={{ maxWidth: 1100 }}>
-      <BackLink label="Admin" href="/admin" />
       <SectionHeading title="Business Insights" kicker="What needs attention, why, and what to do next." />
 
       <Notice icon="construct-outline" tone="warning">
-        Requests, training, postings, and posts are live from the admin pages. Budget, funding, and program numbers are sample data.
+        Case actions are live from the case records. Training, postings and posts are kept on this device; budget, funding and program numbers are sample data.
       </Notice>
 
       <View style={{ gap: 6 }}>

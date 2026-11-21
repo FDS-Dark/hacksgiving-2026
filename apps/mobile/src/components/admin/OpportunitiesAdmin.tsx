@@ -134,7 +134,7 @@ export function OpportunitiesAdmin() {
         variant="plain"
         onPress={() => {
           setAdminMode(false);
-          router.navigate('/admin');
+          router.navigate('/worker/info');
         }}
       />
     </Page>

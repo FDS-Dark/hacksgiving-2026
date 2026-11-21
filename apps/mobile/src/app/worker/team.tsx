@@ -1,9 +1,12 @@
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Role } from '@/api/types';
 import { Page } from '@/components/Page';
-import { ErrorBanner, Loading, Notice } from '@/components/ui';
+import { ErrorBanner, Group, Loading, Notice, Row } from '@/components/ui';
 import { Card, CardTitle, ChoiceRow, ROLE_LABEL, timeAgo } from '@/components/worker/kit';
+import { PARTNERS, STAFF } from '@/lib/directory';
+import { REQUIRED_MODULES, TRAINING_MODULES } from '@/lib/training';
 import { useSetRole, useStaffStatus, useUsers, useWorkers } from '@/services/cases';
 import { space, type, useTheme } from '@/theme/tokens';
 
@@ -61,6 +64,42 @@ export default function TeamScreen() {
       ) : (
         <Notice icon="information-circle-outline">Staff admins add and remove workers here.</Notice>
       )}
+
+      {/* Sample data until training progress and partner records are stored. */}
+      <Group
+        header="Training compliance (sample)"
+        headerIcon="school-outline"
+        footer={`${REQUIRED_MODULES.length} of ${TRAINING_MODULES.length} modules are required before a first shift.`}
+      >
+        {STAFF.map((w) => {
+          const complete = w.trainingDone === TRAINING_MODULES.length;
+          const started = w.trainingDone > 0;
+          return (
+            <Row
+              key={w.name}
+              title={w.name}
+              subtitle={w.role}
+              detail={complete ? 'Complete' : `${w.trainingDone}/${TRAINING_MODULES.length}`}
+              detailTint={complete ? theme.accentSoft : started ? theme.fill : theme.warningSoft}
+              detailColor={complete ? theme.accent : started ? theme.textSecondary : theme.soon}
+            />
+          );
+        })}
+        <Row title="Preview the worker course" icon="eye-outline" tone="accent" accessory="chevron" onPress={() => router.navigate('/training')} />
+      </Group>
+
+      <Group header="Partners (sample)" headerIcon="business-outline">
+        {PARTNERS.map((p) => (
+          <Row
+            key={p.name}
+            title={p.name}
+            subtitle={p.kind}
+            detail={p.status}
+            detailTint={p.status === 'Active' ? theme.accentSoft : theme.warningSoft}
+            detailColor={p.status === 'Active' ? theme.accent : theme.soon}
+          />
+        ))}
+      </Group>
     </Page>
   );
 }

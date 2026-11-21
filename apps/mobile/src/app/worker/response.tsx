@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
-import { BackLink } from '@/components/admin/BackLink';
 import { GroupedColumns, RankedBars } from '@/components/charts/Bars';
 import { ChartCard, Legend, StatTile } from '@/components/charts/ChartCard';
 import { Heatmap, MeterList, SegmentedBar } from '@/components/charts/Figures';
@@ -56,7 +55,6 @@ export default function ResponseDashboard() {
 
   return (
     <Page contentStyle={{ maxWidth: 1100 }}>
-      <BackLink label="Admin" href="/admin" />
       <SectionHeading title="Rapid Response & EMS" kicker="Response times, EMS coordination, overdose response, and call patterns." />
 
       <Notice icon="construct-outline" tone="warning">

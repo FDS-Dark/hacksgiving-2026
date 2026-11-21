@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/BrandLogo';
+import { AdminProvider } from '@/lib/admin';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { queryClient } from '@/services/queryClient';
 import { space, useTheme } from '@/theme/tokens';
@@ -16,7 +17,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RootStack />
+          {/* Above both route groups: staff tools show on community pages too. */}
+          <AdminProvider>
+            <RootStack />
+          </AdminProvider>
         </AuthProvider>
       </QueryClientProvider>
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />

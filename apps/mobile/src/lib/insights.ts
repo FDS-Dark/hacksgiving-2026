@@ -3,8 +3,8 @@
  * funding, cost per resident, volunteers, partner follow-through) and
  * the rules that turn them into actions.
  *
- * Operational insights (requests, training, postings, info hub) read the
- * live admin state. Finance and program figures are SAMPLE DATA until
+ * Operational insights read the live case records; training, postings and
+ * the info hub read the admin state on this device. Finance and program figures are SAMPLE DATA until
  * accounting and grant records are connected; replace sampleBusiness().
  */
 import type { Href } from 'expo-router';
@@ -12,7 +12,7 @@ import type { Href } from 'expo-router';
 import type { StatusLevel } from '@/theme/chart';
 import type { InfoPost } from '@/lib/infohub';
 import type { Posting } from '@/lib/opportunities';
-import { followUpDue, isOpen, isOverdue, type AssistRequest } from '@/lib/requests';
+import type { CaseStats } from '@/api/types';
 import { REQUIRED_MODULES } from '@/lib/training';
 
 export type Period = 'month' | 'quarter' | 'ytd';
@@ -148,48 +148,53 @@ const LEVEL_ORDER: StatusLevel[] = ['critical', 'serious', 'warning', 'good'];
 /** The rules. Each finding names the problem, the stakes, and one next step. */
 export function buildInsights(
   data: BusinessData,
-  live: { requests: AssistRequest[]; postings: Posting[]; posts: InfoPost[]; staff: readonly { name: string; trainingDone: number }[] },
+  live: { cases?: CaseStats; postings: Posting[]; posts: InfoPost[]; staff: readonly { name: string; trainingDone: number }[] },
 ): Insight[] {
   const out: Insight[] = [];
-  const open = live.requests.filter(isOpen);
-
-  const overdue = open.filter((r) => isOverdue(r));
-  if (overdue.length) {
-    const urgent = overdue.filter((r) => r.priority === 'urgent').length;
+  // Operations: live from the case records (GET /v1/cases/insights).
+  const c = live.cases;
+  if (c?.high_priority_active) {
     out.push({
-      id: 'overdue',
-      level: urgent ? 'critical' : 'serious',
+      id: 'high-priority',
+      level: 'critical',
       area: 'Operations',
-      title: `${overdue.length} request${overdue.length > 1 ? 's are' : ' is'} past the response target`,
-      detail: `${urgent ? `${urgent} urgent. ` : ''}Residents who wait drop off, and response times are what funders ask about first.`,
+      title: `${c.high_priority_active} high-priority case${c.high_priority_active > 1 ? 's are' : ' is'} still open`,
+      detail: 'Residents who wait drop off, and response times are what funders ask about first.',
       action: 'Assign and respond',
-      href: '/admin/requests',
+      href: { pathname: '/worker/cases', params: { open: '1', urgent: '1' } },
     });
   }
-
-  const unassigned = open.filter((r) => !r.assignee && !isOverdue(r));
-  if (unassigned.length) {
+  if (c?.new) {
+    out.push({
+      id: 'new',
+      level: 'serious',
+      area: 'Operations',
+      title: `${c.new} request${c.new > 1 ? 's are' : ' is'} waiting for triage`,
+      detail: 'Set a priority and category so the right worker picks it up.',
+      action: 'Triage new requests',
+      href: { pathname: '/worker/cases', params: { status: 'new' } },
+    });
+  }
+  if (c?.unassigned_active) {
     out.push({
       id: 'unassigned',
       level: 'warning',
       area: 'Operations',
-      title: `${unassigned.length} open request${unassigned.length > 1 ? 's have' : ' has'} no owner`,
-      detail: 'Requests without an owner are the ones that become overdue.',
+      title: `${c.unassigned_active} open case${c.unassigned_active > 1 ? 's have' : ' has'} no owner`,
+      detail: 'Cases without an owner are the ones that get missed.',
       action: 'Open the queue',
-      href: '/admin/requests',
+      href: { pathname: '/worker/cases', params: { open: '1', assigned: 'unassigned' } },
     });
   }
-
-  const due = live.requests.filter(followUpDue);
-  if (due.length) {
+  if (c?.awaiting_resources) {
     out.push({
-      id: 'followups',
+      id: 'awaiting',
       level: 'warning',
       area: 'Operations',
-      title: `${due.length} follow-up${due.length > 1 ? 's are' : ' is'} due`,
-      detail: 'Closing the loop is what turns a referral into a met need.',
-      action: 'See follow-ups',
-      href: '/admin/requests',
+      title: `${c.awaiting_resources} case${c.awaiting_resources > 1 ? 's are' : ' is'} waiting on a resource`,
+      detail: 'Closing the loop with the partner is what turns a referral into a met need.',
+      action: 'Follow up on referrals',
+      href: { pathname: '/worker/cases', params: { status: 'awaiting_resources' } },
     });
   }
 
@@ -202,7 +207,7 @@ export function buildInsights(
       title: `${notReady.length} people can’t take field shifts yet`,
       detail: `${notReady.map((s) => s.name).join(', ')} still have required training left. That’s capacity you’re already paying to recruit.`,
       action: 'Review training',
-      href: '/admin',
+      href: '/worker/team',
     });
   }
 
@@ -245,7 +250,7 @@ export function buildInsights(
         title: `${d.kind} due in ${days} day${days === 1 ? '' : 's'}: ${d.name}`,
         detail: `${money(d.amount)} at stake. ${d.kind === 'Report' ? 'Late reports put renewals at risk.' : 'Pull response-time and outcome numbers from this dashboard.'}`,
         action: 'Share the task',
-        href: '/admin/info',
+        href: '/worker/info',
       });
     }
   }
@@ -295,7 +300,7 @@ export function buildInsights(
       title: `${p.name} completes ${Math.round((p.completed / (p.sent || 1)) * 100)}% of referrals`,
       detail: `${p.sent - p.completed} of ${p.sent} referrals didn’t end in service. Check capacity and intake rules with them before sending more.`,
       action: 'Post a partner note',
-      href: '/admin/info',
+      href: '/worker/info',
     });
   }
 
@@ -308,7 +313,7 @@ export function buildInsights(
       title: `${unread.length} must-read post${unread.length > 1 ? 's' : ''} not confirmed by everyone`,
       detail: 'Safety and policy updates only work if the whole team has read them.',
       action: 'See who hasn’t',
-      href: '/admin/info',
+      href: '/worker/info',
     });
   }
 
@@ -321,7 +326,7 @@ export function buildInsights(
       title: `Residents served up ${Math.round(growth * 100)}% from last period`,
       detail: 'Put this in the next funder update with a resident story.',
       action: 'Draft an announcement',
-      href: '/admin/info',
+      href: '/worker/info',
     });
   }
 
