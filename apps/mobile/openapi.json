@@ -1,6 +1,70 @@
 {
   "components": {
     "schemas": {
+      "ActiveReferral": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/models__voice__ReferralStatus"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "resource_name",
+          "status",
+          "urgency_tier",
+          "neighborhood",
+          "created_at"
+        ],
+        "title": "ActiveReferral",
+        "type": "object"
+      },
       "AddCaseUpdateRequest": {
         "description": "An internal note, or (visibility public) a message the requester will\nsee on their request.",
         "properties": {
@@ -29,7 +93,7 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/ReferralStatus",
+            "$ref": "#/components/schemas/models__case__ReferralStatus",
             "default": "suggested"
           }
         },
@@ -313,7 +377,7 @@
           },
           "referrals": {
             "items": {
-              "$ref": "#/components/schemas/Referral"
+              "$ref": "#/components/schemas/models__case__Referral"
             },
             "title": "Referrals",
             "type": "array"
@@ -711,6 +775,32 @@
         "title": "CreateCaseRequest",
         "type": "object"
       },
+      "CreateReferralRequest": {
+        "properties": {
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "resource_slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Resource Slug",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/models__voice__ReferralStatus",
+            "default": "offered"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "resource_slug"
+        ],
+        "title": "CreateReferralRequest",
+        "type": "object"
+      },
       "CreateResourceRequest": {
         "properties": {
           "address": {
@@ -822,6 +912,84 @@
         },
         "title": "HTTPValidationError",
         "type": "object"
+      },
+      "ImpactCategory": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "count"
+        ],
+        "title": "ImpactCategory",
+        "type": "object"
+      },
+      "ImpactSummary": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "emergency_redirects": {
+            "minimum": 0.0,
+            "title": "Emergency Redirects",
+            "type": "integer"
+          },
+          "follow_ups_completed": {
+            "minimum": 0.0,
+            "title": "Follow Ups Completed",
+            "type": "integer"
+          },
+          "referrals_offered": {
+            "minimum": 0.0,
+            "title": "Referrals Offered",
+            "type": "integer"
+          },
+          "total_calls": {
+            "minimum": 0.0,
+            "title": "Total Calls",
+            "type": "integer"
+          },
+          "transfers_connected": {
+            "minimum": 0.0,
+            "title": "Transfers Connected",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_calls",
+          "emergency_redirects",
+          "referrals_offered",
+          "transfers_connected",
+          "follow_ups_completed",
+          "categories"
+        ],
+        "title": "ImpactSummary",
+        "type": "object"
+      },
+      "OutcomeStatus": {
+        "enum": [
+          "connected",
+          "voicemail",
+          "no_answer",
+          "declined",
+          "unavailable",
+          "follow_up_needed",
+          "completed"
+        ],
+        "title": "OutcomeStatus",
+        "type": "string"
       },
       "PublicRequest": {
         "properties": {
@@ -946,224 +1114,71 @@
         "title": "PublicRequestUpdate",
         "type": "object"
       },
-      "Referral": {
+      "RecordOutcomeRequest": {
         "properties": {
-          "case_id": {
-            "format": "uuid",
-            "title": "Case Id",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "created_by": {
+          "reason_code": {
             "anyOf": [
               {
-                "format": "uuid",
+                "maxLength": 64,
+                "minLength": 1,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Created By"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "outcome": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outcome"
-          },
-          "resource_category": {
-            "$ref": "#/components/schemas/CaseCategory"
-          },
-          "resource_id": {
-            "format": "uuid",
-            "title": "Resource Id",
-            "type": "string"
-          },
-          "resource_is_sample": {
-            "title": "Resource Is Sample",
-            "type": "boolean"
-          },
-          "resource_name": {
-            "title": "Resource Name",
-            "type": "string"
-          },
-          "resource_phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Phone"
-          },
-          "resource_website": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Website"
+            "title": "Reason Code"
           },
           "status": {
-            "$ref": "#/components/schemas/ReferralStatus"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
+            "$ref": "#/components/schemas/OutcomeStatus"
           }
         },
         "required": [
-          "id",
-          "case_id",
-          "resource_id",
-          "resource_name",
-          "resource_category",
-          "resource_phone",
-          "resource_website",
-          "resource_is_sample",
-          "status",
-          "outcome",
-          "created_by",
-          "created_at",
-          "updated_at"
+          "status"
         ],
-        "title": "Referral",
+        "title": "RecordOutcomeRequest",
         "type": "object"
       },
-      "ReferralStatus": {
-        "enum": [
-          "suggested",
-          "shared",
-          "accepted",
-          "completed",
-          "declined"
-        ],
-        "title": "ReferralStatus",
-        "type": "string"
-      },
-      "Resource": {
+      "ReferralOutcome": {
         "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
-          },
-          "address": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Address"
-          },
-          "category": {
-            "$ref": "#/components/schemas/CaseCategory"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "hours": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hours"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
           },
-          "is_sample": {
-            "title": "Is Sample",
-            "type": "boolean"
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
           },
-          "name": {
-            "title": "Name",
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
             "type": "string"
           },
-          "neighborhood": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Neighborhood"
+          "referral_id": {
+            "format": "uuid",
+            "title": "Referral Id",
+            "type": "string"
           },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          },
-          "website": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website"
+          "status": {
+            "$ref": "#/components/schemas/OutcomeStatus"
           }
         },
         "required": [
           "id",
-          "name",
-          "category",
-          "description",
-          "address",
-          "neighborhood",
-          "phone",
-          "website",
-          "hours",
-          "is_sample",
-          "active",
-          "created_at"
+          "referral_id",
+          "status",
+          "reason_code",
+          "recorded_at"
         ],
-        "title": "Resource",
+        "title": "ReferralOutcome",
         "type": "object"
       },
       "ResourceSuggestion": {
@@ -1173,7 +1188,7 @@
             "type": "string"
           },
           "resource": {
-            "$ref": "#/components/schemas/Resource"
+            "$ref": "#/components/schemas/models__case__Resource"
           }
         },
         "required": [
@@ -1652,7 +1667,7 @@
           "status": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ReferralStatus"
+                "$ref": "#/components/schemas/models__case__ReferralStatus"
               },
               {
                 "type": "null"
@@ -1675,6 +1690,15 @@
           "referral"
         ],
         "title": "UpdateType",
+        "type": "string"
+      },
+      "UrgencyTier": {
+        "enum": [
+          "emergency",
+          "urgent",
+          "routine"
+        ],
+        "title": "UrgencyTier",
         "type": "string"
       },
       "UserSummary": {
@@ -1761,6 +1785,54 @@
         "title": "Visibility",
         "type": "string"
       },
+      "VoiceDashboard": {
+        "properties": {
+          "active_referrals": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveReferral"
+            },
+            "title": "Active Referrals",
+            "type": "array"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/models__voice__Resource"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ImpactSummary"
+          }
+        },
+        "required": [
+          "stats",
+          "active_referrals",
+          "routes"
+        ],
+        "title": "VoiceDashboard",
+        "type": "object"
+      },
+      "WebhookAccepted": {
+        "properties": {
+          "duplicate": {
+            "default": false,
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "status": {
+            "default": "received",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "duplicate"
+        ],
+        "title": "WebhookAccepted",
+        "type": "object"
+      },
       "Worker": {
         "properties": {
           "display_name": {
@@ -1794,6 +1866,361 @@
           "open_cases"
         ],
         "title": "Worker",
+        "type": "object"
+      },
+      "models__case__Referral": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "resource_category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_is_sample": {
+            "title": "Resource Is Sample",
+            "type": "boolean"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "resource_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Phone"
+          },
+          "resource_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Website"
+          },
+          "status": {
+            "$ref": "#/components/schemas/models__case__ReferralStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "resource_id",
+          "resource_name",
+          "resource_category",
+          "resource_phone",
+          "resource_website",
+          "resource_is_sample",
+          "status",
+          "outcome",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Referral",
+        "type": "object"
+      },
+      "models__case__ReferralStatus": {
+        "enum": [
+          "suggested",
+          "shared",
+          "accepted",
+          "completed",
+          "declined"
+        ],
+        "title": "ReferralStatus",
+        "type": "string"
+      },
+      "models__case__Resource": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_sample": {
+            "title": "Is Sample",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "description",
+          "address",
+          "neighborhood",
+          "phone",
+          "website",
+          "hours",
+          "is_sample",
+          "active",
+          "created_at"
+        ],
+        "title": "Resource",
+        "type": "object"
+      },
+      "models__voice__Referral": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/models__voice__ReferralStatus"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "resource_id",
+          "status",
+          "created_at"
+        ],
+        "title": "Referral",
+        "type": "object"
+      },
+      "models__voice__ReferralStatus": {
+        "enum": [
+          "offered",
+          "accepted",
+          "transfer_attempted",
+          "connected",
+          "declined",
+          "unavailable"
+        ],
+        "title": "ReferralStatus",
+        "type": "string"
+      },
+      "models__voice__Resource": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hours_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Label"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_emergency": {
+            "title": "Is Emergency",
+            "type": "boolean"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "last_verified_at": {
+            "format": "date-time",
+            "title": "Last Verified At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "service_area": {
+            "title": "Service Area",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "transfer_approved": {
+            "title": "Transfer Approved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "category",
+          "description",
+          "phone_e164",
+          "languages",
+          "service_area",
+          "hours_label",
+          "transfer_approved",
+          "is_emergency",
+          "last_verified_at"
+        ],
+        "title": "Resource",
         "type": "object"
       }
     }
@@ -2354,7 +2781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Referral"
+                  "$ref": "#/components/schemas/models__case__Referral"
                 }
               }
             },
@@ -2418,7 +2845,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Referral"
+                  "$ref": "#/components/schemas/models__case__Referral"
                 }
               }
             },
@@ -2738,7 +3165,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/Resource"
+                    "$ref": "#/components/schemas/models__case__Resource"
                   },
                   "title": "Response List Resources V1 Resources Get",
                   "type": "array"
@@ -2781,7 +3208,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Resource"
+                  "$ref": "#/components/schemas/models__case__Resource"
                 }
               }
             },
@@ -2824,7 +3251,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Resource"
+                  "$ref": "#/components/schemas/models__case__Resource"
                 }
               }
             },
@@ -3036,6 +3463,339 @@
         "summary": "List Workers",
         "tags": [
           "staff"
+        ]
+      }
+    },
+    "/v1/voice/dashboard": {
+      "get": {
+        "operationId": "dashboard_v1_voice_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dashboard",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/impact": {
+      "get": {
+        "operationId": "impact_v1_voice_impact_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Impact",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals": {
+      "post": {
+        "operationId": "create_referral_v1_voice_referrals_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReferralRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/models__voice__Referral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Referral",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}/outcome": {
+      "post": {
+        "operationId": "record_outcome_v1_voice_referrals__referral_id__outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}/responder-outcome": {
+      "post": {
+        "operationId": "record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Responder Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/resources": {
+      "get": {
+        "description": "Return allowlisted routes; only approved destinations expose a number.",
+        "operationId": "resources_v1_voice_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 12,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/models__voice__Resource"
+                  },
+                  "title": "Response Resources V1 Voice Resources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resources",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/webhooks/elevenlabs": {
+      "post": {
+        "description": "Accept signed post-call analysis; verify bytes before parsing JSON.",
+        "operationId": "elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Elevenlabs Webhook",
+        "tags": [
+          "voice"
         ]
       }
     }
