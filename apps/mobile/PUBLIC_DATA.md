@@ -5,7 +5,9 @@ The external mobile MVP reads Milwaukee Police Department monthly public crime l
 - Service: `https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/MPD/MPD_Monthly/MapServer`
 - Layers used: all ten official monthly layers: homicide, arson, sex offense, criminal damage, robbery, burglary, theft, vehicle theft, locked-vehicle entry, and assault (0–9)
 - Window: records whose `DAYSPASSED` value is 30 or less (the service itself is a monthly view)
-- Fields requested: only `DAYSPASSED` and point geometry
+- Fields requested: `DAYSPASSED`, `REPORTEDDATETIME`, `WEAPONUSED`, and point geometry. Incident numbers, narrative text, and exact displayed addresses are excluded.
+
+The map is our own Leaflet visualization over OpenStreetMap tiles; it does not copy or embed MilwaukeeCrime.com's map or dataset. The heat surface is generated from the official points above, while colored pins show reports from the most recent seven days. For a production build, bundle or self-host the pinned Leaflet assets and follow OpenStreetMap's tile-usage policy rather than relying on a public CDN indefinitely.
 
 ## Privacy decisions
 
