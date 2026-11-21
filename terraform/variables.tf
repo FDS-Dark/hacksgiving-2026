@@ -68,3 +68,9 @@ variable "auth0_audience" {
   description = "Auth0 API identifier. Must match auth0/terraform var.api_identifier."
   default     = "https://api.hacksgiving.app"
 }
+
+variable "cors_origins" {
+  type        = list(string)
+  description = "Browser origins the API accepts cross-origin requests from. Empty in production."
+  default     = []
+}

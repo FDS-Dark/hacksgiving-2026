@@ -7,3 +7,5 @@ api_hostname   = "hacksgiving-api-staging.austinkoske.com"
 db_secret_path = "deployments/hacksgiving/staging/db"
 # Seeded by hand like production's: jwt_secret.
 app_secret_path = "deployments/hacksgiving/staging/app"
+# The worker portal in a browser (npx expo start --web) against staging.
+cors_origins = ["http://localhost:8081"]
