@@ -19,6 +19,7 @@ from databridge.executor import PostgresExecutor
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.user import UserDatabridge
+from databridge.voice import VoiceDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
@@ -27,6 +28,7 @@ from services.case_assist import CaseAssistant, triage_with
 from services.rout_request import RoutingService
 from services.staff import StaffService
 from services.user import UserService
+from services.voice import VoiceService
 from settings import config
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,12 @@ def get_staff_service() -> StaffService:
 def get_case_service() -> CaseService:
     executor = get_executor()
     return CaseService(CaseDatabridge(executor), ResourceDatabridge(executor), get_staff_service())
+
+
+@cache
+def get_voice_service() -> VoiceService:
+    executor = get_executor()
+    return VoiceService(VoiceDatabridge(executor), executor)
 
 
 @cache
