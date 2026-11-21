@@ -40,7 +40,7 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/models__voice__ReferralStatus"
+            "$ref": "#/components/schemas/VoiceReferralStatus"
           },
           "urgency_tier": {
             "anyOf": [
@@ -93,7 +93,7 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/models__case__ReferralStatus",
+            "$ref": "#/components/schemas/ReferralStatus",
             "default": "suggested"
           }
         },
@@ -377,7 +377,7 @@
           },
           "referrals": {
             "items": {
-              "$ref": "#/components/schemas/models__case__Referral"
+              "$ref": "#/components/schemas/Referral"
             },
             "title": "Referrals",
             "type": "array"
@@ -655,6 +655,22 @@
         "title": "CategoryCount",
         "type": "object"
       },
+      "ClaimHandoffRequest": {
+        "properties": {
+          "code": {
+            "maxLength": 8,
+            "minLength": 8,
+            "pattern": "^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ClaimHandoffRequest",
+        "type": "object"
+      },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
         "properties": {
@@ -775,6 +791,21 @@
         "title": "CreateCaseRequest",
         "type": "object"
       },
+      "CreateHandoffRequest": {
+        "properties": {
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id"
+        ],
+        "title": "CreateHandoffRequest",
+        "type": "object"
+      },
       "CreateReferralRequest": {
         "properties": {
           "conversation_id": {
@@ -790,7 +821,7 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/models__voice__ReferralStatus",
+            "$ref": "#/components/schemas/VoiceReferralStatus",
             "default": "offered"
           }
         },
@@ -911,6 +942,25 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HandoffCode": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "expires_at"
+        ],
+        "title": "HandoffCode",
         "type": "object"
       },
       "ImpactCategory": {
@@ -1139,6 +1189,111 @@
         "title": "RecordOutcomeRequest",
         "type": "object"
       },
+      "Referral": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "resource_category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_is_sample": {
+            "title": "Resource Is Sample",
+            "type": "boolean"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "resource_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Phone"
+          },
+          "resource_website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Website"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReferralStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "resource_id",
+          "resource_name",
+          "resource_category",
+          "resource_phone",
+          "resource_website",
+          "resource_is_sample",
+          "status",
+          "outcome",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Referral",
+        "type": "object"
+      },
       "ReferralOutcome": {
         "properties": {
           "id": {
@@ -1181,6 +1336,121 @@
         "title": "ReferralOutcome",
         "type": "object"
       },
+      "ReferralStatus": {
+        "enum": [
+          "suggested",
+          "shared",
+          "accepted",
+          "completed",
+          "declined"
+        ],
+        "title": "ReferralStatus",
+        "type": "string"
+      },
+      "Resource": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_sample": {
+            "title": "Is Sample",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "description",
+          "address",
+          "neighborhood",
+          "phone",
+          "website",
+          "hours",
+          "is_sample",
+          "active",
+          "created_at"
+        ],
+        "title": "Resource",
+        "type": "object"
+      },
       "ResourceSuggestion": {
         "properties": {
           "reason": {
@@ -1188,7 +1458,7 @@
             "type": "string"
           },
           "resource": {
-            "$ref": "#/components/schemas/models__case__Resource"
+            "$ref": "#/components/schemas/Resource"
           }
         },
         "required": [
@@ -1667,7 +1937,7 @@
           "status": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/models__case__ReferralStatus"
+                "$ref": "#/components/schemas/ReferralStatus"
               },
               {
                 "type": "null"
@@ -1796,7 +2066,7 @@
           },
           "routes": {
             "items": {
-              "$ref": "#/components/schemas/models__voice__Resource"
+              "$ref": "#/components/schemas/VoiceResource"
             },
             "title": "Routes",
             "type": "array"
@@ -1813,29 +2083,14 @@
         "title": "VoiceDashboard",
         "type": "object"
       },
-      "WebhookAccepted": {
+      "VoiceFollowUp": {
         "properties": {
-          "duplicate": {
-            "default": false,
-            "title": "Duplicate",
-            "type": "boolean"
-          },
-          "status": {
-            "default": "received",
-            "title": "Status",
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
             "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "duplicate"
-        ],
-        "title": "WebhookAccepted",
-        "type": "object"
-      },
-      "Worker": {
-        "properties": {
-          "display_name": {
+          },
+          "disposition": {
             "anyOf": [
               {
                 "type": "string"
@@ -1844,251 +2099,60 @@
                 "type": "null"
               }
             ],
-            "title": "Display Name"
+            "title": "Disposition"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
           },
-          "open_cases": {
-            "title": "Open Cases",
-            "type": "integer"
+          "linked_at": {
+            "format": "date-time",
+            "title": "Linked At",
+            "type": "string"
           },
-          "role": {
-            "$ref": "#/components/schemas/Role"
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "resources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resources",
+            "type": "array"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "id",
-          "display_name",
-          "role",
-          "open_cases"
+          "call_id",
+          "need_category",
+          "urgency_tier",
+          "disposition",
+          "resources",
+          "linked_at"
         ],
-        "title": "Worker",
+        "title": "VoiceFollowUp",
         "type": "object"
       },
-      "models__case__Referral": {
-        "properties": {
-          "case_id": {
-            "format": "uuid",
-            "title": "Case Id",
-            "type": "string"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "created_by": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "outcome": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Outcome"
-          },
-          "resource_category": {
-            "$ref": "#/components/schemas/CaseCategory"
-          },
-          "resource_id": {
-            "format": "uuid",
-            "title": "Resource Id",
-            "type": "string"
-          },
-          "resource_is_sample": {
-            "title": "Resource Is Sample",
-            "type": "boolean"
-          },
-          "resource_name": {
-            "title": "Resource Name",
-            "type": "string"
-          },
-          "resource_phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Phone"
-          },
-          "resource_website": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Website"
-          },
-          "status": {
-            "$ref": "#/components/schemas/models__case__ReferralStatus"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "case_id",
-          "resource_id",
-          "resource_name",
-          "resource_category",
-          "resource_phone",
-          "resource_website",
-          "resource_is_sample",
-          "status",
-          "outcome",
-          "created_by",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "Referral",
-        "type": "object"
-      },
-      "models__case__ReferralStatus": {
-        "enum": [
-          "suggested",
-          "shared",
-          "accepted",
-          "completed",
-          "declined"
-        ],
-        "title": "ReferralStatus",
-        "type": "string"
-      },
-      "models__case__Resource": {
-        "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
-          },
-          "address": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Address"
-          },
-          "category": {
-            "$ref": "#/components/schemas/CaseCategory"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "hours": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hours"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "is_sample": {
-            "title": "Is Sample",
-            "type": "boolean"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "neighborhood": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Neighborhood"
-          },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          },
-          "website": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Website"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "category",
-          "description",
-          "address",
-          "neighborhood",
-          "phone",
-          "website",
-          "hours",
-          "is_sample",
-          "active",
-          "created_at"
-        ],
-        "title": "Resource",
-        "type": "object"
-      },
-      "models__voice__Referral": {
+      "VoiceReferral": {
         "properties": {
           "call_id": {
             "format": "uuid",
@@ -2111,7 +2175,7 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/models__voice__ReferralStatus"
+            "$ref": "#/components/schemas/VoiceReferralStatus"
           }
         },
         "required": [
@@ -2121,10 +2185,10 @@
           "status",
           "created_at"
         ],
-        "title": "Referral",
+        "title": "VoiceReferral",
         "type": "object"
       },
-      "models__voice__ReferralStatus": {
+      "VoiceReferralStatus": {
         "enum": [
           "offered",
           "accepted",
@@ -2133,10 +2197,10 @@
           "declined",
           "unavailable"
         ],
-        "title": "ReferralStatus",
+        "title": "VoiceReferralStatus",
         "type": "string"
       },
-      "models__voice__Resource": {
+      "VoiceResource": {
         "properties": {
           "category": {
             "title": "Category",
@@ -2220,7 +2284,62 @@
           "is_emergency",
           "last_verified_at"
         ],
-        "title": "Resource",
+        "title": "VoiceResource",
+        "type": "object"
+      },
+      "WebhookAccepted": {
+        "properties": {
+          "duplicate": {
+            "default": false,
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "status": {
+            "default": "received",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "duplicate"
+        ],
+        "title": "WebhookAccepted",
+        "type": "object"
+      },
+      "Worker": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "open_cases": {
+            "title": "Open Cases",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "role",
+          "open_cases"
+        ],
+        "title": "Worker",
         "type": "object"
       }
     }
@@ -2781,7 +2900,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/models__case__Referral"
+                  "$ref": "#/components/schemas/Referral"
                 }
               }
             },
@@ -2845,7 +2964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/models__case__Referral"
+                  "$ref": "#/components/schemas/Referral"
                 }
               }
             },
@@ -3165,7 +3284,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/models__case__Resource"
+                    "$ref": "#/components/schemas/Resource"
                   },
                   "title": "Response List Resources V1 Resources Get",
                   "type": "array"
@@ -3208,7 +3327,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/models__case__Resource"
+                  "$ref": "#/components/schemas/Resource"
                 }
               }
             },
@@ -3251,7 +3370,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/models__case__Resource"
+                  "$ref": "#/components/schemas/Resource"
                 }
               }
             },
@@ -3487,6 +3606,133 @@
         ]
       }
     },
+    "/v1/voice/follow-ups": {
+      "get": {
+        "operationId": "follow_ups_v1_voice_follow_ups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceFollowUp"
+                  },
+                  "title": "Response Follow Ups V1 Voice Follow Ups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Follow Ups",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/handoffs": {
+      "post": {
+        "description": "Create a short-lived code the agent can read aloud to the caller.",
+        "operationId": "create_handoff_v1_voice_handoffs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoffCode"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Handoff",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/handoffs/claim": {
+      "post": {
+        "description": "Attach one call to the signed-in account without storing a phone number.",
+        "operationId": "claim_handoff_v1_voice_handoffs_claim_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceFollowUp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Claim Handoff",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/impact": {
       "get": {
         "operationId": "impact_v1_voice_impact_get",
@@ -3544,7 +3790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/models__voice__Referral"
+                  "$ref": "#/components/schemas/VoiceReferral"
                 }
               }
             },
@@ -3751,7 +3997,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/models__voice__Resource"
+                    "$ref": "#/components/schemas/VoiceResource"
                   },
                   "title": "Response Resources V1 Voice Resources Get",
                   "type": "array"

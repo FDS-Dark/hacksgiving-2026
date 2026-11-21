@@ -496,6 +496,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/voice/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Follow Ups */
+        get: operations["follow_ups_v1_voice_follow_ups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Handoff
+         * @description Create a short-lived code the agent can read aloud to the caller.
+         */
+        post: operations["create_handoff_v1_voice_handoffs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Handoff
+         * @description Attach one call to the signed-in account without storing a phone number.
+         */
+        post: operations["claim_handoff_v1_voice_handoffs_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/impact": {
         parameters: {
             query?: never;
@@ -626,7 +683,7 @@ export interface components {
             neighborhood: string | null;
             /** Resource Name */
             resource_name: string;
-            status: components["schemas"]["models__voice__ReferralStatus"];
+            status: components["schemas"]["VoiceReferralStatus"];
             urgency_tier: components["schemas"]["UrgencyTier"] | null;
         };
         /**
@@ -648,7 +705,7 @@ export interface components {
              */
             resource_id: string;
             /** @default suggested */
-            status?: components["schemas"]["models__case__ReferralStatus"];
+            status?: components["schemas"]["ReferralStatus"];
         };
         /**
          * AppUser
@@ -740,7 +797,7 @@ export interface components {
         CaseDetail: {
             case: components["schemas"]["Case"];
             /** Referrals */
-            referrals: components["schemas"]["models__case__Referral"][];
+            referrals: components["schemas"]["Referral"][];
             /** Updates */
             updates: components["schemas"]["CaseUpdate"][];
         };
@@ -849,6 +906,11 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ClaimHandoffRequest */
+        ClaimHandoffRequest: {
+            /** Code */
+            code: string;
+        };
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -882,6 +944,11 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** CreateHandoffRequest */
+        CreateHandoffRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+        };
         /** CreateReferralRequest */
         CreateReferralRequest: {
             /** Conversation Id */
@@ -889,7 +956,7 @@ export interface components {
             /** Resource Slug */
             resource_slug: string;
             /** @default offered */
-            status?: components["schemas"]["models__voice__ReferralStatus"];
+            status?: components["schemas"]["VoiceReferralStatus"];
         };
         /** CreateResourceRequest */
         CreateResourceRequest: {
@@ -925,6 +992,16 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HandoffCode */
+        HandoffCode: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
         };
         /** ImpactCategory */
         ImpactCategory: {
@@ -1011,6 +1088,48 @@ export interface components {
             reason_code?: string | null;
             status: components["schemas"]["OutcomeStatus"];
         };
+        /** Referral */
+        Referral: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome */
+            outcome: string | null;
+            resource_category: components["schemas"]["CaseCategory"];
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            /** Resource Is Sample */
+            resource_is_sample: boolean;
+            /** Resource Name */
+            resource_name: string;
+            /** Resource Phone */
+            resource_phone: string | null;
+            /** Resource Website */
+            resource_website: string | null;
+            status: components["schemas"]["ReferralStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** ReferralOutcome */
         ReferralOutcome: {
             /**
@@ -1032,11 +1151,48 @@ export interface components {
             referral_id: string;
             status: components["schemas"]["OutcomeStatus"];
         };
+        /**
+         * ReferralStatus
+         * @enum {string}
+         */
+        ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /** Resource */
+        Resource: {
+            /** Active */
+            active: boolean;
+            /** Address */
+            address: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** Hours */
+            hours: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Sample */
+            is_sample: boolean;
+            /** Name */
+            name: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Website */
+            website: string | null;
+        };
         /** ResourceSuggestion */
         ResourceSuggestion: {
             /** Reason */
             reason: string;
-            resource: components["schemas"]["models__case__Resource"];
+            resource: components["schemas"]["Resource"];
         };
         /** ResourceSuggestions */
         ResourceSuggestions: {
@@ -1174,7 +1330,7 @@ export interface components {
         UpdateReferralRequest: {
             /** Outcome */
             outcome?: string | null;
-            status?: components["schemas"]["models__case__ReferralStatus"] | null;
+            status?: components["schemas"]["ReferralStatus"] | null;
         };
         /**
          * UpdateType
@@ -1225,116 +1381,36 @@ export interface components {
             /** Active Referrals */
             active_referrals: components["schemas"]["ActiveReferral"][];
             /** Routes */
-            routes: components["schemas"]["models__voice__Resource"][];
+            routes: components["schemas"]["VoiceResource"][];
             stats: components["schemas"]["ImpactSummary"];
         };
-        /** WebhookAccepted */
-        WebhookAccepted: {
+        /** VoiceFollowUp */
+        VoiceFollowUp: {
             /**
-             * Duplicate
-             * @default false
+             * Call Id
+             * Format: uuid
              */
-            duplicate: boolean;
-            /**
-             * Status
-             * @default received
-             */
-            status: string;
-        };
-        /** Worker */
-        Worker: {
-            /** Display Name */
-            display_name: string | null;
+            call_id: string;
+            /** Disposition */
+            disposition: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
-            /** Open Cases */
-            open_cases: number;
-            role: components["schemas"]["Role"];
-        };
-        /** Referral */
-        models__case__Referral: {
             /**
-             * Case Id
-             * Format: uuid
-             */
-            case_id: string;
-            /**
-             * Created At
+             * Linked At
              * Format: date-time
              */
-            created_at: string;
-            /** Created By */
-            created_by: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Outcome */
-            outcome: string | null;
-            resource_category: components["schemas"]["CaseCategory"];
-            /**
-             * Resource Id
-             * Format: uuid
-             */
-            resource_id: string;
-            /** Resource Is Sample */
-            resource_is_sample: boolean;
-            /** Resource Name */
-            resource_name: string;
-            /** Resource Phone */
-            resource_phone: string | null;
-            /** Resource Website */
-            resource_website: string | null;
-            status: components["schemas"]["models__case__ReferralStatus"];
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
+            linked_at: string;
+            /** Need Category */
+            need_category: string | null;
+            /** Resources */
+            resources: string[];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
         };
-        /**
-         * ReferralStatus
-         * @enum {string}
-         */
-        models__case__ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
-        /** Resource */
-        models__case__Resource: {
-            /** Active */
-            active: boolean;
-            /** Address */
-            address: string | null;
-            category: components["schemas"]["CaseCategory"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Description */
-            description: string;
-            /** Hours */
-            hours: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Is Sample */
-            is_sample: boolean;
-            /** Name */
-            name: string;
-            /** Neighborhood */
-            neighborhood: string | null;
-            /** Phone */
-            phone: string | null;
-            /** Website */
-            website: string | null;
-        };
-        /** Referral */
-        models__voice__Referral: {
+        /** VoiceReferral */
+        VoiceReferral: {
             /**
              * Call Id
              * Format: uuid
@@ -1355,15 +1431,15 @@ export interface components {
              * Format: uuid
              */
             resource_id: string;
-            status: components["schemas"]["models__voice__ReferralStatus"];
+            status: components["schemas"]["VoiceReferralStatus"];
         };
         /**
-         * ReferralStatus
+         * VoiceReferralStatus
          * @enum {string}
          */
-        models__voice__ReferralStatus: "offered" | "accepted" | "transfer_attempted" | "connected" | "declined" | "unavailable";
-        /** Resource */
-        models__voice__Resource: {
+        VoiceReferralStatus: "offered" | "accepted" | "transfer_attempted" | "connected" | "declined" | "unavailable";
+        /** VoiceResource */
+        VoiceResource: {
             /** Category */
             category: string;
             /** Description */
@@ -1394,6 +1470,32 @@ export interface components {
             slug: string;
             /** Transfer Approved */
             transfer_approved: boolean;
+        };
+        /** WebhookAccepted */
+        WebhookAccepted: {
+            /**
+             * Duplicate
+             * @default false
+             */
+            duplicate: boolean;
+            /**
+             * Status
+             * @default received
+             */
+            status: string;
+        };
+        /** Worker */
+        Worker: {
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Open Cases */
+            open_cases: number;
+            role: components["schemas"]["Role"];
         };
     };
     responses: never;
@@ -1708,7 +1810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__case__Referral"];
+                    "application/json": components["schemas"]["Referral"];
                 };
             };
             /** @description Validation Error */
@@ -1744,7 +1846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__case__Referral"];
+                    "application/json": components["schemas"]["Referral"];
                 };
             };
             /** @description Validation Error */
@@ -1970,7 +2072,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__case__Resource"][];
+                    "application/json": components["schemas"]["Resource"][];
                 };
             };
             /** @description Validation Error */
@@ -2003,7 +2105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__case__Resource"];
+                    "application/json": components["schemas"]["Resource"];
                 };
             };
             /** @description Validation Error */
@@ -2034,7 +2136,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__case__Resource"];
+                    "application/json": components["schemas"]["Resource"];
                 };
             };
             /** @description Validation Error */
@@ -2216,6 +2318,94 @@ export interface operations {
             };
         };
     };
+    follow_ups_v1_voice_follow_ups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"][];
+                };
+            };
+        };
+    };
+    create_handoff_v1_voice_handoffs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoffCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_handoff_v1_voice_handoffs_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     impact_v1_voice_impact_get: {
         parameters: {
             query?: never;
@@ -2257,7 +2447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__voice__Referral"];
+                    "application/json": components["schemas"]["VoiceReferral"];
                 };
             };
             /** @description Validation Error */
@@ -2363,7 +2553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["models__voice__Resource"][];
+                    "application/json": components["schemas"]["VoiceResource"][];
                 };
             };
             /** @description Validation Error */

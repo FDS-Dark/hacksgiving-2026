@@ -60,6 +60,25 @@ CREATE TABLE app.voice_call_events (
 );
 CREATE INDEX voice_call_events_call_idx ON app.voice_call_events (call_id, occurred_at);
 
+-- A handoff code is the only bridge from an anonymous call to an account.
+-- Store only a keyed hash; the spoken code expires quickly and is single-use.
+CREATE TABLE app.voice_handoffs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    call_id UUID NOT NULL UNIQUE REFERENCES app.voice_calls(id) ON DELETE CASCADE,
+    code_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    claimed_by UUID REFERENCES app.users(id) ON DELETE CASCADE,
+    claimed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT voice_handoffs_hash_length CHECK (length(code_hash) = 64),
+    CONSTRAINT voice_handoffs_claim_pair CHECK (
+        (claimed_by IS NULL AND claimed_at IS NULL) OR
+        (claimed_by IS NOT NULL AND claimed_at IS NOT NULL)
+    )
+);
+CREATE INDEX voice_handoffs_user_idx ON app.voice_handoffs (claimed_by, claimed_at DESC)
+    WHERE claimed_by IS NOT NULL;
+
 CREATE TABLE app.voice_referrals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     call_id UUID NOT NULL REFERENCES app.voice_calls(id) ON DELETE CASCADE,
@@ -206,6 +225,61 @@ LANGUAGE sql AS $$
     ON CONFLICT ON CONSTRAINT voice_referrals_call_resource_unique DO UPDATE SET
         status = EXCLUDED.status, updated_at = now()
     RETURNING f.id, f.call_id, f.resource_id, f.status, f.created_at
+$$;
+
+CREATE FUNCTION app.voice_handoff_create(
+    p_call_id UUID, p_code_hash TEXT, p_expires_at TIMESTAMPTZ
+)
+RETURNS TABLE (id UUID, call_id UUID, expires_at TIMESTAMPTZ)
+LANGUAGE sql AS $$
+    INSERT INTO app.voice_handoffs AS h (call_id, code_hash, expires_at)
+    VALUES (p_call_id, p_code_hash, p_expires_at)
+    ON CONFLICT (call_id) DO UPDATE SET
+        code_hash = CASE WHEN h.claimed_by IS NULL THEN EXCLUDED.code_hash ELSE h.code_hash END,
+        expires_at = CASE WHEN h.claimed_by IS NULL THEN EXCLUDED.expires_at ELSE h.expires_at END
+    RETURNING h.id, h.call_id, h.expires_at
+$$;
+
+CREATE FUNCTION app.voice_handoff_claim(p_code_hash TEXT, p_user_id UUID)
+RETURNS TABLE (
+    id UUID, call_id UUID, need_category TEXT, urgency_tier TEXT,
+    disposition TEXT, resources TEXT[], linked_at TIMESTAMPTZ
+)
+LANGUAGE sql AS $$
+    WITH claimed AS (
+        UPDATE app.voice_handoffs AS h
+        SET claimed_by = p_user_id, claimed_at = now()
+        WHERE h.code_hash = p_code_hash
+          AND h.claimed_by IS NULL
+          AND h.expires_at > now()
+        RETURNING h.id, h.call_id, h.claimed_at
+    )
+    SELECT x.id, x.call_id, c.need_category, c.urgency_tier, c.disposition,
+           COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::TEXT[]),
+           x.claimed_at
+    FROM claimed x
+    JOIN app.voice_calls c ON c.id = x.call_id
+    LEFT JOIN app.voice_referrals f ON f.call_id = c.id
+    LEFT JOIN app.voice_resources r ON r.id = f.resource_id
+    GROUP BY x.id, x.call_id, c.need_category, c.urgency_tier, c.disposition, x.claimed_at
+$$;
+
+CREATE FUNCTION app.voice_follow_up_list(p_user_id UUID)
+RETURNS TABLE (
+    id UUID, call_id UUID, need_category TEXT, urgency_tier TEXT,
+    disposition TEXT, resources TEXT[], linked_at TIMESTAMPTZ
+)
+LANGUAGE sql STABLE AS $$
+    SELECT h.id, h.call_id, c.need_category, c.urgency_tier, c.disposition,
+           COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::TEXT[]),
+           h.claimed_at
+    FROM app.voice_handoffs h
+    JOIN app.voice_calls c ON c.id = h.call_id
+    LEFT JOIN app.voice_referrals f ON f.call_id = c.id
+    LEFT JOIN app.voice_resources r ON r.id = f.resource_id
+    WHERE h.claimed_by = p_user_id
+    GROUP BY h.id, h.call_id, c.need_category, c.urgency_tier, c.disposition, h.claimed_at
+    ORDER BY h.claimed_at DESC
 $$;
 
 CREATE FUNCTION app.voice_referral_outcome_record(p_referral_id UUID, p_status TEXT, p_reason_code TEXT)

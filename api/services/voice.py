@@ -3,8 +3,9 @@
 import hashlib
 import hmac
 import json
+import secrets
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 from uuid import UUID
 
@@ -13,17 +14,21 @@ from databridge.voice import VoiceDatabridge
 from errors import ApiError, not_found
 from models.voice import (
     ImpactSummary,
+    HandoffCode,
     OutcomeStatus,
-    Referral,
+    VoiceReferral,
     ReferralOutcome,
-    ReferralStatus,
-    Resource,
+    VoiceReferralStatus,
+    VoiceResource,
     VoiceDashboard,
+    VoiceFollowUp,
     WebhookAccepted,
 )
 
 MAX_WEBHOOK_BYTES = 1_000_000
 SIGNATURE_TOLERANCE_SECONDS = 30 * 60
+HANDOFF_TTL = timedelta(minutes=15)
+HANDOFF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
 def verify_elevenlabs_signature(
@@ -96,7 +101,7 @@ class VoiceService:
 
     async def resources(
         self, category: str | None, language: str | None
-    ) -> list[Resource]:
+    ) -> list[VoiceResource]:
         return await self.voice.resources(
             _short_string(category, 64), _short_string(language, 12)
         )
@@ -177,8 +182,8 @@ class VoiceService:
         return WebhookAccepted(duplicate=stored is None)
 
     async def create_referral(
-        self, conversation_id: str, resource_slug: str, status: ReferralStatus
-    ) -> Referral:
+        self, conversation_id: str, resource_slug: str, status: VoiceReferralStatus
+    ) -> VoiceReferral:
         call = await self.voice.call_by_conversation(conversation_id)
         if not call:
             call = await self.voice.begin_call(conversation_id)
@@ -190,6 +195,47 @@ class VoiceService:
                 "Resource is unavailable or cannot be used as a referral destination",
             )
         return referral
+
+    @staticmethod
+    def _handoff_hash(code: str, secret: str) -> str:
+        if not secret:
+            raise ApiError(
+                503,
+                "voice_handoff_unavailable",
+                "Call handoff is not configured",
+            )
+        return hmac.new(
+            secret.encode(), code.encode("ascii"), hashlib.sha256
+        ).hexdigest()
+
+    async def create_handoff(self, conversation_id: str, secret: str) -> HandoffCode:
+        call = await self.voice.call_by_conversation(conversation_id)
+        if not call:
+            call = await self.voice.begin_call(conversation_id)
+        code = "".join(secrets.choice(HANDOFF_ALPHABET) for _ in range(8))
+        expires_at = datetime.now(timezone.utc) + HANDOFF_TTL
+        stored_expiry = await self.voice.create_handoff(
+            call.id, self._handoff_hash(code, secret), expires_at
+        )
+        return HandoffCode(code=code, expires_at=stored_expiry)
+
+    async def claim_handoff(
+        self, user_id: UUID, code: str, secret: str
+    ) -> VoiceFollowUp:
+        normalized = code.strip().upper()
+        follow_up = await self.voice.claim_handoff(
+            self._handoff_hash(normalized, secret), user_id
+        )
+        if not follow_up:
+            raise ApiError(
+                404,
+                "handoff_not_found",
+                "That call code is invalid, expired, or already claimed",
+            )
+        return follow_up
+
+    async def follow_ups(self, user_id: UUID) -> list[VoiceFollowUp]:
+        return await self.voice.follow_ups(user_id)
 
     async def record_outcome(
         self, referral_id: UUID, status: OutcomeStatus, reason_code: str | None

@@ -8,13 +8,17 @@ from dependencies import get_current_user, get_voice_service
 from errors import ApiError
 from models.user import AppUser
 from models.voice import (
+    ClaimHandoffRequest,
+    CreateHandoffRequest,
     CreateReferralRequest,
+    HandoffCode,
     ImpactSummary,
     RecordOutcomeRequest,
-    Referral,
+    VoiceReferral,
     ReferralOutcome,
-    Resource,
+    VoiceResource,
     VoiceDashboard,
+    VoiceFollowUp,
     WebhookAccepted,
 )
 from services.voice import VoiceService
@@ -46,28 +50,61 @@ async def elevenlabs_webhook(
 
 @router.get(
     "/resources",
-    response_model=list[Resource],
+    response_model=list[VoiceResource],
     dependencies=[Depends(require_tool_secret)],
 )
 async def resources(
     category: Annotated[str | None, Query(max_length=64)] = None,
     language: Annotated[str | None, Query(max_length=12)] = None,
     service: VoiceService = Depends(get_voice_service),
-) -> list[Resource]:
+) -> list[VoiceResource]:
     """Return allowlisted routes; only approved destinations expose a number."""
     return await service.resources(category, language)
 
 
 @router.post(
-    "/referrals", response_model=Referral, dependencies=[Depends(require_tool_secret)]
+    "/referrals",
+    response_model=VoiceReferral,
+    dependencies=[Depends(require_tool_secret)],
 )
 async def create_referral(
     body: CreateReferralRequest,
     service: VoiceService = Depends(get_voice_service),
-) -> Referral:
+) -> VoiceReferral:
     return await service.create_referral(
         body.conversation_id, body.resource_slug, body.status
     )
+
+
+@router.post(
+    "/handoffs",
+    response_model=HandoffCode,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def create_handoff(
+    body: CreateHandoffRequest,
+    service: VoiceService = Depends(get_voice_service),
+) -> HandoffCode:
+    """Create a short-lived code the agent can read aloud to the caller."""
+    return await service.create_handoff(body.conversation_id, config.voice.tool_secret)
+
+
+@router.post("/handoffs/claim", response_model=VoiceFollowUp)
+async def claim_handoff(
+    body: ClaimHandoffRequest,
+    user: AppUser = Depends(get_current_user),
+    service: VoiceService = Depends(get_voice_service),
+) -> VoiceFollowUp:
+    """Attach one call to the signed-in account without storing a phone number."""
+    return await service.claim_handoff(user.id, body.code, config.voice.tool_secret)
+
+
+@router.get("/follow-ups", response_model=list[VoiceFollowUp])
+async def follow_ups(
+    user: AppUser = Depends(get_current_user),
+    service: VoiceService = Depends(get_voice_service),
+) -> list[VoiceFollowUp]:
+    return await service.follow_ups(user.id)
 
 
 @router.post(
