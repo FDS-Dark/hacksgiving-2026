@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 
 import { SafetyMap, type AreaSelection } from '@/components/SafetyMap';
-import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
-import { useAuth } from '@/lib/auth';
+import { SectionHeading } from '@/components/brand';
+import { Page } from '@/components/Page';
+import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Sheet, Txt, success } from '@/components/ui';
 import {
   INCIDENT_CATEGORIES,
   type IncidentCategory,
@@ -30,9 +31,8 @@ function approximateDistance(
   return `Approx. ${milesBetween(center, { latitude: point.latitude, longitude: point.longitude }).toFixed(1)} mi`;
 }
 
-export default function HomeScreen() {
+export default function SafetyScreen() {
   const theme = useTheme();
-  const { signOut } = useAuth();
   const safety = usePublicSafetyPoints();
   const calls = useRecentCalls();
   const [active, setActive] = useState<Set<IncidentCategory | 'community-report'>>(
@@ -102,18 +102,11 @@ export default function HomeScreen() {
 
   return (
     <>
-      <Screen refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandTitle}>
-            <Txt variant="headline" color={theme.brand}>NearMKE</Txt>
-            <View style={[styles.brandDivider, { backgroundColor: theme.separator }]} />
-            <Txt variant="headline">Know what’s nearby.</Txt>
-          </View>
-          <Pressable onPress={signOut} accessibilityRole="button" accessibilityLabel="Sign out" hitSlop={10}>
-            <Ionicons name="person-circle-outline" size={30} color={theme.textSecondary} />
-          </Pressable>
-        </View>
-        <Txt variant="subhead" tone="secondary">Recent, generalized public safety activity across Milwaukee.</Txt>
+      <Page refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
+        <SectionHeading
+          title="Milwaukee Safety Map"
+          kicker="Recent, generalized public safety activity from official public feeds."
+        />
 
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
@@ -176,7 +169,7 @@ export default function HomeScreen() {
             onPress={() => Linking.openURL('tel:211')}
           />
         </Group>
-      </Screen>
+      </Page>
 
       <Sheet
         visible={reportOpen}
@@ -302,9 +295,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  brandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brandTitle: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
-  brandDivider: { width: 1, height: 24 },
   sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   noteField: { minHeight: 84, textAlignVertical: 'top' },
   privacyCard: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', padding: space.md, borderRadius: radius.lg },

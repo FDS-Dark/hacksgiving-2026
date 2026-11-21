@@ -38,6 +38,7 @@ class VoiceDatabridge(Databridge):
         neighborhood: str | None,
         callback_consent: bool,
         disposition: str | None,
+        caller_hash: str | None,
         started_at: datetime | None,
         ended_at: datetime | None,
     ) -> VoiceCall:
@@ -51,6 +52,7 @@ class VoiceDatabridge(Databridge):
             neighborhood=neighborhood,
             callback_consent=callback_consent,
             disposition=disposition,
+            caller_hash=caller_hash,
             started_at=started_at,
             ended_at=ended_at,
         )
@@ -98,12 +100,17 @@ class VoiceDatabridge(Databridge):
         return VoiceReferral(**row) if row else None
 
     async def create_handoff(
-        self, call_id: UUID, code_hash: str, expires_at: datetime
+        self,
+        call_id: UUID,
+        code_hash: str,
+        caller_hash: str | None,
+        expires_at: datetime,
     ) -> datetime:
         row = await self._one(
             "voice_handoff_create",
             call_id=call_id,
             code_hash=code_hash,
+            caller_hash=caller_hash,
             expires_at=expires_at,
         )
         stored_expiry = row["expires_at"]

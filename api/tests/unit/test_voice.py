@@ -64,6 +64,9 @@ async def test_webhook_keeps_only_allowlisted_structured_fields(monkeypatch):
         "data": {
             "conversation_id": "conv-1",
             "status": "done",
+            "conversation_initiation_client_data": {
+                "dynamic_variables": {"system__caller_id": "+14145550123"}
+            },
             "transcript": [{"role": "user", "message": "my private story"}],
             "metadata": {"phone_call": {"external_number": "+14145550123"}},
             "analysis": {
@@ -88,7 +91,7 @@ async def test_webhook_keeps_only_allowlisted_structured_fields(monkeypatch):
     db = FakeFunctions(voice_call_ingest=[row], voice_call_event_append=[event_row])
     monkeypatch.setattr("services.voice.time.time", lambda: timestamp)
     result = await VoiceService(VoiceDatabridge(db), db).receive_elevenlabs_webhook(
-        body, _signature(body, "secret", timestamp), "secret"
+        body, _signature(body, "secret", timestamp), "secret", "phone-secret"
     )
     assert not result.duplicate
     persisted = repr(db.calls)
@@ -146,7 +149,9 @@ async def test_handoff_code_links_a_call_without_a_phone_number(monkeypatch):
     monkeypatch.setattr("services.voice.secrets.choice", lambda _: "A")
     service = VoiceService(VoiceDatabridge(db), db)
 
-    handoff = await service.create_handoff("conv-handoff", "tool-secret")
+    handoff = await service.create_handoff(
+        "conv-handoff", "+14145550123", "tool-secret"
+    )
     claimed = await service.claim_handoff(uuid4(), handoff.code, "tool-secret")
 
     assert handoff.code == "AAAAAAAA"
@@ -154,6 +159,7 @@ async def test_handoff_code_links_a_call_without_a_phone_number(monkeypatch):
     persisted = repr(db.calls)
     assert "phone" not in persisted
     assert "AAAAAAAA" not in persisted
+    assert "+14145550123" not in persisted
 
 
 async def test_handoff_rejects_an_expired_or_reused_code():

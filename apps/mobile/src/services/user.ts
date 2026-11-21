@@ -17,7 +17,11 @@ export function useMe() {
 }
 
 export function useVoiceFollowUps() {
-  return useQuery({ queryKey: keys.voiceFollowUps, queryFn: userApi.followUps });
+  return useQuery({
+    queryKey: keys.voiceFollowUps,
+    queryFn: userApi.followUps,
+    refetchInterval: 30_000,
+  });
 }
 
 export function useClaimVoiceHandoff() {

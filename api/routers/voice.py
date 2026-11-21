@@ -45,6 +45,7 @@ async def elevenlabs_webhook(
         await request.body(),
         request.headers.get("ElevenLabs-Signature"),
         config.voice.elevenlabs_webhook_secret,
+        config.voice.tool_secret,
     )
 
 
@@ -86,7 +87,9 @@ async def create_handoff(
     service: VoiceService = Depends(get_voice_service),
 ) -> HandoffCode:
     """Create a short-lived code the agent can read aloud to the caller."""
-    return await service.create_handoff(body.conversation_id, config.voice.tool_secret)
+    return await service.create_handoff(
+        body.conversation_id, body.caller_id, config.voice.tool_secret
+    )
 
 
 @router.post("/handoffs/claim", response_model=VoiceFollowUp)

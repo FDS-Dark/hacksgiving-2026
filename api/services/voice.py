@@ -107,7 +107,11 @@ class VoiceService:
         )
 
     async def receive_elevenlabs_webhook(
-        self, raw_body: bytes, signature_header: str | None, webhook_secret: str
+        self,
+        raw_body: bytes,
+        signature_header: str | None,
+        webhook_secret: str,
+        phone_hash_secret: str = "",
     ) -> WebhookAccepted:
         if len(raw_body) > MAX_WEBHOOK_BYTES:
             raise ApiError(413, "webhook_too_large", "Webhook body is too large")
@@ -145,6 +149,10 @@ class VoiceService:
         disposition = _short_string(_collected(data, "disposition"), 64)
         if urgency == "emergency":
             disposition = "redirect_911"
+        caller_hash = self._caller_hash(
+            _short_string(_collected(data, "system__caller_id"), 16),
+            phone_hash_secret,
+        )
         metadata = _object(data.get("metadata"))
         started_at = _unix_datetime(metadata.get("start_time_unix_secs"))
         duration = metadata.get("call_duration_secs")
@@ -169,6 +177,7 @@ class VoiceService:
                 neighborhood=_short_string(_collected(data, "neighborhood"), 80),
                 callback_consent=_boolean(_collected(data, "callback_consent")),
                 disposition=disposition,
+                caller_hash=caller_hash,
                 started_at=started_at,
                 ended_at=ended_at,
             )
@@ -208,14 +217,35 @@ class VoiceService:
             secret.encode(), code.encode("ascii"), hashlib.sha256
         ).hexdigest()
 
-    async def create_handoff(self, conversation_id: str, secret: str) -> HandoffCode:
+    @staticmethod
+    def _caller_hash(caller_id: str | None, secret: str) -> str | None:
+        if (
+            not caller_id
+            or not secret
+            or not caller_id.startswith("+")
+            or not caller_id[1:].isdigit()
+            or not 8 <= len(caller_id) <= 16
+        ):
+            return None
+        return hmac.new(
+            secret.encode(),
+            b"caller-id:" + caller_id.encode("ascii"),
+            hashlib.sha256,
+        ).hexdigest()
+
+    async def create_handoff(
+        self, conversation_id: str, caller_id: str | None, secret: str
+    ) -> HandoffCode:
         call = await self.voice.call_by_conversation(conversation_id)
         if not call:
             call = await self.voice.begin_call(conversation_id)
         code = "".join(secrets.choice(HANDOFF_ALPHABET) for _ in range(8))
         expires_at = datetime.now(timezone.utc) + HANDOFF_TTL
         stored_expiry = await self.voice.create_handoff(
-            call.id, self._handoff_hash(code, secret), expires_at
+            call.id,
+            self._handoff_hash(code, secret),
+            self._caller_hash(caller_id, secret),
+            expires_at,
         )
         return HandoffCode(code=code, expires_at=stored_expiry)
 

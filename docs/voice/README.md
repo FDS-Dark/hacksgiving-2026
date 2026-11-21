@@ -29,9 +29,14 @@ dial 911 without continuing intake.
    - `GET /v1/voice/resources`
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`
-   - `POST /v1/voice/handoffs` with `system__conversation_id` when the caller
+   - `POST /v1/voice/handoffs` with `system__conversation_id` and
+     `system__caller_id` when the caller
      explicitly asks to continue in the app. Read the returned eight-character
      code aloud; never ask for their password, phone number, or login code.
+     The caller ID is immediately converted to a keyed hash. Claiming the code
+     while signed in links that hash to the account so future calls can create
+     private inbox follow-ups; caller ID alone never authorizes spoken account
+     details or consequential changes.
 8. Simulate emergency, routine, failed-transfer, Spanish, unlisted-number, and
    prompt-injection cases before attaching the public number.
 

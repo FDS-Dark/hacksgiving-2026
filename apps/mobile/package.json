@@ -50,8 +50,6 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
-    "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.test.ts?(x)"
-    ]
+    "testRegex": "src[/\\\\].*__tests__[/\\\\].*\\.test\\.tsx?$"
   }
 }

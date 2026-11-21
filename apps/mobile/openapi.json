@@ -793,6 +793,20 @@
       },
       "CreateHandoffRequest": {
         "properties": {
+          "caller_id": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 8,
+                "pattern": "^\\+[1-9][0-9]{7,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caller Id"
+          },
           "conversation_id": {
             "maxLength": 64,
             "minLength": 1,

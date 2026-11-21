@@ -946,6 +946,8 @@ export interface components {
         };
         /** CreateHandoffRequest */
         CreateHandoffRequest: {
+            /** Caller Id */
+            caller_id?: string | null;
             /** Conversation Id */
             conversation_id: string;
         };

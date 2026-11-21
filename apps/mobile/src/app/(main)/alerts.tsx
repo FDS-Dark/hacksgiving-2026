@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
 
-import { Button, EmptyState, Group, Header, Loading, Notice, Row, Screen, Txt } from '@/components/ui';
+import { SectionHeading } from '@/components/brand';
+import { Page } from '@/components/Page';
+import { Button, EmptyState, Group, Loading, Notice, Row, Txt } from '@/components/ui';
 import { useDeviceLocation } from '@/services/deviceLocation';
 import { INCIDENT_CATEGORIES, type SafetyPoint, usePublicSafetyPoints } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
+import { useVoiceFollowUps } from '@/services/user';
 
 function categoryLabel(point: SafetyPoint) {
   if (point.category === 'community-report') return 'Community report';
@@ -25,6 +28,7 @@ export default function AlertsScreen() {
   const calls = useRecentCalls();
   const safety = usePublicSafetyPoints();
   const device = useDeviceLocation();
+  const followUps = useVoiceFollowUps();
 
   const recentIncidents = useMemo(
     () => safety.points
@@ -47,15 +51,39 @@ export default function AlertsScreen() {
   const refresh = () => {
     calls.refetch();
     safety.refetch();
+    followUps.refetch();
   };
 
   return (
-    <Screen refreshing={calls.isRefetching || safety.isRefetching} onRefresh={refresh}>
-      <Header title="Safety alerts" subtitle="Visible updates from Milwaukee’s official public incident and dispatch feeds." />
+    <Page refreshing={calls.isRefetching || safety.isRefetching} onRefresh={refresh}>
+      <SectionHeading title="Safety Alerts" kicker="Visible updates from Milwaukee’s official public incident and dispatch feeds." />
 
       <Notice icon="information-circle-outline">
         Dispatch calls are delayed 30–90 minutes and are not confirmed crimes. Incident locations and distances are approximate.
       </Notice>
+
+      <Group
+        header="Your ComForce notifications"
+        footer="These private follow-ups are visible only while signed in. Connect your first call from the Account page."
+      >
+        {followUps.data?.length ? (
+          followUps.data.map((item) => (
+            <Row
+              key={item.id}
+              title={item.need_category?.replaceAll('-', ' ') ?? 'ComForce call follow-up'}
+              subtitle={item.resources.length ? `Resources: ${item.resources.join(', ')}` : 'Your call is connected; resources can be added as the response progresses.'}
+              detail={item.urgency_tier ?? 'new'}
+              tile={{ icon: 'bell-ring', color: '#247A63' }}
+            />
+          ))
+        ) : (
+          <Row
+            title="No call notifications yet"
+            subtitle="Ask the phone assistant to connect your call, then enter its code under Account."
+            tile={{ icon: 'phone-check', color: '#247A63' }}
+          />
+        )}
+      </Group>
 
       {!device.location ? (
         <>
@@ -133,6 +161,6 @@ export default function AlertsScreen() {
           tile={{ icon: 'shield-alert', color: '#B42318' }}
         />
       </Group>
-    </Screen>
+    </Page>
   );
 }

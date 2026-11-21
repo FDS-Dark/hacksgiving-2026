@@ -37,6 +37,7 @@ def downgrade() -> None:
     op.execute("\n".join(f"DROP FUNCTION app.{name};" for name in FUNCTIONS))
     op.execute("DROP TABLE app.voice_referral_outcomes")
     op.execute("DROP TABLE app.voice_referrals")
+    op.execute("DROP TABLE app.voice_account_phones")
     op.execute("DROP TABLE app.voice_handoffs")
     op.execute("DROP TABLE app.voice_call_events")
     op.execute("DROP TABLE app.voice_calls")

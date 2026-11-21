@@ -33,6 +33,8 @@ CREATE TABLE app.voice_calls (
     neighborhood TEXT,
     callback_consent BOOLEAN NOT NULL DEFAULT false,
     disposition TEXT,
+    caller_hash TEXT,
+    linked_user_id UUID REFERENCES app.users(id) ON DELETE SET NULL,
     event_timestamp BIGINT NOT NULL,
     started_at TIMESTAMPTZ,
     ended_at TIMESTAMPTZ,
@@ -44,8 +46,11 @@ CREATE TABLE app.voice_calls (
     CONSTRAINT voice_calls_category_length CHECK (need_category IS NULL OR length(need_category) <= 64),
     CONSTRAINT voice_calls_urgency CHECK (urgency_tier IS NULL OR urgency_tier IN ('emergency', 'urgent', 'routine')),
     CONSTRAINT voice_calls_neighborhood_length CHECK (neighborhood IS NULL OR length(neighborhood) <= 80),
-    CONSTRAINT voice_calls_disposition_length CHECK (disposition IS NULL OR length(disposition) <= 64)
+    CONSTRAINT voice_calls_disposition_length CHECK (disposition IS NULL OR length(disposition) <= 64),
+    CONSTRAINT voice_calls_caller_hash_length CHECK (caller_hash IS NULL OR length(caller_hash) = 64)
 );
+CREATE INDEX voice_calls_linked_user_idx ON app.voice_calls (linked_user_id, created_at DESC)
+    WHERE linked_user_id IS NOT NULL;
 
 CREATE TABLE app.voice_call_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -66,11 +71,13 @@ CREATE TABLE app.voice_handoffs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     call_id UUID NOT NULL UNIQUE REFERENCES app.voice_calls(id) ON DELETE CASCADE,
     code_hash TEXT NOT NULL UNIQUE,
+    caller_hash TEXT,
     expires_at TIMESTAMPTZ NOT NULL,
     claimed_by UUID REFERENCES app.users(id) ON DELETE CASCADE,
     claimed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT voice_handoffs_hash_length CHECK (length(code_hash) = 64),
+    CONSTRAINT voice_handoffs_caller_hash_length CHECK (caller_hash IS NULL OR length(caller_hash) = 64),
     CONSTRAINT voice_handoffs_claim_pair CHECK (
         (claimed_by IS NULL AND claimed_at IS NULL) OR
         (claimed_by IS NOT NULL AND claimed_at IS NOT NULL)
@@ -78,6 +85,15 @@ CREATE TABLE app.voice_handoffs (
 );
 CREATE INDEX voice_handoffs_user_idx ON app.voice_handoffs (claimed_by, claimed_at DESC)
     WHERE claimed_by IS NOT NULL;
+
+CREATE TABLE app.voice_account_phones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES app.users(id) ON DELETE CASCADE,
+    caller_hash TEXT NOT NULL UNIQUE,
+    verified_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT voice_account_phones_hash_length CHECK (length(caller_hash) = 64),
+    CONSTRAINT voice_account_phones_user_hash_unique UNIQUE (user_id, caller_hash)
+);
 
 CREATE TABLE app.voice_referrals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -138,7 +154,7 @@ $$;
 CREATE FUNCTION app.voice_call_ingest(
     p_conversation_id TEXT, p_event_timestamp BIGINT, p_language TEXT,
     p_need_category TEXT, p_urgency_tier TEXT, p_neighborhood TEXT,
-    p_callback_consent BOOLEAN, p_disposition TEXT, p_started_at TIMESTAMPTZ,
+    p_callback_consent BOOLEAN, p_disposition TEXT, p_caller_hash TEXT, p_started_at TIMESTAMPTZ,
     p_ended_at TIMESTAMPTZ
 )
 RETURNS TABLE (
@@ -150,11 +166,14 @@ RETURNS TABLE (
 LANGUAGE sql AS $$
     INSERT INTO app.voice_calls AS c
         (conversation_id, event_timestamp, language, need_category, urgency_tier,
-         neighborhood, callback_consent, disposition, started_at, ended_at)
+         neighborhood, callback_consent, disposition, caller_hash, linked_user_id,
+         started_at, ended_at)
     VALUES
         (p_conversation_id, p_event_timestamp, p_language, p_need_category,
          p_urgency_tier, p_neighborhood, COALESCE(p_callback_consent, false),
-         p_disposition, p_started_at, p_ended_at)
+         p_disposition, p_caller_hash,
+         (SELECT a.user_id FROM app.voice_account_phones a WHERE a.caller_hash = p_caller_hash),
+         p_started_at, p_ended_at)
     ON CONFLICT ON CONSTRAINT voice_calls_conversation_unique DO UPDATE SET
         event_timestamp = GREATEST(c.event_timestamp, EXCLUDED.event_timestamp),
         language = COALESCE(EXCLUDED.language, c.language),
@@ -163,6 +182,8 @@ LANGUAGE sql AS $$
         neighborhood = COALESCE(EXCLUDED.neighborhood, c.neighborhood),
         callback_consent = c.callback_consent OR EXCLUDED.callback_consent,
         disposition = COALESCE(EXCLUDED.disposition, c.disposition),
+        caller_hash = COALESCE(EXCLUDED.caller_hash, c.caller_hash),
+        linked_user_id = COALESCE(c.linked_user_id, EXCLUDED.linked_user_id),
         started_at = COALESCE(EXCLUDED.started_at, c.started_at),
         ended_at = COALESCE(EXCLUDED.ended_at, c.ended_at), updated_at = now()
     RETURNING c.id, c.provider, c.conversation_id, c.language,
@@ -228,14 +249,28 @@ LANGUAGE sql AS $$
 $$;
 
 CREATE FUNCTION app.voice_handoff_create(
-    p_call_id UUID, p_code_hash TEXT, p_expires_at TIMESTAMPTZ
+    p_call_id UUID, p_code_hash TEXT, p_caller_hash TEXT, p_expires_at TIMESTAMPTZ
 )
 RETURNS TABLE (id UUID, call_id UUID, expires_at TIMESTAMPTZ)
 LANGUAGE sql AS $$
-    INSERT INTO app.voice_handoffs AS h (call_id, code_hash, expires_at)
-    VALUES (p_call_id, p_code_hash, p_expires_at)
+    WITH linked_call AS (
+        UPDATE app.voice_calls AS c
+        SET caller_hash = COALESCE(p_caller_hash, c.caller_hash),
+            linked_user_id = COALESCE(
+                c.linked_user_id,
+                (SELECT a.user_id FROM app.voice_account_phones a
+                 WHERE a.caller_hash = p_caller_hash)
+            ),
+            updated_at = now()
+        WHERE c.id = p_call_id
+        RETURNING c.id
+    )
+    INSERT INTO app.voice_handoffs AS h (call_id, code_hash, caller_hash, expires_at)
+    SELECT l.id, p_code_hash, p_caller_hash, p_expires_at FROM linked_call l
+    WHERE true
     ON CONFLICT (call_id) DO UPDATE SET
         code_hash = CASE WHEN h.claimed_by IS NULL THEN EXCLUDED.code_hash ELSE h.code_hash END,
+        caller_hash = CASE WHEN h.claimed_by IS NULL THEN EXCLUDED.caller_hash ELSE h.caller_hash END,
         expires_at = CASE WHEN h.claimed_by IS NULL THEN EXCLUDED.expires_at ELSE h.expires_at END
     RETURNING h.id, h.call_id, h.expires_at
 $$;
@@ -252,16 +287,27 @@ LANGUAGE sql AS $$
         WHERE h.code_hash = p_code_hash
           AND h.claimed_by IS NULL
           AND h.expires_at > now()
-        RETURNING h.id, h.call_id, h.claimed_at
+        RETURNING h.call_id, h.caller_hash, h.claimed_at
+    ), phone_link AS (
+        INSERT INTO app.voice_account_phones AS a (user_id, caller_hash)
+        SELECT p_user_id, x.caller_hash FROM claimed x WHERE x.caller_hash IS NOT NULL
+        ON CONFLICT (caller_hash) DO UPDATE SET
+            user_id = EXCLUDED.user_id, verified_at = now()
+        RETURNING a.caller_hash
+    ), linked_call AS (
+        UPDATE app.voice_calls AS c SET linked_user_id = p_user_id, updated_at = now()
+        FROM claimed x WHERE c.id = x.call_id
+        RETURNING c.id
     )
-    SELECT x.id, x.call_id, c.need_category, c.urgency_tier, c.disposition,
+    SELECT c.id, c.id, c.need_category, c.urgency_tier, c.disposition,
            COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::TEXT[]),
            x.claimed_at
     FROM claimed x
     JOIN app.voice_calls c ON c.id = x.call_id
+    JOIN linked_call l ON l.id = c.id
     LEFT JOIN app.voice_referrals f ON f.call_id = c.id
     LEFT JOIN app.voice_resources r ON r.id = f.resource_id
-    GROUP BY x.id, x.call_id, c.need_category, c.urgency_tier, c.disposition, x.claimed_at
+    GROUP BY c.id, c.need_category, c.urgency_tier, c.disposition, x.claimed_at
 $$;
 
 CREATE FUNCTION app.voice_follow_up_list(p_user_id UUID)
@@ -270,16 +316,16 @@ RETURNS TABLE (
     disposition TEXT, resources TEXT[], linked_at TIMESTAMPTZ
 )
 LANGUAGE sql STABLE AS $$
-    SELECT h.id, h.call_id, c.need_category, c.urgency_tier, c.disposition,
+    SELECT c.id, c.id, c.need_category, c.urgency_tier, c.disposition,
            COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), ARRAY[]::TEXT[]),
-           h.claimed_at
-    FROM app.voice_handoffs h
-    JOIN app.voice_calls c ON c.id = h.call_id
+           COALESCE(h.claimed_at, c.created_at)
+    FROM app.voice_calls c
+    LEFT JOIN app.voice_handoffs h ON h.call_id = c.id AND h.claimed_by = p_user_id
     LEFT JOIN app.voice_referrals f ON f.call_id = c.id
     LEFT JOIN app.voice_resources r ON r.id = f.resource_id
-    WHERE h.claimed_by = p_user_id
-    GROUP BY h.id, h.call_id, c.need_category, c.urgency_tier, c.disposition, h.claimed_at
-    ORDER BY h.claimed_at DESC
+    WHERE c.linked_user_id = p_user_id
+    GROUP BY c.id, c.need_category, c.urgency_tier, c.disposition, h.claimed_at, c.created_at
+    ORDER BY COALESCE(h.claimed_at, c.created_at) DESC
 $$;
 
 CREATE FUNCTION app.voice_referral_outcome_record(p_referral_id UUID, p_status TEXT, p_reason_code TEXT)

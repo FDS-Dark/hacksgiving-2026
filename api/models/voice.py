@@ -26,6 +26,15 @@ HandoffCodeText = Annotated[
         pattern=r"^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$",
     ),
 ]
+CallerId = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=8,
+        max_length=16,
+        pattern=r"^\+[1-9][0-9]{7,14}$",
+    ),
+]
 
 
 class UrgencyTier(StrEnum):
@@ -101,6 +110,7 @@ class CreateReferralRequest(ApiModel):
 
 class CreateHandoffRequest(ApiModel):
     conversation_id: ShortText
+    caller_id: CallerId | None = None
 
 
 class ClaimHandoffRequest(ApiModel):
