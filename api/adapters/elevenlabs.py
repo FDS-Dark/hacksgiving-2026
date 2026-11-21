@@ -142,14 +142,18 @@ class ElevenLabsClient:
         self._transport = transport
         self._timeout = timeout_seconds
 
-    async def _post(self, path: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+    async def _request(
+        self, method: str, path: str, payload: Mapping[str, Any]
+    ) -> dict[str, Any]:
         async with httpx.AsyncClient(
             base_url="https://api.elevenlabs.io",
             headers={"xi-api-key": self._api_key, "Content-Type": "application/json"},
             timeout=self._timeout,
             transport=self._transport,
         ) as client:
-            response = await client.post(path, content=json.dumps(payload))
+            response = await client.request(
+                method, path, content=json.dumps(payload)
+            )
         if response.status_code >= 400:
             raise ElevenLabsError(
                 f"ElevenLabs request failed with status {response.status_code}"
@@ -161,6 +165,12 @@ class ElevenLabsClient:
         if not isinstance(value, dict):
             raise ElevenLabsError("ElevenLabs returned an unexpected response shape")
         return value
+
+    async def _post(self, path: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        return await self._request("POST", path, payload)
+
+    async def _patch(self, path: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        return await self._request("PATCH", path, payload)
 
     async def create_agent(self, payload: Mapping[str, Any]) -> str:
         result = await self._post("/v1/convai/agents/create", payload)
@@ -176,18 +186,24 @@ class ElevenLabsClient:
         phone_number: str,
         account_sid: str,
         auth_token: str,
+        agent_id: str | None = None,
     ) -> str:
         if not _E164.fullmatch(phone_number):
             raise ValueError("Twilio phone number must use E.164 format")
+        payload = {
+            "provider": "twilio",
+            "label": label,
+            "phone_number": phone_number,
+            "sid": account_sid,
+            "token": auth_token,
+        }
+        if agent_id is not None:
+            if not agent_id.strip():
+                raise ValueError("ElevenLabs agent id cannot be blank")
+            payload["agent_id"] = agent_id
         result = await self._post(
             "/v1/convai/phone-numbers",
-            {
-                "provider": "twilio",
-                "label": label,
-                "phone_number": phone_number,
-                "sid": account_sid,
-                "token": auth_token,
-            },
+            payload,
         )
         phone_number_id = result.get("phone_number_id")
         if not isinstance(phone_number_id, str) or not phone_number_id:
@@ -195,3 +211,30 @@ class ElevenLabsClient:
                 "ElevenLabs response did not contain a phone number id"
             )
         return phone_number_id
+
+    async def assign_phone_number(
+        self,
+        *,
+        phone_number_id: str,
+        agent_id: str,
+        branch_id: str | None = None,
+    ) -> str:
+        """Assign an imported number to an agent without exposing provider data."""
+        if not phone_number_id.strip():
+            raise ValueError("ElevenLabs phone number id cannot be blank")
+        if not agent_id.strip():
+            raise ValueError("ElevenLabs agent id cannot be blank")
+        payload = {"agent_id": agent_id}
+        if branch_id is not None:
+            if not branch_id.strip():
+                raise ValueError("ElevenLabs branch id cannot be blank")
+            payload["branch_id"] = branch_id
+        result = await self._patch(
+            f"/v1/convai/phone-numbers/{phone_number_id}", payload
+        )
+        assigned_id = result.get("phone_number_id")
+        if not isinstance(assigned_id, str) or not assigned_id:
+            raise ElevenLabsError(
+                "ElevenLabs response did not contain a phone number id"
+            )
+        return assigned_id

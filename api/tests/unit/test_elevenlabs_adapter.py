@@ -101,3 +101,49 @@ async def test_twilio_import_posts_provider_payload():
         "sid": "AC_test",
         "token": "token_test",
     }
+
+
+@pytest.mark.asyncio
+async def test_twilio_import_can_assign_agent_during_setup():
+    captured: dict = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json.loads(request.content))
+        return httpx.Response(200, json={"phone_number_id": "phnum_123"})
+
+    client = ElevenLabsClient("test-key", transport=httpx.MockTransport(handler))
+    result = await client.import_twilio_number(
+        label="ComForce demo",
+        phone_number="+14145550100",
+        account_sid="AC_test",
+        auth_token="token_test",
+        agent_id="agent_123",
+    )
+
+    assert result == "phnum_123"
+    assert captured["agent_id"] == "agent_123"
+
+
+@pytest.mark.asyncio
+async def test_phone_number_assignment_uses_patch_and_supports_branch():
+    captured: dict = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["method"] = request.method
+        captured["path"] = request.url.path
+        captured["payload"] = json.loads(request.content)
+        return httpx.Response(200, json={"phone_number_id": "phnum_123"})
+
+    client = ElevenLabsClient("test-key", transport=httpx.MockTransport(handler))
+    result = await client.assign_phone_number(
+        phone_number_id="phnum_123",
+        agent_id="agent_123",
+        branch_id="branch_123",
+    )
+
+    assert result == "phnum_123"
+    assert captured == {
+        "method": "PATCH",
+        "path": "/v1/convai/phone-numbers/phnum_123",
+        "payload": {"agent_id": "agent_123", "branch_id": "branch_123"},
+    }
