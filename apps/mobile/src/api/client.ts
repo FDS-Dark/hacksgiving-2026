@@ -56,8 +56,10 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   /** JSON-encoded unless it is FormData. */
   body?: unknown;
-  /** false for the unauthenticated health check. */
+  /** false for calls that need no sign-in (health, asking for help without an account). */
   auth?: boolean;
+  /** Extra headers, e.g. X-Access-Code. */
+  headers?: Record<string, string>;
 }
 
 interface ErrorBody {
@@ -66,8 +68,8 @@ interface ErrorBody {
   request_id?: string;
 }
 
-export async function request<T>(path: string, { method = 'GET', body, auth = true }: RequestOptions = {}) {
-  const headers: Record<string, string> = { Accept: 'application/json' };
+export async function request<T>(path: string, { method = 'GET', body, auth = true, headers: extra }: RequestOptions = {}) {
+  const headers: Record<string, string> = { ...extra, Accept: 'application/json' };
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
     payload = body; // FormData sets its own multipart Content-Type with the boundary.

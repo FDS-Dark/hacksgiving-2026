@@ -164,8 +164,9 @@ flowchart LR
 |---|---|---|---|
 | Landing | everyone | 0 | have |
 | Sign in / Account | everyone | 0 | have |
-| Get help (form) | resident | 1 | new |
-| My requests | resident | 1 | new (API have) |
+| Get help (form) | resident | 1 | have (`/help`, works signed out) |
+| Request received | resident | 1 | have (`/help/received`) |
+| My requests / My request | resident | 1 | have (`/help/requests`, `/help/request/[id]`) |
 | New record (text, then voice) | worker | 1 / 3 | new |
 | Review extraction | worker | 3 | new |
 | My tasks | worker | 1 | new |
@@ -185,7 +186,7 @@ flowchart LR
 | `cases` | one request or incident | have |
 | `case_updates` | history, notes, public messages | have |
 | `resources`, `case_referrals` | partner directory, referrals | have |
-| `tasks` | generated work items per case | new |
+| `tasks` | generated work items per case | have (API; no screen yet) |
 | `records` | captured text / transcript + extraction (no audio kept) | new |
 | `on_call_shifts`, `push_tokens` | who's on call, where to notify | new |
 | `shares` | what was shared with whom, when | new |

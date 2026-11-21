@@ -266,6 +266,69 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/public/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Anonymous Request
+         * @description Ask ComForce MKE for help without signing in. Same body as
+         *     `POST /v1/requests`. Keep the access code: it's shown only this once.
+         *     429 after a few requests from one address in an hour.
+         */
+        post: operations["submit_anonymous_request_v1_public_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Anonymous Request
+         * @description A request sent without an account, with its public updates. 404 for
+         *     a wrong number or code alike.
+         */
+        get: operations["get_anonymous_request_v1_public_requests__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To Anonymous Request
+         * @description Answer on a request sent without an account.
+         */
+        post: operations["reply_to_anonymous_request_v1_public_requests__number__replies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/requests": {
         parameters: {
             query?: never;
@@ -307,6 +370,27 @@ export interface paths {
         get: operations["get_my_request_v1_requests__request_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/requests/{request_id}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To My Request
+         * @description Answer on one of the caller's requests (shown to them and to staff).
+         *     404 for anyone else's.
+         */
+        post: operations["reply_to_my_request_v1_requests__request_id__replies_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -477,6 +561,49 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tasks
+         * @description Open tasks by due time (soonest first). `mine` keeps the caller's:
+         *     tasks assigned to them, and unassigned tasks on cases they hold.
+         */
+        get: operations["list_tasks_v1_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Task
+         * @description Mark a task done (or open again), or hand it to another worker
+         *     (`assigned_worker_id: null` gives it back to whoever holds the case).
+         *     Finishing a task is noted in the case history.
+         */
+        patch: operations["update_task_v1_tasks__task_id__patch"];
         trace?: never;
     };
     "/v1/voice/dashboard": {
@@ -708,6 +835,16 @@ export interface components {
             status?: components["schemas"]["ReferralStatus"];
         };
         /**
+         * AnonymousRequestReceipt
+         * @description A request sent without an account. The access code is shown once:
+         *     with the request's number it is the only way back to the request.
+         */
+        AnonymousRequestReceipt: {
+            /** Access Code */
+            access_code: string;
+            request: components["schemas"]["PublicRequest"];
+        };
+        /**
          * AppUser
          * @description The authenticated caller as a Hacksgiving user (app.users).
          */
@@ -738,6 +875,7 @@ export interface components {
             category: components["schemas"]["CaseCategory"];
             /** Contact Email */
             contact_email: string | null;
+            contact_method: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name: string | null;
             /** Contact Phone */
@@ -777,6 +915,8 @@ export interface components {
             requester_id: string | null;
             /** Resolved At */
             resolved_at: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
             source: components["schemas"]["CaseSource"];
             status: components["schemas"]["CaseStatus"];
             /** Title */
@@ -798,6 +938,8 @@ export interface components {
             case: components["schemas"]["Case"];
             /** Referrals */
             referrals: components["schemas"]["Referral"][];
+            /** Tasks */
+            tasks: components["schemas"]["Task"][];
             /** Updates */
             updates: components["schemas"]["CaseUpdate"][];
         };
@@ -911,6 +1053,12 @@ export interface components {
             /** Code */
             code: string;
         };
+        /**
+         * ContactMethod
+         * @description How a resident wants to be reached. `none`: don't reach out at all.
+         * @enum {string}
+         */
+        ContactMethod: "call" | "text" | "none";
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -1158,6 +1306,15 @@ export interface components {
          * @enum {string}
          */
         ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /**
+         * ReplyRequest
+         * @description The requester's answer on their own request. Staff see it in the case
+         *     history.
+         */
+        ReplyRequest: {
+            /** Content */
+            content: string;
+        };
         /** Resource */
         Resource: {
             /** Active */
@@ -1282,6 +1439,8 @@ export interface components {
             category?: components["schemas"]["CaseCategory"] | null;
             /** Contact Email */
             contact_email?: string | null;
+            /** @description Call or text needs `contact_phone`. Leave out when the form didn't ask. */
+            contact_method?: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name?: string | null;
             /** Contact Phone */
@@ -1294,6 +1453,11 @@ export interface components {
             location?: string | null;
             /** Longitude */
             longitude?: number | null;
+            /**
+             * Safe To Contact
+             * @description It's safe to call or leave a voicemail (or to text).
+             */
+            safe_to_contact?: boolean | null;
             /** Title */
             title?: string | null;
         };
@@ -1302,6 +1466,56 @@ export interface components {
          * @enum {string}
          */
         SuggestionMethod: "ai" | "rules";
+        /**
+         * Task
+         * @description A piece of work on a case: generated when the case comes in
+         *     (services/tasks.py), or added by a worker.
+         */
+        Task: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            case_category: components["schemas"]["CaseCategory"];
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            case_priority: components["schemas"]["CasePriority"];
+            /** Case Title */
+            case_title: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Completed By */
+            completed_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Detail */
+            detail: string;
+            /** Due At */
+            due_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "open" | "done";
         /**
          * UpdateCaseRequest
          * @description Only the fields sent change. Send `assigned_worker_id: null` to
@@ -1335,10 +1549,20 @@ export interface components {
             status?: components["schemas"]["ReferralStatus"] | null;
         };
         /**
+         * UpdateTaskRequest
+         * @description Only the fields sent change. Send `assigned_worker_id: null` to hand
+         *     the task back to whoever holds the case.
+         */
+        UpdateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            status?: components["schemas"]["TaskStatus"] | null;
+        };
+        /**
          * UpdateType
          * @enum {string}
          */
-        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral";
+        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral" | "reply";
         /**
          * UrgencyTier
          * @enum {string}
@@ -1972,6 +2196,113 @@ export interface operations {
             };
         };
     };
+    submit_anonymous_request_v1_public_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnonymousRequestReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_anonymous_request_v1_public_requests__number__get: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_anonymous_request_v1_public_requests__number__replies_post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_my_requests_v1_requests_get: {
         parameters: {
             query?: never;
@@ -2043,6 +2374,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_my_request_v1_requests__request_id__replies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
                 };
             };
             /** @description Validation Error */
@@ -2296,6 +2662,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Worker"][];
+                };
+            };
+        };
+    };
+    list_tasks_v1_tasks_get: {
+        parameters: {
+            query?: {
+                case_id?: string | null;
+                mine?: boolean;
+                open_only?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

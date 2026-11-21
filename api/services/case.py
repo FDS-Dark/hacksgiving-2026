@@ -13,20 +13,23 @@ from errors import ApiError, not_found
 from models.case import (
     AddCaseUpdateRequest,
     AddReferralRequest,
+    AnonymousRequestReceipt,
     Case,
     CaseCategory,
     CaseDetail,
     CaseFilters,
     CaseInsights,
-    CaseKind,
     CasePriority,
     CaseSource,
     CaseUpdate,
+    ContactMethod,
     CreateCaseRequest,
     CreateResourceRequest,
     PublicRequest,
     PublicRequestDetail,
+    PublicRequestUpdate,
     Referral,
+    ReplyRequest,
     Resource,
     SubmitRequest,
     UpdateCaseRequest,
@@ -36,7 +39,9 @@ from models.case import (
 )
 from models.staff import StaffMember
 from models.user import AppUser
+from services import access_code
 from services.staff import StaffService
+from services.tasks import TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -72,17 +77,43 @@ def title_from(description: str) -> str:
 
 
 class CaseService:
-    def __init__(self, cases: CaseDatabridge, resources: ResourceDatabridge, staff: StaffService) -> None:
+    def __init__(
+        self, cases: CaseDatabridge, resources: ResourceDatabridge, staff: StaffService, tasks: TaskService
+    ) -> None:
         self.cases = cases
         self.resources = resources
         self.staff = staff
+        self.tasks = tasks
 
     # --- Public: the person asking for help ------------------------------------
 
     async def submit_request(self, user: AppUser, body: SubmitRequest, triage: Triager | None) -> PublicRequest:
-        """A community member's request. Its priority, status and assignee are
-        for workers to set. An optional triager suggests a category and flags
-        urgency; it never blocks the submission."""
+        """A signed-in member's request. Its priority, status and assignee
+        are for workers to set. An optional triager suggests a category and
+        flags urgency; it never blocks the submission."""
+        case = await self._submit(body, triage, requester_id=user.id, access_code_hash=None)
+        logger.info("Request #%s submitted by user %s", case.number, user.id)
+        request = await self.cases.get_for_requester(user.id, case.id)
+        if request is None:
+            raise RuntimeError(f"Case {case.id} isn't visible to its requester")
+        return request
+
+    async def submit_anonymous_request(self, body: SubmitRequest, triage: Triager | None) -> AnonymousRequestReceipt:
+        """A request from someone who isn't signed in (an emergency shouldn't
+        wait on an account). The access code in the receipt, with the
+        request's number, is how they get back to it."""
+        code = access_code.new_code()
+        code_hash = access_code.hash_code(code)
+        case = await self._submit(body, triage, requester_id=None, access_code_hash=code_hash)
+        logger.info("Request #%s submitted without an account", case.number)
+        request = await self.cases.get_by_code(case.number, code_hash)
+        if request is None:
+            raise RuntimeError(f"Case {case.id} isn't readable with its access code")
+        return AnonymousRequestReceipt(request=request, access_code=code)
+
+    async def _submit(
+        self, body: SubmitRequest, triage: Triager | None, *, requester_id: UUID | None, access_code_hash: bytes | None
+    ) -> Case:
         guess: Triage | None = None
         if body.category is None and triage is not None:
             try:
@@ -92,22 +123,23 @@ class CaseService:
         category = body.category or (guess.category if guess else CaseCategory.OTHER)
         priority = CasePriority.HIGH if guess and guess.urgent else CasePriority.MEDIUM
 
-        case = await self.cases.create(
-            kind=CaseKind.REQUEST,
+        contact_method = body.contact_method
+        case = await self.cases.create_request(
             title=body.title or title_from(body.description),
             description=body.description,
             category=category,
             priority=priority,
-            source=CaseSource.PUBLIC,
             location=blank_to_none(body.location),
             latitude=body.latitude,
             longitude=body.longitude,
             contact_name=blank_to_none(body.contact_name),
-            contact_phone=blank_to_none(body.contact_phone),
-            contact_email=blank_to_none(body.contact_email),
-            requester_id=user.id,
-            assigned_worker_id=None,
-            created_by=user.id,
+            # "Don't contact me" means no number is kept either.
+            contact_phone=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_phone),
+            contact_email=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_email),
+            contact_method=contact_method,
+            safe_to_contact=None if contact_method == ContactMethod.NONE else body.safe_to_contact,
+            requester_id=requester_id,
+            access_code_hash=access_code_hash,
         )
         if guess:
             urgent = " Flagged urgent." if guess.urgent else ""
@@ -116,11 +148,8 @@ class CaseService:
                 case.id, None, UpdateType.NOTE, Visibility.INTERNAL,
                 f"Auto-triage suggested {label}.{urgent} {guess.reason}".strip(),
             )
-        logger.info("Request #%s submitted by user %s", case.number, user.id)
-        request = await self.cases.get_for_requester(user.id, case.id)
-        if request is None:
-            raise RuntimeError(f"Case {case.id} isn't visible to its requester")
-        return request
+        await self.tasks.generate_for(case)
+        return case
 
     async def my_requests(self, user: AppUser) -> list[PublicRequest]:
         return await self.cases.list_for_requester(user.id)
@@ -130,6 +159,34 @@ class CaseService:
         if request is None:
             raise not_found("request")
         return PublicRequestDetail(request=request, updates=await self.cases.list_public_updates(user.id, case_id))
+
+    async def reply(self, user: AppUser, case_id: UUID, body: ReplyRequest) -> PublicRequestUpdate:
+        """The member answers on their own request."""
+        if await self.cases.get_for_requester(user.id, case_id) is None:
+            raise not_found("request")
+        return await self._add_reply(case_id, user.id, body)
+
+    async def request_by_code(self, number: int, code: str) -> PublicRequestDetail:
+        """A request sent without an account, for whoever holds its code.
+        A wrong number or code is the same 404, so neither can be probed."""
+        request = await self._by_code(number, code)
+        return PublicRequestDetail(request=request, updates=await self.cases.list_public_updates_for_case(request.id))
+
+    async def reply_by_code(self, number: int, code: str, body: ReplyRequest) -> PublicRequestUpdate:
+        request = await self._by_code(number, code)
+        return await self._add_reply(request.id, None, body)
+
+    async def _by_code(self, number: int, code: str) -> PublicRequest:
+        request = await self.cases.get_by_code(number, access_code.hash_code(code)) if code.strip() else None
+        if request is None:
+            raise not_found("request")
+        return request
+
+    async def _add_reply(self, case_id: UUID, author_id: UUID | None, body: ReplyRequest) -> PublicRequestUpdate:
+        reply = await self.cases.add_reply(case_id, author_id, body.content)
+        if reply is None:
+            raise not_found("request")
+        return reply
 
     # --- Workers ---------------------------------------------------------------
 
@@ -157,6 +214,7 @@ class CaseService:
             created_by=worker.id,
         )
         logger.info("Case #%s opened by worker %s", case.number, worker.id)
+        await self.tasks.generate_for(case)
         return case
 
     async def search(self, filters: CaseFilters) -> list[Case]:
@@ -174,6 +232,7 @@ class CaseService:
             case=case,
             updates=await self.cases.list_updates(case_id),
             referrals=await self.resources.list_referrals(case_id),
+            tasks=await self.tasks.for_case(case_id),
         )
 
     async def update(self, worker: StaffMember, case_id: UUID, changes: UpdateCaseRequest) -> Case:

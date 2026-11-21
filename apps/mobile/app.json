@@ -35,7 +35,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow NearMKE to use your location only while the app is open to calculate nearby safety alerts."
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location only while the app is open: to show nearby safety alerts and to fill in where you are when you ask for help."
         }
       ]
     ],

@@ -33,4 +33,7 @@ COPY --chown=root:root . .
 USER 10001:10001
 EXPOSE 8443
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443"]
+# --proxy-headers: the client address comes from the ingress's
+# X-Forwarded-For (services/rate_limit.py limits by it). The pod is only
+# reachable through the ingress.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8443", "--proxy-headers", "--forwarded-allow-ips", "*"]

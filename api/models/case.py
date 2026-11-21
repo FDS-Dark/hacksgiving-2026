@@ -64,11 +64,26 @@ class UpdateType(StrEnum):
     CATEGORY_CHANGE = "category_change"
     ASSIGNMENT = "assignment"
     REFERRAL = "referral"
+    # The requester answering on their own request.
+    REPLY = "reply"
 
 
 class Visibility(StrEnum):
     INTERNAL = "internal"
     PUBLIC = "public"
+
+
+class ContactMethod(StrEnum):
+    """How a resident wants to be reached. `none`: don't reach out at all."""
+
+    CALL = "call"
+    TEXT = "text"
+    NONE = "none"
+
+
+class TaskStatus(StrEnum):
+    OPEN = "open"
+    DONE = "done"
 
 
 class ReferralStatus(StrEnum):
@@ -117,6 +132,12 @@ class Case(ApiModel):
     resolved_at: datetime | None = None
     referral_count: int
     last_activity_at: datetime
+    # How the requester wants to be reached; None when nobody asked (cases a
+    # worker opens).
+    contact_method: ContactMethod | None = None
+    # "It's safe to call or leave a voicemail" (or to text). False means be
+    # careful: no voicemail, and don't say why you're calling to someone else.
+    safe_to_contact: bool | None = None
 
 
 class CaseUpdate(ApiModel):
@@ -151,10 +172,34 @@ class Referral(ApiModel):
     updated_at: datetime
 
 
+class Task(ApiModel):
+    """A piece of work on a case: generated when the case comes in
+    (services/tasks.py), or added by a worker."""
+
+    id: UUID
+    case_id: UUID
+    case_number: int
+    case_title: str
+    case_category: CaseCategory
+    case_priority: CasePriority
+    title: str
+    detail: str
+    status: TaskStatus
+    # The task's own assignee, or the case's when the task has none.
+    assigned_worker_id: UUID | None = None
+    assigned_worker_name: str | None = None
+    due_at: datetime | None = None
+    created_by: UUID | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+    completed_by: UUID | None = None
+
+
 class CaseDetail(ApiModel):
     case: Case
     updates: list[CaseUpdate]
     referrals: list[Referral]
+    tasks: list[Task]
 
 
 class CreateCaseRequest(ApiModel):
@@ -198,6 +243,26 @@ class AddCaseUpdateRequest(ApiModel):
 
     content: RequiredText
     visibility: Visibility = Visibility.INTERNAL
+
+
+class TaskFilters(ApiModel):
+    case_id: UUID | None = None
+    # Only tasks the caller holds (theirs, or unassigned on a case they hold).
+    mine: bool = False
+    open_only: bool = True
+    limit: int = Field(default=200, ge=1, le=500)
+
+
+class UpdateTaskRequest(ApiModel):
+    """Only the fields sent change. Send `assigned_worker_id: null` to hand
+    the task back to whoever holds the case."""
+
+    status: TaskStatus | None = None
+    assigned_worker_id: UUID | None = None
+
+    @property
+    def unassign(self) -> bool:
+        return "assigned_worker_id" in self.model_fields_set and self.assigned_worker_id is None
 
 
 class CaseFilters(ApiModel):
@@ -315,6 +380,18 @@ class SubmitRequest(ApiModel):
     contact_name: ContactField | None = None
     contact_phone: ContactField | None = None
     contact_email: ContactField | None = None
+    contact_method: ContactMethod | None = Field(
+        default=None, description="Call or text needs `contact_phone`. Leave out when the form didn't ask."
+    )
+    safe_to_contact: bool | None = Field(
+        default=None, description="It's safe to call or leave a voicemail (or to text)."
+    )
+
+    @model_validator(mode="after")
+    def _reachable(self) -> "SubmitRequest":
+        if self.contact_method in (ContactMethod.CALL, ContactMethod.TEXT) and not (self.contact_phone or "").strip():
+            raise ValueError("A phone number is needed to call or text")
+        return self
 
 
 class PublicRequest(ApiModel):
@@ -340,3 +417,23 @@ class PublicRequestUpdate(ApiModel):
 class PublicRequestDetail(ApiModel):
     request: PublicRequest
     updates: list[PublicRequestUpdate]
+
+
+class AnonymousRequestReceipt(ApiModel):
+    """A request sent without an account. The access code is shown once:
+    with the request's number it is the only way back to the request."""
+
+    request: PublicRequest
+    access_code: str
+
+
+Reply = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+
+class ReplyRequest(ApiModel):
+    """The requester's answer on their own request. Staff see it in the case
+    history."""
+
+    model_config = ConfigDict(extra="forbid", json_schema_serialization_defaults_required=True)
+
+    content: Reply

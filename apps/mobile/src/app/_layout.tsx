@@ -47,6 +47,8 @@ function RootStack() {
       <Stack.Protected guard={!signedIn} redirectTo="/">
         <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
       </Stack.Protected>
+      {/* Asking for help never waits on a sign-in. */}
+      <Stack.Screen name="help" />
       <Stack.Screen name="auth" />
     </Stack>
   );

@@ -9,6 +9,7 @@ from models.case import (
     CaseStats,
     CaseUpdate,
     CategoryCount,
+    ContactMethod,
     PublicRequest,
     PublicRequestUpdate,
     StatusCount,
@@ -44,6 +45,34 @@ class CaseDatabridge(Databridge):
             source=source, location=location, latitude=latitude, longitude=longitude,
             contact_name=contact_name, contact_phone=contact_phone, contact_email=contact_email,
             requester_id=requester_id, assigned_worker_id=assigned_worker_id, created_by=created_by,
+        ))
+
+    async def create_request(
+        self,
+        *,
+        title: str,
+        description: str,
+        category: str,
+        priority: str,
+        location: str | None,
+        latitude: float | None,
+        longitude: float | None,
+        contact_name: str | None,
+        contact_phone: str | None,
+        contact_email: str | None,
+        contact_method: ContactMethod | None,
+        safe_to_contact: bool | None,
+        requester_id: UUID | None,
+        access_code_hash: bytes | None,
+    ) -> Case:
+        """A resident's request: signed in (requester_id) or not (access_code_hash)."""
+        return Case(**await self._one(
+            "request_create",
+            title=title, description=description, category=category, priority=priority,
+            location=location, latitude=latitude, longitude=longitude,
+            contact_name=contact_name, contact_phone=contact_phone, contact_email=contact_email,
+            contact_method=contact_method, safe_to_contact=safe_to_contact,
+            requester_id=requester_id, access_code_hash=access_code_hash,
         ))
 
     async def search(self, f: CaseFilters) -> list[Case]:
@@ -101,6 +130,19 @@ class CaseDatabridge(Databridge):
     async def get_for_requester(self, user_id: UUID, case_id: UUID) -> PublicRequest | None:
         row = await self._first("request_get_for_user", user_id=user_id, case_id=case_id)
         return PublicRequest(**row) if row else None
+
+    async def get_by_code(self, number: int, access_code_hash: bytes) -> PublicRequest | None:
+        row = await self._first("request_get_by_code", number=number, access_code_hash=access_code_hash)
+        return PublicRequest(**row) if row else None
+
+    async def list_public_updates_for_case(self, case_id: UUID) -> list[PublicRequestUpdate]:
+        """For a caller already matched to the request (by account or code)."""
+        rows = await self._rows("request_list_public_updates", case_id=case_id)
+        return [PublicRequestUpdate(**row) for row in rows]
+
+    async def add_reply(self, case_id: UUID, author_id: UUID | None, content: str) -> PublicRequestUpdate | None:
+        row = await self._first("request_add_reply", case_id=case_id, author_id=author_id, content=content)
+        return PublicRequestUpdate(**row) if row else None
 
     async def list_public_updates(self, user_id: UUID, case_id: UUID) -> list[PublicRequestUpdate]:
         rows = await self._rows("request_list_updates_for_user", user_id=user_id, case_id=case_id)
