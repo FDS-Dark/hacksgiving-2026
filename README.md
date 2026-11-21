@@ -6,6 +6,25 @@ Tunnel, Vault secrets, and a staging → main GitLab pipeline. Right now it's
 a working skeleton: sign-in, `GET/PATCH /v1/me`, health checks, and a Home
 screen. Features go on top.
 
+## Community Response Navigator
+
+The `calls-ava` work adds a privacy-first voice intake and responder workflow:
+
+- ElevenLabs handles the live AI conversation and approved warm transfers;
+  Twilio supplies the local phone number.
+- FastAPI exposes signed post-call ingestion plus allowlisted resource and
+  referral tools. It never stores audio, transcripts, caller phone numbers, or
+  exact addresses.
+- Postgres tracks structured call outcomes, referrals, verified resources,
+  and aggregate impact measures.
+- The mobile **Response** tab gives authenticated responders a minimum-data
+  queue and clearly labeled synthetic fallback for demos.
+- Immediate-danger calls are instructed to hang up and dial 911 directly;
+  ordinary Twilio Programmable Voice is never treated as emergency dispatch.
+
+Provider provisioning, the agent prompt, safety simulations, and the live demo
+runbook are in [`docs/voice/`](docs/voice/README.md).
+
 - **Security, data handling, known gaps:** [`SECURITY.md`](SECURITY.md)
 - **Decisions** (inherited from Cooli): [`docs/decisions/`](docs/decisions/)
 

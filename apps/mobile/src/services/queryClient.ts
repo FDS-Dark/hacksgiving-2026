@@ -30,4 +30,9 @@ AppState.addEventListener('change', (state) => {
 export const keys = {
   health: ['health'] as const,
   me: ['me'] as const,
+  communityResponse: ['community-response'] as const,
+  communityResources: ['community-resources'] as const,
+  communityOpportunities: ['community-opportunities'] as const,
+  assistanceRequests: ['assistance-requests'] as const,
+  communityFeed: ['community-feed'] as const,
 };

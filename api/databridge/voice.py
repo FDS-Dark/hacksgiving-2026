@@ -1,0 +1,113 @@
+import json
+from datetime import datetime
+from uuid import UUID
+
+from databridge.base import Databridge
+from models.voice import (
+    ActiveReferral,
+    ImpactCategory,
+    ImpactSummary,
+    Referral,
+    ReferralOutcome,
+    ReferralStatus,
+    Resource,
+    VoiceCall,
+    VoiceCallEvent,
+    VoiceDashboard,
+)
+
+
+class VoiceDatabridge(Databridge):
+    async def resources(self, category: str | None, language: str | None) -> list[Resource]:
+        rows = await self._rows("resource_list", category=category, language=language)
+        return [Resource(**row) for row in rows]
+
+    async def ingest_call(
+        self,
+        *,
+        conversation_id: str,
+        event_timestamp: int,
+        language: str | None,
+        need_category: str | None,
+        urgency_tier: str | None,
+        neighborhood: str | None,
+        callback_consent: bool,
+        disposition: str | None,
+        started_at: datetime | None,
+        ended_at: datetime | None,
+    ) -> VoiceCall:
+        row = await self._one(
+            "voice_call_ingest",
+            conversation_id=conversation_id,
+            event_timestamp=event_timestamp,
+            language=language,
+            need_category=need_category,
+            urgency_tier=urgency_tier,
+            neighborhood=neighborhood,
+            callback_consent=callback_consent,
+            disposition=disposition,
+            started_at=started_at,
+            ended_at=ended_at,
+        )
+        return VoiceCall(**row)
+
+    async def call_by_conversation(self, conversation_id: str) -> VoiceCall | None:
+        row = await self._first("voice_call_get_by_conversation", conversation_id=conversation_id)
+        return VoiceCall(**row) if row else None
+
+    async def begin_call(self, conversation_id: str) -> VoiceCall:
+        return VoiceCall(
+            **await self._one("voice_call_begin", conversation_id=conversation_id)
+        )
+
+    async def append_event(
+        self,
+        *,
+        call_id: UUID,
+        event_key: str,
+        event_type: str,
+        details: dict[str, str | bool | int | None],
+        occurred_at: datetime,
+    ) -> VoiceCallEvent | None:
+        row = await self._first(
+            "voice_call_event_append",
+            call_id=call_id,
+            event_key=event_key,
+            event_type=event_type,
+            details=json.dumps(details, separators=(",", ":"), sort_keys=True),
+            occurred_at=occurred_at,
+        )
+        return VoiceCallEvent(**row) if row else None
+
+    async def create_referral(
+        self, call_id: UUID, resource_slug: str, status: ReferralStatus
+    ) -> Referral | None:
+        row = await self._first(
+            "referral_create", call_id=call_id, resource_slug=resource_slug, status=status
+        )
+        return Referral(**row) if row else None
+
+    async def record_outcome(
+        self, referral_id: UUID, status: str, reason_code: str | None
+    ) -> ReferralOutcome | None:
+        row = await self._first(
+            "referral_outcome_record",
+            referral_id=referral_id,
+            status=status,
+            reason_code=reason_code,
+        )
+        return ReferralOutcome(**row) if row else None
+
+    async def impact(self) -> ImpactSummary:
+        summary = await self._one("voice_impact_summary")
+        rows = await self._rows("voice_impact_categories")
+        return ImpactSummary(**summary, categories=[ImpactCategory(**row) for row in rows])
+
+    async def dashboard(self) -> VoiceDashboard:
+        return VoiceDashboard(
+            stats=await self.impact(),
+            active_referrals=[
+                ActiveReferral(**row) for row in await self._rows("voice_active_referrals")
+            ],
+            routes=await self.resources(None, None),
+        )

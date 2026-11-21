@@ -12,11 +12,15 @@ from typing import Any
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
+from databridge.community import CommunityDatabridge
 from databridge.executor import PostgresExecutor
 from databridge.user import UserDatabridge
+from databridge.voice import VoiceDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from models.user import AppUser, TokenClaims
+from services.community import CommunityService
 from services.user import UserService
+from services.voice import VoiceService
 from settings import config
 
 logger = logging.getLogger(__name__)
@@ -36,6 +40,17 @@ def get_executor() -> PostgresExecutor:
 @cache
 def get_user_service() -> UserService:
     return UserService(UserDatabridge(get_executor()))
+
+
+@cache
+def get_community_service() -> CommunityService:
+    return CommunityService(CommunityDatabridge(get_executor()))
+
+
+@cache
+def get_voice_service() -> VoiceService:
+    executor = get_executor()
+    return VoiceService(VoiceDatabridge(executor), executor)
 
 
 # --- Identity -------------------------------------------------------------------

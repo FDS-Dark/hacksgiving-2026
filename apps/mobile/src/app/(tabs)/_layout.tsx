@@ -19,6 +19,14 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
         <NativeTabs.Trigger.Badge hidden={alertCount === 0}>{String(alertCount)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="community">
+        <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'heart.text.square', selected: 'heart.text.square.fill' }} md="diversity_1" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="response">
+        <NativeTabs.Trigger.Label>Response</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'headphones', selected: 'headphones' }} md="support_agent" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

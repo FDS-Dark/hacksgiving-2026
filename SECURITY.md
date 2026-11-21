@@ -61,9 +61,15 @@ through the Cloudflare Tunnel at `https://hacksgiving-api.austinkoske.com/v1`
 | Data | Where | Notes |
 |---|---|---|
 | Auth0 `sub`, display name, timezone | Postgres `app.users` | No email or password; Auth0 holds credentials. A name that is an email address is never stored (API, app and Auth0 Action) |
+| Voice call outcome | Postgres `app.voice_calls` | Provider conversation id, coarse service category, urgency tier, optional neighborhood, consent and disposition; scheduled for deletion after 30 days |
+| Referral and outcome events | Postgres `app.referrals`, `app.referral_outcomes`, `app.voice_call_events` | Resource selected and connection/follow-up status; no raw audio, transcript, caller phone number, exact address or free-form case narrative |
 
 Third parties that receive data: **Auth0** (sign-in), **Supabase**
-(database), **Cloudflare** (TLS termination for the tunnel).
+(database), **Cloudflare** (TLS termination for the tunnel), **Twilio**
+(telephone network), and **ElevenLabs** (live voice conversation). Before any
+real caller is accepted, the ElevenLabs agent must have audio saving disabled
+and zero-day retention or Zero Retention Mode enabled; see
+[`docs/voice/README.md`](docs/voice/README.md).
 
 ## Input handling
 
@@ -73,6 +79,10 @@ Third parties that receive data: **Auth0** (sign-in), **Supabase**
 - Request bodies are Pydantic models; validation failures return a
   structured 422.
 - CORS: production allows **no** browser origins (the clients are native).
+- ElevenLabs post-call webhooks are verified over the raw body with HMAC and a
+  timestamp tolerance before JSON parsing. Voice tool routes use a separate
+  server-only secret, reject unapproved transfer targets, and are idempotent
+  under retries.
 
 ## Secrets
 
@@ -128,6 +138,13 @@ accepted moderate findings here.
 - **No account deletion or data export.** Required before App Store
   release (App Store Review Guideline 5.1.1(v)).
 - **No API rate limiting** beyond Cloudflare's defaults.
+- **No responder role/organization authorization yet.** Any authenticated app
+  user can currently open the responder dashboard; production must add staff
+  roles before real caller data is enabled.
+- **Voice retention deletion is not scheduled yet.** Rows carry
+  `retention_delete_at`, but a production cleanup job must enforce it.
+- Provider accounts, zero-retention settings, partner transfer approval, and a
+  Milwaukee phone number must be completed before accepting real calls.
 - Supabase backup/PITR settings have not been reviewed.
 - Check that `gitlab-hacksgiving-ci` and `gitlab-hacksgiving-database-ci`
   (in `infra/vault-config`) accept protected refs only, so only `staging`

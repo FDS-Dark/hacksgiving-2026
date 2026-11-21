@@ -48,7 +48,7 @@ variable "db_secret_path" {
 
 variable "app_secret_path" {
   type        = string
-  description = "Vault KV path (under secret/) for app secrets: jwt_secret. Seed manually — see ../database/README.md and homelab/docs/DEPLOYMENT.md's 'First-Time Secrets Required in Vault'."
+  description = "Vault KV path (under secret/) for app secrets: jwt_secret, elevenlabs_webhook_secret, and voice_tool_secret. Seed manually — see ../database/README.md and homelab/docs/DEPLOYMENT.md's 'First-Time Secrets Required in Vault'."
   default     = "deployments/hacksgiving/app"
 }
 

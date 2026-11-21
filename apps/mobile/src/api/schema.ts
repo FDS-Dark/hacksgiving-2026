@@ -4,6 +4,93 @@
  */
 
 export interface paths {
+    "/v1/community/assistant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant */
+        get: operations["assistant_v1_community_assistant_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Feed */
+        get: operations["feed_v1_community_feed_get"];
+        put?: never;
+        /** Create Post */
+        post: operations["create_post_v1_community_feed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Opportunities */
+        get: operations["opportunities_v1_community_opportunities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Requests */
+        get: operations["my_requests_v1_community_requests_get"];
+        put?: never;
+        /** Create Request */
+        post: operations["create_request_v1_community_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/community/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resources */
+        get: operations["resources_v1_community_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health": {
         parameters: {
             query?: never;
@@ -50,10 +137,168 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/voice/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dashboard
+         * @description Responder queue with minimum necessary fields and verified routes.
+         */
+        get: operations["dashboard_v1_voice_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Impact
+         * @description Aggregate outcomes only; no caller identity or transcript.
+         */
+        get: operations["impact_v1_voice_impact_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Referral */
+        post: operations["create_referral_v1_voice_referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Outcome */
+        post: operations["record_outcome_v1_voice_referrals__referral_id__outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/responder-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Responder Outcome
+         * @description Authenticated responder update; never exposes the agent tool secret.
+         */
+        post: operations["record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resources
+         * @description Verified, allowlisted routes for the voice agent.
+         *
+         *     A phone number is returned only after that organization has approved
+         *     transfers. Emergency resources never include a transferable number.
+         */
+        get: operations["resources_v1_voice_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/webhooks/elevenlabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Elevenlabs Webhook
+         * @description Signed post-call analysis. Raw payload is verified before JSON parsing.
+         */
+        post: operations["elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveReferral */
+        ActiveReferral: {
+            /** Category */
+            category: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Resource Name */
+            resource_name: string;
+            status: components["schemas"]["ReferralStatus"];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
         /**
          * AppUser
          * @description The authenticated caller as a Hacksgiving user (app.users).
@@ -76,10 +321,286 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** AssistanceRequest */
+        AssistanceRequest: {
+            /** Category */
+            category: string;
+            /** Contact Preference */
+            contact_preference: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Status */
+            status: string;
+            /** Summary */
+            summary: string;
+        };
+        /** CatalogAnswer */
+        CatalogAnswer: {
+            /** Answer */
+            answer: string;
+            /**
+             * Disclaimer
+             * @default Information only. Call 911 for immediate danger.
+             */
+            disclaimer: string;
+            /**
+             * Emergency
+             * @default false
+             */
+            emergency: boolean;
+            /** Resources */
+            resources: components["schemas"]["PublicResource"][];
+        };
+        /** CommunityPost */
+        CommunityPost: {
+            /** Author Label */
+            author_label: string;
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+        };
+        /** CreateAssistanceRequest */
+        CreateAssistanceRequest: {
+            /** Category */
+            category: string;
+            /**
+             * Contact Preference
+             * @default in-app
+             */
+            contact_preference?: string;
+            /** Neighborhood */
+            neighborhood?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** CreateCommunityPost */
+        CreateCommunityPost: {
+            /**
+             * Anonymous
+             * @default true
+             */
+            anonymous?: boolean;
+            /** Body */
+            body: string;
+            /** Neighborhood */
+            neighborhood?: string | null;
+        };
+        /** CreateReferralRequest */
+        CreateReferralRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Resource Slug */
+            resource_slug: string;
+            /** @default offered */
+            status?: components["schemas"]["ReferralStatus"];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImpactCategory */
+        ImpactCategory: {
+            /** Category */
+            category: string;
+            /** Count */
+            count: number;
+        };
+        /** ImpactSummary */
+        ImpactSummary: {
+            /** Categories */
+            categories: components["schemas"]["ImpactCategory"][];
+            /** Emergency Redirects */
+            emergency_redirects: number;
+            /** Follow Ups Completed */
+            follow_ups_completed: number;
+            /** Referrals Offered */
+            referrals_offered: number;
+            /** Total Calls */
+            total_calls: number;
+            /** Transfers Connected */
+            transfers_connected: number;
+        };
+        /** Opportunity */
+        Opportunity: {
+            /** Apply Url */
+            apply_url: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Posted At
+             * Format: date-time
+             */
+            posted_at: string;
+            /** Schedule Label */
+            schedule_label: string | null;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * OutcomeStatus
+         * @enum {string}
+         */
+        OutcomeStatus: "connected" | "voicemail" | "no_answer" | "declined" | "unavailable" | "follow_up_needed" | "completed";
+        /** PublicResource */
+        PublicResource: {
+            /** Address Label */
+            address_label: string | null;
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Languages */
+            languages: string[];
+            /**
+             * Last Verified At
+             * Format: date-time
+             */
+            last_verified_at: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Name */
+            name: string;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Service Area */
+            service_area: string;
+            /** Slug */
+            slug: string;
+            /** Website Url */
+            website_url: string | null;
+        };
+        /** RecordOutcomeRequest */
+        RecordOutcomeRequest: {
+            /** Reason Code */
+            reason_code?: string | null;
+            status: components["schemas"]["OutcomeStatus"];
+        };
+        /** Referral */
+        Referral: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            status: components["schemas"]["ReferralStatus"];
+        };
+        /** ReferralOutcome */
+        ReferralOutcome: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            status: components["schemas"]["OutcomeStatus"];
+        };
+        /**
+         * ReferralStatus
+         * @enum {string}
+         */
+        ReferralStatus: "offered" | "accepted" | "transfer_attempted" | "connected" | "declined" | "unavailable";
+        /** Resource */
+        Resource: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Languages */
+            languages: string[];
+            /**
+             * Last Verified At
+             * Format: date-time
+             */
+            last_verified_at: string;
+            /** Name */
+            name: string;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Service Area */
+            service_area: string;
+            /** Slug */
+            slug: string;
+            /** Transfer Approved */
+            transfer_approved: boolean;
         };
         /** UpdateMeRequest */
         UpdateMeRequest: {
@@ -88,6 +609,11 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /**
+         * UrgencyTier
+         * @enum {string}
+         */
+        UrgencyTier: "emergency" | "urgent" | "routine";
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -101,6 +627,27 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** VoiceDashboard */
+        VoiceDashboard: {
+            /** Active Referrals */
+            active_referrals: components["schemas"]["ActiveReferral"][];
+            /** Routes */
+            routes: components["schemas"]["Resource"][];
+            stats: components["schemas"]["ImpactSummary"];
+        };
+        /** WebhookAccepted */
+        WebhookAccepted: {
+            /**
+             * Duplicate
+             * @default false
+             */
+            duplicate: boolean;
+            /**
+             * Status
+             * @default received
+             */
+            status: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -110,6 +657,206 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    assistant_v1_community_assistant_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    feed_v1_community_feed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPost"][];
+                };
+            };
+        };
+    };
+    create_post_v1_community_feed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunityPost"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityPost"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    opportunities_v1_community_opportunities_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_requests_v1_community_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistanceRequest"][];
+                };
+            };
+        };
+    };
+    create_request_v1_community_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssistanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistanceRequest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resources_v1_community_resources_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicResource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_check_v1_health_get: {
         parameters: {
             query?: never;
@@ -181,6 +928,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_v1_voice_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceDashboard"];
+                };
+            };
+        };
+    };
+    impact_v1_voice_impact_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpactSummary"];
+                };
+            };
+        };
+    };
+    create_referral_v1_voice_referrals_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReferralRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Referral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_outcome_v1_voice_referrals__referral_id__outcome_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resources_v1_voice_resources_get: {
+        parameters: {
+            query?: {
+                category?: string | null;
+                language?: string | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAccepted"];
                 };
             };
         };

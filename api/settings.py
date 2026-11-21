@@ -71,6 +71,17 @@ class LoggingConfig(BaseModel):
     format: Literal["json", "text"] = Field(default="text")
 
 
+class VoiceConfig(BaseModel):
+    """Secrets for anonymous telephony entry points.
+
+    Empty means the corresponding entry point is disabled. Production values
+    come from Vault; they are never shipped to the mobile app.
+    """
+
+    elevenlabs_webhook_secret: str = Field(default="")
+    tool_secret: str = Field(default="")
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP__", env_nested_delimiter="__", extra="ignore"
@@ -83,6 +94,7 @@ class AppConfig(BaseSettings):
     jwt: JWTConfig = Field(default_factory=JWTConfig)
     environment: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    voice: VoiceConfig = Field(default_factory=VoiceConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(

@@ -5,5 +5,6 @@
 environment    = "staging"
 api_hostname   = "hacksgiving-api-staging.austinkoske.com"
 db_secret_path = "deployments/hacksgiving/staging/db"
-# Seeded by hand like production's: jwt_secret.
+# Seeded by hand like production's: jwt_secret, elevenlabs_webhook_secret,
+# and voice_tool_secret.
 app_secret_path = "deployments/hacksgiving/staging/app"

@@ -8,8 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import errors
 from dependencies import get_executor
 from logging_setup import configure_logging
+from routers.community import router as community
 from routers.health import router as health
 from routers.user import router as user
+from routers.voice import router as voice
 from settings import config
 
 configure_logging(config.logging)
@@ -44,7 +46,7 @@ app.add_middleware(
 
 errors.install(app)
 
-for router in (health, user):
+for router in (health, user, voice, community):
     app.include_router(router, prefix="/v1")
 
 
