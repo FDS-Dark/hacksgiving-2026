@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import errors
-from dependencies import get_executor
+from dependencies import get_executor, get_mpd_call_service
 from logging_setup import configure_logging
 from routers.case import router as cases
 from routers.health import router as health
@@ -20,6 +20,7 @@ from routers.staff import router as staff
 from routers.task import router as tasks
 from routers.user import router as user
 from routers.voice import router as voice
+from services.mpd_scheduler import MpdIngestLoop
 from settings import config
 
 configure_logging(config.logging)
@@ -27,7 +28,18 @@ configure_logging(config.logging)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # 911 calls for the safety map: scraped in the background while the API
+    # runs (APP__MPD_INGEST__ENABLED=false turns it off).
+    ingest = (
+        MpdIngestLoop(get_mpd_call_service(), config.mpd_ingest.interval_seconds)
+        if config.mpd_ingest.enabled
+        else None
+    )
+    if ingest:
+        ingest.start()
     yield
+    if ingest:
+        await ingest.stop()
     if get_executor.cache_info().currsize:
         await get_executor().dispose()
 

@@ -18,6 +18,8 @@ os.environ.update({
     "APP__JWT__JWKS_URL": "",
     "APP__JWT__ISSUER": "",
     "APP__JWT__AUDIENCE": "",
+    # Never scrape the city from a test, even if something runs the app's lifespan.
+    "APP__MPD_INGEST__ENABLED": "false",
 })
 
 from models.user import AppUser  # noqa: E402

@@ -2,6 +2,7 @@
 number, the geocode cache spares repeat lookups, and GET /v1/safety/calls
 returns the generalized calls with their summary."""
 
+import asyncio
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -84,6 +85,13 @@ async def test_ingest_upserts_and_the_api_serves_generalized_calls(api, service,
 
     assert (await api.get("/v1/safety/calls")).status_code == 401
     assert (await api.get("/v1/safety/calls", headers=member, params={"hours": 999})).status_code == 422
+
+
+async def test_only_one_claim_wins_per_interval(service, admin_conn):
+    await admin_conn.execute("UPDATE app.mpd_ingest_lease SET claimed_at = '-infinity'")
+    claims = await asyncio.gather(*(service.calls.claim(120) for _ in range(5)))
+    assert sorted(claims) == [False, False, False, False, True]
+    assert await service.calls.claim(120) is False
 
 
 async def test_a_failed_run_is_recorded(service, admin_conn):

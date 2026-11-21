@@ -35,6 +35,11 @@ class MpdCallDatabridge(Databridge):
     async def record_run(self, ok: bool, rows_seen: int, new_calls: int, error: str | None) -> None:
         await self._rows("mpd_ingest_record", ok=ok, rows_seen=rows_seen, new_calls=new_calls, error=error)
 
+    async def claim(self, every_seconds: int) -> bool:
+        """True when this process should ingest now (see 0012's lease)."""
+        row = await self._one("mpd_ingest_claim", every_seconds=every_seconds)
+        return bool(row["claimed"])
+
     async def status(self) -> Row:
         return await self._one("mpd_ingest_status")
 

@@ -87,6 +87,16 @@ class VoiceConfig(BaseModel):
     tool_secret: str = Field(default="")
 
 
+class MpdIngestConfig(BaseModel):
+    """The MPD 911-call ingestion the API runs in the background
+    (services/mpd_scheduler.py). On by default, so starting the API is all it
+    takes for calls to appear in the app."""
+
+    enabled: bool = Field(default=True)
+    # The city page refreshes every five minutes; two is enough to catch each update promptly.
+    interval_seconds: int = Field(default=120, ge=30)
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP__", env_nested_delimiter="__", extra="ignore"
@@ -101,6 +111,7 @@ class AppConfig(BaseSettings):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    mpd_ingest: MpdIngestConfig = Field(default_factory=MpdIngestConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(
