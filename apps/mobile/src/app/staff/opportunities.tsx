@@ -1,22 +1,35 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { OPPORTUNITY_KINDS, type CreateOpportunity, type OpportunityKind } from '@/api/types';
+import {
+  AUDIENCES,
+  COSTS,
+  OPPORTUNITY_KINDS,
+  type Audience,
+  type Cost,
+  type CreateOpportunity,
+  type OpportunityKind,
+  type OpportunityOrigin,
+} from '@/api/types';
 import { BackLink } from '@/components/BackLink';
-import { OpportunityCard } from '@/components/OpportunityCard';
+import { AUDIENCE_INFO, COST_LABEL, KIND_INFO, OpportunityCard } from '@/components/OpportunityCard';
 import { Page } from '@/components/Page';
 import { Card, CardTitle, PageTitle } from '@/components/staff/kit';
 import { Button, Chip, Chips, EmptyState, ErrorBanner, Field, FieldLabel, Loading, success } from '@/components/ui';
 import { useCreateOpportunity, useOpportunities, useSetOpportunityActive } from '@/services/opportunities';
 import { radius, space, useTheme } from '@/theme/tokens';
 
-/** Staff post volunteer and job opportunities, and close or reopen them.
- *  Opened from Me → Manage; the staff layout already gates it to workers. */
+/** Staff post job, education and volunteer opportunities, and close or reopen
+ *  them, their own and the ones the data loader imports. Opened from Me →
+ *  Manage; the staff layout already gates it to workers. */
 export default function StaffOpportunitiesScreen() {
   return (
     <Page contentStyle={{ gap: space.lg, maxWidth: 900 }}>
       <BackLink label="Me" fallback="/staff/me" />
-      <PageTitle title="Opportunities" subtitle="Post jobs and volunteer work for residents to find in the app." />
+      <PageTitle
+        title="Opportunities"
+        subtitle="Post jobs, education and volunteer work for residents to find in the app. Say who each one is open to: these show before the job-board listings."
+      />
       <NewOpportunity />
       <Posted />
     </Page>
@@ -39,9 +52,12 @@ function NewOpportunity() {
   const theme = useTheme();
   const create = useCreateOpportunity();
   const [kind, setKind] = useState<OpportunityKind>('job');
+  const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [cost, setCost] = useState<Cost | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [tried, setTried] = useState(false);
   const set = (key: keyof typeof EMPTY) => (text: string) => setForm((f) => ({ ...f, [key]: text }));
+  const toggleAudience = (a: Audience) => setAudiences((all) => (all.includes(a) ? all.filter((x) => x !== a) : [...all, a]));
 
   const url = form.apply_url.trim();
   const badUrl = url.length > 0 && !/^https?:\/\/\S+$/.test(url);
@@ -62,11 +78,15 @@ function NewOpportunity() {
       contact_phone: blank(form.contact_phone),
       contact_email: blank(form.contact_email),
       apply_url: blank(form.apply_url),
+      audiences,
+      cost,
     };
     create.mutate(body, {
       onSuccess: () => {
         success();
         setForm(EMPTY);
+        setAudiences([]);
+        setCost(null);
         setTried(false);
       },
     });
@@ -77,7 +97,7 @@ function NewOpportunity() {
       <CardTitle title="Post an opportunity" icon="add-circle-outline" />
       <Chips>
         {OPPORTUNITY_KINDS.map((k) => (
-          <Chip key={k} label={k === 'job' ? 'Job' : 'Volunteer'} active={kind === k} onPress={() => setKind(k)} />
+          <Chip key={k} label={KIND_INFO[k].label} active={kind === k} onPress={() => setKind(k)} />
         ))}
       </Chips>
 
@@ -129,6 +149,26 @@ function NewOpportunity() {
       />
       {badUrl ? <Text style={[styles.hint, { color: theme.danger }]}>The link must start with http:// or https://.</Text> : null}
 
+      <View style={{ gap: 6 }}>
+        <FieldLabel>Open to</FieldLabel>
+        <Text style={[styles.hint, { color: theme.textSecondary }]}>Tag who this works for, so residents can find it.</Text>
+        <Chips>
+          {AUDIENCES.map((a) => (
+            <Chip key={a} label={AUDIENCE_INFO[a].label} active={audiences.includes(a)} onPress={() => toggleAudience(a)} />
+          ))}
+        </Chips>
+      </View>
+
+      <View style={{ gap: 6 }}>
+        <FieldLabel>Cost</FieldLabel>
+        <Chips>
+          <Chip label="Not stated" active={cost === null} onPress={() => setCost(null)} />
+          {COSTS.map((c) => (
+            <Chip key={c} label={COST_LABEL[c]} active={cost === c} onPress={() => setCost(c)} />
+          ))}
+        </Chips>
+      </View>
+
       {create.isError ? <ErrorBanner error={create.error} /> : null}
       <Button label="Post opportunity" icon="add-circle-outline" loading={create.isPending} onPress={submit} />
     </Card>
@@ -137,7 +177,9 @@ function NewOpportunity() {
 
 function Posted() {
   const theme = useTheme();
-  const list = useOpportunities({ includeClosed: true });
+  // Staff postings by default; the imports can run to hundreds.
+  const [origin, setOrigin] = useState<OpportunityOrigin>('manual');
+  const list = useOpportunities({ includeClosed: true, origin });
   const toggle = useSetOpportunityActive();
 
   return (
@@ -145,13 +187,30 @@ function Posted() {
       <Text accessibilityRole="header" style={[styles.heading, { color: theme.text }]}>
         Posted {list.data ? `(${list.data.filter((o) => o.active).length} open)` : ''}
       </Text>
+      <Chips>
+        <Chip label="By staff" active={origin === 'manual'} onPress={() => setOrigin('manual')} />
+        <Chip label="From job boards" active={origin === 'imported'} onPress={() => setOrigin('imported')} />
+      </Chips>
+      {origin === 'imported' ? (
+        <Text style={[styles.hint, { color: theme.textSecondary }]}>
+          Imported every night. Closing one keeps it closed even if the job board still lists it.
+        </Text>
+      ) : null}
       {toggle.isError ? <ErrorBanner error={toggle.error} /> : null}
       {list.isPending ? (
         <Loading label="Loading opportunities" />
       ) : list.isError ? (
         <ErrorBanner error={list.error} onRetry={() => list.refetch()} />
       ) : list.data.length === 0 ? (
-        <EmptyState icon="briefcase-outline" title="Nothing posted yet" body="Opportunities you post show up here and in the resident app." />
+        <EmptyState
+          icon="briefcase-outline"
+          title={origin === 'manual' ? 'Nothing posted yet' : 'Nothing imported yet'}
+          body={
+            origin === 'manual'
+              ? 'Opportunities you post show up here and in the resident app.'
+              : 'The data loader adds job-board listings here after its nightly run.'
+          }
+        />
       ) : (
         list.data.map((o) => (
           <OpportunityCard

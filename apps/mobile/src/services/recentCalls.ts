@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
-const CALLS_URL = 'https://itmdapps.milwaukee.gov/MPDCallData/';
+import { request } from '@/api/client';
+import type { DispatchCall } from '@/api/types';
 
 const ALERT_TERMS = [
   'shooting',
@@ -34,60 +35,30 @@ export type RecentCall = {
   status: string;
 };
 
-function textOf(html: string) {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
+// Delayed MPD dispatch calls come from the API: the loader polls the city's
+// page every 5 minutes (it allows 10 requests per 30 minutes per address),
+// and addresses never leave the server.
+
+function shownAt(iso: string) {
+  return new Date(iso).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function dmsToDecimal(value: string) {
-  const [degreesText, minutesText, secondsText] = value.split(':');
-  const degrees = Number(degreesText);
-  const minutes = Number(minutesText);
-  const seconds = Number(secondsText);
-  if (![degrees, minutes, seconds].every(Number.isFinite)) return null;
-  const sign = degrees < 0 ? -1 : 1;
-  return sign * (Math.abs(degrees) + minutes / 60 + seconds / 3600);
-}
-
-function coordinatesOf(location: string) {
-  const match = location.match(/LL\(([-\d:.]+),([-\d:.]+)\)/i);
-  if (!match) return null;
-  const longitude = dmsToDecimal(match[1]);
-  const latitude = dmsToDecimal(match[2]);
-  if (latitude === null || longitude === null) return null;
-  // Do not reproduce the precise call location. Roughly 110 m precision is
-  // enough for an on-device proximity alert without exposing a residence.
-  return {
-    latitude: Math.round(latitude * 1000) / 1000,
-    longitude: Math.round(longitude * 1000) / 1000,
-  };
-}
-
-export function parseRecentCalls(html: string): RecentCall[] {
-  const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
-  const calls = new Map<string, RecentCall>();
-
-  for (const row of rows) {
-    const cells = [...row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((match) => textOf(match[1]));
-    if (cells.length < 6) continue;
-    const [id, occurredAt, location, district, nature, status] = cells;
-    if (!/^P\d+$/i.test(id) || !ALERT_TERMS.some((term) => nature.toLowerCase().includes(term))) continue;
-    calls.set(id, { id, occurredAt, district, nature, status, ...coordinatesOf(location) });
-  }
-
-  return [...calls.values()];
+/** The crime-related calls, in the shape the map and alerts use. */
+export function toRecentCalls(calls: DispatchCall[]): RecentCall[] {
+  return calls
+    .filter((call) => ALERT_TERMS.some((term) => call.category.toLowerCase().includes(term)))
+    .map((call) => ({
+      id: call.call_number,
+      occurredAt: shownAt(call.occurred_at),
+      district: call.district ?? '',
+      nature: call.category,
+      status: call.status ?? '',
+      ...(call.latitude != null && call.longitude != null ? { latitude: call.latitude, longitude: call.longitude } : {}),
+    }));
 }
 
 async function fetchRecentCalls() {
-  const response = await fetch(CALLS_URL, { headers: { Accept: 'text/html' } });
-  if (!response.ok) throw new Error(`Calls-for-service request failed (${response.status})`);
-  return parseRecentCalls(await response.text());
+  return toRecentCalls(await request<DispatchCall[]>('/public-data/calls?source=mpd_calls&hours=6&limit=500', { auth: false }));
 }
 
 export function useRecentCalls() {

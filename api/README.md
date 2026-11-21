@@ -89,6 +89,8 @@ stored.
 | `/v1/public/requests/...` (requests without an account, by access code) | `CaseService` |
 | `/v1/tasks/...` | `TaskService` |
 | `/v1/resources/...` (the resource directory) | `ResourceService` |
+| `/v1/opportunities/...` (jobs, education, volunteering) | `OpportunityService` |
+| `/v1/public-data/...` (incidents, calls, transit, alerts; no sign-in) | `PublicDataService` |
 | `POST /v1/route` (sort a request for help) | `RoutingService` |
 | `/v1/voice/...` (ElevenLabs webhook and tools, handoffs, follow-ups) | `VoiceService` |
 | `/v1/records/...` (Phantom debriefs: create, follow, retry, confirm into a case, discard) | `RecordService` |
@@ -148,6 +150,14 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
    (`test_migrations.py` checks it).
 7. **The app's types:** `uv run python scripts/export_openapi.py
    ../apps/mobile/openapi.json`, then `npm run gen:api` in `apps/mobile`.
+
+## Data loader
+
+`python -m loader` keeps outside data current: opportunities and resources
+(USAJOBS, CareerOneStop, Hunger Task Force) and public data (NIBRS incidents,
+MPD/MFD calls, boundaries, MCTS transit, NWS alerts, CDC PLACES, FBI
+trends), served at `/v1/public-data`. Daily sources run nightly, live ones
+every 5 minutes. See [docs/data-loader.md](../docs/data-loader.md).
 
 ## Local development
 

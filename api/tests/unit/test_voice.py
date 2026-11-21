@@ -334,14 +334,15 @@ async def test_voice_opportunities_use_same_open_directory_as_app():
     class Opportunities:
         called = None
 
-        async def search(self, query, kind, include_closed):
-            self.called = (query, kind, include_closed)
+        async def search(self, query, kind, include_closed, limit=None):
+            self.called = (query, kind, include_closed, limit)
             return []
 
     service = Opportunities()
     result = await opportunities("mentor", None, cast(OpportunityService, service))
     assert result == []
-    assert service.called == ("mentor", None, False)
+    # A phone agent reads a short list: staff postings come first.
+    assert service.called == ("mentor", None, False, 25)
 
 
 def test_voice_case_request_requires_explicit_and_complete_contact_consent():

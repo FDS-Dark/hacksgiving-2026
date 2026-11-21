@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Runs the whole app locally: the API, the background worker (debriefs) and
-# Expo for your phone. Ctrl+C stops all of it. Run scripts/dev-setup.sh once
-# first (and again after pulls that change env files or migrations).
+# Runs the whole app locally: the API, the background worker (debriefs), the
+# data loader (public data, every few minutes) and Expo for your phone.
+# Ctrl+C stops all of it. Run scripts/dev-setup.sh once first (and again
+# after pulls that change env files or migrations).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -31,6 +32,14 @@ if [ -n "$(get api/.env APP__OPENAI__API_KEY)" ]; then
   (cd api && uv run python -m worker 2>&1 | tag "[worker]") &
 else
   echo "[worker] not started: add APP__OPENAI__API_KEY to api/.env (debriefs stay 'processing' without it)"
+fi
+
+# Public data (docs/data-loader.md): daily sources now and every 24 hours,
+# live ones (MPD/MFD calls, alerts) every 5 minutes. HACKSGIVING_NO_LOADER=1
+# skips it, e.g. when a teammate on the same network already polls MPD (it
+# allows 10 requests per 30 minutes per address).
+if [ -z "${HACKSGIVING_NO_LOADER:-}" ]; then
+  (cd api && uv run python -m loader --watch 2>&1 | tag "[loader]") &
 fi
 
 sleep 2

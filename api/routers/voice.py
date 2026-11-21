@@ -102,7 +102,7 @@ async def opportunities(
     service: OpportunityService = Depends(get_opportunity_service),
 ) -> list[Opportunity]:
     """Open jobs and volunteer postings from the same directory as the app."""
-    return await service.search(q, kind, include_closed=False)
+    return await service.search(q, kind, include_closed=False, limit=25)
 
 
 @router.get(

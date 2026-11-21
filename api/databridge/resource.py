@@ -1,7 +1,9 @@
+from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
 from models.case_enums import CaseCategory
+from models.loader import ImportedResource, SyncResult
 from models.resource import CreateResourceRequest, Resource
 
 
@@ -21,3 +23,20 @@ class ResourceDatabridge(Databridge):
             neighborhood=body.neighborhood or None, phone=body.phone or None, website=body.website or None,
             hours=body.hours or None, latitude=body.latitude, longitude=body.longitude, created_by=created_by,
         ))
+
+    # --- The data loader (api/loader) ------------------------------------------
+
+    async def sync_upsert(self, item: ImportedResource, seen_at: datetime) -> SyncResult:
+        row = await self._one(
+            "resource_sync_upsert",
+            source=item.source, external_id=item.external_id, name=item.name, category=item.category,
+            description=item.description or "", address=item.address, neighborhood=item.neighborhood,
+            phone=item.phone, website=item.website, hours=item.hours, latitude=item.latitude,
+            longitude=item.longitude, seen_at=seen_at,
+        )
+        return SyncResult(row["result"])
+
+    async def sync_retire(self, source: str, seen_before: datetime) -> int:
+        """Closes `source`'s open resources last seen before `seen_before`."""
+        row = await self._one("resource_sync_retire", source=source, seen_before=seen_before)
+        return int(row["retired"])

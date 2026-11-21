@@ -1,5 +1,6 @@
-"""Volunteer and job opportunities. Anyone signed in can search the open
-ones; ComForce staff post them, close them, and also see closed ones."""
+"""Volunteer, job and education opportunities. Anyone signed in can search
+the open ones; ComForce staff post them, close them, and also see closed
+ones. The data loader (api/loader) imports more from public sources."""
 
 from typing import Annotated
 from uuid import UUID
@@ -7,7 +8,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
 from dependencies import get_current_user, get_current_worker, get_opportunity_service, get_staff_service
-from models.opportunity import CreateOpportunityRequest, Opportunity, OpportunityKind, UpdateOpportunityRequest
+from models.opportunity import (
+    Audience,
+    CreateOpportunityRequest,
+    Opportunity,
+    OpportunityKind,
+    OpportunityOrigin,
+    UpdateOpportunityRequest,
+)
 from models.staff import StaffMember
 from models.user import AppUser
 from services.opportunity import OpportunityService
@@ -24,15 +32,20 @@ async def _is_staff(user: AppUser, staff: StaffService) -> bool:
 async def list_opportunities(
     q: Annotated[str | None, Query(max_length=200)] = None,
     kind: OpportunityKind | None = None,
+    audience: Annotated[Audience | None, Query(description="Only postings open to this audience.")] = None,
+    origin: Annotated[
+        OpportunityOrigin | None, Query(description="manual: staff postings; imported: from the data loader.")
+    ] = None,
     include_closed: Annotated[bool, Query(description="Staff only; ignored for everyone else.")] = False,
+    limit: Annotated[int, Query(ge=1, le=500)] = 200,
     user: AppUser = Depends(get_current_user),
     staff: StaffService = Depends(get_staff_service),
     service: OpportunityService = Depends(get_opportunity_service),
 ) -> list[Opportunity]:
-    """Open opportunities, newest first. `q` matches the title,
-    organization, description or location."""
+    """Open opportunities: staff postings first, then the newest. `q`
+    matches the title, organization, description or location."""
     closed = include_closed and await _is_staff(user, staff)
-    return await service.search(q, kind, closed)
+    return await service.search(q, kind, closed, audience, origin, limit)
 
 
 @router.get("/{opportunity_id}", response_model=Opportunity)
@@ -52,7 +65,7 @@ async def create_opportunity(
     worker: StaffMember = Depends(get_current_worker),
     service: OpportunityService = Depends(get_opportunity_service),
 ) -> Opportunity:
-    """Post a volunteer or job opportunity. Staff only."""
+    """Post a volunteer, job or education opportunity. Staff only."""
     return await service.create(worker, body)
 
 

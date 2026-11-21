@@ -16,6 +16,7 @@ from routers.record import router as records
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
+from routers.public_data import router as public_data
 from routers.public_request import router as public_requests
 from routers.staff import router as staff
 from routers.task import router as tasks
@@ -62,7 +63,7 @@ errors.install(app)
 
 for router in (
     health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
-    staff, voice, records, jobs,
+    staff, voice, records, jobs, public_data,
 ):
     app.include_router(router, prefix="/v1")
 

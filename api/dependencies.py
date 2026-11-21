@@ -19,6 +19,7 @@ from adapters.storage import AudioStorage, make_audio_storage
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
 from databridge.opportunity import OpportunityDatabridge
+from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
 from databridge.record import RecordDatabridge
 from databridge.resource import ResourceDatabridge
@@ -35,6 +36,7 @@ from services.job import JobService
 from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
+from services.public_data import PublicDataService
 from services.resource import ResourceService
 from services.routing import RoutingService
 from services.staff import StaffService
@@ -87,6 +89,11 @@ def get_case_service() -> CaseService:
 @cache
 def get_opportunity_service() -> OpportunityService:
     return OpportunityService(OpportunityDatabridge(get_executor()))
+
+
+@cache
+def get_public_data_service() -> PublicDataService:
+    return PublicDataService(PublicDataDatabridge(get_executor()))
 
 
 @cache

@@ -92,6 +92,8 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0010_opportunities",
             "0011_jobs_and_records",
             "0012_voice_referral_history",
+            "0013_data_loader",
+            "0014_public_data",
         )
         for name in _revision(revision).FUNCTIONS
     }
