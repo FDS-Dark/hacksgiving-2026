@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { SafetyMap } from '@/components/SafetyMap';
+import { SafetyMap, type AreaSelection } from '@/components/SafetyMap';
 import { Button, Chip, Chips, EmptyState, Field, Group, Header, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import {
@@ -31,7 +31,7 @@ export default function HomeScreen() {
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
   const [reports, setReports] = useState<SafetyPoint[]>([]);
-  const [selectedIncidents, setSelectedIncidents] = useState<SafetyPoint[] | null>(null);
+  const [selectedArea, setSelectedArea] = useState<AreaSelection | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [category, setCategory] = useState<IncidentCategory>('assault');
   const [neighborhood, setNeighborhood] = useState(NEIGHBORHOODS[0]);
@@ -40,6 +40,18 @@ export default function HomeScreen() {
   const allPoints = useMemo(() => [...safety.points, ...reports], [reports, safety.points]);
   const visiblePoints = useMemo(() => allPoints.filter((point) => active.has(point.category)), [active, allPoints]);
   const updatedAt = safety.dataUpdatedAt ? new Date(safety.dataUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading';
+  const areaSummary = useMemo(() => {
+    if (!selectedArea) return null;
+    const counts = new Map<string, number>();
+    for (const point of selectedArea.incidents) {
+      const label = point.category === 'community-report'
+        ? 'Community report'
+        : INCIDENT_CATEGORIES.find((item) => item.id === point.category)?.label ?? 'Reported incident';
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    const breakdown = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    return { total: selectedArea.incidents.length, breakdown, top: breakdown[0] };
+  }, [selectedArea]);
   const refresh = () => {
     safety.refetch();
     calls.refetch();
@@ -113,7 +125,7 @@ export default function HomeScreen() {
               onPress={() => toggle('community-report')}
             />
           </Chips>
-          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} onSelectArea={setSelectedIncidents} />
+          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
             Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Red markers are delayed police calls—not confirmed crimes. All locations are generalized.
           </Txt>
@@ -193,34 +205,61 @@ export default function HomeScreen() {
       </Sheet>
 
       <Sheet
-        visible={selectedIncidents !== null}
-        onClose={() => setSelectedIncidents(null)}
+        visible={selectedArea !== null}
+        onClose={() => setSelectedArea(null)}
         title="Recent activity in this area"
-        subtitle="MPD reports within approximately 1.5 miles of the point you selected."
+        subtitle="Official public reports and dispatch calls within approximately 1.5 miles."
       >
-        {selectedIncidents?.length ? (
-          <Group footer="Times and classifications come from the public MPD feed and may be revised. Exact addresses and incident numbers are intentionally omitted.">
-            {selectedIncidents.map((point) => {
-              const categoryName = point.category === 'community-report'
-                ? 'Community report'
-                : INCIDENT_CATEGORIES.find((item) => item.id === point.category)?.label ?? 'Reported incident';
-              const time = point.reportedAt
-                ? new Date(point.reportedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
-                : point.ageInDays === 0
-                  ? 'Reported today'
-                  : point.ageInDays
-                    ? `Reported ${point.ageInDays} days ago`
-                    : 'Reported within 30 days';
-              return (
-                <Row
-                  key={point.id}
-                  title={categoryName}
-                  subtitle={point.weaponUsed ? `${time} · Weapon detail: ${point.weaponUsed}` : time}
-                  tile={{ icon: 'map-marker-alert', color: '#B42318' }}
-                />
-              );
-            })}
-          </Group>
+        {areaSummary?.total || selectedArea?.calls.length ? (
+          <>
+            {areaSummary?.total ? (
+              <>
+                <Notice icon="analytics-outline">
+                  This area appears warmer because {areaSummary.total} reports cluster near the selected point in the 30-day window
+                  {areaSummary.top ? `; ${areaSummary.top[0]} is the largest category (${areaSummary.top[1]})` : ''}. This describes report density, not why crime occurs or whether an area is safe.
+                </Notice>
+                <Group header="Category breakdown">
+                  {areaSummary.breakdown.map(([label, count]) => (
+                    <Row key={label} title={label} detail={String(count)} />
+                  ))}
+                </Group>
+                <Group header="Recent reported incidents" footer="Classifications may be revised. Exact addresses and incident numbers are intentionally omitted.">
+                  {selectedArea?.incidents.map((point) => {
+                    const categoryName = point.category === 'community-report'
+                      ? 'Community report'
+                      : INCIDENT_CATEGORIES.find((item) => item.id === point.category)?.label ?? 'Reported incident';
+                    const time = point.reportedAt
+                      ? new Date(point.reportedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+                      : point.ageInDays === 0
+                        ? 'Reported today'
+                        : point.ageInDays
+                          ? `Reported ${point.ageInDays} days ago`
+                          : 'Reported within 30 days';
+                    return (
+                      <Row
+                        key={point.id}
+                        title={categoryName}
+                        subtitle={point.weaponUsed ? `${time} · Weapon detail: ${point.weaponUsed}` : time}
+                        tile={{ icon: 'map-marker-alert', color: '#B42318' }}
+                      />
+                    );
+                  })}
+                </Group>
+              </>
+            ) : null}
+            {selectedArea?.calls.length ? (
+              <Group header="Recent dispatch calls" footer="Calls are delayed and unconfirmed; they are not counted in the heat intensity.">
+                {selectedArea.calls.map((call) => (
+                  <Row
+                    key={call.id}
+                    title={call.nature}
+                    subtitle={`${call.occurredAt} · District ${call.district} · ${call.status}`}
+                    tile={{ icon: 'phone-alert', color: '#D76B18' }}
+                  />
+                ))}
+              </Group>
+            ) : null}
+          </>
         ) : (
           <EmptyState
             icon="search-outline"
