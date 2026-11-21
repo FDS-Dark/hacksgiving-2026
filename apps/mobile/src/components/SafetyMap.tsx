@@ -7,7 +7,11 @@ import { INCIDENT_CATEGORIES, type SafetyPoint } from '@/services/publicSafety';
 import { milesBetween, type RecentCall } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 
-export type AreaSelection = { incidents: SafetyPoint[]; calls: RecentCall[] };
+export type AreaSelection = {
+  center: { latitude: number; longitude: number };
+  incidents: SafetyPoint[];
+  calls: RecentCall[];
+};
 
 type HeatCell = { latitude: number; longitude: number; count: number };
 
@@ -112,13 +116,11 @@ export function SafetyMap({
       const center = { latitude: message.latitude, longitude: message.longitude };
       const incidents = points
         .filter((point) => point.category !== 'community-report' && milesBetween(center, point) <= 1.5)
-        .sort((a, b) => (a.ageInDays ?? 31) - (b.ageInDays ?? 31))
-        .slice(0, 30);
+        .sort((a, b) => (a.ageInDays ?? 31) - (b.ageInDays ?? 31));
       const calls = recentCalls
         .filter((call): call is RecentCall & { latitude: number; longitude: number } => call.latitude !== undefined && call.longitude !== undefined)
-        .filter((call) => milesBetween(center, call) <= 1.5)
-        .slice(0, 20);
-      onSelectArea?.({ incidents, calls });
+        .filter((call) => milesBetween(center, call) <= 1.5);
+      onSelectArea?.({ center, incidents, calls });
     } catch {
       // Ignore malformed messages from web content.
     }
