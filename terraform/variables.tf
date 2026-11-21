@@ -74,3 +74,9 @@ variable "cors_origins" {
   description = "Browser origins the API accepts cross-origin requests from. Empty in production."
   default     = []
 }
+
+variable "mpd_ingest_schedule" {
+  type        = string
+  description = "Cron schedule for the MPD 911-call ingestion CronJob (api/scripts/ingest_mpd_calls.py). The city page refreshes every 5 minutes. Empty disables the job."
+  default     = "*/2 * * * *"
+}

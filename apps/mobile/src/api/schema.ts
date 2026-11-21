@@ -532,6 +532,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/safety/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Calls
+         * @description MPD calls for service dispatched in the last `hours`, newest first,
+         *     with counts by category, call type, district and hour. Locations are
+         *     generalized: a block or intersection and coordinates rounded to about
+         *     110 m. Calls are delayed 30-90 minutes by MPD and are not confirmed
+         *     crimes.
+         */
+        get: operations["recent_calls_v1_safety_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/staff/bootstrap": {
         parameters: {
             query?: never;
@@ -1190,6 +1214,13 @@ export interface components {
          * @enum {string}
          */
         ContactMethod: "call" | "text" | "none";
+        /** CountItem */
+        CountItem: {
+            /** Count */
+            count: number;
+            /** Label */
+            label: string;
+        };
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -1356,6 +1387,98 @@ export interface components {
             total_calls: number;
             /** Transfers Connected */
             transfers_connected: number;
+        };
+        /** MpdCall */
+        MpdCall: {
+            /**
+             * Block
+             * @description The block or intersection, never the exact address.
+             */
+            block: string;
+            /**
+             * Call Number
+             * @description MPD's call number, e.g. P2611210938.
+             */
+            call_number: string;
+            /**
+             * Category
+             * @description The app's grouping of `nature`: violent, weapons, property, traffic, disorder, assist or other.
+             */
+            category: string;
+            /**
+             * Dispatched At
+             * Format: date-time
+             */
+            dispatched_at: string;
+            /**
+             * District
+             * @description Police district 1-7, or CITY / another agency code.
+             */
+            district: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /**
+             * Nature
+             * @description MPD's nature of call, e.g. 'Traffic Stop', 'Shooting'.
+             */
+            nature: string;
+            /** Status */
+            status: string;
+        };
+        /** MpdCallSummary */
+        MpdCallSummary: {
+            /** By Category */
+            by_category: components["schemas"]["CountItem"][];
+            /**
+             * By District
+             * @description Districts 1-7 in order, then any others.
+             */
+            by_district: components["schemas"]["CountItem"][];
+            /**
+             * By Hour
+             * @description Calls per clock hour (local time), oldest first, labelled like '2 PM'.
+             */
+            by_hour: components["schemas"]["CountItem"][];
+            /**
+             * By Nature
+             * @description The most common call types, most first (top 10).
+             */
+            by_nature: components["schemas"]["CountItem"][];
+            /**
+             * Hours
+             * @description The window the calls and counts cover.
+             */
+            hours: number;
+            /**
+             * Mapped
+             * @description Calls with coordinates (the rest couldn't be placed on the map).
+             */
+            mapped: number;
+            /** Total */
+            total: number;
+        };
+        /** MpdCalls */
+        MpdCalls: {
+            /** Calls */
+            calls: components["schemas"]["MpdCall"][];
+            /**
+             * Last Updated At
+             * @description When ingestion last read the MPD page successfully.
+             */
+            last_updated_at: string | null;
+            /**
+             * Source
+             * @default https://itmdapps.milwaukee.gov/MPDCallData/
+             */
+            source: string;
+            /**
+             * Stale
+             * @description True when the last good read is more than 15 minutes old.
+             */
+            stale: boolean;
+            summary: components["schemas"]["MpdCallSummary"];
         };
         /** Opportunity */
         Opportunity: {
@@ -2993,6 +3116,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RouteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recent_calls_v1_safety_calls_get: {
+        parameters: {
+            query?: {
+                /** @description How far back to look, by dispatch time. */
+                hours?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MpdCalls"];
                 };
             };
             /** @description Validation Error */

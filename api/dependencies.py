@@ -17,6 +17,7 @@ from openai import AsyncOpenAI
 
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.mpd_call import MpdCallDatabridge
 from databridge.opportunity import OpportunityDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
@@ -29,6 +30,7 @@ from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
 from services.case_assist import CaseAssistant, triage_with
+from services.mpd_calls import MpdCallService
 from services.opportunity import OpportunityService
 from services.resource import ResourceService
 from services.routing import RoutingService
@@ -82,6 +84,11 @@ def get_case_service() -> CaseService:
 @cache
 def get_opportunity_service() -> OpportunityService:
     return OpportunityService(OpportunityDatabridge(get_executor()))
+
+
+@cache
+def get_mpd_call_service() -> MpdCallService:
+    return MpdCallService(MpdCallDatabridge(get_executor()))
 
 
 @cache

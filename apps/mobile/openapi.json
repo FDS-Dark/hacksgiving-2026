@@ -730,6 +730,24 @@
         "title": "ContactMethod",
         "type": "string"
       },
+      "CountItem": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "count"
+        ],
+        "title": "CountItem",
+        "type": "object"
+      },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
         "properties": {
@@ -1273,6 +1291,185 @@
           "categories"
         ],
         "title": "ImpactSummary",
+        "type": "object"
+      },
+      "MpdCall": {
+        "properties": {
+          "block": {
+            "description": "The block or intersection, never the exact address.",
+            "title": "Block",
+            "type": "string"
+          },
+          "call_number": {
+            "description": "MPD's call number, e.g. P2611210938.",
+            "title": "Call Number",
+            "type": "string"
+          },
+          "category": {
+            "description": "The app's grouping of `nature`: violent, weapons, property, traffic, disorder, assist or other.",
+            "title": "Category",
+            "type": "string"
+          },
+          "dispatched_at": {
+            "format": "date-time",
+            "title": "Dispatched At",
+            "type": "string"
+          },
+          "district": {
+            "description": "Police district 1-7, or CITY / another agency code.",
+            "title": "District",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "nature": {
+            "description": "MPD's nature of call, e.g. 'Traffic Stop', 'Shooting'.",
+            "title": "Nature",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "call_number",
+          "dispatched_at",
+          "block",
+          "district",
+          "nature",
+          "status",
+          "category",
+          "latitude",
+          "longitude"
+        ],
+        "title": "MpdCall",
+        "type": "object"
+      },
+      "MpdCallSummary": {
+        "properties": {
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CountItem"
+            },
+            "title": "By Category",
+            "type": "array"
+          },
+          "by_district": {
+            "description": "Districts 1-7 in order, then any others.",
+            "items": {
+              "$ref": "#/components/schemas/CountItem"
+            },
+            "title": "By District",
+            "type": "array"
+          },
+          "by_hour": {
+            "description": "Calls per clock hour (local time), oldest first, labelled like '2 PM'.",
+            "items": {
+              "$ref": "#/components/schemas/CountItem"
+            },
+            "title": "By Hour",
+            "type": "array"
+          },
+          "by_nature": {
+            "description": "The most common call types, most first (top 10).",
+            "items": {
+              "$ref": "#/components/schemas/CountItem"
+            },
+            "title": "By Nature",
+            "type": "array"
+          },
+          "hours": {
+            "description": "The window the calls and counts cover.",
+            "title": "Hours",
+            "type": "integer"
+          },
+          "mapped": {
+            "description": "Calls with coordinates (the rest couldn't be placed on the map).",
+            "title": "Mapped",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hours",
+          "total",
+          "mapped",
+          "by_category",
+          "by_nature",
+          "by_district",
+          "by_hour"
+        ],
+        "title": "MpdCallSummary",
+        "type": "object"
+      },
+      "MpdCalls": {
+        "properties": {
+          "calls": {
+            "items": {
+              "$ref": "#/components/schemas/MpdCall"
+            },
+            "title": "Calls",
+            "type": "array"
+          },
+          "last_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When ingestion last read the MPD page successfully.",
+            "title": "Last Updated At"
+          },
+          "source": {
+            "default": "https://itmdapps.milwaukee.gov/MPDCallData/",
+            "title": "Source",
+            "type": "string"
+          },
+          "stale": {
+            "description": "True when the last good read is more than 15 minutes old.",
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/MpdCallSummary"
+          }
+        },
+        "required": [
+          "calls",
+          "summary",
+          "last_updated_at",
+          "stale",
+          "source"
+        ],
+        "title": "MpdCalls",
         "type": "object"
       },
       "Opportunity": {
@@ -4706,6 +4903,54 @@
         "summary": "Route Request",
         "tags": [
           "routing"
+        ]
+      }
+    },
+    "/v1/safety/calls": {
+      "get": {
+        "description": "MPD calls for service dispatched in the last `hours`, newest first,\nwith counts by category, call type, district and hour. Locations are\ngeneralized: a block or intersection and coordinates rounded to about\n110 m. Calls are delayed 30-90 minutes by MPD and are not confirmed\ncrimes.",
+        "operationId": "recent_calls_v1_safety_calls_get",
+        "parameters": [
+          {
+            "description": "How far back to look, by dispatch time.",
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "description": "How far back to look, by dispatch time.",
+              "maximum": 72,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MpdCalls"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recent Calls",
+        "tags": [
+          "safety"
         ]
       }
     },

@@ -81,3 +81,9 @@ export const CASE_CATEGORIES = [
 export const CASE_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const satisfies readonly CasePriority[];
 export const CASE_STATUSES = ['new', 'in_progress', 'awaiting_resources', 'resolved', 'closed'] as const satisfies readonly CaseStatus[];
 export const REFERRAL_STATUSES = ['suggested', 'shared', 'accepted', 'completed', 'declined'] as const satisfies readonly ReferralStatus[];
+
+// ── Public safety: MPD calls for service ─────────────────────────────────
+export type MpdCall = Schemas['MpdCall'];
+export type MpdCalls = Schemas['MpdCalls'];
+export type MpdCallSummary = Schemas['MpdCallSummary'];
+export type CountItem = Schemas['CountItem'];

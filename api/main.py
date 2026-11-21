@@ -14,6 +14,7 @@ from routers.opportunity import router as opportunities
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
+from routers.safety import router as safety
 from routers.public_request import router as public_requests
 from routers.staff import router as staff
 from routers.task import router as tasks
@@ -53,7 +54,9 @@ app.add_middleware(
 
 errors.install(app)
 
-for router in (health, user, routing, requests, public_requests, cases, tasks, resources, opportunities, staff, voice):
+for router in (
+    health, user, routing, requests, public_requests, cases, tasks, resources, opportunities, safety, staff, voice,
+):
     app.include_router(router, prefix="/v1")
 
 

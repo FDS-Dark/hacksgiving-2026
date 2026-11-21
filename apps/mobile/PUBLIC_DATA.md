@@ -19,14 +19,16 @@ The map is our own Leaflet visualization over OpenStreetMap tiles; it does not c
 
 ## Recent calls and nearby alerts
 
-The Alerts tab reads the official MPD dispatched calls page at `https://itmdapps.milwaukee.gov/MPDCallData/`.
+The safety map and the Alerts tab show the official MPD calls-for-service page at `https://itmdapps.milwaukee.gov/MPDCallData/`, ingested server-side. The app never scrapes the city page itself.
 
+- **Pipeline:** a Kubernetes CronJob (`terraform/main.tf`, `mpd_ingest_schedule`, every two minutes) runs `api/scripts/ingest_mpd_calls.py`. It parses the page's one table, deduplicates by call number (a call's outcome replaces "Service in Progress"), places each call on the map, and upserts it into `app.mpd_calls` (migration 0011). Each run is logged in `app.mpd_ingest_runs`. A page that parses to zero calls counts as a failed run (layout change), not as an empty city. Calls older than 30 days are pruned.
+- **Placing calls:** about one row in five carries MPD's own `LL(...)` estimate. The rest are an address or an intersection, geocoded with MPD's CAD locator (`MPDTritech/TriTechLocator` on milwaukeemaps.milwaukee.gov), the only city locator that resolves intersections. Answers and misses are cached in `app.mpd_geocodes`, so each address is looked up once. Highway segments (`INT 43 S`) stay unplotted.
+- **API:** `GET /v1/safety/calls?hours=2|6|24` (signed in) returns the calls plus counts by category, call type, district and hour, and a `stale` flag when the last good read is more than 15 minutes old.
 - MPD says the page refreshes every five minutes and shows calls 30–90 minutes after dispatch.
 - Calls for service are not confirmed crimes. The app keeps them visually and statistically separate from the 30-day incident heatmap.
-- Calls without embedded coordinates can appear in the citywide Alerts list, but only coordinate-bearing calls can be plotted or compared with the phone's location.
-- Crime-related dispatch categories include shootings, weapons, assault, sexual assault, robbery, burglary, theft, stolen vehicles, arson, criminal damage, drug dealing, and reckless driving. Generic 911 calls and administrative calls are omitted.
-- Coordinates from the calls page are rounded before display. The phone's foreground location is used only in memory to calculate distance and is not uploaded or saved.
-- The client-side HTML parser is appropriate for a weekend prototype, but a production service should ingest the feed server-side with permission from MPD, monitor schema changes, deduplicate calls, and publish a stable sanitized API.
+- **Privacy:** the published street text is stored only to geocode it and is never returned. The API returns the block ("2800 block of S GREELEY ST") or intersection, and coordinates rounded to three decimals (~110 m) before storage. Place notes and unit numbers ("@UNIT 6") are dropped. The phone's foreground location is used only in memory to calculate distance and is not uploaded or saved.
+- The Alerts tab lists only the weapons, violence and property categories, plus reckless driving, drug dealing and arson. The safety map and its summary show every call type.
+- Before public launch, confirm automated-access expectations with the City of Milwaukee. The scraper identifies itself in its User-Agent, polls at most every two minutes, and asks the geocoder only about addresses it hasn't seen.
 
 ## Production follow-up
 

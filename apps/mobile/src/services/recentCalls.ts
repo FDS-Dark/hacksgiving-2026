@@ -1,102 +1,127 @@
+/**
+ * Milwaukee Police Department calls for service, from our API
+ * (GET /v1/safety/calls). The API ingests the city's page every two minutes,
+ * geocodes each call to its block, and summarizes the window; the app no
+ * longer scrapes the city page itself.
+ */
 import { useQuery } from '@tanstack/react-query';
 
-const CALLS_URL = 'https://itmdapps.milwaukee.gov/MPDCallData/';
+import { request } from '@/api/client';
+import type { MpdCall, MpdCalls, MpdCallSummary } from '@/api/types';
 
-const ALERT_TERMS = [
-  'shooting',
-  'shots fired',
-  'subject with a weapon',
-  'stabbing',
-  'robbery',
-  'battery',
-  'fight',
-  'assault',
-  'dead on entry',
-  'sexual assault',
-  'burglary',
-  'entry-building or structure',
-  'theft',
-  'stolen vehicle',
-  'vehicle theft',
-  'arson',
-  'criminal damage',
-  'drug dealing',
-  'reckless vehicle',
-];
+/** Map and chip colors, one fixed slot per category (validated categorical
+ *  palette; identity is also carried by text labels, never color alone). */
+export const CALL_CATEGORIES = [
+  { id: 'weapons', label: 'Weapons & shots', color: '#EB6834' },
+  { id: 'violent', label: 'Violence', color: '#E87BA4' },
+  { id: 'property', label: 'Property', color: '#2A78D6' },
+  { id: 'traffic', label: 'Traffic', color: '#1BAF7A' },
+  { id: 'disorder', label: 'Disorder', color: '#EDA100' },
+  { id: 'assist', label: 'Assistance', color: '#008300' },
+  { id: 'other', label: 'Other / 911', color: '#8C979B' },
+] as const;
+
+export type CallCategory = (typeof CALL_CATEGORIES)[number]['id'];
+
+export const CALL_WINDOWS = [
+  { value: '2', label: '2 hours' },
+  { value: '6', label: '6 hours' },
+  { value: '24', label: '24 hours' },
+] as const;
+export type CallWindow = (typeof CALL_WINDOWS)[number]['value'];
+
+export function callCategory(id: string) {
+  return CALL_CATEGORIES.find((item) => item.id === id) ?? CALL_CATEGORIES[CALL_CATEGORIES.length - 1];
+}
 
 export type RecentCall = {
   id: string;
+  /** ISO dispatch time. */
+  dispatchedAt: string;
+  /** Short local time for display, e.g. "2:30 PM". */
   occurredAt: string;
+  block: string;
   latitude?: number;
   longitude?: number;
   district: string;
   nature: string;
   status: string;
+  category: CallCategory;
 };
 
-function textOf(html: string) {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
+export type CallFeed = {
+  calls: RecentCall[];
+  summary: MpdCallSummary;
+  lastUpdatedAt: string | null;
+  stale: boolean;
+};
+
+/** Calls the Alerts tab surfaces: crime and danger, not routine traffic stops or admin calls. */
+const ALERT_CATEGORIES = new Set<string>(['weapons', 'violent', 'property']);
+const ALERT_TERMS = ['reckless vehicle', 'drug dealing', 'arson'];
+
+export function isAlertCall(call: Pick<RecentCall, 'category' | 'nature'>) {
+  const nature = call.nature.toLowerCase();
+  return ALERT_CATEGORIES.has(call.category) || ALERT_TERMS.some((term) => nature.includes(term));
 }
 
-function dmsToDecimal(value: string) {
-  const [degreesText, minutesText, secondsText] = value.split(':');
-  const degrees = Number(degreesText);
-  const minutes = Number(minutesText);
-  const seconds = Number(secondsText);
-  if (![degrees, minutes, seconds].every(Number.isFinite)) return null;
-  const sign = degrees < 0 ? -1 : 1;
-  return sign * (Math.abs(degrees) + minutes / 60 + seconds / 3600);
-}
-
-function coordinatesOf(location: string) {
-  const match = location.match(/LL\(([-\d:.]+),([-\d:.]+)\)/i);
-  if (!match) return null;
-  const longitude = dmsToDecimal(match[1]);
-  const latitude = dmsToDecimal(match[2]);
-  if (latitude === null || longitude === null) return null;
-  // Do not reproduce the precise call location. Roughly 110 m precision is
-  // enough for an on-device proximity alert without exposing a residence.
+export function toRecentCall(call: MpdCall): RecentCall {
+  const when = new Date(call.dispatched_at);
   return {
-    latitude: Math.round(latitude * 1000) / 1000,
-    longitude: Math.round(longitude * 1000) / 1000,
+    id: call.call_number,
+    dispatchedAt: call.dispatched_at,
+    occurredAt: Number.isNaN(when.getTime())
+      ? call.dispatched_at
+      : when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+    block: call.block,
+    latitude: call.latitude ?? undefined,
+    longitude: call.longitude ?? undefined,
+    district: call.district,
+    nature: call.nature,
+    status: call.status,
+    category: callCategory(call.category).id,
   };
 }
 
-export function parseRecentCalls(html: string): RecentCall[] {
-  const rows = html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
-  const calls = new Map<string, RecentCall>();
-
-  for (const row of rows) {
-    const cells = [...row.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((match) => textOf(match[1]));
-    if (cells.length < 6) continue;
-    const [id, occurredAt, location, district, nature, status] = cells;
-    if (!/^P\d+$/i.test(id) || !ALERT_TERMS.some((term) => nature.toLowerCase().includes(term))) continue;
-    calls.set(id, { id, occurredAt, district, nature, status, ...coordinatesOf(location) });
-  }
-
-  return [...calls.values()];
+export function toCallFeed(data: MpdCalls): CallFeed {
+  return {
+    calls: data.calls.map(toRecentCall),
+    summary: data.summary,
+    lastUpdatedAt: data.last_updated_at ?? null,
+    stale: data.stale,
+  };
 }
 
-async function fetchRecentCalls() {
-  const response = await fetch(CALLS_URL, { headers: { Accept: 'text/html' } });
-  if (!response.ok) throw new Error(`Calls-for-service request failed (${response.status})`);
-  return parseRecentCalls(await response.text());
+export const callsApi = {
+  list: (hours: number) => request<MpdCalls>(`/safety/calls?hours=${hours}`),
+};
+
+export const callKeys = {
+  all: ['mpd-calls'] as const,
+  window: (hours: number) => ['mpd-calls', hours] as const,
+};
+
+/** Every call in the window, with its summary. Refreshes every two minutes,
+ *  matching the ingestion schedule. */
+export function useCallFeed(hours: number) {
+  return useQuery({
+    queryKey: callKeys.window(hours),
+    queryFn: () => callsApi.list(hours),
+    select: toCallFeed,
+    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60,
+    retry: 1,
+  });
 }
 
+/** The Alerts tab's live feed: safety-related calls from the last two hours. */
 export function useRecentCalls() {
   return useQuery({
-    queryKey: ['mpd-recent-calls'],
-    queryFn: fetchRecentCalls,
-    refetchInterval: 1000 * 60 * 5,
-    staleTime: 1000 * 60 * 4,
-    refetchOnMount: 'always',
+    queryKey: callKeys.window(2),
+    queryFn: () => callsApi.list(2),
+    select: (data: MpdCalls) => data.calls.map(toRecentCall).filter(isAlertCall),
+    refetchInterval: 1000 * 60 * 2,
+    staleTime: 1000 * 60,
     retry: 1,
   });
 }
