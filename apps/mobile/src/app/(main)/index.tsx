@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 
 import { BrandLogo } from '@/components/BrandLogo';
 import { Container, Page } from '@/components/Page';
-import { Display, Green, LinkButton, RedRule, Ribbon, SectionHeading } from '@/components/brand';
+import { Display, Green, RedRule, Ribbon, SectionHeading } from '@/components/brand';
 import { NAV_ITEMS, type NavItem } from '@/lib/navigation';
 import { SERIF, radius, space, useTheme } from '@/theme/tokens';
 
@@ -42,10 +42,6 @@ export default function HomeScreen() {
             <Text style={[styles.lede, { color: theme.textSecondary }]}>
               Find jobs and volunteer opportunities, connect with resources, and get the support you and your family need to thrive.
             </Text>
-            <View style={styles.actions}>
-              <LinkButton href="/opportunities" label="Find Opportunities" />
-              <LinkButton href="/resources" label="Get Resources" variant="outline" />
-            </View>
           </View>
 
           {wide ? (
@@ -74,16 +70,18 @@ export default function HomeScreen() {
       </View>
 
       {/* Sections: the same places as the header bar, with a line on each. */}
-      <Container style={styles.section}>
-        <SectionHeading title="How Can We Help?" kicker="Everything ComForce MKE offers, in one place." />
-        <View style={styles.grid}>
-          {NAV_ITEMS.map((item) => (
-            <View key={item.href} style={{ width: `${100 / columns}%`, padding: space.sm }}>
-              <SectionCard item={item} />
-            </View>
-          ))}
-        </View>
-      </Container>
+      {NAV_ITEMS.length ? (
+        <Container style={styles.section}>
+          <SectionHeading title="How Can We Help?" kicker="Everything ComForce MKE offers, in one place." />
+          <View style={styles.grid}>
+            {NAV_ITEMS.map((item) => (
+              <View key={item.href} style={{ width: `${100 / columns}%`, padding: space.sm }}>
+                <SectionCard item={item} />
+              </View>
+            ))}
+          </View>
+        </Container>
+      ) : null}
 
       {/* Stats band */}
       <View style={{ backgroundColor: theme.charcoal }}>
@@ -97,17 +95,6 @@ export default function HomeScreen() {
           ))}
         </Container>
       </View>
-
-      {/* Call to action */}
-      <Container style={styles.cta}>
-        <Display size={wide ? 36 : 28}>
-          Ready to <Green>get involved?</Green>
-        </Display>
-        <Text style={[styles.lede, { color: theme.textSecondary, textAlign: 'center' }]}>
-          Volunteer, find work, or lend a hand. Together, we create a safer, stronger MKE.
-        </Text>
-        <LinkButton href="/opportunities" label="See Opportunities" />
-      </Container>
     </Page>
   );
 }
@@ -150,7 +137,6 @@ const styles = StyleSheet.create({
   heroWide: { flexDirection: 'row', alignItems: 'center', paddingVertical: 64 },
   heroCopy: { gap: space.lg },
   lede: { fontSize: 17, lineHeight: 26, maxWidth: 560 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, marginTop: space.sm },
   heroCard: { flex: 0.8, alignItems: 'center', gap: space.sm, padding: 40, borderWidth: 1, borderRadius: radius.md },
   heroCardTitle: { fontFamily: SERIF, fontSize: 28, fontWeight: '700', marginTop: space.md },
   heroCardBody: { fontSize: 16, textAlign: 'center' },
@@ -169,5 +155,4 @@ const styles = StyleSheet.create({
   statNumber: { fontFamily: SERIF, fontSize: 44, lineHeight: 46, fontWeight: '900' },
   statLabel: { fontSize: 16, fontWeight: '800', marginTop: space.xs },
   statSmall: { fontSize: 13, color: 'rgba(255,255,255,0.65)' },
-  cta: { alignItems: 'center', gap: space.lg, paddingVertical: 56 },
 });

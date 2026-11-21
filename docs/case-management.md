@@ -1,10 +1,16 @@
-# Case management: worker portal and API contract
+# Case management: API contract
 
 ComForce MKE workers handle community requests for help and incidents as
 **cases**: triage (priority, category), assign, keep notes, refer the person
-to community resources, and resolve. The worker portal is the `/worker`
-section of the Expo app (web and iPhone). This page is the contract for the
-community app and anyone else integrating.
+to community resources, and resolve. This page is the contract for any
+screen that uses it.
+
+> **Frontend status:** the app was cut back to the landing page, sign-in and
+> account (branch `chore/bare-bones`) so the flow can be rebuilt step by step.
+> Everything on this page still runs in the API and database, and the
+> TanStack hooks are still in `apps/mobile/src/services/cases.ts`, but no
+> screen uses them yet. The old worker portal (`/worker`) and the sample
+> pages are on the `archive/full-prototype` branch.
 
 All paths are under `/v1`, need a signed-in Auth0 access token
 (`Authorization: Bearer …`), and return the usual error body
@@ -12,20 +18,6 @@ All paths are under `/v1`, need a signed-in Auth0 access token
 `apps/mobile/openapi.json` and the generated `apps/mobile/src/api/schema.ts`.
 Types by name: `apps/mobile/src/api/types.ts`. Ready-made TanStack hooks:
 `apps/mobile/src/services/cases.ts`.
-
-## The portal's pages
-
-| Page | Data |
-|---|---|
-| Dashboard, Cases, Resources, Team (workers and access) | Live, from the API below |
-| Insights | Case actions are live (`/cases/insights`); budget, funding, programs, volunteers are sample data |
-| Response | Rapid response and EMS charts: sample data until dispatch records are connected |
-| Info hub | Staff and partner posts, kept on the device for now (`lib/admin.tsx`) |
-| Team: training compliance, partners | Sample data (`lib/directory.ts`) |
-
-Staff in the portal can also turn on admin mode (Info hub → **Post an
-opportunity**) to manage postings on the community Opportunities page;
-it only shows for staff.
 
 ## Who can do what
 
@@ -129,7 +121,7 @@ public/internal split done in SQL (`request_*` functions return only public
 columns and public updates). `0006_sample_resources` adds the sample
 directory; remove it with the SQL in that file once real partners are in.
 
-## Demo script
+## Demo script (for the archived portal on `archive/full-prototype`)
 
 1. Sign in, open **Account → ComForce staff portal**, and claim staff admin
    (first person only).

@@ -8,8 +8,8 @@ screen. Features go on top.
 
 - **Security, data handling, known gaps:** [`SECURITY.md`](SECURITY.md)
 - **Decisions** (inherited from Cooli): [`docs/decisions/`](docs/decisions/)
-- **Case management** (worker portal at `/worker`, request and case API,
-  demo script): [`docs/case-management.md`](docs/case-management.md)
+- **Case management** (request and case API; no screens yet, the old
+  portal is on `archive/full-prototype`): [`docs/case-management.md`](docs/case-management.md)
 - **Shared test accounts** (admin, worker, member; hackathon only):
   [`docs/test-accounts.md`](docs/test-accounts.md)
 
