@@ -35,6 +35,9 @@ const light = {
   soon: '#9A5800',
   danger: '#B42318',
   dangerSoft: 'rgba(180,35,24,0.09)',
+  /** Neutral status ("In progress"). */
+  info: '#1F5FC7',
+  infoSoft: '#E6EEFC',
   warningSoft: 'rgba(154,88,0,0.10)',
   overlay: 'rgba(10,16,20,0.4)',
   /** Card drop shadow (CSS box-shadow syntax). */
@@ -65,6 +68,8 @@ const dark: Theme = {
   soon: '#E5A64A',
   danger: '#F0796D',
   dangerSoft: 'rgba(240,121,109,0.14)',
+  info: '#8DB4F5',
+  infoSoft: 'rgba(141,180,245,0.16)',
   warningSoft: 'rgba(229,166,74,0.14)',
   overlay: 'rgba(0,0,0,0.55)',
   shadow: '0 18px 45px rgba(0, 0, 0, 0.35)',

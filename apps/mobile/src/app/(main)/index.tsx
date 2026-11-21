@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
-import { BrandLogo } from '@/components/BrandLogo';
+import { HelpPanel } from '@/components/HelpPanel';
 import { Container, Page } from '@/components/Page';
 import { Display, Green, RedRule, Ribbon, SectionHeading } from '@/components/brand';
 import { useNavItems, type NavItem } from '@/lib/navigation';
@@ -45,14 +45,10 @@ export default function HomeScreen() {
             </Text>
           </View>
 
-          {wide ? (
-            <View style={[styles.heroCard, { backgroundColor: theme.bg, borderColor: theme.separator }]}>
-              <BrandLogo mark width={120} />
-              <Text style={[styles.heroCardTitle, { color: theme.text }]}>Serving Milwaukee</Text>
-              <Text style={[styles.heroCardBody, { color: theme.textSecondary }]}>With Compassion, Courage & Commitment</Text>
-              <RedRule />
-            </View>
-          ) : null}
+          {/* Asking for help comes first (Figma A1). */}
+          <View style={[styles.heroCard, wide && { flex: 0.8 }, { backgroundColor: theme.bg, borderColor: theme.separator }]}>
+            <HelpPanel />
+          </View>
         </Container>
 
         <Container style={[styles.values, { borderTopColor: theme.separator }]}>
@@ -138,9 +134,7 @@ const styles = StyleSheet.create({
   heroWide: { flexDirection: 'row', alignItems: 'center', paddingVertical: 64 },
   heroCopy: { gap: space.lg },
   lede: { fontSize: 17, lineHeight: 26, maxWidth: 560 },
-  heroCard: { flex: 0.8, alignItems: 'center', gap: space.sm, padding: 40, borderWidth: 1, borderRadius: radius.md },
-  heroCardTitle: { fontFamily: SERIF, fontSize: 28, fontWeight: '700', marginTop: space.md },
-  heroCardBody: { fontSize: 16, textAlign: 'center' },
+  heroCard: { padding: space.xl, borderWidth: 1, borderRadius: radius.md },
   values: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xl, paddingVertical: space.xl, borderTopWidth: StyleSheet.hairlineWidth },
   value: { flexDirection: 'row', alignItems: 'center', gap: space.md, minWidth: 200 },
   valueIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },

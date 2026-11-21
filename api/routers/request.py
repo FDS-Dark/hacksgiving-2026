@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from dependencies import get_case_service, get_current_user, get_triager
-from models.case import PublicRequest, PublicRequestDetail, SubmitRequest
+from models.case import PublicRequest, PublicRequestDetail, PublicRequestUpdate, ReplyRequest, SubmitRequest
 from models.user import AppUser
 from services.case import CaseService, Triager
 
@@ -45,3 +45,15 @@ async def get_my_request(
     """One of the caller's requests, with its public updates (status changes
     and messages from ComForce). 404 for anyone else's."""
     return await service.my_request(user, request_id)
+
+
+@router.post("/{request_id}/replies", response_model=PublicRequestUpdate, status_code=status.HTTP_201_CREATED)
+async def reply_to_my_request(
+    request_id: UUID,
+    body: ReplyRequest,
+    user: AppUser = Depends(get_current_user),
+    service: CaseService = Depends(get_case_service),
+) -> PublicRequestUpdate:
+    """Answer on one of the caller's requests (shown to them and to staff).
+    404 for anyone else's."""
+    return await service.reply(user, request_id, body)

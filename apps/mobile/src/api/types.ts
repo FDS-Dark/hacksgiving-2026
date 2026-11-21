@@ -44,6 +44,16 @@ export type UserSummary = Schemas['UserSummary'];
 export type SubmitRequest = Schemas['SubmitRequest'];
 export type PublicRequest = Schemas['PublicRequest'];
 export type PublicRequestDetail = Schemas['PublicRequestDetail'];
+export type PublicRequestUpdate = Schemas['PublicRequestUpdate'];
+export type AnonymousRequestReceipt = Schemas['AnonymousRequestReceipt'];
+export type ReplyRequest = Schemas['ReplyRequest'];
+export type ContactMethod = Schemas['ContactMethod'];
+export type Task = Schemas['Task'];
+export type TaskStatus = Schemas['TaskStatus'];
+export type UpdateTask = Schemas['UpdateTaskRequest'];
+export type TaskFilters = NonNullable<operations['list_tasks_v1_tasks_get']['parameters']['query']>;
+export type ClaimHandoff = Schemas['ClaimHandoffRequest'];
+export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

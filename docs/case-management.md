@@ -44,9 +44,14 @@ show up there.
   "category": "optional: homelessness | meal_programs | transportation | violence_prevention | incident_deescalation | missing_persons | burial_assistance | bridge_to_employment | other",
   "location": "optional free text, e.g. N 35th St & W Center St",
   "latitude": 43.07, "longitude": -87.95,
-  "contact_name": "optional", "contact_phone": "optional", "contact_email": "optional"
+  "contact_name": "optional", "contact_phone": "optional", "contact_email": "optional",
+  "contact_method": "optional: call | text | none (call and text need contact_phone)",
+  "safe_to_contact": "optional: true when it's safe to call or leave a voicemail (or to text)"
 }
 ```
+
+- `contact_method: "none"` ("Don't contact me") drops any phone or email sent with it.
+- Each new request gets its first **tasks** (see below).
 
 - Who asked comes from the token, never from the body.
 - `priority`, `status`, `assigned_worker_id` or any other unknown field → **422**.
@@ -74,6 +79,24 @@ The only updates included are public ones: "Request received.", status changes a
 messages a worker chose to send. Internal notes, assignees, referrals and who wrote
 something are never included. Another person's request → 404.
 
+### `POST /v1/requests/{id}/replies` → 201 `PublicRequestUpdate`
+`{"content"}`: the requester answers on their own request (`update_type: "reply"`,
+seen by them and in the worker's case history). Another person's request → 404.
+
+### Without an account: `/v1/public/requests` (no token)
+An emergency shouldn't wait on a sign-in, so a resident can ask for help signed out.
+
+| Method and path | What it does |
+|---|---|
+| `POST /public/requests` | Same body as `POST /requests`. 201 `{"request": PublicRequest, "access_code": "K7QM-4XPA"}`. The code is shown once; only its SHA-256 is stored |
+| `GET /public/requests/{number}` + header `X-Access-Code` | `PublicRequestDetail`. A wrong number or code is the same 404 |
+| `POST /public/requests/{number}/replies` + `X-Access-Code` | `{"content"}`, as above |
+
+Rate limited per client address (`services/rate_limit.py`, in memory per API
+replica): 5 submissions an hour, 60 code lookups or replies per 10 minutes;
+over that → 429 `rate_limited`. The app keeps the code on the device
+(`lib/savedRequests.ts`), so "My requests" opens it without typing it.
+
 ### `GET /v1/resources?q=&category=` → `Resource[]`
 The resource directory, for any signed-in user. Rows with `"is_sample": true` are
 demonstration data (fictional 555 numbers), not real services; show them as such
@@ -90,6 +113,8 @@ or leave them out.
 | `POST /cases/{id}/updates` | `{"content", "visibility": "internal" \| "public"}`. Internal is a note; public is a message the requester sees |
 | `POST /cases/{id}/referrals` | `{"resource_id", "status"?}`. 409 if the resource is already on the case |
 | `PATCH /cases/{id}/referrals/{referral_id}` | `{"status"?: suggested \| shared \| accepted \| completed \| declined, "outcome"?}` |
+| `GET /tasks?mine=&case_id=&open_only=&limit=` | Tasks by due time. `mine`: tasks assigned to the caller, and unassigned tasks on cases they hold |
+| `PATCH /tasks/{id}` | `{"status"?: open \| done, "assigned_worker_id"?}` (`null` hands it back to whoever holds the case). Done/reopened is noted in the case history |
 | `GET /cases/insights` | Dashboard numbers: `stats` (active, new, high_priority_active, awaiting_resources, unassigned_active, resolved, opened/resolved in the last 7 days, avg_resolution_hours), `by_category`, `by_status`, `recent_activity` |
 | `GET /cases/activity?limit=` | The latest updates across all cases |
 | `POST /cases/{id}/assist/summary` | AI summary and next steps. 503 `ai_unavailable` without an OpenAI key |
@@ -104,6 +129,16 @@ Statuses: `new` → `in_progress` → `awaiting_resources` → `resolved` / `clo
 (any order is allowed; reopening clears `resolved_at`). Priorities: `low`,
 `medium`, `high`, `critical`.
 
+## Tasks (services/tasks.py)
+
+Every new case (a resident's request or one a worker opens) gets tasks from
+`plan_tasks(case)`: first reach the person the way they asked (call, text,
+or "review only" for don't-contact, with a no-voicemail warning when it isn't
+safe), then the category's follow-ups (e.g. housing: find a bed, offer a
+ride). Due in 1 h and 24 h, or 15 min and 2 h when the case is high priority
+or an incident / missing person. A task with no assignee follows the case's.
+`CaseDetail` includes `tasks`. Rules first; AI can replace `plan_tasks` later.
+
 ## AI rules (services/case_assist.py)
 
 - Suggestions only: the AI never changes a case, sends a message or closes anything.
@@ -115,7 +150,8 @@ Statuses: `new` → `in_progress` → `awaiting_resources` → `resolved` / `clo
 
 ## Data
 
-Migration `0005_case_management` holds the tables (`cases`, `case_updates`,
+Migration `0008_get_help` adds safe-contact columns, access codes, replies
+and `tasks`. Migration `0005_case_management` holds the tables (`cases`, `case_updates`,
 `resources`, `case_referrals`), the views and every stored function, with the
 public/internal split done in SQL (`request_*` functions return only public
 columns and public updates). `0006_sample_resources` adds the sample

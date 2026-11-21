@@ -1,6 +1,70 @@
 {
   "components": {
     "schemas": {
+      "ActiveReferral": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoiceReferralStatus"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "resource_name",
+          "status",
+          "urgency_tier",
+          "neighborhood",
+          "created_at"
+        ],
+        "title": "ActiveReferral",
+        "type": "object"
+      },
       "AddCaseUpdateRequest": {
         "description": "An internal note, or (visibility public) a message the requester will\nsee on their request.",
         "properties": {
@@ -37,6 +101,24 @@
           "resource_id"
         ],
         "title": "AddReferralRequest",
+        "type": "object"
+      },
+      "AnonymousRequestReceipt": {
+        "description": "A request sent without an account. The access code is shown once:\nwith the request's number it is the only way back to the request.",
+        "properties": {
+          "access_code": {
+            "title": "Access Code",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/PublicRequest"
+          }
+        },
+        "required": [
+          "request",
+          "access_code"
+        ],
+        "title": "AnonymousRequestReceipt",
         "type": "object"
       },
       "AppUser": {
@@ -120,6 +202,16 @@
               }
             ],
             "title": "Contact Email"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "contact_name": {
             "anyOf": [
@@ -245,6 +337,17 @@
             ],
             "title": "Resolved At"
           },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          },
           "source": {
             "$ref": "#/components/schemas/CaseSource"
           },
@@ -285,7 +388,9 @@
           "updated_at",
           "resolved_at",
           "referral_count",
-          "last_activity_at"
+          "last_activity_at",
+          "contact_method",
+          "safe_to_contact"
         ],
         "title": "Case",
         "type": "object"
@@ -318,6 +423,13 @@
             "title": "Referrals",
             "type": "array"
           },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
           "updates": {
             "items": {
               "$ref": "#/components/schemas/CaseUpdate"
@@ -329,7 +441,8 @@
         "required": [
           "case",
           "updates",
-          "referrals"
+          "referrals",
+          "tasks"
         ],
         "title": "CaseDetail",
         "type": "object"
@@ -591,6 +704,32 @@
         "title": "CategoryCount",
         "type": "object"
       },
+      "ClaimHandoffRequest": {
+        "properties": {
+          "code": {
+            "maxLength": 8,
+            "minLength": 8,
+            "pattern": "^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ClaimHandoffRequest",
+        "type": "object"
+      },
+      "ContactMethod": {
+        "description": "How a resident wants to be reached. `none`: don't reach out at all.",
+        "enum": [
+          "call",
+          "text",
+          "none"
+        ],
+        "title": "ContactMethod",
+        "type": "string"
+      },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
         "properties": {
@@ -711,6 +850,61 @@
         "title": "CreateCaseRequest",
         "type": "object"
       },
+      "CreateHandoffRequest": {
+        "properties": {
+          "caller_id": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 8,
+                "pattern": "^\\+[1-9][0-9]{7,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caller Id"
+          },
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id"
+        ],
+        "title": "CreateHandoffRequest",
+        "type": "object"
+      },
+      "CreateReferralRequest": {
+        "properties": {
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "resource_slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Resource Slug",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoiceReferralStatus",
+            "default": "offered"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "resource_slug"
+        ],
+        "title": "CreateReferralRequest",
+        "type": "object"
+      },
       "CreateResourceRequest": {
         "properties": {
           "address": {
@@ -822,6 +1016,103 @@
         },
         "title": "HTTPValidationError",
         "type": "object"
+      },
+      "HandoffCode": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "expires_at"
+        ],
+        "title": "HandoffCode",
+        "type": "object"
+      },
+      "ImpactCategory": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "count"
+        ],
+        "title": "ImpactCategory",
+        "type": "object"
+      },
+      "ImpactSummary": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "emergency_redirects": {
+            "minimum": 0.0,
+            "title": "Emergency Redirects",
+            "type": "integer"
+          },
+          "follow_ups_completed": {
+            "minimum": 0.0,
+            "title": "Follow Ups Completed",
+            "type": "integer"
+          },
+          "referrals_offered": {
+            "minimum": 0.0,
+            "title": "Referrals Offered",
+            "type": "integer"
+          },
+          "total_calls": {
+            "minimum": 0.0,
+            "title": "Total Calls",
+            "type": "integer"
+          },
+          "transfers_connected": {
+            "minimum": 0.0,
+            "title": "Transfers Connected",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_calls",
+          "emergency_redirects",
+          "referrals_offered",
+          "transfers_connected",
+          "follow_ups_completed",
+          "categories"
+        ],
+        "title": "ImpactSummary",
+        "type": "object"
+      },
+      "OutcomeStatus": {
+        "enum": [
+          "connected",
+          "voicemail",
+          "no_answer",
+          "declined",
+          "unavailable",
+          "follow_up_needed",
+          "completed"
+        ],
+        "title": "OutcomeStatus",
+        "type": "string"
       },
       "PublicRequest": {
         "properties": {
@@ -946,6 +1237,31 @@
         "title": "PublicRequestUpdate",
         "type": "object"
       },
+      "RecordOutcomeRequest": {
+        "properties": {
+          "reason_code": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OutcomeStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "RecordOutcomeRequest",
+        "type": "object"
+      },
       "Referral": {
         "properties": {
           "case_id": {
@@ -1051,6 +1367,48 @@
         "title": "Referral",
         "type": "object"
       },
+      "ReferralOutcome": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "referral_id": {
+            "format": "uuid",
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OutcomeStatus"
+          }
+        },
+        "required": [
+          "id",
+          "referral_id",
+          "status",
+          "reason_code",
+          "recorded_at"
+        ],
+        "title": "ReferralOutcome",
+        "type": "object"
+      },
       "ReferralStatus": {
         "enum": [
           "suggested",
@@ -1061,6 +1419,23 @@
         ],
         "title": "ReferralStatus",
         "type": "string"
+      },
+      "ReplyRequest": {
+        "additionalProperties": false,
+        "description": "The requester's answer on their own request. Staff see it in the case\nhistory.",
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "ReplyRequest",
+        "type": "object"
       },
       "Resource": {
         "properties": {
@@ -1412,6 +1787,17 @@
             ],
             "title": "Contact Email"
           },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Call or text needs `contact_phone`. Leave out when the form didn't ask."
+          },
           "contact_name": {
             "anyOf": [
               {
@@ -1480,6 +1866,18 @@
             ],
             "title": "Longitude"
           },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "It's safe to call or leave a voicemail (or to text).",
+            "title": "Safe To Contact"
+          },
           "title": {
             "anyOf": [
               {
@@ -1506,6 +1904,150 @@
           "rules"
         ],
         "title": "SuggestionMethod",
+        "type": "string"
+      },
+      "Task": {
+        "description": "A piece of work on a case: generated when the case comes in\n(services/tasks.py), or added by a worker.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "assigned_worker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Name"
+          },
+          "case_category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "completed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed By"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "case_category",
+          "case_priority",
+          "title",
+          "detail",
+          "status",
+          "assigned_worker_id",
+          "assigned_worker_name",
+          "due_at",
+          "created_by",
+          "created_at",
+          "completed_at",
+          "completed_by"
+        ],
+        "title": "Task",
+        "type": "object"
+      },
+      "TaskStatus": {
+        "enum": [
+          "open",
+          "done"
+        ],
+        "title": "TaskStatus",
         "type": "string"
       },
       "UpdateCaseRequest": {
@@ -1663,6 +2205,35 @@
         "title": "UpdateReferralRequest",
         "type": "object"
       },
+      "UpdateTaskRequest": {
+        "description": "Only the fields sent change. Send `assigned_worker_id: null` to hand\nthe task back to whoever holds the case.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UpdateTaskRequest",
+        "type": "object"
+      },
       "UpdateType": {
         "enum": [
           "created",
@@ -1672,9 +2243,19 @@
           "priority_change",
           "category_change",
           "assignment",
-          "referral"
+          "referral",
+          "reply"
         ],
         "title": "UpdateType",
+        "type": "string"
+      },
+      "UrgencyTier": {
+        "enum": [
+          "emergency",
+          "urgent",
+          "routine"
+        ],
+        "title": "UrgencyTier",
         "type": "string"
       },
       "UserSummary": {
@@ -1760,6 +2341,258 @@
         ],
         "title": "Visibility",
         "type": "string"
+      },
+      "VoiceDashboard": {
+        "properties": {
+          "active_referrals": {
+            "items": {
+              "$ref": "#/components/schemas/ActiveReferral"
+            },
+            "title": "Active Referrals",
+            "type": "array"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceResource"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ImpactSummary"
+          }
+        },
+        "required": [
+          "stats",
+          "active_referrals",
+          "routes"
+        ],
+        "title": "VoiceDashboard",
+        "type": "object"
+      },
+      "VoiceFollowUp": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "disposition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposition"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "linked_at": {
+            "format": "date-time",
+            "title": "Linked At",
+            "type": "string"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "resources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resources",
+            "type": "array"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "need_category",
+          "urgency_tier",
+          "disposition",
+          "resources",
+          "linked_at"
+        ],
+        "title": "VoiceFollowUp",
+        "type": "object"
+      },
+      "VoiceReferral": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "resource_id": {
+            "format": "uuid",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoiceReferralStatus"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "resource_id",
+          "status",
+          "created_at"
+        ],
+        "title": "VoiceReferral",
+        "type": "object"
+      },
+      "VoiceReferralStatus": {
+        "enum": [
+          "offered",
+          "accepted",
+          "transfer_attempted",
+          "connected",
+          "declined",
+          "unavailable"
+        ],
+        "title": "VoiceReferralStatus",
+        "type": "string"
+      },
+      "VoiceResource": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "hours_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Label"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_emergency": {
+            "title": "Is Emergency",
+            "type": "boolean"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "last_verified_at": {
+            "format": "date-time",
+            "title": "Last Verified At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "service_area": {
+            "title": "Service Area",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "transfer_approved": {
+            "title": "Transfer Approved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "category",
+          "description",
+          "phone_e164",
+          "languages",
+          "service_area",
+          "hours_label",
+          "transfer_approved",
+          "is_emergency",
+          "last_verified_at"
+        ],
+        "title": "VoiceResource",
+        "type": "object"
+      },
+      "WebhookAccepted": {
+        "properties": {
+          "duplicate": {
+            "default": false,
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "status": {
+            "default": "received",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "duplicate"
+        ],
+        "title": "WebhookAccepted",
+        "type": "object"
       },
       "Worker": {
         "properties": {
@@ -2583,6 +3416,174 @@
         ]
       }
     },
+    "/v1/public/requests": {
+      "post": {
+        "description": "Ask ComForce MKE for help without signing in. Same body as\n`POST /v1/requests`. Keep the access code: it's shown only this once.\n429 after a few requests from one address in an hour.",
+        "operationId": "submit_anonymous_request_v1_public_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousRequestReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}": {
+      "get": {
+        "description": "A request sent without an account, with its public updates. 404 for\na wrong number or code alike.",
+        "operationId": "get_anonymous_request_v1_public_requests__number__get",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}/replies": {
+      "post": {
+        "description": "Answer on a request sent without an account.",
+        "operationId": "reply_to_anonymous_request_v1_public_requests__number__replies_post",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestUpdate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reply To Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
     "/v1/requests": {
       "get": {
         "description": "The caller's own requests, newest first.",
@@ -2688,6 +3689,60 @@
           }
         },
         "summary": "Get My Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/requests/{request_id}/replies": {
+      "post": {
+        "description": "Answer on one of the caller's requests (shown to them and to staff).\n404 for anyone else's.",
+        "operationId": "reply_to_my_request_v1_requests__request_id__replies_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestUpdate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reply To My Request",
         "tags": [
           "requests"
         ]
@@ -3036,6 +4091,607 @@
         "summary": "List Workers",
         "tags": [
           "staff"
+        ]
+      }
+    },
+    "/v1/tasks": {
+      "get": {
+        "description": "Open tasks by due time (soonest first). `mine` keeps the caller's:\ntasks assigned to them, and unassigned tasks on cases they hold.",
+        "operationId": "list_tasks_v1_tasks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "case_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "open_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Open Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  },
+                  "title": "Response List Tasks V1 Tasks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Tasks",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/v1/tasks/{task_id}": {
+      "patch": {
+        "description": "Mark a task done (or open again), or hand it to another worker\n(`assigned_worker_id: null` gives it back to whoever holds the case).\nFinishing a task is noted in the case history.",
+        "operationId": "update_task_v1_tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Task",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/v1/voice/dashboard": {
+      "get": {
+        "operationId": "dashboard_v1_voice_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dashboard",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/follow-ups": {
+      "get": {
+        "operationId": "follow_ups_v1_voice_follow_ups_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceFollowUp"
+                  },
+                  "title": "Response Follow Ups V1 Voice Follow Ups Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Follow Ups",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/handoffs": {
+      "post": {
+        "description": "Create a short-lived code the agent can read aloud to the caller.",
+        "operationId": "create_handoff_v1_voice_handoffs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoffCode"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Handoff",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/handoffs/claim": {
+      "post": {
+        "description": "Attach one call to the signed-in account without storing a phone number.",
+        "operationId": "claim_handoff_v1_voice_handoffs_claim_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimHandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceFollowUp"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Claim Handoff",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/impact": {
+      "get": {
+        "operationId": "impact_v1_voice_impact_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Impact",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals": {
+      "post": {
+        "operationId": "create_referral_v1_voice_referrals_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReferralRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceReferral"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Referral",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}/outcome": {
+      "post": {
+        "operationId": "record_outcome_v1_voice_referrals__referral_id__outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}/responder-outcome": {
+      "post": {
+        "operationId": "record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Responder Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/resources": {
+      "get": {
+        "description": "Return allowlisted routes; only approved destinations expose a number.",
+        "operationId": "resources_v1_voice_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 12,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceResource"
+                  },
+                  "title": "Response Resources V1 Voice Resources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resources",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/webhooks/elevenlabs": {
+      "post": {
+        "description": "Accept signed post-call analysis; verify bytes before parsing JSON.",
+        "operationId": "elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Elevenlabs Webhook",
+        "tags": [
+          "voice"
         ]
       }
     }

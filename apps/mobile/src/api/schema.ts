@@ -266,6 +266,69 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/public/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Anonymous Request
+         * @description Ask ComForce MKE for help without signing in. Same body as
+         *     `POST /v1/requests`. Keep the access code: it's shown only this once.
+         *     429 after a few requests from one address in an hour.
+         */
+        post: operations["submit_anonymous_request_v1_public_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Anonymous Request
+         * @description A request sent without an account, with its public updates. 404 for
+         *     a wrong number or code alike.
+         */
+        get: operations["get_anonymous_request_v1_public_requests__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To Anonymous Request
+         * @description Answer on a request sent without an account.
+         */
+        post: operations["reply_to_anonymous_request_v1_public_requests__number__replies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/requests": {
         parameters: {
             query?: never;
@@ -307,6 +370,27 @@ export interface paths {
         get: operations["get_my_request_v1_requests__request_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/requests/{request_id}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply To My Request
+         * @description Answer on one of the caller's requests (shown to them and to staff).
+         *     404 for anyone else's.
+         */
+        post: operations["reply_to_my_request_v1_requests__request_id__replies_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -479,10 +563,256 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tasks
+         * @description Open tasks by due time (soonest first). `mine` keeps the caller's:
+         *     tasks assigned to them, and unassigned tasks on cases they hold.
+         */
+        get: operations["list_tasks_v1_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Task
+         * @description Mark a task done (or open again), or hand it to another worker
+         *     (`assigned_worker_id: null` gives it back to whoever holds the case).
+         *     Finishing a task is noted in the case history.
+         */
+        patch: operations["update_task_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/v1/voice/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_v1_voice_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Follow Ups */
+        get: operations["follow_ups_v1_voice_follow_ups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Handoff
+         * @description Create a short-lived code the agent can read aloud to the caller.
+         */
+        post: operations["create_handoff_v1_voice_handoffs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/handoffs/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Handoff
+         * @description Attach one call to the signed-in account without storing a phone number.
+         */
+        post: operations["claim_handoff_v1_voice_handoffs_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Impact */
+        get: operations["impact_v1_voice_impact_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Referral */
+        post: operations["create_referral_v1_voice_referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Outcome */
+        post: operations["record_outcome_v1_voice_referrals__referral_id__outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}/responder-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Responder Outcome */
+        post: operations["record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resources
+         * @description Return allowlisted routes; only approved destinations expose a number.
+         */
+        get: operations["resources_v1_voice_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/webhooks/elevenlabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Elevenlabs Webhook
+         * @description Accept signed post-call analysis; verify bytes before parsing JSON.
+         */
+        post: operations["elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveReferral */
+        ActiveReferral: {
+            /** Category */
+            category: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Resource Name */
+            resource_name: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
         /**
          * AddCaseUpdateRequest
          * @description An internal note, or (visibility public) a message the requester will
@@ -503,6 +833,16 @@ export interface components {
             resource_id: string;
             /** @default suggested */
             status?: components["schemas"]["ReferralStatus"];
+        };
+        /**
+         * AnonymousRequestReceipt
+         * @description A request sent without an account. The access code is shown once:
+         *     with the request's number it is the only way back to the request.
+         */
+        AnonymousRequestReceipt: {
+            /** Access Code */
+            access_code: string;
+            request: components["schemas"]["PublicRequest"];
         };
         /**
          * AppUser
@@ -535,6 +875,7 @@ export interface components {
             category: components["schemas"]["CaseCategory"];
             /** Contact Email */
             contact_email: string | null;
+            contact_method: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name: string | null;
             /** Contact Phone */
@@ -574,6 +915,8 @@ export interface components {
             requester_id: string | null;
             /** Resolved At */
             resolved_at: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
             source: components["schemas"]["CaseSource"];
             status: components["schemas"]["CaseStatus"];
             /** Title */
@@ -595,6 +938,8 @@ export interface components {
             case: components["schemas"]["Case"];
             /** Referrals */
             referrals: components["schemas"]["Referral"][];
+            /** Tasks */
+            tasks: components["schemas"]["Task"][];
             /** Updates */
             updates: components["schemas"]["CaseUpdate"][];
         };
@@ -703,6 +1048,17 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ClaimHandoffRequest */
+        ClaimHandoffRequest: {
+            /** Code */
+            code: string;
+        };
+        /**
+         * ContactMethod
+         * @description How a resident wants to be reached. `none`: don't reach out at all.
+         * @enum {string}
+         */
+        ContactMethod: "call" | "text" | "none";
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -735,6 +1091,22 @@ export interface components {
             priority?: components["schemas"]["CasePriority"];
             /** Title */
             title: string;
+        };
+        /** CreateHandoffRequest */
+        CreateHandoffRequest: {
+            /** Caller Id */
+            caller_id?: string | null;
+            /** Conversation Id */
+            conversation_id: string;
+        };
+        /** CreateReferralRequest */
+        CreateReferralRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Resource Slug */
+            resource_slug: string;
+            /** @default offered */
+            status?: components["schemas"]["VoiceReferralStatus"];
         };
         /** CreateResourceRequest */
         CreateResourceRequest: {
@@ -771,6 +1143,43 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HandoffCode */
+        HandoffCode: {
+            /** Code */
+            code: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** ImpactCategory */
+        ImpactCategory: {
+            /** Category */
+            category: string;
+            /** Count */
+            count: number;
+        };
+        /** ImpactSummary */
+        ImpactSummary: {
+            /** Categories */
+            categories: components["schemas"]["ImpactCategory"][];
+            /** Emergency Redirects */
+            emergency_redirects: number;
+            /** Follow Ups Completed */
+            follow_ups_completed: number;
+            /** Referrals Offered */
+            referrals_offered: number;
+            /** Total Calls */
+            total_calls: number;
+            /** Transfers Connected */
+            transfers_connected: number;
+        };
+        /**
+         * OutcomeStatus
+         * @enum {string}
+         */
+        OutcomeStatus: "connected" | "voicemail" | "no_answer" | "declined" | "unavailable" | "follow_up_needed" | "completed";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -823,6 +1232,12 @@ export interface components {
             id: string;
             update_type: components["schemas"]["UpdateType"];
         };
+        /** RecordOutcomeRequest */
+        RecordOutcomeRequest: {
+            /** Reason Code */
+            reason_code?: string | null;
+            status: components["schemas"]["OutcomeStatus"];
+        };
         /** Referral */
         Referral: {
             /**
@@ -865,11 +1280,41 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ReferralOutcome */
+        ReferralOutcome: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason Code */
+            reason_code: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            status: components["schemas"]["OutcomeStatus"];
+        };
         /**
          * ReferralStatus
          * @enum {string}
          */
         ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /**
+         * ReplyRequest
+         * @description The requester's answer on their own request. Staff see it in the case
+         *     history.
+         */
+        ReplyRequest: {
+            /** Content */
+            content: string;
+        };
         /** Resource */
         Resource: {
             /** Active */
@@ -994,6 +1439,8 @@ export interface components {
             category?: components["schemas"]["CaseCategory"] | null;
             /** Contact Email */
             contact_email?: string | null;
+            /** @description Call or text needs `contact_phone`. Leave out when the form didn't ask. */
+            contact_method?: components["schemas"]["ContactMethod"] | null;
             /** Contact Name */
             contact_name?: string | null;
             /** Contact Phone */
@@ -1006,6 +1453,11 @@ export interface components {
             location?: string | null;
             /** Longitude */
             longitude?: number | null;
+            /**
+             * Safe To Contact
+             * @description It's safe to call or leave a voicemail (or to text).
+             */
+            safe_to_contact?: boolean | null;
             /** Title */
             title?: string | null;
         };
@@ -1014,6 +1466,56 @@ export interface components {
          * @enum {string}
          */
         SuggestionMethod: "ai" | "rules";
+        /**
+         * Task
+         * @description A piece of work on a case: generated when the case comes in
+         *     (services/tasks.py), or added by a worker.
+         */
+        Task: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            case_category: components["schemas"]["CaseCategory"];
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            case_priority: components["schemas"]["CasePriority"];
+            /** Case Title */
+            case_title: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Completed By */
+            completed_by: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Detail */
+            detail: string;
+            /** Due At */
+            due_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Title */
+            title: string;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "open" | "done";
         /**
          * UpdateCaseRequest
          * @description Only the fields sent change. Send `assigned_worker_id: null` to
@@ -1047,10 +1549,25 @@ export interface components {
             status?: components["schemas"]["ReferralStatus"] | null;
         };
         /**
+         * UpdateTaskRequest
+         * @description Only the fields sent change. Send `assigned_worker_id: null` to hand
+         *     the task back to whoever holds the case.
+         */
+        UpdateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            status?: components["schemas"]["TaskStatus"] | null;
+        };
+        /**
          * UpdateType
          * @enum {string}
          */
-        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral";
+        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral" | "reply";
+        /**
+         * UrgencyTier
+         * @enum {string}
+         */
+        UrgencyTier: "emergency" | "urgent" | "routine";
         /** UserSummary */
         UserSummary: {
             /**
@@ -1085,6 +1602,114 @@ export interface components {
          * @enum {string}
          */
         Visibility: "internal" | "public";
+        /** VoiceDashboard */
+        VoiceDashboard: {
+            /** Active Referrals */
+            active_referrals: components["schemas"]["ActiveReferral"][];
+            /** Routes */
+            routes: components["schemas"]["VoiceResource"][];
+            stats: components["schemas"]["ImpactSummary"];
+        };
+        /** VoiceFollowUp */
+        VoiceFollowUp: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /** Disposition */
+            disposition: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Linked At
+             * Format: date-time
+             */
+            linked_at: string;
+            /** Need Category */
+            need_category: string | null;
+            /** Resources */
+            resources: string[];
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
+        /** VoiceReferral */
+        VoiceReferral: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Resource Id
+             * Format: uuid
+             */
+            resource_id: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+        };
+        /**
+         * VoiceReferralStatus
+         * @enum {string}
+         */
+        VoiceReferralStatus: "offered" | "accepted" | "transfer_attempted" | "connected" | "declined" | "unavailable";
+        /** VoiceResource */
+        VoiceResource: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Emergency */
+            is_emergency: boolean;
+            /** Languages */
+            languages: string[];
+            /**
+             * Last Verified At
+             * Format: date-time
+             */
+            last_verified_at: string;
+            /** Name */
+            name: string;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Service Area */
+            service_area: string;
+            /** Slug */
+            slug: string;
+            /** Transfer Approved */
+            transfer_approved: boolean;
+        };
+        /** WebhookAccepted */
+        WebhookAccepted: {
+            /**
+             * Duplicate
+             * @default false
+             */
+            duplicate: boolean;
+            /**
+             * Status
+             * @default received
+             */
+            status: string;
+        };
         /** Worker */
         Worker: {
             /** Display Name */
@@ -1571,6 +2196,113 @@ export interface operations {
             };
         };
     };
+    submit_anonymous_request_v1_public_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnonymousRequestReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_anonymous_request_v1_public_requests__number__get: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_anonymous_request_v1_public_requests__number__replies_post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_my_requests_v1_requests_get: {
         parameters: {
             query?: never;
@@ -1642,6 +2374,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicRequestDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reply_to_my_request_v1_requests__request_id__replies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRequestUpdate"];
                 };
             };
             /** @description Validation Error */
@@ -1895,6 +2662,364 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Worker"][];
+                };
+            };
+        };
+    };
+    list_tasks_v1_tasks_get: {
+        parameters: {
+            query?: {
+                case_id?: string | null;
+                mine?: boolean;
+                open_only?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_v1_voice_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceDashboard"];
+                };
+            };
+        };
+    };
+    follow_ups_v1_voice_follow_ups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"][];
+                };
+            };
+        };
+    };
+    create_handoff_v1_voice_handoffs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HandoffCode"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_handoff_v1_voice_handoffs_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimHandoffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceFollowUp"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    impact_v1_voice_impact_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpactSummary"];
+                };
+            };
+        };
+    };
+    create_referral_v1_voice_referrals_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReferralRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_outcome_v1_voice_referrals__referral_id__outcome_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_responder_outcome_v1_voice_referrals__referral_id__responder_outcome_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordOutcomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resources_v1_voice_resources_get: {
+        parameters: {
+            query?: {
+                category?: string | null;
+                language?: string | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceResource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    elevenlabs_webhook_v1_voice_webhooks_elevenlabs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAccepted"];
                 };
             };
         };

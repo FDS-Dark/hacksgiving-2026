@@ -75,7 +75,12 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
     created = {name for (name,) in _fetch(empty_database, API_FUNCTIONS)}
     declared = {
         name
-        for revision in ("0003_api_functions", "0005_case_management")
+        for revision in (
+            "0003_api_functions",
+            "0005_case_management",
+            "0007_voice_coordination",
+            "0008_get_help",
+        )
         for name in _revision(revision).FUNCTIONS
     }
     assert created == declared
