@@ -119,7 +119,7 @@ function PhoneCalls() {
       </Group>
       {callConnected ? (
         <Notice icon="checkmark-circle-outline">
-          Call connected. Open Alerts to see your ComForce notification.
+          Call connected. Your follow-up appears below and under Safety alerts.
         </Notice>
       ) : null}
       {claim.error ? <ErrorBanner error={claim.error} /> : null}

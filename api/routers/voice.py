@@ -98,7 +98,7 @@ async def app_capabilities() -> VoiceAppCapabilities:
         features=[
             "Get Help submits a signed-in request to the appropriate ComForce service queue.",
             "Safety Map shows generalized public-safety information and is not monitored for emergencies.",
-            "Alerts shows private connected-call follow-ups plus public incident updates while the app is open.",
+            "Me > Safety alerts shows private connected-call follow-ups plus public updates while the app is open.",
             "Me > Phone calls connects a call with a one-time eight-character handoff code.",
             "Me > Volunteer and jobs opens the official ComForce MKE website.",
         ],
@@ -107,7 +107,8 @@ async def app_capabilities() -> VoiceAppCapabilities:
             "Write down the eight-character code; it expires after 15 minutes and works once.",
             "Sign in to the mobile app and tap Me in the bottom navigation.",
             "Under Phone calls, enter the code and tap Connect call.",
-            "A successful claim shows Call connected; open Alerts to see the ComForce notification.",
+            "A successful claim shows Call connected and the follow-up under Phone calls; "
+            "Me > Safety alerts also shows the ComForce notification.",
             "If a retry says invalid, expired, or already claimed after success, "
             "the one-time code was already consumed.",
         ],

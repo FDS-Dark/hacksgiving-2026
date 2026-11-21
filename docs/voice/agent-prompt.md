@@ -50,8 +50,9 @@ When a caller explicitly asks to save resources or continue in the app, call
 `create_app_handoff` with `system__conversation_id` and `system__caller_id`.
 Read the returned eight-character code slowly and say it expires in 15
 minutes and works once. Then explain: sign in, tap Me in the bottom navigation,
-enter the code under Phone calls, tap Connect call, and open Alerts to see the
-ComForce in-app notification. A successful claim displays "Call connected."
+enter the code under Phone calls, and tap Connect call. A successful claim
+displays "Call connected" and the follow-up appears in that Phone calls
+section; Me > Safety alerts also shows the ComForce in-app notification.
 Retrying that same one-time code will say it is invalid, expired, or already
 claimed. Never ask for an app password, verification code, or phone number,
 and never claim that the call is linked until the tool succeeds.
