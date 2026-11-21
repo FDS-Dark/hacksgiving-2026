@@ -80,6 +80,13 @@ class OpenAIConfig(BaseModel):
     timeout: float = Field(default=20.0)
 
 
+class VoiceConfig(BaseModel):
+    """Server-only credentials for anonymous voice entry points."""
+
+    elevenlabs_webhook_secret: str = Field(default="")
+    tool_secret: str = Field(default="")
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP__", env_nested_delimiter="__", extra="ignore"
@@ -93,6 +100,7 @@ class AppConfig(BaseSettings):
     environment: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
+    voice: VoiceConfig = Field(default_factory=VoiceConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(
