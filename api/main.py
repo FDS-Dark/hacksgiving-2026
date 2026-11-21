@@ -6,21 +6,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import errors
-from dependencies import get_executor, get_mpd_call_service
+from dependencies import get_audio_storage, get_executor
 from logging_setup import configure_logging
 from routers.case import router as cases
 from routers.health import router as health
 from routers.opportunity import router as opportunities
+from routers.job import router as jobs
+from routers.record import router as records
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
-from routers.safety import router as safety
+from routers.public_data import router as public_data
 from routers.public_request import router as public_requests
 from routers.staff import router as staff
 from routers.task import router as tasks
 from routers.user import router as user
 from routers.voice import router as voice
-from services.mpd_scheduler import MpdIngestLoop
 from settings import config
 
 configure_logging(config.logging)
@@ -28,18 +29,12 @@ configure_logging(config.logging)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    # 911 calls for the safety map: scraped in the background while the API
-    # runs (APP__MPD_INGEST__ENABLED=false turns it off).
-    ingest = (
-        MpdIngestLoop(get_mpd_call_service(), config.mpd_ingest.interval_seconds)
-        if config.mpd_ingest.enabled
-        else None
-    )
-    if ingest:
-        ingest.start()
+    # Make the private audio bucket if it's missing, so the first voice
+    # upload works (the worker does the same; it's safe to repeat).
+    storage = get_audio_storage()
+    if storage is not None and config.storage.create_bucket:
+        await storage.ensure_bucket()
     yield
-    if ingest:
-        await ingest.stop()
     if get_executor.cache_info().currsize:
         await get_executor().dispose()
 
@@ -67,7 +62,8 @@ app.add_middleware(
 errors.install(app)
 
 for router in (
-    health, user, routing, requests, public_requests, cases, tasks, resources, opportunities, safety, staff, voice,
+    health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
+    staff, voice, records, jobs, public_data,
 ):
     app.include_router(router, prefix="/v1")
 

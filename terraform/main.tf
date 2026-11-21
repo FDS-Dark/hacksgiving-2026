@@ -153,10 +153,6 @@ locals {
       # production (the clients are native); staging allows the Expo web
       # dev server, for the worker portal on a laptop.
       APP__CORS_ORIGINS = jsonencode(var.cors_origins)
-      # The API scrapes MPD's 911-call page itself (services/mpd_scheduler.py).
-      # The city allows 10 requests per 30 minutes per IP and both environments
-      # leave the cluster from the same address: 6 + 3 per 30 minutes.
-      APP__MPD_INGEST__INTERVAL_SECONDS = local.is_production ? "300" : "600"
     },
     var.auth0_domain == "" ? {} : {
       APP__JWT__ALGORITHM = "RS256"
@@ -215,8 +211,15 @@ resource "kubernetes_deployment" "hacksgiving_api" {
           env_from {
             secret_ref { name = "${local.api_name}-jwt" }
           }
+          # Voice debriefs (storage.tf). Optional: without it voice is off.
+          env_from {
+            secret_ref {
+              name     = local.storage_secret_name
+              optional = true
+            }
+          }
           dynamic "env" {
-            for_each = local.api_env
+            for_each = merge(local.api_env, local.storage_env)
             content {
               name  = env.key
               value = env.value
@@ -308,3 +311,4 @@ resource "kubernetes_manifest" "hacksgiving_api_ingressroute" {
   }
   depends_on = [kubernetes_manifest.hacksgiving_api_cert, kubernetes_service.hacksgiving_api]
 }
+

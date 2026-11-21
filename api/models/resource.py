@@ -5,6 +5,8 @@ case domain (models/case.py Referral)."""
 from datetime import datetime
 from uuid import UUID
 
+from pydantic import Field
+
 from models.base import ApiModel
 from models.case import ContactField, Latitude, Location, LongText, Longitude, Title
 from models.case_enums import CaseCategory
@@ -22,6 +24,7 @@ class Resource(ApiModel):
     hours: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    source: str = Field(default="manual", description="'manual' for staff-entered, else the import's source.")
     is_sample: bool
     active: bool
     created_at: datetime

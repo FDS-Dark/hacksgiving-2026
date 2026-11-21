@@ -16,7 +16,7 @@ dial 911 without continuing intake.
 
 ## Safe setup order
 
-1. Deploy the API and migration `0007`; confirm the HTTPS voice endpoints.
+1. Deploy the API and migrations through `0012`; confirm the HTTPS voice endpoints.
 2. Configure the prompt in [agent-prompt.md](agent-prompt.md).
 3. Enable only a teammate or explicitly approved ComForce responder as a
    transfer destination. The adapter rejects emergency short codes.
@@ -31,6 +31,12 @@ dial 911 without continuing intake.
    - `POST /v1/voice/route` with `system__conversation_id` and a short need
      description. This uses the same ComForce service classifier as Get Help
      and stores only its structured category on the call.
+   - `POST /v1/voice/requests` only after explicit caller consent. It creates an
+     anonymous ComForce Get Help case from the caller-approved summary,
+     structured category, general location, and optional callback preference.
+     It returns the case number and private access code, which is shown only in
+     that response. Audio and transcripts are never submitted or stored by
+     this tool.
    - `GET /v1/voice/opportunities` for the same active job and volunteer
      postings residents can search under Me > Volunteer and jobs.
    - `GET /v1/voice/resources`
@@ -50,6 +56,19 @@ dial 911 without continuing intake.
 Production transfers require approval from the receiving organization. The
 model never supplies arbitrary phone numbers: only reviewed backend resources
 and enabled provider destinations may be used.
+
+## Referral history and staff review
+
+- Signed-in residents use `GET /v1/voice/referrals` and
+  `GET /v1/voice/referrals/{id}`. Results are limited in SQL to calls linked to
+  that account and include reviewed public contact details for tap-to-call.
+- ComForce workers use `GET /v1/voice/staff/calls` and
+  `GET /v1/voice/staff/calls/{id}`. The review view contains only structured
+  routing, disposition, referral, and case-link fields; it contains no audio,
+  transcript, caller phone number, exact address, or free-form call text.
+- A consented phone submission enters the normal case queue, so staff can open
+  the linked request from the call review and use the existing assignment,
+  task, referral, update, and outcome workflow.
 
 ## Go-live checks
 

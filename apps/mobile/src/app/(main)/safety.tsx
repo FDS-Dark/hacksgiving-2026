@@ -151,11 +151,15 @@ export default function SafetyScreen() {
           </Chips>
           <SafetyMap points={visiblePoints} recentCalls={mapCalls} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
-            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls placed by block—not confirmed crimes. All locations are generalized.
+            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls at approximate locations—not confirmed crimes. All locations are generalized.
           </Txt>
-          {safety.isUsingFallback ? (
-            <Notice icon="cloud-offline-outline">Live city data is unavailable, so sample locations are shown. Pull down to retry.</Notice>
-          ) : null}
+          {safety.isUnavailable ? (
+            <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
+          ) : (
+            <Txt variant="footnote" tone="secondary">
+              MPD-reviewed reported incidents · updated daily · may lag several weeks. Source: City of Milwaukee (CC BY).
+            </Txt>
+          )}
         </View>
 
         <CallSummary
@@ -303,7 +307,7 @@ export default function SafetyScreen() {
                   <Row
                     key={call.id}
                     title={call.nature}
-                    subtitle={`${call.occurredAt} · ${call.block} · District ${call.district}`}
+                    subtitle={`${call.occurredAt} · District ${call.district}`}
                     detail={approximateDistance(selectedArea.center, call)}
                     tile={{ icon: 'phone-alert', color: '#D76B18' }}
                   />

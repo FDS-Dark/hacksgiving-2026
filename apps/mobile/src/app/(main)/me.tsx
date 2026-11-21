@@ -108,6 +108,13 @@ function PhoneCalls() {
           }
         />
         <Row title="Connect call" tone="accent" onPress={connect} disabled={code.length !== 8 || claim.isPending} />
+        <Row
+          title="Past referrals"
+          subtitle="Recommendations and contact details from connected calls"
+          icon="link-outline"
+          accessory="chevron"
+          onPress={() => router.push('/referrals/index')}
+        />
         {followUps.data?.map((item) => (
           <Row
             key={item.id}

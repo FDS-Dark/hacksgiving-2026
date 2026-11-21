@@ -133,13 +133,13 @@ export default function AlertsScreen() {
       ) : calls.data?.length ? (
         <Group
           header={`Live dispatch feed · ${calls.data.length}`}
-          footer="Safety-related calls from the last two hours. Not live: MPD publishes calls 30–90 min after dispatch; the app checks every 30 seconds. Locations are shown by block only."
+          footer="Safety-related calls from the last six hours. Not live: MPD publishes calls 30–90 min after dispatch; the app checks every 30 seconds. Locations are approximate."
         >
           {calls.data.slice(0, 8).map((call) => (
             <Row
               key={call.id}
               title={call.nature}
-              subtitle={`${call.occurredAt} · ${call.block} · District ${call.district}`}
+              subtitle={`${call.occurredAt} · District ${call.district}`}
               detail={call.status === 'Service in Progress' ? 'Active' : 'Updated'}
               detailTint="rgba(215,107,24,0.12)"
               detailColor="#9A5800"

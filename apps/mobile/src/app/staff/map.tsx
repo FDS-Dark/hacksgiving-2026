@@ -20,7 +20,7 @@ const LAYERS = [
 
 /**
  * Figma S2 "Map": open cases with a location (tap a pin for its card; the card
- * opens the case), and recent MPD 911 calls by block with their summary.
+ * opens the case), and recent MPD 911 calls with their summary.
  * Opens on 911 calls when there are no cases to map.
  */
 export default function StaffMapScreen() {

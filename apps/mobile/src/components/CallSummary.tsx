@@ -168,7 +168,7 @@ export function CallSummary({
         <>
           <View style={styles.stats}>
             <Stat label="Calls" value={String(summary.total)} hint={`last ${windowLabel}`} />
-            <Stat label="On the map" value={String(summary.mapped)} hint="placed by block" />
+            <Stat label="On the map" value={String(summary.mapped)} hint="approximate location" />
             <Stat label="Weapons / violence" value={String(serious)} hint="unconfirmed" />
           </View>
 
@@ -228,7 +228,7 @@ export function CallSummary({
 
               <Group
                 header={selectedCategory ? `Latest ${callCategory(selectedCategory).label.toLowerCase()} calls` : 'Latest calls'}
-                footer="Calls are delayed 30–90 minutes by MPD and are not confirmed crimes. Locations are shown by block only."
+                footer="Calls are delayed 30–90 minutes by MPD and are not confirmed crimes. Locations are approximate (about 110 m)."
               >
                 {calls.length ? (
                   calls.slice(0, showAll ? 60 : 10).map((call) => {
@@ -237,7 +237,7 @@ export function CallSummary({
                       <Row
                         key={call.id}
                         title={call.nature}
-                        subtitle={`${call.occurredAt} · ${call.block}`}
+                        subtitle={call.status ? `${call.occurredAt} · ${call.status}` : call.occurredAt}
                         detail={/^\d$/.test(call.district) ? `D${call.district}` : call.district}
                         tile={{ icon: 'phone-alert', color: category.color }}
                       />

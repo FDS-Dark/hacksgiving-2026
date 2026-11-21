@@ -164,6 +164,18 @@
         "title": "AppUser",
         "type": "object"
       },
+      "Audience": {
+        "description": "Who a posting is open to, beyond everyone: staff tag their own postings,\nand an import is tagged when its source says so.",
+        "enum": [
+          "second_chance",
+          "unhoused",
+          "no_experience",
+          "no_id_required",
+          "youth"
+        ],
+        "title": "Audience",
+        "type": "string"
+      },
       "Case": {
         "properties": {
           "assigned_worker_id": {
@@ -720,6 +732,193 @@
         "title": "ClaimHandoffRequest",
         "type": "object"
       },
+      "CommunityMeasure": {
+        "properties": {
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low"
+          },
+          "measure": {
+            "title": "Measure",
+            "type": "string"
+          },
+          "measure_id": {
+            "title": "Measure Id",
+            "type": "string"
+          },
+          "tract_geoid": {
+            "title": "Tract Geoid",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tract_geoid",
+          "measure_id",
+          "measure",
+          "year",
+          "value",
+          "low",
+          "high"
+        ],
+        "title": "CommunityMeasure",
+        "type": "object"
+      },
+      "ConfirmRecordRequest": {
+        "description": "The author's reviewed version of the extraction: this becomes the case.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "default": "other"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind",
+            "default": "request"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority",
+            "default": "medium"
+          },
+          "summary": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Summary",
+            "type": "string"
+          },
+          "tasks": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConfirmTask"
+            },
+            "maxItems": 10,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ConfirmRecordRequest",
+        "type": "object"
+      },
+      "ConfirmTask": {
+        "properties": {
+          "due_in_hours": {
+            "anyOf": [
+              {
+                "maximum": 336.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due In Hours"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ConfirmTask",
+        "type": "object"
+      },
+      "ConfirmedRecord": {
+        "properties": {
+          "case": {
+            "$ref": "#/components/schemas/Case"
+          },
+          "record": {
+            "$ref": "#/components/schemas/Record"
+          }
+        },
+        "required": [
+          "record",
+          "case"
+        ],
+        "title": "ConfirmedRecord",
+        "type": "object"
+      },
       "ContactMethod": {
         "description": "How a resident wants to be reached. `none`: don't reach out at all.",
         "enum": [
@@ -730,23 +929,14 @@
         "title": "ContactMethod",
         "type": "string"
       },
-      "CountItem": {
-        "properties": {
-          "count": {
-            "title": "Count",
-            "type": "integer"
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          }
-        },
-        "required": [
-          "label",
-          "count"
+      "Cost": {
+        "enum": [
+          "free",
+          "low_cost",
+          "paid"
         ],
-        "title": "CountItem",
-        "type": "object"
+        "title": "Cost",
+        "type": "string"
       },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
@@ -913,6 +1103,14 @@
             "description": "An http(s) link to apply or sign up.",
             "title": "Apply Url"
           },
+          "audiences": {
+            "items": {
+              "$ref": "#/components/schemas/Audience"
+            },
+            "maxItems": 5,
+            "title": "Audiences",
+            "type": "array"
+          },
           "contact_email": {
             "anyOf": [
               {
@@ -936,6 +1134,17 @@
               }
             ],
             "title": "Contact Phone"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cost"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Mostly for education: free, low cost or paid."
           },
           "description": {
             "default": "",
@@ -1003,6 +1212,22 @@
           "organization"
         ],
         "title": "CreateOpportunityRequest",
+        "type": "object"
+      },
+      "CreateRecordRequest": {
+        "description": "A typed debrief. (Voice records upload audio first; see the pipeline.)",
+        "properties": {
+          "text": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "CreateRecordRequest",
         "type": "object"
       },
       "CreateReferralRequest": {
@@ -1182,6 +1407,137 @@
         "title": "CreateTaskRequest",
         "type": "object"
       },
+      "CrimeTrendPoint": {
+        "properties": {
+          "measure": {
+            "title": "Measure",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "offense": {
+            "title": "Offense",
+            "type": "string"
+          },
+          "series": {
+            "title": "Series",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "offense",
+          "measure",
+          "series",
+          "month",
+          "value"
+        ],
+        "title": "CrimeTrendPoint",
+        "type": "object"
+      },
+      "DispatchCall": {
+        "description": "A delayed dispatch call: not a confirmed incident.",
+        "properties": {
+          "call_number": {
+            "title": "Call Number",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "source",
+          "call_number",
+          "occurred_at",
+          "category",
+          "status",
+          "district",
+          "city",
+          "latitude",
+          "longitude"
+        ],
+        "title": "DispatchCall",
+        "type": "object"
+      },
       "DraftMessage": {
         "description": "A message to the requester. Sent only if a worker posts it as a\npublic update.",
         "properties": {
@@ -1194,6 +1550,100 @@
           "message"
         ],
         "title": "DraftMessage",
+        "type": "object"
+      },
+      "ExtractedTask": {
+        "properties": {
+          "due_in_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How soon it should be done, in hours from now, if the record makes that clear; else null.",
+            "title": "Due In Hours"
+          },
+          "title": {
+            "description": "A short, concrete next step for ComForce staff, as an imperative.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "due_in_hours"
+        ],
+        "title": "ExtractedTask",
+        "type": "object"
+      },
+      "Extraction": {
+        "description": "The AI's reading of a record. Suggestions only: the author reviews and\nedits all of it before a case is created.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "description": "The ComForce service that should own this."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind",
+            "description": "request: someone needs help. incident: something happened that staff responded to."
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A street, intersection or neighborhood named in the record; else null.",
+            "title": "Location"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority",
+            "description": "critical or high only if someone may be in danger or the need is tonight."
+          },
+          "risk_flags": {
+            "description": "Short safety concerns staff should see ('weapon mentioned', 'children present'). Empty if none.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Risk Flags",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Two to four plain sentences: what happened and what the person needs. No names.",
+            "title": "Summary",
+            "type": "string"
+          },
+          "tasks": {
+            "description": "Up to five follow-ups the record clearly calls for. Empty if none.",
+            "items": {
+              "$ref": "#/components/schemas/ExtractedTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "description": "A short title for the case, under 80 characters, with no names.",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "kind",
+          "category",
+          "priority",
+          "location",
+          "risk_flags",
+          "tasks"
+        ],
+        "title": "Extraction",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1293,149 +1743,80 @@
         "title": "ImpactSummary",
         "type": "object"
       },
-      "MpdCall": {
+      "IncidentPoint": {
+        "description": "A reviewed incident, generalized to about 1 km.",
         "properties": {
-          "block": {
-            "description": "The block or intersection, never the exact address.",
-            "title": "Block",
-            "type": "string"
-          },
-          "call_number": {
-            "description": "MPD's call number, e.g. P2611210938.",
-            "title": "Call Number",
-            "type": "string"
-          },
           "category": {
-            "description": "The app's grouping of `nature`: violent, weapons, property, traffic, disorder, assist or other.",
-            "title": "Category",
-            "type": "string"
-          },
-          "dispatched_at": {
-            "format": "date-time",
-            "title": "Dispatched At",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The app's map category, from the NIBRS codes.",
+            "title": "Category"
           },
           "district": {
-            "description": "Police district 1-7, or CITY / another agency code.",
-            "title": "District",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "incident_at": {
+            "format": "date-time",
+            "title": "Incident At",
             "type": "string"
           },
           "latitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude"
+            "title": "Latitude",
+            "type": "number"
           },
           "longitude": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude"
+            "title": "Longitude",
+            "type": "number"
           },
-          "nature": {
-            "description": "MPD's nature of call, e.g. 'Traffic Stop', 'Shooting'.",
-            "title": "Nature",
-            "type": "string"
+          "offense_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Offense Codes",
+            "type": "array"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "weapons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Weapons",
+            "type": "array"
           }
         },
         "required": [
-          "call_number",
-          "dispatched_at",
-          "block",
+          "incident_at",
           "district",
-          "nature",
-          "status",
-          "category",
           "latitude",
-          "longitude"
+          "longitude",
+          "offense_codes",
+          "category",
+          "weapons"
         ],
-        "title": "MpdCall",
+        "title": "IncidentPoint",
         "type": "object"
       },
-      "MpdCallSummary": {
+      "JobStat": {
+        "description": "One kind and status in the queue: how many, and the oldest one due.",
         "properties": {
-          "by_category": {
-            "items": {
-              "$ref": "#/components/schemas/CountItem"
-            },
-            "title": "By Category",
-            "type": "array"
+          "kind": {
+            "title": "Kind",
+            "type": "string"
           },
-          "by_district": {
-            "description": "Districts 1-7 in order, then any others.",
-            "items": {
-              "$ref": "#/components/schemas/CountItem"
-            },
-            "title": "By District",
-            "type": "array"
-          },
-          "by_hour": {
-            "description": "Calls per clock hour (local time), oldest first, labelled like '2 PM'.",
-            "items": {
-              "$ref": "#/components/schemas/CountItem"
-            },
-            "title": "By Hour",
-            "type": "array"
-          },
-          "by_nature": {
-            "description": "The most common call types, most first (top 10).",
-            "items": {
-              "$ref": "#/components/schemas/CountItem"
-            },
-            "title": "By Nature",
-            "type": "array"
-          },
-          "hours": {
-            "description": "The window the calls and counts cover.",
-            "title": "Hours",
-            "type": "integer"
-          },
-          "mapped": {
-            "description": "Calls with coordinates (the rest couldn't be placed on the map).",
-            "title": "Mapped",
-            "type": "integer"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "hours",
-          "total",
-          "mapped",
-          "by_category",
-          "by_nature",
-          "by_district",
-          "by_hour"
-        ],
-        "title": "MpdCallSummary",
-        "type": "object"
-      },
-      "MpdCalls": {
-        "properties": {
-          "calls": {
-            "items": {
-              "$ref": "#/components/schemas/MpdCall"
-            },
-            "title": "Calls",
-            "type": "array"
-          },
-          "last_updated_at": {
+          "oldest_run_at": {
             "anyOf": [
               {
                 "format": "date-time",
@@ -1445,32 +1826,34 @@
                 "type": "null"
               }
             ],
-            "description": "When ingestion last read the MPD page successfully.",
-            "title": "Last Updated At"
+            "title": "Oldest Run At"
           },
-          "source": {
-            "default": "https://itmdapps.milwaukee.gov/MPDCallData/",
-            "title": "Source",
-            "type": "string"
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
           },
-          "stale": {
-            "description": "True when the last good read is more than 15 minutes old.",
-            "title": "Stale",
-            "type": "boolean"
-          },
-          "summary": {
-            "$ref": "#/components/schemas/MpdCallSummary"
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "calls",
-          "summary",
-          "last_updated_at",
-          "stale",
-          "source"
+          "kind",
+          "status",
+          "total",
+          "oldest_run_at"
         ],
-        "title": "MpdCalls",
+        "title": "JobStat",
         "type": "object"
+      },
+      "JobStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "done",
+          "dead"
+        ],
+        "title": "JobStatus",
+        "type": "string"
       },
       "Opportunity": {
         "properties": {
@@ -1488,6 +1871,13 @@
               }
             ],
             "title": "Apply Url"
+          },
+          "audiences": {
+            "items": {
+              "$ref": "#/components/schemas/Audience"
+            },
+            "title": "Audiences",
+            "type": "array"
           },
           "contact_email": {
             "anyOf": [
@@ -1511,6 +1901,16 @@
             ],
             "title": "Contact Phone"
           },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cost"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1519,6 +1919,19 @@
           "description": {
             "title": "Description",
             "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When applications close, if the source says.",
+            "title": "Expires At"
           },
           "id": {
             "format": "uuid",
@@ -1554,6 +1967,19 @@
             ],
             "title": "Pay"
           },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imports: when the source posted it.",
+            "title": "Posted At"
+          },
           "schedule": {
             "anyOf": [
               {
@@ -1564,6 +1990,12 @@
               }
             ],
             "title": "Schedule"
+          },
+          "source": {
+            "default": "manual",
+            "description": "'manual' for staff postings, else the import's source.",
+            "title": "Source",
+            "type": "string"
           },
           "title": {
             "title": "Title",
@@ -1587,6 +2019,11 @@
           "contact_phone",
           "contact_email",
           "apply_url",
+          "source",
+          "audiences",
+          "cost",
+          "posted_at",
+          "expires_at",
           "active",
           "created_at",
           "updated_at"
@@ -1597,9 +2034,19 @@
       "OpportunityKind": {
         "enum": [
           "volunteer",
-          "job"
+          "job",
+          "education"
         ],
         "title": "OpportunityKind",
+        "type": "string"
+      },
+      "OpportunityOrigin": {
+        "description": "A list filter: staff postings, imported ones, or (no filter) both.",
+        "enum": [
+          "manual",
+          "imported"
+        ],
+        "title": "OpportunityOrigin",
         "type": "string"
       },
       "OutcomeStatus": {
@@ -1738,6 +2185,111 @@
         "title": "PublicRequestUpdate",
         "type": "object"
       },
+      "Record": {
+        "properties": {
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "extraction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Extraction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Text"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RecordSource"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/RecordStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecordStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "source",
+          "status",
+          "stage",
+          "raw_text",
+          "extraction",
+          "case_id",
+          "error",
+          "created_at",
+          "updated_at",
+          "confirmed_at"
+        ],
+        "title": "Record",
+        "type": "object"
+      },
       "RecordOutcomeRequest": {
         "properties": {
           "reason_code": {
@@ -1762,6 +2314,38 @@
         ],
         "title": "RecordOutcomeRequest",
         "type": "object"
+      },
+      "RecordSource": {
+        "enum": [
+          "text",
+          "audio"
+        ],
+        "title": "RecordSource",
+        "type": "string"
+      },
+      "RecordStage": {
+        "description": "Where a record is in the pipeline. Each stage is one job kind.",
+        "enum": [
+          "upload",
+          "transcribe",
+          "redact",
+          "extract",
+          "done"
+        ],
+        "title": "RecordStage",
+        "type": "string"
+      },
+      "RecordStatus": {
+        "enum": [
+          "processing",
+          "ready",
+          "confirming",
+          "confirmed",
+          "failed",
+          "discarded"
+        ],
+        "title": "RecordStatus",
+        "type": "string"
       },
       "Referral": {
         "properties": {
@@ -2035,6 +2619,12 @@
             ],
             "title": "Phone"
           },
+          "source": {
+            "default": "manual",
+            "description": "'manual' for staff-entered, else the import's source.",
+            "title": "Source",
+            "type": "string"
+          },
           "website": {
             "anyOf": [
               {
@@ -2059,6 +2649,7 @@
           "hours",
           "latitude",
           "longitude",
+          "source",
           "is_sample",
           "active",
           "created_at"
@@ -2195,6 +2786,58 @@
           "role"
         ],
         "title": "SetRoleRequest",
+        "type": "object"
+      },
+      "SourceHealth": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "fetched": {
+            "title": "Fetched",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "status",
+          "finished_at",
+          "fetched",
+          "detail",
+          "last_success_at"
+        ],
+        "title": "SourceHealth",
         "type": "object"
       },
       "StaffMember": {
@@ -2575,6 +3218,245 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "TractCount": {
+        "properties": {
+          "incidents": {
+            "title": "Incidents",
+            "type": "integer"
+          },
+          "tract_geoid": {
+            "title": "Tract Geoid",
+            "type": "string"
+          },
+          "tract_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tract Name"
+          }
+        },
+        "required": [
+          "tract_geoid",
+          "tract_name",
+          "incidents"
+        ],
+        "title": "TractCount",
+        "type": "object"
+      },
+      "TransitAlert": {
+        "properties": {
+          "active_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Until"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "effect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effect"
+          },
+          "header": {
+            "title": "Header",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "header",
+          "description",
+          "effect",
+          "url",
+          "routes",
+          "active_until"
+        ],
+        "title": "TransitAlert",
+        "type": "object"
+      },
+      "TransitArrival": {
+        "properties": {
+          "arrives_at": {
+            "format": "date-time",
+            "title": "Arrives At",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "route_id": {
+            "title": "Route Id",
+            "type": "string"
+          },
+          "route_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Name"
+          }
+        },
+        "required": [
+          "route_id",
+          "route_name",
+          "arrives_at",
+          "minutes"
+        ],
+        "title": "TransitArrival",
+        "type": "object"
+      },
+      "TransitNearby": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/TransitAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "arrivals_live": {
+            "description": "false when the live arrivals feed couldn't be read.",
+            "title": "Arrivals Live",
+            "type": "boolean"
+          },
+          "attribution": {
+            "default": "Transit data from MCTS. Not sponsored or operated by MTS or MCTS.",
+            "title": "Attribution",
+            "type": "string"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/TransitStop"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "stops",
+          "alerts",
+          "arrivals_live",
+          "attribution"
+        ],
+        "title": "TransitNearby",
+        "type": "object"
+      },
+      "TransitStop": {
+        "properties": {
+          "arrivals": {
+            "items": {
+              "$ref": "#/components/schemas/TransitArrival"
+            },
+            "title": "Arrivals",
+            "type": "array"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "distance_m": {
+            "title": "Distance M",
+            "type": "number"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "route_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Route Names",
+            "type": "array"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stop_id",
+          "code",
+          "name",
+          "latitude",
+          "longitude",
+          "distance_m",
+          "routes",
+          "route_names",
+          "arrivals"
+        ],
+        "title": "TransitStop",
+        "type": "object"
+      },
       "UpdateCaseRequest": {
         "description": "Only the fields sent change. Send `assigned_worker_id: null` to\nunassign.",
         "properties": {
@@ -2948,6 +3830,259 @@
         "title": "VoiceAppService",
         "type": "object"
       },
+      "VoiceCallReview": {
+        "properties": {
+          "callback_consent": {
+            "title": "Callback Consent",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disposition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposition"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "referral_count": {
+            "minimum": 0.0,
+            "title": "Referral Count",
+            "type": "integer"
+          },
+          "referral_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Referral Names",
+            "type": "array"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "request_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Number"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "need_category",
+          "urgency_tier",
+          "callback_consent",
+          "disposition",
+          "started_at",
+          "ended_at",
+          "created_at",
+          "referral_count",
+          "referral_names",
+          "request_id",
+          "request_number"
+        ],
+        "title": "VoiceCallReview",
+        "type": "object"
+      },
+      "VoiceCallReviewDetail": {
+        "properties": {
+          "call": {
+            "$ref": "#/components/schemas/VoiceCallReview"
+          },
+          "referrals": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceReferralDetail"
+            },
+            "title": "Referrals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "call",
+          "referrals"
+        ],
+        "title": "VoiceCallReviewDetail",
+        "type": "object"
+      },
+      "VoiceCaseReceipt": {
+        "properties": {
+          "access_code": {
+            "title": "Access Code",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_number": {
+            "title": "Request Number",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "request_number",
+          "category",
+          "access_code",
+          "status"
+        ],
+        "title": "VoiceCaseReceipt",
+        "type": "object"
+      },
+      "VoiceCaseRequest": {
+        "description": "A minimal request the caller explicitly approved for ComForce staff.",
+        "properties": {
+          "approved_summary": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Approved Summary",
+            "type": "string"
+          },
+          "caller_id": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 8,
+                "pattern": "^\\+[1-9][0-9]{7,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caller Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "consent": {
+            "const": true,
+            "title": "Consent",
+            "type": "boolean"
+          },
+          "contact_method": {
+            "$ref": "#/components/schemas/ContactMethod",
+            "default": "none"
+          },
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "general_location": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "General Location"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "consent",
+          "approved_summary",
+          "category"
+        ],
+        "title": "VoiceCaseRequest",
+        "type": "object"
+      },
       "VoiceDashboard": {
         "properties": {
           "active_referrals": {
@@ -3079,6 +4214,128 @@
           "created_at"
         ],
         "title": "VoiceReferral",
+        "type": "object"
+      },
+      "VoiceReferralDetail": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "hours_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Label"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "outcome_reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome Reason Code"
+          },
+          "outcome_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutcomeStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "resource_category": {
+            "title": "Resource Category",
+            "type": "string"
+          },
+          "resource_description": {
+            "title": "Resource Description",
+            "type": "string"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "resource_slug": {
+            "title": "Resource Slug",
+            "type": "string"
+          },
+          "service_area": {
+            "title": "Service Area",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoiceReferralStatus"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "need_category",
+          "resource_slug",
+          "resource_name",
+          "resource_category",
+          "resource_description",
+          "phone_e164",
+          "languages",
+          "service_area",
+          "hours_label",
+          "status",
+          "outcome_status",
+          "outcome_reason_code",
+          "created_at"
+        ],
+        "title": "VoiceReferralDetail",
         "type": "object"
       },
       "VoiceReferralStatus": {
@@ -3261,6 +4518,160 @@
           "app_destination"
         ],
         "title": "VoiceRouteResponse",
+        "type": "object"
+      },
+      "VoiceUpload": {
+        "description": "Where the app uploads a voice debrief: PUT the audio to `upload_url`\nwith this Content-Type, then call `POST /records/{id}/uploaded`.",
+        "properties": {
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "max_bytes": {
+            "title": "Max Bytes",
+            "type": "integer"
+          },
+          "record": {
+            "$ref": "#/components/schemas/Record"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record",
+          "upload_url",
+          "content_type",
+          "max_bytes",
+          "expires_in_seconds"
+        ],
+        "title": "VoiceUpload",
+        "type": "object"
+      },
+      "WeatherAlert": {
+        "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "effective_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective At"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "urgency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "headline",
+          "severity",
+          "urgency",
+          "area",
+          "description",
+          "instruction",
+          "url",
+          "effective_at",
+          "expires_at"
+        ],
+        "title": "WeatherAlert",
         "type": "object"
       },
       "WebhookAccepted": {
@@ -4097,6 +5508,32 @@
         ]
       }
     },
+    "/v1/jobs/stats": {
+      "get": {
+        "description": "Jobs by kind and status: everything queued, running or dead, and what\nfinished in the last day. `oldest_run_at` on queued work shows a backlog.",
+        "operationId": "job_stats_v1_jobs_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/JobStat"
+                  },
+                  "title": "Response Job Stats V1 Jobs Stats Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Job Stats",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "description": "The signed-in user; the first call provisions them.",
@@ -4161,7 +5598,7 @@
     },
     "/v1/opportunities": {
       "get": {
-        "description": "Open opportunities, newest first. `q` matches the title,\norganization, description or location.",
+        "description": "Open opportunities: staff postings first, then the newest. `q`\nmatches the title, organization, description or location.",
         "operationId": "list_opportunities_v1_opportunities_get",
         "parameters": [
           {
@@ -4198,6 +5635,42 @@
             }
           },
           {
+            "description": "Only postings open to this audience.",
+            "in": "query",
+            "name": "audience",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Audience"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only postings open to this audience.",
+              "title": "Audience"
+            }
+          },
+          {
+            "description": "manual: staff postings; imported: from the data loader.",
+            "in": "query",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OpportunityOrigin"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "manual: staff postings; imported: from the data loader.",
+              "title": "Origin"
+            }
+          },
+          {
             "description": "Staff only; ignored for everyone else.",
             "in": "query",
             "name": "include_closed",
@@ -4207,6 +5680,18 @@
               "description": "Staff only; ignored for everyone else.",
               "title": "Include Closed",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],
@@ -4242,7 +5727,7 @@
         ]
       },
       "post": {
-        "description": "Post a volunteer or job opportunity. Staff only.",
+        "description": "Post a volunteer, job or education opportunity. Staff only.",
         "operationId": "create_opportunity_v1_opportunities_post",
         "requestBody": {
           "content": {
@@ -4375,6 +5860,475 @@
         "summary": "Update Opportunity",
         "tags": [
           "opportunities"
+        ]
+      }
+    },
+    "/v1/public-data/calls": {
+      "get": {
+        "description": "Delayed dispatch calls (MPD 30-90 minutes, MFD 15-105): not confirmed\nincidents. Sensitive call types are never listed.",
+        "operationId": "calls_v1_public_data_calls_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(mpd|mfd)_calls$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "maximum": 48,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 300,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DispatchCall"
+                  },
+                  "title": "Response Calls V1 Public Data Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Calls",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/community-needs": {
+      "get": {
+        "description": "CDC PLACES modeled estimates of health-related social needs by tract\n(yearly). Context only: never for prioritizing people.",
+        "operationId": "community_needs_v1_public_data_community_needs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tract_geoid",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{11}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tract Geoid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "measure_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 20,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Measure Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommunityMeasure"
+                  },
+                  "title": "Response Community Needs V1 Public Data Community Needs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Community Needs",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/crime-trends": {
+      "get": {
+        "description": "FBI monthly totals and rates for MPD, Wisconsin and the US.",
+        "operationId": "crime_trends_v1_public_data_crime_trends_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offense",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Offense"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CrimeTrendPoint"
+                  },
+                  "title": "Response Crime Trends V1 Public Data Crime Trends Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Crime Trends",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/incidents": {
+      "get": {
+        "description": "MPD-reviewed incidents (NIBRS, updated daily, may lag weeks), newest\nfirst, each at about 1 km and with the app's map category.",
+        "operationId": "incidents_v1_public_data_incidents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5000,
+              "maximum": 20000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentPoint"
+                  },
+                  "title": "Response Incidents V1 Public Data Incidents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Incidents",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/incidents/by-tract": {
+      "get": {
+        "description": "Incident counts per census tract; tracts with fewer than 5 are left out.",
+        "operationId": "incidents_by_tract_v1_public_data_incidents_by_tract_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "A NIBRS code, e.g. 13A.",
+            "in": "query",
+            "name": "offense_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A NIBRS code, e.g. 13A.",
+              "title": "Offense Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TractCount"
+                  },
+                  "title": "Response Incidents By Tract V1 Public Data Incidents By Tract Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Incidents By Tract",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/sources": {
+      "get": {
+        "description": "Each source's latest loader run and when it last succeeded.",
+        "operationId": "sources_v1_public_data_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceHealth"
+                  },
+                  "title": "Response Sources V1 Public Data Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/transit/nearby": {
+      "get": {
+        "description": "The nearest MCTS stops, their next arrivals and any service alerts.",
+        "operationId": "transit_nearby_v1_public_data_transit_nearby_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "latitude",
+            "required": true,
+            "schema": {
+              "maximum": 43.5,
+              "minimum": 42.5,
+              "title": "Latitude",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "longitude",
+            "required": true,
+            "schema": {
+              "maximum": -87.5,
+              "minimum": -88.5,
+              "title": "Longitude",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "radius_m",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 2000,
+              "minimum": 50,
+              "title": "Radius M",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitNearby"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transit Nearby",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/weather-alerts": {
+      "get": {
+        "description": "National Weather Service alerts in effect for Milwaukee County.",
+        "operationId": "weather_alerts_v1_public_data_weather_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherAlert"
+                  },
+                  "title": "Response Weather Alerts V1 Public Data Weather Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Weather Alerts",
+        "tags": [
+          "public data"
         ]
       }
     },
@@ -4543,6 +6497,321 @@
         "summary": "Reply To Anonymous Request",
         "tags": [
           "requests"
+        ]
+      }
+    },
+    "/v1/records": {
+      "get": {
+        "description": "The caller's records, newest first.",
+        "operationId": "my_records_v1_records_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Record"
+                  },
+                  "title": "Response My Records V1 Records Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Records",
+        "tags": [
+          "records"
+        ]
+      },
+      "post": {
+        "description": "Capture a typed debrief. 202: it's processed in the background; poll\n`GET /records/{id}` until `status` is `ready` (or `failed`).",
+        "operationId": "create_record_v1_records_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/voice": {
+      "post": {
+        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server.",
+        "operationId": "start_voice_record_v1_records_voice_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceUpload"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Voice Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}": {
+      "delete": {
+        "description": "Throw a record away; its text is deleted. A case it became stays.",
+        "operationId": "discard_record_v1_records__record_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discard Record",
+        "tags": [
+          "records"
+        ]
+      },
+      "get": {
+        "operationId": "get_record_v1_records__record_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/confirm": {
+      "post": {
+        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. Calling it again returns the same\ncase.",
+        "operationId": "confirm_record_v1_records__record_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/retry": {
+      "post": {
+        "description": "Process a failed record again, from the stage it stopped at.",
+        "operationId": "retry_record_v1_records__record_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry Record",
+        "tags": [
+          "records"
+        ]
+      }
+    },
+    "/v1/records/{record_id}/uploaded": {
+      "post": {
+        "description": "The recording is uploaded: it's transcribed, redacted and read in the\nbackground. Poll `GET /records/{id}` as for a typed debrief.",
+        "operationId": "voice_uploaded_v1_records__record_id__uploaded_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Voice Uploaded",
+        "tags": [
+          "records"
         ]
       }
     },
@@ -4903,54 +7172,6 @@
         "summary": "Route Request",
         "tags": [
           "routing"
-        ]
-      }
-    },
-    "/v1/safety/calls": {
-      "get": {
-        "description": "MPD calls for service dispatched in the last `hours`, newest first,\nwith counts by category, call type, district and hour. Locations are\ngeneralized: a block or intersection and coordinates rounded to about\n110 m. Calls are delayed 30-90 minutes by MPD and are not confirmed\ncrimes.",
-        "operationId": "recent_calls_v1_safety_calls_get",
-        "parameters": [
-          {
-            "description": "How far back to look, by dispatch time.",
-            "in": "query",
-            "name": "hours",
-            "required": false,
-            "schema": {
-              "default": 6,
-              "description": "How far back to look, by dispatch time.",
-              "maximum": 72,
-              "minimum": 1,
-              "title": "Hours",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MpdCalls"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Recent Calls",
-        "tags": [
-          "safety"
         ]
       }
     },
@@ -5552,6 +7773,30 @@
       }
     },
     "/v1/voice/referrals": {
+      "get": {
+        "description": "Reviewed resources referred during calls linked to this account.",
+        "operationId": "my_referrals_v1_voice_referrals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceReferralDetail"
+                  },
+                  "title": "Response My Referrals V1 Voice Referrals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Referrals",
+        "tags": [
+          "voice"
+        ]
+      },
       "post": {
         "operationId": "create_referral_v1_voice_referrals_post",
         "parameters": [
@@ -5605,6 +7850,49 @@
           }
         },
         "summary": "Create Referral",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}": {
+      "get": {
+        "operationId": "my_referral_v1_voice_referrals__referral_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceReferralDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "My Referral",
         "tags": [
           "voice"
         ]
@@ -5727,6 +8015,66 @@
           }
         },
         "summary": "Record Responder Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/requests": {
+      "post": {
+        "description": "Create a consented anonymous Get Help case from approved fields only.",
+        "operationId": "submit_voice_request_v1_voice_requests_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCaseReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Voice Request",
         "tags": [
           "voice"
         ]
@@ -5875,6 +8223,75 @@
           }
         },
         "summary": "Route Voice Request",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/staff/calls": {
+      "get": {
+        "description": "Structured call outcomes for ComForce review; never transcripts.",
+        "operationId": "staff_call_reviews_v1_voice_staff_calls_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceCallReview"
+                  },
+                  "title": "Response Staff Call Reviews V1 Voice Staff Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Staff Call Reviews",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/staff/calls/{call_id}": {
+      "get": {
+        "operationId": "staff_call_review_v1_voice_staff_calls__call_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCallReviewDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Staff Call Review",
         "tags": [
           "voice"
         ]

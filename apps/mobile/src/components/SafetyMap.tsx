@@ -57,7 +57,7 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
       lng: call.longitude,
       label: call.nature,
       color: callCategory(call.category).color,
-      time: `${call.occurredAt} · ${call.block}`,
+      time: call.occurredAt,
       detail: `911 call · ${callCategory(call.category).label} · District ${call.district} · ${call.status}`,
     }));
 

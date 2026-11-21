@@ -13,8 +13,10 @@ from models.voice import (
     VoiceResource,
     VoiceCall,
     VoiceCallEvent,
+    VoiceCallReview,
     VoiceDashboard,
     VoiceFollowUp,
+    VoiceReferralDetail,
 )
 
 
@@ -130,6 +132,37 @@ class VoiceDatabridge(Databridge):
         return [
             VoiceFollowUp(**row)
             for row in await self._rows("voice_follow_up_list", user_id=user_id)
+        ]
+
+    async def referrals_for_user(self, user_id: UUID) -> list[VoiceReferralDetail]:
+        return [
+            VoiceReferralDetail(**row)
+            for row in await self._rows("voice_referral_list_for_user", user_id=user_id)
+        ]
+
+    async def referral_for_user(
+        self, user_id: UUID, referral_id: UUID
+    ) -> VoiceReferralDetail | None:
+        row = await self._first(
+            "voice_referral_get_for_user",
+            user_id=user_id,
+            referral_id=referral_id,
+        )
+        return VoiceReferralDetail(**row) if row else None
+
+    async def call_reviews(self) -> list[VoiceCallReview]:
+        return [
+            VoiceCallReview(**row) for row in await self._rows("voice_call_review_list")
+        ]
+
+    async def call_review(self, call_id: UUID) -> VoiceCallReview | None:
+        row = await self._first("voice_call_review_get", call_id=call_id)
+        return VoiceCallReview(**row) if row else None
+
+    async def referrals_for_call(self, call_id: UUID) -> list[VoiceReferralDetail]:
+        return [
+            VoiceReferralDetail(**row)
+            for row in await self._rows("voice_referral_list_for_call", call_id=call_id)
         ]
 
     async def record_outcome(

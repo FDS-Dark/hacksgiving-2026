@@ -3,28 +3,33 @@ import { useDeferredValue, useState } from 'react';
 import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { OPPORTUNITY_KINDS, type OpportunityKind } from '@/api/types';
-import { KIND_INFO, OpportunityCard } from '@/components/OpportunityCard';
+import { AUDIENCE_INFO, KIND_INFO, OpportunityCard } from '@/components/OpportunityCard';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
 import { Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
 import { useOpportunities } from '@/services/opportunities';
 import { radius, space, useTheme } from '@/theme/tokens';
 
-/** Residents search the volunteer and job opportunities ComForce has posted. */
+/** Residents search jobs, education and volunteer work: ComForce's own
+ *  postings first, then listings the data loader imports from job boards. */
 export default function OpportunitiesScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const [q, setQ] = useState('');
   const [kind, setKind] = useState<OpportunityKind | null>(null);
+  const [secondChance, setSecondChance] = useState(false);
   // Search as they type; deferring keeps typing smooth while results load.
   const search = useDeferredValue(q);
-  const list = useOpportunities({ q: search, kind });
+  const list = useOpportunities({ q: search, kind, audience: secondChance ? 'second_chance' : null });
+  const filtered = Boolean(q.trim() || kind || secondChance);
   const columns = width >= 900 ? 2 : 1;
 
   return (
     <Page refreshing={list.isRefetching} onRefresh={() => list.refetch()} contentStyle={{ gap: space.lg }}>
-      <ResidentHeader kicker="Volunteer and jobs" title="Opportunities" />
-      <Text style={{ fontSize: 15, color: theme.textSecondary }}>Jobs and volunteer work posted by ComForce MKE and our partners.</Text>
+      <ResidentHeader kicker="Jobs, education and volunteering" title="Opportunities" />
+      <Text style={{ fontSize: 15, color: theme.textSecondary }}>
+        Postings from ComForce MKE and our partners come first, then free training and jobs from public job boards.
+      </Text>
 
       <View style={[styles.search, { backgroundColor: theme.fill }]}>
         <Ionicons name="search" size={18} color={theme.textSecondary} />
@@ -44,8 +49,9 @@ export default function OpportunitiesScreen() {
       <Chips>
         <Chip label="All" active={kind === null} onPress={() => setKind(null)} />
         {OPPORTUNITY_KINDS.map((k) => (
-          <Chip key={k} label={k === 'job' ? 'Jobs' : 'Volunteer'} active={kind === k} onPress={() => setKind(k)} />
+          <Chip key={k} label={KIND_INFO[k].plural} active={kind === k} onPress={() => setKind(k)} />
         ))}
+        <Chip label={AUDIENCE_INFO.second_chance.label} active={secondChance} onPress={() => setSecondChance((on) => !on)} />
       </Chips>
 
       {list.isPending ? (
@@ -56,7 +62,7 @@ export default function OpportunitiesScreen() {
         <EmptyState
           icon={kind ? KIND_INFO[kind].icon : 'search-outline'}
           title="Nothing found"
-          body={q.trim() || kind ? 'Try a different search or filter.' : 'No opportunities are posted right now. Check back soon.'}
+          body={filtered ? 'Try a different search or filter.' : 'No opportunities are posted right now. Check back soon.'}
         />
       ) : (
         <View style={styles.grid}>

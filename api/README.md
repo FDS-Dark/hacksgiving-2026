@@ -6,7 +6,7 @@ FastAPI backend for hacksgiving.
 
 Layered, one direction of dependency, and the same domains in every layer
 (see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)):
-`user`, `staff`, `case`, `task`, `resource`, `routing` and `voice`.
+`user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record` and `job`.
 
 ```
 routers/<domain>.py     HTTP: request/response models, status codes, auth dependencies
@@ -16,6 +16,7 @@ routers/<domain>.py     HTTP: request/response models, status codes, auth depend
 models/<domain>.py      Pydantic models passed between the layers (base: models/base.py)
 adapters/               clients for external services, called only from services
 engine/                 owns the SQLAlchemy async engine + connection URL
+worker/                 the background worker process (python -m worker): runs queued jobs
 ```
 
 - **There is no SQL in the API.** `databridge/executor.py` sends the one
@@ -88,8 +89,47 @@ stored.
 | `/v1/public/requests/...` (requests without an account, by access code) | `CaseService` |
 | `/v1/tasks/...` | `TaskService` |
 | `/v1/resources/...` (the resource directory) | `ResourceService` |
+| `/v1/opportunities/...` (jobs, education, volunteering) | `OpportunityService` |
+| `/v1/public-data/...` (incidents, calls, transit, alerts; no sign-in) | `PublicDataService` |
 | `POST /v1/route` (sort a request for help) | `RoutingService` |
 | `/v1/voice/...` (ElevenLabs webhook and tools, handoffs, follow-ups) | `VoiceService` |
+| `/v1/records/...` (Phantom debriefs: create, follow, retry, confirm into a case, discard) | `RecordService` |
+| `GET /v1/jobs/stats` (queue health, admins) | `JobService` |
+
+## Background work (Phantom)
+
+Slow work runs in a separate process from a job queue in Postgres
+([ADR 0009](../docs/decisions/0009-postgres-job-queue.md)), never inside a
+request:
+
+```
+typed:  POST /v1/records             ->  record + job "record.redact"       (one transaction)
+voice:  POST /v1/records/voice       ->  record + a one-time upload URL
+        the app PUTs the .m4a to storage (adapters/storage.py)
+        POST /v1/records/{id}/uploaded  ->  checks it, job "record.transcribe"
+worker: record.transcribe  speech to text (services/transcription.py), then deletes the audio
+        record.redact      names, phones, emails out (services/redaction.py)
+        record.extract     OpenAI structured output (services/extraction.py)
+        -> record ready; the author reviews it in the app
+POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
+```
+
+- `services/pipeline.py` holds the stages; `worker/runner.py` claims, runs,
+  retries and dead-letters them; `worker/__main__.py` wires it all up.
+- Name removal is best effort (rules, not a model): the app says "names we
+  can spot are removed", never "all names". For voice, the audio itself goes
+  to the transcription service before redaction; the app says that too.
+- Audio is never kept: deleted after transcription, when a transcribe job
+  finds nothing to do or dies, on discard, and by a sweeper in the worker's
+  upkeep that lists the bucket (so it also finds orphans). An error that
+  retrying can't fix (unreadable audio, silence) dead-letters at once.
+- Storage has two backends behind one interface (`adapters/storage.py`):
+  Supabase Storage's own API in production, with a secret API key that
+  `../database/terraform/storage.tf` creates and writes into the runtime db secret in Vault (no manual
+  setup; the API and worker create the private bucket on startup), and any
+  S3-compatible store locally (the `storage` container).
+- Run it locally beside the API: `uv run python -m worker` (needs
+  `APP__OPENAI__API_KEY`; liveness on `:8090`).
 
 ## Adding a resource
 
@@ -111,12 +151,22 @@ stored.
 7. **The app's types:** `uv run python scripts/export_openapi.py
    ../apps/mobile/openapi.json`, then `npm run gen:api` in `apps/mobile`.
 
+## Data loader
+
+`python -m loader` keeps outside data current: opportunities and resources
+(USAJOBS, CareerOneStop, Hunger Task Force) and public data (NIBRS incidents,
+MPD/MFD calls, boundaries, MCTS transit, NWS alerts, CDC PLACES, FBI
+trends), served at `/v1/public-data`. Daily sources run nightly, live ones
+every 5 minutes. See [docs/data-loader.md](../docs/data-loader.md).
+
 ## Local development
 
 ```bash
 cp example.env .env   # fill in real values
+(cd ../database && docker compose up -d)   # Postgres, and S3-compatible storage for voice
 uv sync
 uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run python -m worker                     # in another terminal: background jobs
 ```
 
 ## Tests

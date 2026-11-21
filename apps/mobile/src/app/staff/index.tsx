@@ -6,6 +6,7 @@ import { Page } from '@/components/Page';
 import { RefreshError } from '@/components/RefreshError';
 import { CaseListSkeleton, TilesSkeleton } from '@/components/Skeleton';
 import { CaseLine } from '@/components/staff/CaseLine';
+import { Debriefs } from '@/components/staff/Debriefs';
 import { ErrorBanner } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
@@ -72,6 +73,7 @@ export default function TodayScreen() {
         <ErrorBanner error={open.error} onRetry={() => open.refetch()} />
       ) : (
         <>
+          <Debriefs />
           <Section title="Assigned to you" link={mine.length ? `${mine.length} open` : undefined} href="/staff/cases?view=mine">
             {mine.length ? (
               mine.slice(0, 5).map((c) => (

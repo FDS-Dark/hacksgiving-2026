@@ -1,23 +1,30 @@
 /**
- * Volunteer and job opportunities: residents search the open ones, ComForce
- * staff post them and close them (staff also see closed ones).
+ * Volunteer, job and education opportunities: residents search the open ones,
+ * ComForce staff post them and close them (staff also see closed ones). The
+ * data loader imports more from public job boards (docs/data-loader.md).
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { request } from '@/api/client';
-import type { CreateOpportunity, Opportunity, OpportunityKind } from '@/api/types';
+import type { Audience, CreateOpportunity, Opportunity, OpportunityKind, OpportunityOrigin } from '@/api/types';
 
 export interface OpportunityFilters {
   q?: string;
   kind?: OpportunityKind | null;
+  /** Only postings open to this audience (e.g. second chance). */
+  audience?: Audience | null;
+  /** manual: staff postings; imported: from the data loader; unset: both. */
+  origin?: OpportunityOrigin | null;
   /** Staff only: the API ignores it for everyone else. */
   includeClosed?: boolean;
 }
 
-function query({ q, kind, includeClosed }: OpportunityFilters) {
+function query({ q, kind, audience, origin, includeClosed }: OpportunityFilters) {
   const params = new URLSearchParams();
   if (q?.trim()) params.set('q', q.trim());
   if (kind) params.set('kind', kind);
+  if (audience) params.set('audience', audience);
+  if (origin) params.set('origin', origin);
   if (includeClosed) params.set('include_closed', 'true');
   const s = params.toString();
   return s ? `?${s}` : '';

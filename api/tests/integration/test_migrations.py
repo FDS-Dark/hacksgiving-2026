@@ -25,7 +25,9 @@ def _fetch(database: str, sql: str) -> list[tuple]:
 
 
 def _head() -> str:
-    head = ScriptDirectory.from_config(Config(str(DATABASE_DIR / "alembic.ini"))).get_current_head()
+    head = ScriptDirectory.from_config(
+        Config(str(DATABASE_DIR / "alembic.ini"))
+    ).get_current_head()
     assert head
     return head
 
@@ -55,13 +57,19 @@ API_FUNCTIONS = """
 
 def test_migrations_round_trip(empty_database):
     alembic(empty_database, "upgrade", "head")
-    assert _fetch(empty_database, "SELECT version_num FROM alembic_version") == [(_head(),)]
+    assert _fetch(empty_database, "SELECT version_num FROM alembic_version") == [
+        (_head(),)
+    ]
     tables = [name for (name,) in _fetch(empty_database, APP_TABLES)]
-    assert {"users", "cases", "case_updates", "resources", "case_referrals"} <= set(tables)
+    assert {"users", "cases", "case_updates", "resources", "case_referrals"} <= set(
+        tables
+    )
 
     alembic(empty_database, "downgrade", "base")
     assert _fetch(empty_database, "SELECT version_num FROM alembic_version") == []
-    assert _fetch(empty_database, "SELECT 1 FROM pg_namespace WHERE nspname = 'app'") == []
+    assert (
+        _fetch(empty_database, "SELECT 1 FROM pg_namespace WHERE nspname = 'app'") == []
+    )
 
     alembic(empty_database, "upgrade", "head")
     assert [name for (name,) in _fetch(empty_database, APP_TABLES)] == tables
@@ -82,8 +90,10 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0008_get_help",
             "0009_case_tasks_resource_coordinates",
             "0010_opportunities",
-            "0011_mpd_calls",
-            "0012_mpd_ingest_lease",
+            "0011_jobs_and_records",
+            "0012_voice_referral_history",
+            "0013_data_loader",
+            "0014_public_data",
         )
         for name in _revision(revision).FUNCTIONS
     }
