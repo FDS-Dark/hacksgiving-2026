@@ -1,6 +1,6 @@
 /**
- * Case management: the ComForce worker portal's server data (staff only),
- * plus the community-facing request calls the external app can use.
+ * Case management: the ComForce worker portal's server data (staff only).
+ * A resident's own requests are in requests.ts.
  * Keys live here, not in queryClient.ts, so this domain stays self-contained.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,17 +18,17 @@ import type {
   CreateCase,
   CreateResource,
   DraftMessage,
-  PublicRequest,
-  PublicRequestDetail,
   Referral,
   Resource,
   ResourceSuggestions,
   Role,
   StaffMember,
   StaffStatus,
-  SubmitRequest,
+  Task,
+  TaskFilters,
   UpdateCase,
   UpdateReferral,
+  UpdateTask,
   UserSummary,
   Worker,
 } from '@/api/types';
@@ -66,11 +66,9 @@ export const resourcesApi = {
   create: (body: CreateResource) => request<Resource>('/resources', { method: 'POST', body }),
 };
 
-/** For the community app: a member's own requests for help. */
-export const requestsApi = {
-  submit: (body: SubmitRequest) => request<PublicRequest>('/requests', { method: 'POST', body }),
-  mine: () => request<PublicRequest[]>('/requests'),
-  get: (id: string) => request<PublicRequestDetail>(`/requests/${id}`),
+export const tasksApi = {
+  list: (filters: Partial<TaskFilters>) => request<Task[]>(`/tasks${query(filters)}`),
+  update: (id: string, body: UpdateTask) => request<Task>(`/tasks/${id}`, { method: 'PATCH', body }),
 };
 
 export const caseKeys = {
@@ -82,8 +80,7 @@ export const caseKeys = {
   workers: ['staff', 'workers'] as const,
   users: ['staff', 'users'] as const,
   resources: (q?: string, category?: string | null) => ['resources', q ?? '', category ?? ''] as const,
-  myRequests: ['requests', 'mine'] as const,
-  myRequest: (id: string) => ['requests', id] as const,
+  tasks: (filters: Partial<TaskFilters>) => ['cases', 'tasks', filters] as const,
 };
 
 // ── Staff ──────────────────────────────────────────────────────────────────
@@ -185,17 +182,17 @@ export function useCreateResource() {
   return useMutation({ mutationFn: resourcesApi.create, onSuccess: () => qc.invalidateQueries({ queryKey: ['resources'] }) });
 }
 
-// ── Community requests (for the external app) ──────────────────────────────
+// ── Tasks ────────────────────────────────────────────────────────────────
 
-export function useSubmitRequest() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: requestsApi.submit, onSuccess: () => qc.invalidateQueries({ queryKey: ['requests'] }) });
+/** Tasks live under the 'cases' key, so any case change refreshes them too. */
+export function useTasks(filters: Partial<TaskFilters>, enabled = true) {
+  return useQuery({ queryKey: caseKeys.tasks(filters), queryFn: () => tasksApi.list(filters), refetchInterval: 30_000, enabled });
 }
 
-export function useMyRequests() {
-  return useQuery({ queryKey: caseKeys.myRequests, queryFn: requestsApi.mine });
-}
-
-export function useMyRequest(id: string) {
-  return useQuery({ queryKey: caseKeys.myRequest(id), queryFn: () => requestsApi.get(id) });
+export function useUpdateTask() {
+  const invalidate = useInvalidateCase();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateTask }) => tasksApi.update(id, body),
+    onSuccess: (task) => invalidate(task.case_id),
+  });
 }

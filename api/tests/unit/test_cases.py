@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from databridge.case import CaseDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
+from databridge.task import TaskDatabridge
 from dependencies import get_current_user, get_staff_service
 from errors import ApiError
 from main import app
@@ -30,6 +31,7 @@ from models.user import AppUser
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.staff import StaffService
+from services.tasks import TaskService
 from tests.helpers import auth_header
 from tests.unit.fakes import FakeFunctions
 
@@ -75,7 +77,8 @@ def staff_row(user_id: UUID, role: str) -> dict[str, Any]:
 
 
 def service(db: FakeFunctions) -> CaseService:
-    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), StaffService(StaffDatabridge(db)))
+    staff = StaffService(StaffDatabridge(db))
+    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), staff, TaskService(TaskDatabridge(db), staff))
 
 
 def worker(user_id: UUID | None = None) -> StaffMember:
@@ -87,24 +90,24 @@ def worker(user_id: UUID | None = None) -> StaffMember:
 
 async def test_a_submission_is_triaged_and_an_urgent_one_is_high_priority(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], case_add_update=[update_row(case)],
-                       request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], case_add_update=[update_row(case)],
+                       request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         return Triage(category=CaseCategory.HOMELESSNESS, urgent=True, reason="Evicted today.")
 
     await service(db).submit_request(sample_user, SubmitRequest(description="We were evicted"), triage)
 
-    (created,) = db.called("case_create")
-    assert (created["category"], created["priority"], created["source"]) == ("homelessness", "high", "public")
-    assert created["requester_id"] == sample_user.id and created["assigned_worker_id"] is None
+    (created,) = db.called("request_create")
+    assert (created["category"], created["priority"]) == ("homelessness", "high")
+    assert created["requester_id"] == sample_user.id and created["access_code_hash"] is None
     (note,) = db.called("case_add_update")
     assert note["visibility"] == "internal" and "Evicted today." in note["content"]
 
 
 async def test_a_failing_triage_never_blocks_a_submission(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         raise TimeoutError
@@ -112,13 +115,13 @@ async def test_a_failing_triage_never_blocks_a_submission(sample_user: AppUser):
     request = await service(db).submit_request(sample_user, SubmitRequest(description="help"), triage)
 
     assert request.id == case["id"]
-    assert db.called("case_create")[0]["category"] == "other"
+    assert db.called("request_create")[0]["category"] == "other"
     assert db.called("case_add_update") == []
 
 
 async def test_a_chosen_category_skips_triage(sample_user: AppUser):
     case = case_row()
-    db = FakeFunctions(case_create=[case], request_get_for_user=[public_row(case)])
+    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=[])
 
     async def triage(text: str) -> Triage:
         raise AssertionError("not called")
@@ -126,7 +129,7 @@ async def test_a_chosen_category_skips_triage(sample_user: AppUser):
     body = SubmitRequest(description="Need groceries", category=CaseCategory.MEAL_PROGRAMS)
     await service(db).submit_request(sample_user, body, triage)
 
-    assert db.called("case_create")[0]["category"] == "meal_programs"
+    assert db.called("request_create")[0]["category"] == "meal_programs"
 
 
 @pytest.mark.parametrize("field", ["priority", "status", "assigned_worker_id", "requester_id"])
@@ -254,7 +257,7 @@ def detail_with(case: dict[str, Any], updates: list[dict[str, Any]], referrals=(
     from models.case import Case, CaseUpdate, Referral
 
     return CaseDetail(case=Case(**case), updates=[CaseUpdate(**u) for u in updates],
-                      referrals=[Referral(**r) for r in referrals])
+                      referrals=[Referral(**r) for r in referrals], tasks=[])
 
 
 def test_the_model_never_sees_contact_details_and_drafts_never_see_internal_notes():

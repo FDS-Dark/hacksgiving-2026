@@ -13,7 +13,9 @@ from routers.health import router as health
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
+from routers.public_request import router as public_requests
 from routers.staff import router as staff
+from routers.task import router as tasks
 from routers.user import router as user
 from routers.voice import router as voice
 from settings import config
@@ -43,14 +45,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=config.cors_origins,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Accept", "Authorization", "X-Request-ID"],
+    allow_headers=["Content-Type", "Accept", "Authorization", "X-Request-ID", "X-Access-Code"],
     expose_headers=["X-Request-ID"],
     max_age=3600,
 )
 
 errors.install(app)
 
-for router in (health, user, routing, requests, cases, resources, staff, voice):
+for router in (health, user, routing, requests, public_requests, cases, tasks, resources, staff, voice):
     app.include_router(router, prefix="/v1")
 
 

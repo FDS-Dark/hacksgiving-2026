@@ -3,13 +3,16 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandLogo } from '@/components/BrandLogo';
+import { HelpPanel } from '@/components/HelpPanel';
+import { QuickExitButton } from '@/components/resident';
 import { Display, Green, RedRule, Ribbon } from '@/components/brand';
 import { Button, Txt } from '@/components/ui';
 import { auth0Configured, devSignInAvailable, redirectUri, useAuth } from '@/lib/auth';
 import { radius, space, useTheme } from '@/theme/tokens';
 
-/** The first screen for anyone signed out. Sign-up and sign-in both go
- *  through Auth0 Universal Login; "Create an account" opens it on sign-up. */
+/** The first screen for anyone signed out: getting help (no account
+ *  needed), then sign-up and sign-in, which both go through Auth0
+ *  Universal Login; "Create an account" opens it on sign-up. */
 export default function SignInScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -20,8 +23,19 @@ export default function SignInScreen() {
       style={{ flex: 1, backgroundColor: theme.bg }}
       contentContainerStyle={[styles.root, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}
     >
+      {/* Help first, no account needed: an emergency shouldn't wait on a sign-in. */}
+      <View style={styles.exitRow}>
+        <QuickExitButton />
+      </View>
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator, boxShadow: theme.shadow }]}>
-        <BrandLogo width={260} />
+        <BrandLogo width={220} />
+        <HelpPanel />
+        <Txt variant="footnote" tone="secondary" style={{ textAlign: 'center' }}>
+          No account needed to ask for help.
+        </Txt>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator, boxShadow: theme.shadow }]}>
 
         <View style={styles.intro}>
           <Ribbon>We Empower. We Protect. We Uplift.</Ribbon>
@@ -82,7 +96,8 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: space.lg },
+  root: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: space.lg, gap: space.xl },
+  exitRow: { width: '100%', maxWidth: 480, alignSelf: 'center', flexDirection: 'row', justifyContent: 'flex-end', marginBottom: -space.md },
   card: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: space.xl, padding: space.xl, borderWidth: 1, borderRadius: radius.md },
   intro: { gap: space.md },
   actions: { gap: space.sm },

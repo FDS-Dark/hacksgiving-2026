@@ -103,6 +103,24 @@
         "title": "AddReferralRequest",
         "type": "object"
       },
+      "AnonymousRequestReceipt": {
+        "description": "A request sent without an account. The access code is shown once:\nwith the request's number it is the only way back to the request.",
+        "properties": {
+          "access_code": {
+            "title": "Access Code",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/PublicRequest"
+          }
+        },
+        "required": [
+          "request",
+          "access_code"
+        ],
+        "title": "AnonymousRequestReceipt",
+        "type": "object"
+      },
       "AppUser": {
         "description": "The authenticated caller as a Hacksgiving user (app.users).",
         "properties": {
@@ -184,6 +202,16 @@
               }
             ],
             "title": "Contact Email"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "contact_name": {
             "anyOf": [
@@ -309,6 +337,17 @@
             ],
             "title": "Resolved At"
           },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          },
           "source": {
             "$ref": "#/components/schemas/CaseSource"
           },
@@ -349,7 +388,9 @@
           "updated_at",
           "resolved_at",
           "referral_count",
-          "last_activity_at"
+          "last_activity_at",
+          "contact_method",
+          "safe_to_contact"
         ],
         "title": "Case",
         "type": "object"
@@ -382,6 +423,13 @@
             "title": "Referrals",
             "type": "array"
           },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
           "updates": {
             "items": {
               "$ref": "#/components/schemas/CaseUpdate"
@@ -393,7 +441,8 @@
         "required": [
           "case",
           "updates",
-          "referrals"
+          "referrals",
+          "tasks"
         ],
         "title": "CaseDetail",
         "type": "object"
@@ -670,6 +719,16 @@
         ],
         "title": "ClaimHandoffRequest",
         "type": "object"
+      },
+      "ContactMethod": {
+        "description": "How a resident wants to be reached. `none`: don't reach out at all.",
+        "enum": [
+          "call",
+          "text",
+          "none"
+        ],
+        "title": "ContactMethod",
+        "type": "string"
       },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
@@ -1361,6 +1420,23 @@
         "title": "ReferralStatus",
         "type": "string"
       },
+      "ReplyRequest": {
+        "additionalProperties": false,
+        "description": "The requester's answer on their own request. Staff see it in the case\nhistory.",
+        "properties": {
+          "content": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "ReplyRequest",
+        "type": "object"
+      },
       "Resource": {
         "properties": {
           "active": {
@@ -1711,6 +1787,17 @@
             ],
             "title": "Contact Email"
           },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Call or text needs `contact_phone`. Leave out when the form didn't ask."
+          },
           "contact_name": {
             "anyOf": [
               {
@@ -1779,6 +1866,18 @@
             ],
             "title": "Longitude"
           },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "It's safe to call or leave a voicemail (or to text).",
+            "title": "Safe To Contact"
+          },
           "title": {
             "anyOf": [
               {
@@ -1805,6 +1904,150 @@
           "rules"
         ],
         "title": "SuggestionMethod",
+        "type": "string"
+      },
+      "Task": {
+        "description": "A piece of work on a case: generated when the case comes in\n(services/tasks.py), or added by a worker.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "assigned_worker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Name"
+          },
+          "case_category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "completed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed By"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "case_category",
+          "case_priority",
+          "title",
+          "detail",
+          "status",
+          "assigned_worker_id",
+          "assigned_worker_name",
+          "due_at",
+          "created_by",
+          "created_at",
+          "completed_at",
+          "completed_by"
+        ],
+        "title": "Task",
+        "type": "object"
+      },
+      "TaskStatus": {
+        "enum": [
+          "open",
+          "done"
+        ],
+        "title": "TaskStatus",
         "type": "string"
       },
       "UpdateCaseRequest": {
@@ -1962,6 +2205,35 @@
         "title": "UpdateReferralRequest",
         "type": "object"
       },
+      "UpdateTaskRequest": {
+        "description": "Only the fields sent change. Send `assigned_worker_id: null` to hand\nthe task back to whoever holds the case.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UpdateTaskRequest",
+        "type": "object"
+      },
       "UpdateType": {
         "enum": [
           "created",
@@ -1971,7 +2243,8 @@
           "priority_change",
           "category_change",
           "assignment",
-          "referral"
+          "referral",
+          "reply"
         ],
         "title": "UpdateType",
         "type": "string"
@@ -3143,6 +3416,174 @@
         ]
       }
     },
+    "/v1/public/requests": {
+      "post": {
+        "description": "Ask ComForce MKE for help without signing in. Same body as\n`POST /v1/requests`. Keep the access code: it's shown only this once.\n429 after a few requests from one address in an hour.",
+        "operationId": "submit_anonymous_request_v1_public_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnonymousRequestReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}": {
+      "get": {
+        "description": "A request sent without an account, with its public updates. 404 for\na wrong number or code alike.",
+        "operationId": "get_anonymous_request_v1_public_requests__number__get",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}/replies": {
+      "post": {
+        "description": "Answer on a request sent without an account.",
+        "operationId": "reply_to_anonymous_request_v1_public_requests__number__replies_post",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestUpdate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reply To Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
     "/v1/requests": {
       "get": {
         "description": "The caller's own requests, newest first.",
@@ -3248,6 +3689,60 @@
           }
         },
         "summary": "Get My Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/requests/{request_id}/replies": {
+      "post": {
+        "description": "Answer on one of the caller's requests (shown to them and to staff).\n404 for anyone else's.",
+        "operationId": "reply_to_my_request_v1_requests__request_id__replies_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRequestUpdate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reply To My Request",
         "tags": [
           "requests"
         ]
@@ -3596,6 +4091,147 @@
         "summary": "List Workers",
         "tags": [
           "staff"
+        ]
+      }
+    },
+    "/v1/tasks": {
+      "get": {
+        "description": "Open tasks by due time (soonest first). `mine` keeps the caller's:\ntasks assigned to them, and unassigned tasks on cases they hold.",
+        "operationId": "list_tasks_v1_tasks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "case_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "open_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Open Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  },
+                  "title": "Response List Tasks V1 Tasks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Tasks",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/v1/tasks/{task_id}": {
+      "patch": {
+        "description": "Mark a task done (or open again), or hand it to another worker\n(`assigned_worker_id: null` gives it back to whoever holds the case).\nFinishing a task is noted in the case history.",
+        "operationId": "update_task_v1_tasks__task_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Task",
+        "tags": [
+          "tasks"
         ]
       }
     },
