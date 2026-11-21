@@ -132,9 +132,9 @@ resource "kubernetes_manifest" "hacksgiving_jwt_es" {
         template = {
           engineVersion = "v2"
           data = {
-            APP__JWT__SECRET                       = "{{ .jwt_secret }}"
+            APP__JWT__SECRET                      = "{{ .jwt_secret }}"
             APP__VOICE__ELEVENLABS_WEBHOOK_SECRET = "{{ .elevenlabs_webhook_secret }}"
-            APP__VOICE__TOOL_SECRET                = "{{ .voice_tool_secret }}"
+            APP__VOICE__TOOL_SECRET               = "{{ .voice_tool_secret }}"
           }
         }
       }
