@@ -89,10 +89,13 @@ export function SafetyMap({
   points,
   recentCalls = [],
   onSelectArea,
+  callsOnly = false,
 }: {
   points: SafetyPoint[];
   recentCalls?: RecentCall[];
   onSelectArea?: (selection: AreaSelection) => void;
+  /** Just the 911-call layer (the staff map): a legend for calls only. */
+  callsOnly?: boolean;
 }) {
   const theme = useTheme();
   const html = useMemo(() => mapHtml(points, recentCalls), [points, recentCalls]);
@@ -126,6 +129,14 @@ export function SafetyMap({
         allowsInlineMediaPlayback={false}
         style={styles.webview}
       />
+      {callsOnly ? (
+        <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
+          <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
+            {recentCalls.filter((call) => call.latitude !== undefined).length} 911 CALLS ON THE MAP
+          </Txt>
+          <Txt variant="caption" tone="secondary">Pin color: call type · tap a pin for details</Txt>
+        </View>
+      ) : (
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
         <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
           {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · 30 DAYS
@@ -140,6 +151,7 @@ export function SafetyMap({
         <Txt variant="caption" tone="secondary">Small pins: reports · dark-ringed pins: 911 calls</Txt>
         <Txt variant="caption" tone="secondary">Tap the map or a pin for details</Txt>
       </View>
+      )}
     </View>
   );
 }
