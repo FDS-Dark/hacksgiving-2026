@@ -96,7 +96,18 @@ export default function GetHelpScreen() {
   return (
     <ResidentScreen
       title="Get help"
-      footer={<BigButton label="Send request" onPress={submit} loading={send.isPending} />}
+      footer={
+        // Feedback sits by the button: the fields it points at may be scrolled
+        // out of view (or under the keyboard), which made a failed send look
+        // like the button did nothing.
+        <View style={{ gap: 8 }}>
+          {send.error ? <ErrorBanner error={send.error} /> : null}
+          {tried && !ready && !send.error ? (
+            <Hint>{!description.trim() ? 'Tell us what’s going on first.' : `Add a phone number, or choose “Don’t contact me”.`}</Hint>
+          ) : null}
+          <BigButton label="Send request" onPress={submit} loading={send.isPending} />
+        </View>
+      }
     >
       <Text style={{ fontSize: 14, color: theme.textSecondary }}>Answer what you can. Everything else is optional.</Text>
 
@@ -180,7 +191,6 @@ export default function GetHelpScreen() {
         </>
       )}
 
-      {send.error ? <ErrorBanner error={send.error} /> : null}
     </ResidentScreen>
   );
 }
