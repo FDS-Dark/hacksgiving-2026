@@ -1,24 +1,24 @@
 """The data loader: opportunities and resources imported by a nightly batch
 job (api/loader) next to the ones staff enter, with source tracking,
 duplicate fingerprints, an education kind, audiences and cost. The SQL is in
-0012_data_loader.sql; docs/data-loader.md describes the job.
+0013_data_loader.sql; docs/data-loader.md describes the job.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0012
+Revision ID: 0013
 Revises: 0010
 Create Date: 2026-11-21
 """
 
 from alembic import context, op
 
-revision = "0012"
-down_revision = "0011"
+revision = "0013"
+down_revision = "0012"
 branch_labels = None
 depends_on = None
 
-# Every function 0012_data_loader.sql creates (none is overloaded).
+# Every function 0013_data_loader.sql creates (none is overloaded).
 # opportunity_list, opportunity_create and opportunity_set_active are 0010's,
 # replaced here; the downgrade puts 0010's definitions back.
 # test_migrations.py checks the union of every revision's list against the

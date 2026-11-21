@@ -1,4 +1,4 @@
-"""The public-data tables (0013_public_data.sql): bulk writes for the loader,
+"""The public-data tables (0014_public_data.sql): bulk writes for the loader,
 and the generalized reads the API serves."""
 
 import json

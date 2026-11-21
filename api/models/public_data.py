@@ -1,5 +1,5 @@
 """Public data: what the loader imports into the public-data tables
-(0013_public_data.sql), and what the API serves from them
+(0014_public_data.sql), and what the API serves from them
 (routers/public_data.py).
 
 Imported rows are written in bulk as JSON (`ImportedRow.row()`); the API's

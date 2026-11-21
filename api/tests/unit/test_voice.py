@@ -6,13 +6,31 @@ from typing import Any, cast
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from databridge.voice import VoiceDatabridge
 from errors import ApiError
-from models.voice import OutcomeStatus, VoiceReferralStatus
+from models.case import (
+    AnonymousRequestReceipt,
+    CaseStatus,
+    ContactMethod,
+    PublicRequest,
+)
+from models.case_enums import CaseCategory
 from models.routing import RouteResponse, Service
-from models.voice import VoiceRouteRequest
-from routers.voice import app_capabilities, opportunities, route_voice_request
+from models.voice import (
+    OutcomeStatus,
+    VoiceCaseRequest,
+    VoiceReferralStatus,
+    VoiceRouteRequest,
+)
+from routers.voice import (
+    app_capabilities,
+    opportunities,
+    route_voice_request,
+    submit_voice_request,
+)
+from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.routing import RoutingService
 from services.voice import VoiceService, verify_elevenlabs_signature
@@ -43,6 +61,42 @@ def _call_row(conversation_id: str = "conv-1") -> dict[str, Any]:
         "started_at": NOW,
         "ended_at": NOW,
         "created_at": NOW,
+    }
+
+
+def _referral_detail_row(call_id=None) -> dict[str, Any]:
+    return {
+        "id": uuid4(),
+        "call_id": call_id or uuid4(),
+        "need_category": "mental-health-crisis",
+        "resource_slug": "milwaukee-mobile-crisis",
+        "resource_name": "Milwaukee Mobile Crisis",
+        "resource_category": "mental-health-crisis",
+        "resource_description": "24/7 mental-health crisis response.",
+        "phone_e164": "+14142577222",
+        "languages": ["en", "es"],
+        "service_area": "Milwaukee",
+        "hours_label": "24/7",
+        "status": "accepted",
+        "outcome_status": "connected",
+        "outcome_reason_code": None,
+        "created_at": NOW,
+    }
+
+
+def _call_review_row(call_id=None) -> dict[str, Any]:
+    return {
+        "id": call_id or uuid4(),
+        "need_category": "mental-health-crisis",
+        "urgency_tier": "urgent",
+        "callback_consent": True,
+        "disposition": "warm_transfer",
+        "started_at": NOW,
+        "ended_at": NOW,
+        "created_at": NOW,
+        "referral_count": 1,
+        "referral_names": ["Milwaukee Mobile Crisis"],
+        "request_number": 1042,
     }
 
 
@@ -138,6 +192,105 @@ async def test_shared_app_route_is_persisted_without_free_text():
     assert "message" not in persisted
 
 
+async def test_case_submission_event_keeps_only_structured_case_metadata():
+    call = _call_row("conv-case")
+    request_id = uuid4()
+    event = {
+        "id": uuid4(),
+        "call_id": call["id"],
+        "event_key": "case_submitted:conv-case:1042",
+        "event_type": "case_submitted",
+        "details": {
+            "request_id": str(request_id),
+            "request_number": 1042,
+            "category": "transportation",
+            "contact_method": "text",
+        },
+        "occurred_at": NOW,
+    }
+    db = FakeFunctions(
+        voice_call_ingest=[call],
+        voice_call_event_append=[event],
+    )
+
+    await VoiceService(VoiceDatabridge(db), db).record_case_submission(
+        "conv-case",
+        request_id,
+        1042,
+        CaseCategory.TRANSPORTATION,
+        ContactMethod.TEXT,
+    )
+
+    persisted = repr(db.calls)
+    assert "approved_summary" not in persisted
+    assert "transcript" not in persisted
+    assert db.called("voice_call_ingest")[0]["callback_consent"] is True
+    details = json.loads(db.called("voice_call_event_append")[0]["details"])
+    assert details == event["details"]
+
+
+async def test_resident_referral_list_is_scoped_by_verified_user_id():
+    user_id = uuid4()
+    referral = _referral_detail_row()
+    db = FakeFunctions(voice_referral_list_for_user=[referral])
+
+    result = await VoiceService(VoiceDatabridge(db), db).referrals_for_user(user_id)
+
+    assert [item.id for item in result] == [referral["id"]]
+    assert db.called("voice_referral_list_for_user") == [{"user_id": user_id}]
+
+
+async def test_resident_referral_detail_is_scoped_and_missing_is_404():
+    user_id, referral_id = uuid4(), uuid4()
+    referral = _referral_detail_row() | {"id": referral_id}
+    rows = iter([[referral], []])
+    db = FakeFunctions(voice_referral_get_for_user=lambda _: next(rows))
+    service = VoiceService(VoiceDatabridge(db), db)
+
+    found = await service.referral_for_user(user_id, referral_id)
+    assert found.resource_slug == "milwaukee-mobile-crisis"
+    assert db.called("voice_referral_get_for_user")[0] == {
+        "user_id": user_id,
+        "referral_id": referral_id,
+    }
+    with pytest.raises(ApiError) as error:
+        await service.referral_for_user(user_id, uuid4())
+    assert error.value.code == "referral_not_found"
+
+
+async def test_staff_call_review_list_returns_only_structured_summary():
+    review = _call_review_row()
+    db = FakeFunctions(voice_call_review_list=[review])
+
+    result = await VoiceService(VoiceDatabridge(db), db).call_reviews()
+
+    assert [item.id for item in result] == [review["id"]]
+    assert result[0].request_number == 1042
+    assert "transcript" not in repr(result[0]).lower()
+    assert db.called("voice_call_review_list") == [{}]
+
+
+async def test_staff_call_review_detail_combines_call_and_referrals_or_404():
+    call_id = uuid4()
+    review = _call_review_row(call_id)
+    referral = _referral_detail_row(call_id)
+    reviews = iter([[review], []])
+    db = FakeFunctions(
+        voice_call_review_get=lambda _: next(reviews),
+        voice_referral_list_for_call=[referral],
+    )
+    service = VoiceService(VoiceDatabridge(db), db)
+
+    detail = await service.call_review(call_id)
+    assert detail.call.id == call_id
+    assert [item.id for item in detail.referrals] == [referral["id"]]
+    assert db.called("voice_call_review_get")[0] == {"call_id": call_id}
+    assert db.called("voice_referral_list_for_call") == [{"call_id": call_id}]
+    with pytest.raises(ApiError) as error:
+        await service.call_review(uuid4())
+    assert error.value.code == "call_not_found"
+
+
 async def test_voice_route_uses_app_classifier_and_records_category():
     routed = RouteResponse(
         service=Service.BRIDGE_TO_EMPLOYMENT,
@@ -190,6 +343,90 @@ async def test_voice_opportunities_use_same_open_directory_as_app():
     assert result == []
     # A phone agent reads a short list: staff postings come first.
     assert service.called == ("mentor", None, False, 25)
+
+
+def test_voice_case_request_requires_explicit_and_complete_contact_consent():
+    base = {
+        "conversation_id": "conv-case",
+        "approved_summary": "Caller approved this short summary.",
+        "category": "transportation",
+    }
+    with pytest.raises(ValidationError):
+        VoiceCaseRequest.model_validate({**base, "consent": False})
+    with pytest.raises(ValidationError, match="system caller id"):
+        VoiceCaseRequest.model_validate(
+            {
+                **base,
+                "consent": True,
+                "contact_method": "text",
+                "safe_to_contact": True,
+            }
+        )
+
+
+async def test_voice_request_creates_anonymous_case_from_approved_fields_only():
+    request_id = uuid4()
+    receipt = AnonymousRequestReceipt(
+        request=PublicRequest(
+            id=request_id,
+            number=1042,
+            title="Ride to an appointment",
+            description="Caller approved this short summary.",
+            category=CaseCategory.TRANSPORTATION,
+            status=CaseStatus.NEW,
+            location="North Side",
+            created_at=NOW,
+            updated_at=NOW,
+        ),
+        access_code="K7QM-4XPA",
+    )
+
+    class Cases:
+        submitted = None
+
+        async def submit_anonymous_request(self, body, triage):
+            self.submitted = (body, triage)
+            return receipt
+
+    class Voice:
+        recorded = None
+
+        async def record_case_submission(self, *args):
+            self.recorded = args
+
+    cases = Cases()
+    voice = Voice()
+    body = VoiceCaseRequest(
+        conversation_id="conv-case",
+        consent=True,
+        approved_summary="Caller approved this short summary.",
+        category=CaseCategory.TRANSPORTATION,
+        general_location="North Side",
+        contact_method=ContactMethod.TEXT,
+        caller_id="+14145550123",
+        safe_to_contact=True,
+    )
+
+    result = await submit_voice_request(
+        body,
+        cast(CaseService, cases),
+        cast(VoiceService, voice),
+    )
+
+    assert cases.submitted is not None
+    submitted, triage = cases.submitted
+    assert triage is None
+    assert submitted.description == "Caller approved this short summary."
+    assert submitted.contact_phone == "+14145550123"
+    assert result.request_number == 1042
+    assert result.access_code == "K7QM-4XPA"
+    assert voice.recorded == (
+        "conv-case",
+        request_id,
+        1042,
+        CaseCategory.TRANSPORTATION,
+        ContactMethod.TEXT,
+    )
 
 
 async def test_unknown_referral_outcome_is_a_clean_not_found():

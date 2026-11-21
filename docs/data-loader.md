@@ -117,7 +117,7 @@ when its source flags a fair-chance employer. Opportunities also have an
 ## How a run writes
 
 Everything goes through stored functions (ADR 0007):
-`0012_data_loader.sql` for opportunities and resources, `0013_public_data.sql`
+`0013_data_loader.sql` for opportunities and resources, `0014_public_data.sql`
 for the rest.
 
 - **Opportunities and resources: upsert by the source's id, skipping

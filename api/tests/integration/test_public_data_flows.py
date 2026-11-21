@@ -1,4 +1,4 @@
-"""The public-data tables (0013_public_data.sql) against real PostgreSQL, as
+"""The public-data tables (0014_public_data.sql) against real PostgreSQL, as
 the app role: bulk sync is idempotent, the database generalizes locations
 itself, small tract counts are suppressed, sensitive and expired calls stay
 out of public reads, and retiring removes only what it should."""

@@ -3830,6 +3830,259 @@
         "title": "VoiceAppService",
         "type": "object"
       },
+      "VoiceCallReview": {
+        "properties": {
+          "callback_consent": {
+            "title": "Callback Consent",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disposition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disposition"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "referral_count": {
+            "minimum": 0.0,
+            "title": "Referral Count",
+            "type": "integer"
+          },
+          "referral_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Referral Names",
+            "type": "array"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "request_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Number"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "urgency_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "need_category",
+          "urgency_tier",
+          "callback_consent",
+          "disposition",
+          "started_at",
+          "ended_at",
+          "created_at",
+          "referral_count",
+          "referral_names",
+          "request_id",
+          "request_number"
+        ],
+        "title": "VoiceCallReview",
+        "type": "object"
+      },
+      "VoiceCallReviewDetail": {
+        "properties": {
+          "call": {
+            "$ref": "#/components/schemas/VoiceCallReview"
+          },
+          "referrals": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceReferralDetail"
+            },
+            "title": "Referrals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "call",
+          "referrals"
+        ],
+        "title": "VoiceCallReviewDetail",
+        "type": "object"
+      },
+      "VoiceCaseReceipt": {
+        "properties": {
+          "access_code": {
+            "title": "Access Code",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_number": {
+            "title": "Request Number",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "request_number",
+          "category",
+          "access_code",
+          "status"
+        ],
+        "title": "VoiceCaseReceipt",
+        "type": "object"
+      },
+      "VoiceCaseRequest": {
+        "description": "A minimal request the caller explicitly approved for ComForce staff.",
+        "properties": {
+          "approved_summary": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Approved Summary",
+            "type": "string"
+          },
+          "caller_id": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 8,
+                "pattern": "^\\+[1-9][0-9]{7,14}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caller Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "consent": {
+            "const": true,
+            "title": "Consent",
+            "type": "boolean"
+          },
+          "contact_method": {
+            "$ref": "#/components/schemas/ContactMethod",
+            "default": "none"
+          },
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "general_location": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "General Location"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "consent",
+          "approved_summary",
+          "category"
+        ],
+        "title": "VoiceCaseRequest",
+        "type": "object"
+      },
       "VoiceDashboard": {
         "properties": {
           "active_referrals": {
@@ -3961,6 +4214,128 @@
           "created_at"
         ],
         "title": "VoiceReferral",
+        "type": "object"
+      },
+      "VoiceReferralDetail": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "hours_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Label"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "outcome_reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome Reason Code"
+          },
+          "outcome_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutcomeStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          },
+          "resource_category": {
+            "title": "Resource Category",
+            "type": "string"
+          },
+          "resource_description": {
+            "title": "Resource Description",
+            "type": "string"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          },
+          "resource_slug": {
+            "title": "Resource Slug",
+            "type": "string"
+          },
+          "service_area": {
+            "title": "Service Area",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoiceReferralStatus"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "need_category",
+          "resource_slug",
+          "resource_name",
+          "resource_category",
+          "resource_description",
+          "phone_e164",
+          "languages",
+          "service_area",
+          "hours_label",
+          "status",
+          "outcome_status",
+          "outcome_reason_code",
+          "created_at"
+        ],
+        "title": "VoiceReferralDetail",
         "type": "object"
       },
       "VoiceReferralStatus": {
@@ -7398,6 +7773,30 @@
       }
     },
     "/v1/voice/referrals": {
+      "get": {
+        "description": "Reviewed resources referred during calls linked to this account.",
+        "operationId": "my_referrals_v1_voice_referrals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceReferralDetail"
+                  },
+                  "title": "Response My Referrals V1 Voice Referrals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Referrals",
+        "tags": [
+          "voice"
+        ]
+      },
       "post": {
         "operationId": "create_referral_v1_voice_referrals_post",
         "parameters": [
@@ -7451,6 +7850,49 @@
           }
         },
         "summary": "Create Referral",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/referrals/{referral_id}": {
+      "get": {
+        "operationId": "my_referral_v1_voice_referrals__referral_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "referral_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Referral Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceReferralDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "My Referral",
         "tags": [
           "voice"
         ]
@@ -7573,6 +8015,66 @@
           }
         },
         "summary": "Record Responder Outcome",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/requests": {
+      "post": {
+        "description": "Create a consented anonymous Get Help case from approved fields only.",
+        "operationId": "submit_voice_request_v1_voice_requests_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceCaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCaseReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Voice Request",
         "tags": [
           "voice"
         ]
@@ -7721,6 +8223,75 @@
           }
         },
         "summary": "Route Voice Request",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/staff/calls": {
+      "get": {
+        "description": "Structured call outcomes for ComForce review; never transcripts.",
+        "operationId": "staff_call_reviews_v1_voice_staff_calls_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceCallReview"
+                  },
+                  "title": "Response Staff Call Reviews V1 Voice Staff Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Staff Call Reviews",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/staff/calls/{call_id}": {
+      "get": {
+        "operationId": "staff_call_review_v1_voice_staff_calls__call_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCallReviewDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Staff Call Review",
         "tags": [
           "voice"
         ]

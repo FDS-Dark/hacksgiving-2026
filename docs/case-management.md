@@ -96,6 +96,12 @@ An emergency shouldn't wait on a sign-in, so a resident can ask for help signed 
 | `GET /public/requests/{number}` + header `X-Access-Code` | `PublicRequestDetail`. A wrong number or code is the same 404 |
 | `POST /public/requests/{number}/replies` + `X-Access-Code` | `{"content"}`, as above |
 
+The phone navigator uses the same anonymous workflow through
+`POST /v1/voice/requests`, protected by the server-side voice tool secret. It
+submits only fields the caller reviewed and explicitly approved. The resulting
+request appears in the normal staff case queue; the structured call review
+links to it without storing audio or a transcript.
+
 Rate limited per client address (`services/rate_limit.py`, in memory per API
 replica): 5 submissions an hour, 60 code lookups or replies per 10 minutes;
 over that → 429 `rate_limited`. The app keeps the code on the device

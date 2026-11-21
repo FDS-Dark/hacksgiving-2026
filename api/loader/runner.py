@@ -1,6 +1,6 @@
 """Runs sources and writes what they bring: opportunities and resources row
-by row through their sync functions (0012_data_loader.sql), public data in
-bulk (0013_public_data.sql).
+by row through their sync functions (0013_data_loader.sql), public data in
+bulk (0014_public_data.sql).
 
 Each source runs on its own: one that fails to fetch is reported and the
 rest still run. A source only removes the rows it no longer lists after a

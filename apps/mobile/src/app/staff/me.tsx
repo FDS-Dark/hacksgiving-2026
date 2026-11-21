@@ -11,6 +11,7 @@ import { ROLE_LABEL } from '@/lib/staff';
 import { showCommunityView } from '@/lib/viewMode';
 import { useInsights } from '@/services/cases';
 import { useStaffStatus, useWorkers } from '@/services/staff';
+import { useStaffVoiceCalls } from '@/services/voice';
 import { space, useTheme } from '@/theme/tokens';
 
 /** Figma "Staff · Me": who you are, the admin tools (Manage), and switching to the community view. */
@@ -20,6 +21,7 @@ export default function StaffMeScreen() {
   const me = useStaffStatus();
   const workers = useWorkers();
   const insights = useInsights();
+  const calls = useStaffVoiceCalls();
 
   const count = workers.data?.length;
   const avg = insights.data?.stats.avg_resolution_hours;
@@ -50,6 +52,14 @@ export default function StaffMeScreen() {
           detail={avg === undefined ? undefined : `${hours(avg)} avg`}
           accessory="chevron"
           onPress={() => router.push('/staff/insights')}
+        />
+        <Row
+          title="AI phone calls"
+          subtitle="Privacy-safe routing outcomes and referrals"
+          icon="call-outline"
+          detail={calls.data === undefined ? undefined : String(calls.data.length)}
+          accessory="chevron"
+          onPress={() => router.push('/staff/calls/index')}
         />
         <Row
           title="Volunteer & job opportunities"

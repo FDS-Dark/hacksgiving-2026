@@ -1,4 +1,4 @@
-"""The data loader's sync functions (0012_data_loader.sql) against real
+"""The data loader's sync functions (0013_data_loader.sql) against real
 PostgreSQL, as the app role: imports insert, update and close; duplicates of
 open rows (staff postings included) are skipped; staff decisions stick; and
 the app lists imports next to staff postings."""

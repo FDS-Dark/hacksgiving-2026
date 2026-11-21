@@ -93,6 +93,9 @@ export type UpdateTask = Schemas['UpdateTaskRequest'];
 export type TaskFilters = NonNullable<operations['list_tasks_v1_tasks_get']['parameters']['query']>;
 export type ClaimHandoff = Schemas['ClaimHandoffRequest'];
 export type VoiceFollowUp = Schemas['VoiceFollowUp'];
+export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
+export type VoiceCallReview = Schemas['VoiceCallReview'];
+export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

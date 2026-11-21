@@ -1,17 +1,22 @@
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
 from dependencies import (
+    get_case_service,
     get_current_user,
+    get_current_worker,
     get_opportunity_service,
     get_routing_service,
     get_voice_service,
     require_tool_secret,
 )
+from models.case import AnonymousRequestReceipt
 from models.opportunity import Opportunity, OpportunityKind
 from models.routing import SERVICE_DESCRIPTIONS, Service
+from models.staff import StaffMember
 from models.user import AppUser
 from models.voice import (
     ClaimHandoffRequest,
@@ -20,23 +25,30 @@ from models.voice import (
     HandoffCode,
     ImpactSummary,
     RecordOutcomeRequest,
-    VoiceReferral,
     ReferralOutcome,
+    VoiceCallReview,
+    VoiceCallReviewDetail,
     VoiceResource,
     VoiceDashboard,
     VoiceFollowUp,
     VoiceAppCapabilities,
     VoiceAppService,
+    VoiceCaseReceipt,
+    VoiceCaseRequest,
     VoiceRouteRequest,
     VoiceRouteResponse,
+    VoiceReferral,
+    VoiceReferralDetail,
     WebhookAccepted,
 )
+from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.routing import RoutingService
 from services.voice import VoiceService
 from settings import config
 
 router = APIRouter(prefix="/voice", tags=["voice"])
+logger = logging.getLogger(__name__)
 
 SERVICE_NAMES: dict[Service, str] = {
     Service.HOMELESSNESS: "Housing & Shelter",
@@ -114,16 +126,19 @@ async def app_capabilities() -> VoiceAppCapabilities:
         services=services,
         features=[
             "Get Help submits a signed-in request to the appropriate ComForce service queue.",
+            "With explicit consent, the phone navigator can submit an anonymous "
+            "Get Help request containing only the caller-approved summary and fields.",
             "Safety Map shows generalized public-safety information and is not monitored for emergencies.",
             "Me > Safety alerts shows private connected-call follow-ups plus public updates while the app is open.",
             "Me > Phone calls connects a call with a one-time eight-character handoff code.",
             "Me > Volunteer and jobs opens searchable jobs and volunteer postings from ComForce and partners.",
         ],
         handoff_steps=[
-            "Ask the phone navigator to save the call to the app.",
+            "The navigator asks whether the caller is already signed in to the app.",
             "Write down the eight-character code; it expires after 15 minutes and works once.",
-            "Sign in to the mobile app and tap Me in the bottom navigation.",
-            "Under Phone calls, enter the code and tap Connect call.",
+            "If already signed in: open Me > Phone calls, enter the code, and tap Connect call.",
+            "If not signed in: open Expo Go, sign in, then open Me > Phone calls, "
+            "enter the code, and tap Connect call.",
             "A successful claim shows Call connected and the follow-up under Phone calls; "
             "Me > Safety alerts also shows the ComForce notification.",
             "If a retry says invalid, expired, or already claimed after success, "
@@ -131,9 +146,11 @@ async def app_capabilities() -> VoiceAppCapabilities:
         ],
         limitations=[
             "The phone navigator cannot sign in, submit an authenticated Get Help "
-            "request, or read private account data for the caller.",
+            "request, or read private account data; phone submissions are anonymous.",
             "Only currently open opportunities returned by the opportunities tool may be described.",
             "Call notifications are in-app follow-ups, not operating-system push notifications.",
+            "Past connected-call referrals appear under Me > Phone calls > Past referrals, "
+            "with reviewed details and tappable public phone numbers when available.",
             "Never invent a department, opportunity, resource, or app capability that a tool did not return.",
         ],
     )
@@ -163,6 +180,44 @@ async def route_voice_request(
         urgent=routed.urgent,
         reason=routed.reason,
         follow_up_question=routed.follow_up_question,
+    )
+
+
+@router.post(
+    "/requests",
+    response_model=VoiceCaseReceipt,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def submit_voice_request(
+    body: VoiceCaseRequest,
+    cases: CaseService = Depends(get_case_service),
+    voice: VoiceService = Depends(get_voice_service),
+) -> VoiceCaseReceipt:
+    """Create a consented anonymous Get Help case from approved fields only."""
+    receipt: AnonymousRequestReceipt = await cases.submit_anonymous_request(
+        body.as_submit_request(), None
+    )
+    try:
+        await voice.record_case_submission(
+            body.conversation_id,
+            receipt.request.id,
+            receipt.request.number,
+            receipt.request.category,
+            body.contact_method,
+        )
+    except Exception:
+        # The ComForce case is the primary outcome. Do not make ElevenLabs retry
+        # and create a duplicate merely because call analytics were unavailable.
+        logger.exception(
+            "Voice case metadata could not be linked for request #%s",
+            receipt.request.number,
+        )
+    return VoiceCaseReceipt(
+        request_id=receipt.request.id,
+        request_number=receipt.request.number,
+        category=receipt.request.category,
+        access_code=receipt.access_code,
+        status=receipt.request.status.value,
     )
 
 
@@ -211,6 +266,42 @@ async def follow_ups(
     service: VoiceService = Depends(get_voice_service),
 ) -> list[VoiceFollowUp]:
     return await service.follow_ups(user.id)
+
+
+@router.get("/referrals", response_model=list[VoiceReferralDetail])
+async def my_referrals(
+    user: AppUser = Depends(get_current_user),
+    service: VoiceService = Depends(get_voice_service),
+) -> list[VoiceReferralDetail]:
+    """Reviewed resources referred during calls linked to this account."""
+    return await service.referrals_for_user(user.id)
+
+
+@router.get("/referrals/{referral_id}", response_model=VoiceReferralDetail)
+async def my_referral(
+    referral_id: UUID,
+    user: AppUser = Depends(get_current_user),
+    service: VoiceService = Depends(get_voice_service),
+) -> VoiceReferralDetail:
+    return await service.referral_for_user(user.id, referral_id)
+
+
+@router.get("/staff/calls", response_model=list[VoiceCallReview])
+async def staff_call_reviews(
+    _worker: StaffMember = Depends(get_current_worker),
+    service: VoiceService = Depends(get_voice_service),
+) -> list[VoiceCallReview]:
+    """Structured call outcomes for ComForce review; never transcripts."""
+    return await service.call_reviews()
+
+
+@router.get("/staff/calls/{call_id}", response_model=VoiceCallReviewDetail)
+async def staff_call_review(
+    call_id: UUID,
+    _worker: StaffMember = Depends(get_current_worker),
+    service: VoiceService = Depends(get_voice_service),
+) -> VoiceCallReviewDetail:
+    return await service.call_review(call_id)
 
 
 @router.post(

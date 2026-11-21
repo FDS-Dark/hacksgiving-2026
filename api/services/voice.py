@@ -19,11 +19,16 @@ from models.voice import (
     VoiceReferral,
     ReferralOutcome,
     VoiceReferralStatus,
+    VoiceReferralDetail,
     VoiceResource,
+    VoiceCallReview,
+    VoiceCallReviewDetail,
     VoiceDashboard,
     VoiceFollowUp,
     WebhookAccepted,
 )
+from models.case import ContactMethod
+from models.case_enums import CaseCategory
 
 MAX_WEBHOOK_BYTES = 1_000_000
 SIGNATURE_TOLERANCE_SECONDS = 30 * 60
@@ -223,6 +228,44 @@ class VoiceService:
             ended_at=None,
         )
 
+    async def record_case_submission(
+        self,
+        conversation_id: str,
+        request_id: UUID,
+        request_number: int,
+        category: CaseCategory,
+        contact_method: ContactMethod,
+    ) -> None:
+        """Link structured case metadata to a call; never store its summary."""
+        now = datetime.now(timezone.utc)
+        async with self.transactions.transaction() as transaction:
+            voice = self.voice.within(transaction)
+            call = await voice.ingest_call(
+                conversation_id=conversation_id,
+                event_timestamp=int(now.timestamp()),
+                language=None,
+                need_category=category.value,
+                urgency_tier="routine",
+                neighborhood=None,
+                callback_consent=contact_method != ContactMethod.NONE,
+                disposition="case_submitted",
+                caller_hash=None,
+                started_at=None,
+                ended_at=None,
+            )
+            await voice.append_event(
+                call_id=call.id,
+                event_key=f"case_submitted:{conversation_id}:{request_number}",
+                event_type="case_submitted",
+                details={
+                    "request_id": str(request_id),
+                    "request_number": request_number,
+                    "category": category.value,
+                    "contact_method": contact_method.value,
+                },
+                occurred_at=now,
+            )
+
     @staticmethod
     def _handoff_hash(code: str, secret: str) -> str:
         if not secret:
@@ -284,6 +327,29 @@ class VoiceService:
 
     async def follow_ups(self, user_id: UUID) -> list[VoiceFollowUp]:
         return await self.voice.follow_ups(user_id)
+
+    async def referrals_for_user(self, user_id: UUID) -> list[VoiceReferralDetail]:
+        return await self.voice.referrals_for_user(user_id)
+
+    async def referral_for_user(
+        self, user_id: UUID, referral_id: UUID
+    ) -> VoiceReferralDetail:
+        referral = await self.voice.referral_for_user(user_id, referral_id)
+        if not referral:
+            raise not_found("referral")
+        return referral
+
+    async def call_reviews(self) -> list[VoiceCallReview]:
+        return await self.voice.call_reviews()
+
+    async def call_review(self, call_id: UUID) -> VoiceCallReviewDetail:
+        call = await self.voice.call_review(call_id)
+        if not call:
+            raise not_found("call")
+        return VoiceCallReviewDetail(
+            call=call,
+            referrals=await self.voice.referrals_for_call(call_id),
+        )
 
     async def record_outcome(
         self, referral_id: UUID, status: OutcomeStatus, reason_code: str | None

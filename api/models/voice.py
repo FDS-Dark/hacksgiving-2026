@@ -1,17 +1,20 @@
 """Privacy-minimized voice coordination models.
 
-These contracts intentionally have no audio, transcript, caller phone number,
-exact address, or free-form case narrative fields.
+These contracts intentionally have no audio, transcript, exact address, or
+unapproved free-form case narrative fields. A caller may explicitly approve a
+short case summary for an anonymous ComForce Get Help request.
 """
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field, StringConstraints
+from pydantic import Field, StringConstraints, model_validator
 
 from models.base import ApiModel
+from models.case import ContactMethod, SubmitRequest
+from models.case_enums import CaseCategory
 from models.routing import Service
 
 ShortText = Annotated[
@@ -19,6 +22,12 @@ ShortText = Annotated[
 ]
 VoiceMessage = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
+]
+ApprovedCaseSummary = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)
+]
+GeneralLocation = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)
 ]
 HandoffCodeText = Annotated[
     str,
@@ -133,6 +142,55 @@ class VoiceRouteResponse(ApiModel):
     app_destination: str = "Get Help"
 
 
+class VoiceCaseRequest(ApiModel):
+    """A minimal request the caller explicitly approved for ComForce staff."""
+
+    conversation_id: ShortText
+    consent: Literal[True]
+    approved_summary: ApprovedCaseSummary
+    category: CaseCategory
+    general_location: GeneralLocation | None = None
+    contact_method: ContactMethod = ContactMethod.NONE
+    caller_id: CallerId | None = None
+    safe_to_contact: bool | None = None
+
+    @model_validator(mode="after")
+    def _contact_consent_is_complete(self) -> "VoiceCaseRequest":
+        wants_contact = self.contact_method in (
+            ContactMethod.CALL,
+            ContactMethod.TEXT,
+        )
+        if wants_contact and self.caller_id is None:
+            raise ValueError("Call or text follow-up requires the system caller id")
+        if wants_contact and self.safe_to_contact is None:
+            raise ValueError("Call or text follow-up requires safe-to-contact consent")
+        if not wants_contact and self.safe_to_contact is not None:
+            raise ValueError("safe_to_contact is only valid for call or text follow-up")
+        return self
+
+    def as_submit_request(self) -> SubmitRequest:
+        wants_contact = self.contact_method in (
+            ContactMethod.CALL,
+            ContactMethod.TEXT,
+        )
+        return SubmitRequest(
+            description=self.approved_summary,
+            category=self.category,
+            location=self.general_location,
+            contact_phone=self.caller_id if wants_contact else None,
+            contact_method=self.contact_method,
+            safe_to_contact=self.safe_to_contact if wants_contact else None,
+        )
+
+
+class VoiceCaseReceipt(ApiModel):
+    request_id: UUID
+    request_number: int
+    category: CaseCategory
+    access_code: str
+    status: str
+
+
 class VoiceAppService(ApiModel):
     key: Service
     name: str
@@ -172,6 +230,44 @@ class VoiceReferral(ApiModel):
     resource_id: UUID
     status: VoiceReferralStatus
     created_at: datetime
+
+
+class VoiceReferralDetail(ApiModel):
+    id: UUID
+    call_id: UUID
+    need_category: str | None = None
+    resource_slug: str
+    resource_name: str
+    resource_category: str
+    resource_description: str
+    phone_e164: str | None = None
+    languages: list[str]
+    service_area: str
+    hours_label: str | None = None
+    status: VoiceReferralStatus
+    outcome_status: OutcomeStatus | None = None
+    outcome_reason_code: str | None = None
+    created_at: datetime
+
+
+class VoiceCallReview(ApiModel):
+    id: UUID
+    need_category: str | None = None
+    urgency_tier: UrgencyTier | None = None
+    callback_consent: bool
+    disposition: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    created_at: datetime
+    referral_count: int = Field(ge=0)
+    referral_names: list[str]
+    request_id: UUID | None = None
+    request_number: int | None = None
+
+
+class VoiceCallReviewDetail(ApiModel):
+    call: VoiceCallReview
+    referrals: list[VoiceReferralDetail]
 
 
 class RecordOutcomeRequest(ApiModel):

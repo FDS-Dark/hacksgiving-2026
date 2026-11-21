@@ -1,24 +1,24 @@
 """Public data the loader imports: reviewed incidents (NIBRS), dispatch
 signals (MPD and MFD calls), boundaries, MCTS transit, NWS weather alerts,
 CDC PLACES measures and FBI crime trends, and a log of loader runs. The SQL
-is in 0013_public_data.sql; docs/data-loader.md describes the job.
+is in 0014_public_data.sql; docs/data-loader.md describes the job.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0013
+Revision ID: 0014
 Revises: 0012
 Create Date: 2026-11-21
 """
 
 from alembic import context, op
 
-revision = "0013"
-down_revision = "0012"
+revision = "0014"
+down_revision = "0013"
 branch_labels = None
 depends_on = None
 
-# Every function 0013_public_data.sql creates (none is overloaded).
+# Every function 0014_public_data.sql creates (none is overloaded).
 # test_migrations.py checks the union of every revision's list against the
 # database.
 FUNCTIONS = (
