@@ -5,6 +5,7 @@ import { Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { CASE_CATEGORIES, CASE_PRIORITIES, CASE_STATUSES, type CaseDetail, type CaseUpdate, type Visibility } from '@/api/types';
 import { Page } from '@/components/Page';
+import { ServiceGuide } from '@/components/ServiceGuide';
 import { StaffGate } from '@/components/StaffGate';
 import { RedRule } from '@/components/brand';
 import { Button, Chip, Chips, ErrorBanner, FieldLabel, Loading, success } from '@/components/ui';
@@ -84,6 +85,10 @@ function CaseBody({ id, data: { case: item, updates } }: { id: string; data: Cas
       </View>
 
       {update.isError ? <ErrorBanner error={update.error} /> : null}
+
+      {/* Re-routing the case swaps in the new service's guide. */}
+      <ServiceGuide key={item.category} category={item.category} />
+
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
         <Text accessibilityRole="header" style={[styles.heading, { color: theme.text }]}>

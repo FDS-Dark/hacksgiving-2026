@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } fro
 
 import { CASE_CATEGORIES, CASE_STATUSES, type Case, type CaseCategory, type CaseFilters, type CaseStatus } from '@/api/types';
 import { Page } from '@/components/Page';
+import { ServiceGuide } from '@/components/ServiceGuide';
 import { StaffGate } from '@/components/StaffGate';
 import { SectionHeading } from '@/components/brand';
 import { Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
@@ -96,6 +97,9 @@ function Queue() {
           </View>
         ))}
       </View>
+
+      {/* Picking a service opens its handling guide; key resets it per service. */}
+      {service ? <ServiceGuide key={service} category={service} initiallyOpen /> : null}
 
       {cases.isPending ? (
         <Loading label="Loading requests" />
