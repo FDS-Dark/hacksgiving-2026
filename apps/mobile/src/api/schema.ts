@@ -788,6 +788,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/voice/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Opportunities
+         * @description Open jobs and volunteer postings from the same directory as the app.
+         */
+        get: operations["opportunities_v1_voice_opportunities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/referrals": {
         parameters: {
             query?: never;
@@ -3325,6 +3345,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImpactSummary"];
+                };
+            };
+        };
+    };
+    opportunities_v1_voice_opportunities_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                kind?: components["schemas"]["OpportunityKind"] | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

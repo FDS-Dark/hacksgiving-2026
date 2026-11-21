@@ -5,10 +5,13 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from dependencies import (
     get_current_user,
+    get_opportunity_service,
     get_routing_service,
     get_voice_service,
     require_tool_secret,
 )
+from models.opportunity import Opportunity, OpportunityKind
+from models.routing import SERVICE_DESCRIPTIONS, Service
 from models.user import AppUser
 from models.voice import (
     ClaimHandoffRequest,
@@ -28,7 +31,7 @@ from models.voice import (
     VoiceRouteResponse,
     WebhookAccepted,
 )
-from models.routing import SERVICE_DESCRIPTIONS, Service
+from services.opportunity import OpportunityService
 from services.routing import RoutingService
 from services.voice import VoiceService
 from settings import config
@@ -77,6 +80,20 @@ async def resources(
 
 
 @router.get(
+    "/opportunities",
+    response_model=list[Opportunity],
+    dependencies=[Depends(require_tool_secret)],
+)
+async def opportunities(
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    kind: OpportunityKind | None = None,
+    service: OpportunityService = Depends(get_opportunity_service),
+) -> list[Opportunity]:
+    """Open jobs and volunteer postings from the same directory as the app."""
+    return await service.search(q, kind, include_closed=False)
+
+
+@router.get(
     "/app-capabilities",
     response_model=VoiceAppCapabilities,
     dependencies=[Depends(require_tool_secret)],
@@ -100,7 +117,7 @@ async def app_capabilities() -> VoiceAppCapabilities:
             "Safety Map shows generalized public-safety information and is not monitored for emergencies.",
             "Me > Safety alerts shows private connected-call follow-ups plus public updates while the app is open.",
             "Me > Phone calls connects a call with a one-time eight-character handoff code.",
-            "Me > Volunteer and jobs opens the official ComForce MKE website.",
+            "Me > Volunteer and jobs opens searchable jobs and volunteer postings from ComForce and partners.",
         ],
         handoff_steps=[
             "Ask the phone navigator to save the call to the app.",
@@ -115,8 +132,7 @@ async def app_capabilities() -> VoiceAppCapabilities:
         limitations=[
             "The phone navigator cannot sign in, submit an authenticated Get Help "
             "request, or read private account data for the caller.",
-            "The app routes employment needs to Bridge to Employment and links to "
-            "the official ComForce website, but has no native live job-listing feed.",
+            "Only currently open opportunities returned by the opportunities tool may be described.",
             "Call notifications are in-app follow-ups, not operating-system push notifications.",
             "Never invent a department, opportunity, resource, or app capability that a tool did not return.",
         ],

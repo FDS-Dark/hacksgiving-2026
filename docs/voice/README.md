@@ -31,6 +31,8 @@ dial 911 without continuing intake.
    - `POST /v1/voice/route` with `system__conversation_id` and a short need
      description. This uses the same ComForce service classifier as Get Help
      and stores only its structured category on the call.
+   - `GET /v1/voice/opportunities` for the same active job and volunteer
+     postings residents can search under Me > Volunteer and jobs.
    - `GET /v1/voice/resources`
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`

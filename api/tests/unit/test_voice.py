@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -12,7 +12,9 @@ from errors import ApiError
 from models.voice import OutcomeStatus, VoiceReferralStatus
 from models.routing import RouteResponse, Service
 from models.voice import VoiceRouteRequest
-from routers.voice import app_capabilities, route_voice_request
+from routers.voice import app_capabilities, opportunities, route_voice_request
+from services.opportunity import OpportunityService
+from services.routing import RoutingService
 from services.voice import VoiceService, verify_elevenlabs_signature
 from tests.unit.fakes import FakeFunctions
 
@@ -160,8 +162,8 @@ async def test_voice_route_uses_app_classifier_and_records_category():
         VoiceRouteRequest(
             conversation_id="conv-employment", message="I need job training"
         ),
-        Routing(),
-        voice,
+        cast(RoutingService, Routing()),
+        cast(VoiceService, voice),
     )
     assert result.service_name == "Bridge to Employment"
     assert result.app_destination == "Get Help"
@@ -172,7 +174,21 @@ async def test_app_capabilities_explain_handoff_and_job_limit():
     result = await app_capabilities()
     assert any(item.name == "Bridge to Employment" for item in result.services)
     assert any("works once" in step for step in result.handoff_steps)
-    assert any("no native live job-listing" in item for item in result.limitations)
+    assert any("currently open opportunities" in item for item in result.limitations)
+
+
+async def test_voice_opportunities_use_same_open_directory_as_app():
+    class Opportunities:
+        called = None
+
+        async def search(self, query, kind, include_closed):
+            self.called = (query, kind, include_closed)
+            return []
+
+    service = Opportunities()
+    result = await opportunities("mentor", None, cast(OpportunityService, service))
+    assert result == []
+    assert service.called == ("mentor", None, False)
 
 
 async def test_unknown_referral_outcome_is_a_clean_not_found():
