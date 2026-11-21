@@ -1,7 +1,9 @@
 """python -m loader: run the data loader (docs/data-loader.md).
 
     python -m loader                  every source, once
-    python -m loader --cadence live   the live sources (calls, alerts), once
+    python -m loader --cadence live   the live sources (calls, alerts), once,
+                                      plus any daily source that hasn't
+                                      succeeded in a day (loader/schedule.py)
     python -m loader --watch          keep running: live sources every few
                                       minutes, daily ones at start and daily
     python -m loader --dry-run        fetch and report; write nothing
@@ -16,6 +18,7 @@ import logging
 import sys
 import time
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from databridge.executor import PostgresExecutor
 from databridge.opportunity import OpportunityDatabridge
@@ -23,6 +26,7 @@ from databridge.public_data import PublicDataDatabridge
 from databridge.resource import ResourceDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from loader.runner import SourceReport, Status, run
+from loader.schedule import stale_daily
 from loader.sources import BY_NAME, SOURCES, Cadence, Source
 from logging_setup import configure_logging
 from settings import config
@@ -52,12 +56,17 @@ def _chosen(args: argparse.Namespace, cadence: Cadence | None = None) -> list[So
     return sorted((s for s in chosen if wanted is None or s.cadence is wanted), key=SOURCES.index)
 
 
-async def _once(sources: list[Source], dry_run: bool) -> list[SourceReport]:
+async def _once(sources: list[Source], dry_run: bool, catch_up: bool = False) -> list[SourceReport]:
     if dry_run:
         return await run(sources, config.loader, opportunities=None, resources=None, dry_run=True)
     executor = PostgresExecutor(PostgresDBEngine())
     public = PublicDataDatabridge(executor)
     try:
+        if catch_up:
+            stale = stale_daily(SOURCES, await public.source_health(), config.loader, datetime.now(UTC))
+            if stale:
+                logger.info("Catching up daily sources: %s", ", ".join(s.name for s in stale))
+                sources = sorted({*sources, *stale}, key=SOURCES.index)
         return await run(sources, config.loader, opportunities=OpportunityDatabridge(executor),
                          resources=ResourceDatabridge(executor), public_data=public, runs=public)
     finally:
@@ -90,7 +99,9 @@ async def _main(args: argparse.Namespace) -> int:
         return 0
     if args.watch:
         return await _watch(args)
-    reports = await _once(_chosen(args), args.dry_run)
+    # A live run without --source also catches up stale daily sources.
+    catch_up = args.cadence == Cadence.LIVE.value and not args.source
+    reports = await _once(_chosen(args), args.dry_run, catch_up)
     # Each source logged its summary as it finished.
     return 1 if any(r.status is Status.FAILED for r in reports) else 0
 
