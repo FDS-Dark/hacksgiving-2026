@@ -1,9 +1,10 @@
 # Supabase Storage for Phantom's voice debriefs, with nothing set up by hand.
 #
 # Per environment: a secret API key the API and worker use with Supabase
-# Storage's own API (sign one-time upload URLs, read, delete, list), written
-# to Vault at <vault_prefix>/storage with the project URL and bucket name.
-# ../../terraform/storage.tf reads that path into the pods.
+# Storage's own API (sign one-time upload URLs, read, delete, list). It goes
+# into the runtime secret at <vault_prefix>/db (main.tf, as storage_*) with
+# the project URL and bucket name; CI's Vault role may write only that path
+# and /db-migration. ../../terraform/storage.tf reads it into the pods.
 #
 # The bucket itself (private, audio only, size-capped) is created by the API
 # and the worker on startup (APP__STORAGE__CREATE_BUCKET); the provider has no
@@ -31,16 +32,4 @@ resource "supabase_apikey" "storage" {
       error_message = "supabase_apikey.storage must be a secret key (sb_secret_...)."
     }
   }
-}
-
-resource "vault_kv_secret_v2" "storage" {
-  for_each            = var.environments
-  mount               = "secret"
-  name                = "${each.value.vault_prefix}/storage"
-  delete_all_versions = false
-  data_json = jsonencode({
-    supabase_url = "https://${each.value.project_ref}.supabase.co"
-    secret_key   = supabase_apikey.storage[each.key].api_key
-    bucket       = var.storage_bucket
-  })
 }

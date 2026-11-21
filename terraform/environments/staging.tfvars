@@ -9,5 +9,3 @@ db_secret_path = "deployments/hacksgiving/staging/db"
 app_secret_path = "deployments/hacksgiving/staging/app"
 # The worker portal in a browser (npx expo start --web) against staging.
 cors_origins = ["http://localhost:8081"]
-# Written by database/terraform (vault_kv_secret_v2.storage).
-storage_secret_path = "deployments/hacksgiving/staging/storage"

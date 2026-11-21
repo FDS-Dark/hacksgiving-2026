@@ -123,7 +123,7 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
   retrying can't fix (unreadable audio, silence) dead-letters at once.
 - Storage has two backends behind one interface (`adapters/storage.py`):
   Supabase Storage's own API in production, with a secret API key that
-  `../database/terraform/storage.tf` creates and writes to Vault (no manual
+  `../database/terraform/storage.tf` creates and writes into the runtime db secret in Vault (no manual
   setup; the API and worker create the private bucket on startup), and any
   S3-compatible store locally (the `storage` container).
 - Run it locally beside the API: `uv run python -m worker` (needs
