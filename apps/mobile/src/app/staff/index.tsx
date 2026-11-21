@@ -10,6 +10,8 @@ import { Debriefs } from '@/components/staff/Debriefs';
 import { ErrorBanner } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
+import { NotificationBell } from '@/components/staff/NotificationBell';
+import { OncallCard } from '@/components/staff/OncallCard';
 import { needsAttention } from '@/lib/attention';
 import { CATEGORY_LABEL } from '@/lib/cases';
 import { timeAgo } from '@/lib/format';
@@ -44,10 +46,13 @@ export default function TodayScreen() {
             {hour >= 17 || hour < 5 ? 'Tonight' : 'Today'}
           </Text>
         </View>
+        <NotificationBell />
         <Pressable onPress={() => router.replace('/staff/me')} accessibilityRole="button" accessibilityLabel="Me">
           <Avatar name={me.data?.display_name} size={36} />
         </Pressable>
       </View>
+
+      <OncallCard />
 
       {insights.error && !insights.data ? <ErrorBanner error={insights.error} onRetry={refresh} /> : null}
       <RefreshError query={open} what="your cases" />

@@ -2,14 +2,17 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Page } from '@/components/Page';
-import { Button, Group, Row } from '@/components/ui';
+import { Button, ErrorBanner, Group, Row, Toggle } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/staff/kit';
+import { useOncallSwitch } from '@/components/staff/OncallCard';
 import { useAuth } from '@/lib/auth';
 import { hours } from '@/lib/format';
+import { untilLabel } from '@/lib/oncall';
 import { ROLE_LABEL } from '@/lib/staff';
 import { showCommunityView } from '@/lib/viewMode';
 import { useInsights } from '@/services/cases';
+import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useStaffStatus, useWorkers } from '@/services/staff';
 import { useStaffVoiceCalls } from '@/services/voice';
 import { space, useTheme } from '@/theme/tokens';
@@ -22,6 +25,11 @@ export default function StaffMeScreen() {
   const workers = useWorkers();
   const insights = useInsights();
   const calls = useStaffVoiceCalls();
+  const oncall = useOncallSwitch();
+  const prefs = useNotificationPreferences();
+  const updatePrefs = useUpdateNotificationPreferences();
+  const myShift = oncall.now.data?.me.shift;
+  const urgent = updatePrefs.isPending ? !!updatePrefs.variables?.urgent_when_off_call : !!prefs.data?.urgent_when_off_call;
 
   const count = workers.data?.length;
   const avg = insights.data?.stats.avg_resolution_hours;
@@ -38,6 +46,29 @@ export default function StaffMeScreen() {
         </View>
       </View>
 
+      <Group header="Shift" footer="Also alert me about urgent cases when I’m off call.">
+        <Row
+          title="On call"
+          icon="time-outline"
+          detail={oncall.on && myShift && !oncall.busy ? untilLabel(myShift) : undefined}
+          right={<Toggle value={oncall.on} onChange={oncall.set} disabled={oncall.busy || !oncall.now.data} label="On call" />}
+        />
+        <Row
+          title="Urgent alerts"
+          icon="notifications-outline"
+          right={
+            <Toggle
+              value={urgent}
+              onChange={(next) => updatePrefs.mutate({ urgent_when_off_call: next })}
+              disabled={updatePrefs.isPending || !prefs.data}
+              label="Urgent alerts when off call"
+            />
+          }
+        />
+      </Group>
+      {oncall.error ? <ErrorBanner error={oncall.error} /> : null}
+      {updatePrefs.error ? <ErrorBanner error={updatePrefs.error} /> : null}
+
       <Group header="Manage">
         <Row
           title="Team & roles"
@@ -45,6 +76,12 @@ export default function StaffMeScreen() {
           detail={count === undefined ? undefined : `${count} worker${count === 1 ? '' : 's'}`}
           accessory="chevron"
           onPress={() => router.push('/staff/team')}
+        />
+        <Row
+          title="On-call schedule"
+          icon="calendar-outline"
+          accessory="chevron"
+          onPress={() => router.push('/staff/oncall')}
         />
         <Row
           title="Insights"

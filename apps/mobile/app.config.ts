@@ -2,7 +2,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 /**
  * app.json is the production app. APP_VARIANT=staging makes "Hacksgiving Staging",
- * a separate app (its own bundle id and URL scheme) that installs next to it
+ * a separate app (its own bundle id, Android package and URL scheme) that installs next to it
  * and talks to the staging API. scripts/variant.sh sets APP_VARIANT and the
  * matching .env.<variant> values; see README.md "Staging app".
  *
@@ -11,8 +11,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * from CFBundleDisplayName.
  */
 const variants = {
-  production: { displayName: 'Hacksgiving', bundleIdentifier: 'com.austinkoske.hacksgiving', scheme: 'hacksgiving' },
-  staging: { displayName: 'Hacksgiving Staging', bundleIdentifier: 'com.austinkoske.hacksgiving.staging', scheme: 'hacksgiving-staging' },
+  production: { displayName: 'Hacksgiving', bundleIdentifier: 'com.austinkoske.hacksgiving', androidPackage: 'com.austinkoske.hacksgiving', scheme: 'hacksgiving' },
+  staging: { displayName: 'Hacksgiving Staging', bundleIdentifier: 'com.austinkoske.hacksgiving.staging', androidPackage: 'com.austinkoske.hacksgiving.staging', scheme: 'hacksgiving-staging' },
 } as const;
 
 type Variant = keyof typeof variants;
@@ -39,5 +39,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: v.bundleIdentifier,
       infoPlist: { ...config.ios?.infoPlist, CFBundleDisplayName: v.displayName },
     },
+    android: { ...config.android, package: v.androidPackage },
   };
 };

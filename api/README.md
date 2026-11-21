@@ -6,7 +6,8 @@ FastAPI backend for hacksgiving.
 
 Layered, one direction of dependency, and the same domains in every layer
 (see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)):
-`user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record` and `job`.
+`user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record`, `job`, `oncall`
+and `notification`.
 
 ```
 routers/<domain>.py     HTTP: request/response models, status codes, auth dependencies
@@ -95,6 +96,8 @@ stored.
 | `/v1/voice/...` (ElevenLabs webhook and tools, handoffs, follow-ups) | `VoiceService` |
 | `/v1/records/...` (Phantom debriefs: create, follow, retry, confirm into a case, discard) | `RecordService` |
 | `GET /v1/jobs/stats` (queue health, admins) | `JobService` |
+| `/v1/oncall/...` (who is on now and next, the "On call" switch, the rota; admins edit shifts) | `OncallService` |
+| `/v1/notifications/...`, `/v1/me/notification-preferences` (the inbox: list, unread count, mark read; push settings) | `NotificationService` |
 
 ## Background work (Phantom)
 
@@ -116,6 +119,12 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
 
 - `services/pipeline.py` holds the stages; `worker/runner.py` claims, runs,
   retries and dead-letters them; `worker/__main__.py` wires it all up.
+- The inbox uses the same queue: `task.remind` (`services/notification_jobs.py`)
+  is queued when a task is created or its due time or assignee changes,
+  and 30 minutes before it is due gives the task's owner a `task_due`
+  notification. Other notifications are written by the services, in the
+  transaction of the change (`NotificationService.notify`). Upkeep deletes
+  notifications after 90 days.
 - Name removal is best effort (rules, not a model): the app says "names we
   can spot are removed", never "all names". For voice, the audio itself goes
   to the transcription service before redaction; the app says that too.
@@ -128,8 +137,9 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
   `../database/terraform/storage.tf` creates and writes into the runtime db secret in Vault (no manual
   setup; the API and worker create the private bucket on startup), and any
   S3-compatible store locally (the `storage` container).
-- Run it locally beside the API: `uv run python -m worker` (needs
-  `APP__OPENAI__API_KEY`; liveness on `:8090`).
+- Run it locally beside the API: `uv run python -m worker` (liveness on
+  `:8090`). Without `APP__OPENAI__API_KEY` it still runs task reminders, but
+  not Phantom's stages (it logs a warning).
 
 ## Adding a resource
 

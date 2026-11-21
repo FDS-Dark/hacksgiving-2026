@@ -6,7 +6,9 @@ whatever rows a test gives it, and records each call."""
 
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from databridge.executor import FunctionCaller, Row
 
@@ -34,3 +36,14 @@ class FakeFunctions:
 
     def called(self, function: str) -> list[dict[str, Any]]:
         return [params for name, params in self.calls if name == function]
+
+
+def queued_job(params: Mapping[str, Any]) -> list[Row]:
+    """An app.job_enqueue handler: the job it was asked to queue."""
+    now = datetime.now(timezone.utc)
+    return [{
+        "id": uuid4(), "kind": params["kind"], "payload": {}, "status": "queued", "attempts": 0,
+        "max_attempts": params["max_attempts"], "run_at": params["run_at"] or now, "locked_by": None,
+        "locked_until": None, "last_error": None, "dedupe_key": params["dedupe_key"], "created_at": now,
+        "updated_at": now, "finished_at": None,
+    }]

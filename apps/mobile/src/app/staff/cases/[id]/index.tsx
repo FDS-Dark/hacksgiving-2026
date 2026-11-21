@@ -21,6 +21,7 @@ import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/cases';
 import { dateTime, timeAgo } from '@/lib/format';
 import { callPhone } from '@/lib/phone';
 import { useCase, useUpdateCase } from '@/services/cases';
+import { useMarkCaseRead } from '@/services/notifications';
 import { useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
@@ -36,6 +37,8 @@ export default function CaseScreen() {
   const detail = useCase(id);
   const [tab, setTab] = useState<Tab>('tasks');
   const [updating, setUpdating] = useState(false);
+  // Opening a case clears its notifications; again when a refetch brings new updates.
+  useMarkCaseRead(id, !!detail.data, detail.data?.updates.length);
 
   if (detail.isPending) {
     return (

@@ -7,6 +7,8 @@ import type { PublicRequest, PublicRequestUpdate } from '@/api/types';
 import { CardSkeleton } from '@/components/Skeleton';
 import { Pill, REQUEST_STEPS, ResidentScreen, StatusChip, isOpenStatus, opened, requestStep, when } from '@/components/resident';
 import { ErrorBanner, success } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { useMarkCaseRead } from '@/services/notifications';
 import { useReply, useResidentRequest } from '@/services/requests';
 import { space, useTheme } from '@/theme/tokens';
 
@@ -21,6 +23,9 @@ export default function RequestThreadScreen() {
   const request = useResidentRequest(id);
   const reply = useReply(id);
   const [draft, setDraft] = useState('');
+  // Signed in, opening the request clears its notifications (never signed out: there's no inbox).
+  const signedIn = useAuth().status === 'signedIn';
+  useMarkCaseRead(id, signedIn && !!request.data, request.data?.updates.length);
 
   const send = (content: string) =>
     reply.mutate(content, {
