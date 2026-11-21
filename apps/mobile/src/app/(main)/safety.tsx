@@ -138,9 +138,13 @@ export default function SafetyScreen() {
           <Txt variant="footnote" tone="secondary">
             Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Outlined markers are delayed police calls—not confirmed crimes. All locations are generalized.
           </Txt>
-          {safety.isUsingFallback ? (
-            <Notice icon="cloud-offline-outline">Live city data is unavailable, so sample locations are shown. Pull down to retry.</Notice>
-          ) : null}
+          {safety.isUnavailable ? (
+            <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
+          ) : (
+            <Txt variant="footnote" tone="secondary">
+              MPD-reviewed reported incidents · updated daily · may lag several weeks. Source: City of Milwaukee (CC BY).
+            </Txt>
+          )}
         </View>
 
         <Button label="Report nearby activity" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />

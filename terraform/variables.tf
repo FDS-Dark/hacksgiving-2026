@@ -86,3 +86,22 @@ variable "worker_concurrency" {
   default     = 4
   description = "Jobs each worker pod runs at once."
 }
+
+# The data loader (loader.tf, docs/data-loader.md).
+variable "loader_schedule" {
+  type        = string
+  description = "Cron schedule for the data loader, in America/Chicago time."
+  default     = "30 3 * * *"
+}
+
+variable "loader_live_schedule" {
+  type        = string
+  description = "Cron schedule for the loader's live sources (dispatch calls, alerts). MPD allows 10 requests per 30 minutes: keep it at every 5 minutes or slower."
+  default     = "*/5 * * * *"
+}
+
+variable "loader_secret_path" {
+  type        = string
+  description = "Vault KV path (under secret/) for the loader's source credentials, keyed by environment variable name (APP__LOADER__*). Optional: seed it by hand when you have keys."
+  default     = "deployments/hacksgiving/loader"
+}

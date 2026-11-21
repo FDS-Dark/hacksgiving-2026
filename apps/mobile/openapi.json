@@ -164,6 +164,18 @@
         "title": "AppUser",
         "type": "object"
       },
+      "Audience": {
+        "description": "Who a posting is open to, beyond everyone: staff tag their own postings,\nand an import is tagged when its source says so.",
+        "enum": [
+          "second_chance",
+          "unhoused",
+          "no_experience",
+          "no_id_required",
+          "youth"
+        ],
+        "title": "Audience",
+        "type": "string"
+      },
       "Case": {
         "properties": {
           "assigned_worker_id": {
@@ -720,6 +732,70 @@
         "title": "ClaimHandoffRequest",
         "type": "object"
       },
+      "CommunityMeasure": {
+        "properties": {
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low"
+          },
+          "measure": {
+            "title": "Measure",
+            "type": "string"
+          },
+          "measure_id": {
+            "title": "Measure Id",
+            "type": "string"
+          },
+          "tract_geoid": {
+            "title": "Tract Geoid",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tract_geoid",
+          "measure_id",
+          "measure",
+          "year",
+          "value",
+          "low",
+          "high"
+        ],
+        "title": "CommunityMeasure",
+        "type": "object"
+      },
       "ConfirmRecordRequest": {
         "description": "The author's reviewed version of the extraction: this becomes the case.",
         "properties": {
@@ -851,6 +927,15 @@
           "none"
         ],
         "title": "ContactMethod",
+        "type": "string"
+      },
+      "Cost": {
+        "enum": [
+          "free",
+          "low_cost",
+          "paid"
+        ],
+        "title": "Cost",
         "type": "string"
       },
       "CreateCaseRequest": {
@@ -1018,6 +1103,14 @@
             "description": "An http(s) link to apply or sign up.",
             "title": "Apply Url"
           },
+          "audiences": {
+            "items": {
+              "$ref": "#/components/schemas/Audience"
+            },
+            "maxItems": 5,
+            "title": "Audiences",
+            "type": "array"
+          },
           "contact_email": {
             "anyOf": [
               {
@@ -1041,6 +1134,17 @@
               }
             ],
             "title": "Contact Phone"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cost"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Mostly for education: free, low cost or paid."
           },
           "description": {
             "default": "",
@@ -1303,6 +1407,137 @@
         "title": "CreateTaskRequest",
         "type": "object"
       },
+      "CrimeTrendPoint": {
+        "properties": {
+          "measure": {
+            "title": "Measure",
+            "type": "string"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "offense": {
+            "title": "Offense",
+            "type": "string"
+          },
+          "series": {
+            "title": "Series",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "offense",
+          "measure",
+          "series",
+          "month",
+          "value"
+        ],
+        "title": "CrimeTrendPoint",
+        "type": "object"
+      },
+      "DispatchCall": {
+        "description": "A delayed dispatch call: not a confirmed incident.",
+        "properties": {
+          "call_number": {
+            "title": "Call Number",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "source",
+          "call_number",
+          "occurred_at",
+          "category",
+          "status",
+          "district",
+          "city",
+          "latitude",
+          "longitude"
+        ],
+        "title": "DispatchCall",
+        "type": "object"
+      },
       "DraftMessage": {
         "description": "A message to the requester. Sent only if a worker posts it as a\npublic update.",
         "properties": {
@@ -1508,6 +1743,72 @@
         "title": "ImpactSummary",
         "type": "object"
       },
+      "IncidentPoint": {
+        "description": "A reviewed incident, generalized to about 1 km.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The app's map category, from the NIBRS codes.",
+            "title": "Category"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "incident_at": {
+            "format": "date-time",
+            "title": "Incident At",
+            "type": "string"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "offense_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Offense Codes",
+            "type": "array"
+          },
+          "weapons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Weapons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "incident_at",
+          "district",
+          "latitude",
+          "longitude",
+          "offense_codes",
+          "category",
+          "weapons"
+        ],
+        "title": "IncidentPoint",
+        "type": "object"
+      },
       "JobStat": {
         "description": "One kind and status in the queue: how many, and the oldest one due.",
         "properties": {
@@ -1571,6 +1872,13 @@
             ],
             "title": "Apply Url"
           },
+          "audiences": {
+            "items": {
+              "$ref": "#/components/schemas/Audience"
+            },
+            "title": "Audiences",
+            "type": "array"
+          },
           "contact_email": {
             "anyOf": [
               {
@@ -1593,6 +1901,16 @@
             ],
             "title": "Contact Phone"
           },
+          "cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cost"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1601,6 +1919,19 @@
           "description": {
             "title": "Description",
             "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When applications close, if the source says.",
+            "title": "Expires At"
           },
           "id": {
             "format": "uuid",
@@ -1636,6 +1967,19 @@
             ],
             "title": "Pay"
           },
+          "posted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Imports: when the source posted it.",
+            "title": "Posted At"
+          },
           "schedule": {
             "anyOf": [
               {
@@ -1646,6 +1990,12 @@
               }
             ],
             "title": "Schedule"
+          },
+          "source": {
+            "default": "manual",
+            "description": "'manual' for staff postings, else the import's source.",
+            "title": "Source",
+            "type": "string"
           },
           "title": {
             "title": "Title",
@@ -1669,6 +2019,11 @@
           "contact_phone",
           "contact_email",
           "apply_url",
+          "source",
+          "audiences",
+          "cost",
+          "posted_at",
+          "expires_at",
           "active",
           "created_at",
           "updated_at"
@@ -1679,9 +2034,19 @@
       "OpportunityKind": {
         "enum": [
           "volunteer",
-          "job"
+          "job",
+          "education"
         ],
         "title": "OpportunityKind",
+        "type": "string"
+      },
+      "OpportunityOrigin": {
+        "description": "A list filter: staff postings, imported ones, or (no filter) both.",
+        "enum": [
+          "manual",
+          "imported"
+        ],
+        "title": "OpportunityOrigin",
         "type": "string"
       },
       "OutcomeStatus": {
@@ -2254,6 +2619,12 @@
             ],
             "title": "Phone"
           },
+          "source": {
+            "default": "manual",
+            "description": "'manual' for staff-entered, else the import's source.",
+            "title": "Source",
+            "type": "string"
+          },
           "website": {
             "anyOf": [
               {
@@ -2278,6 +2649,7 @@
           "hours",
           "latitude",
           "longitude",
+          "source",
           "is_sample",
           "active",
           "created_at"
@@ -2414,6 +2786,58 @@
           "role"
         ],
         "title": "SetRoleRequest",
+        "type": "object"
+      },
+      "SourceHealth": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "fetched": {
+            "title": "Fetched",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "status",
+          "finished_at",
+          "fetched",
+          "detail",
+          "last_success_at"
+        ],
+        "title": "SourceHealth",
         "type": "object"
       },
       "StaffMember": {
@@ -2793,6 +3217,245 @@
         ],
         "title": "TaskStatus",
         "type": "string"
+      },
+      "TractCount": {
+        "properties": {
+          "incidents": {
+            "title": "Incidents",
+            "type": "integer"
+          },
+          "tract_geoid": {
+            "title": "Tract Geoid",
+            "type": "string"
+          },
+          "tract_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tract Name"
+          }
+        },
+        "required": [
+          "tract_geoid",
+          "tract_name",
+          "incidents"
+        ],
+        "title": "TractCount",
+        "type": "object"
+      },
+      "TransitAlert": {
+        "properties": {
+          "active_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Until"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "effect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effect"
+          },
+          "header": {
+            "title": "Header",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "header",
+          "description",
+          "effect",
+          "url",
+          "routes",
+          "active_until"
+        ],
+        "title": "TransitAlert",
+        "type": "object"
+      },
+      "TransitArrival": {
+        "properties": {
+          "arrives_at": {
+            "format": "date-time",
+            "title": "Arrives At",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "route_id": {
+            "title": "Route Id",
+            "type": "string"
+          },
+          "route_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route Name"
+          }
+        },
+        "required": [
+          "route_id",
+          "route_name",
+          "arrives_at",
+          "minutes"
+        ],
+        "title": "TransitArrival",
+        "type": "object"
+      },
+      "TransitNearby": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/TransitAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "arrivals_live": {
+            "description": "false when the live arrivals feed couldn't be read.",
+            "title": "Arrivals Live",
+            "type": "boolean"
+          },
+          "attribution": {
+            "default": "Transit data from MCTS. Not sponsored or operated by MTS or MCTS.",
+            "title": "Attribution",
+            "type": "string"
+          },
+          "stops": {
+            "items": {
+              "$ref": "#/components/schemas/TransitStop"
+            },
+            "title": "Stops",
+            "type": "array"
+          }
+        },
+        "required": [
+          "stops",
+          "alerts",
+          "arrivals_live",
+          "attribution"
+        ],
+        "title": "TransitNearby",
+        "type": "object"
+      },
+      "TransitStop": {
+        "properties": {
+          "arrivals": {
+            "items": {
+              "$ref": "#/components/schemas/TransitArrival"
+            },
+            "title": "Arrivals",
+            "type": "array"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "distance_m": {
+            "title": "Distance M",
+            "type": "number"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "route_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Route Names",
+            "type": "array"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          },
+          "stop_id": {
+            "title": "Stop Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stop_id",
+          "code",
+          "name",
+          "latitude",
+          "longitude",
+          "distance_m",
+          "routes",
+          "route_names",
+          "arrivals"
+        ],
+        "title": "TransitStop",
+        "type": "object"
       },
       "UpdateCaseRequest": {
         "description": "Only the fields sent change. Send `assigned_worker_id: null` to\nunassign.",
@@ -3513,6 +4176,127 @@
           "expires_in_seconds"
         ],
         "title": "VoiceUpload",
+        "type": "object"
+      },
+      "WeatherAlert": {
+        "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "effective_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective At"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instruction"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "urgency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgency"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "event",
+          "headline",
+          "severity",
+          "urgency",
+          "area",
+          "description",
+          "instruction",
+          "url",
+          "effective_at",
+          "expires_at"
+        ],
+        "title": "WeatherAlert",
         "type": "object"
       },
       "WebhookAccepted": {
@@ -4439,7 +5223,7 @@
     },
     "/v1/opportunities": {
       "get": {
-        "description": "Open opportunities, newest first. `q` matches the title,\norganization, description or location.",
+        "description": "Open opportunities: staff postings first, then the newest. `q`\nmatches the title, organization, description or location.",
         "operationId": "list_opportunities_v1_opportunities_get",
         "parameters": [
           {
@@ -4476,6 +5260,42 @@
             }
           },
           {
+            "description": "Only postings open to this audience.",
+            "in": "query",
+            "name": "audience",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Audience"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only postings open to this audience.",
+              "title": "Audience"
+            }
+          },
+          {
+            "description": "manual: staff postings; imported: from the data loader.",
+            "in": "query",
+            "name": "origin",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OpportunityOrigin"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "manual: staff postings; imported: from the data loader.",
+              "title": "Origin"
+            }
+          },
+          {
             "description": "Staff only; ignored for everyone else.",
             "in": "query",
             "name": "include_closed",
@@ -4485,6 +5305,18 @@
               "description": "Staff only; ignored for everyone else.",
               "title": "Include Closed",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],
@@ -4520,7 +5352,7 @@
         ]
       },
       "post": {
-        "description": "Post a volunteer or job opportunity. Staff only.",
+        "description": "Post a volunteer, job or education opportunity. Staff only.",
         "operationId": "create_opportunity_v1_opportunities_post",
         "requestBody": {
           "content": {
@@ -4653,6 +5485,475 @@
         "summary": "Update Opportunity",
         "tags": [
           "opportunities"
+        ]
+      }
+    },
+    "/v1/public-data/calls": {
+      "get": {
+        "description": "Delayed dispatch calls (MPD 30-90 minutes, MFD 15-105): not confirmed\nincidents. Sensitive call types are never listed.",
+        "operationId": "calls_v1_public_data_calls_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^(mpd|mfd)_calls$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "maximum": 48,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 300,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DispatchCall"
+                  },
+                  "title": "Response Calls V1 Public Data Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Calls",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/community-needs": {
+      "get": {
+        "description": "CDC PLACES modeled estimates of health-related social needs by tract\n(yearly). Context only: never for prioritizing people.",
+        "operationId": "community_needs_v1_public_data_community_needs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tract_geoid",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{11}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tract Geoid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "measure_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 20,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Measure Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommunityMeasure"
+                  },
+                  "title": "Response Community Needs V1 Public Data Community Needs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Community Needs",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/crime-trends": {
+      "get": {
+        "description": "FBI monthly totals and rates for MPD, Wisconsin and the US.",
+        "operationId": "crime_trends_v1_public_data_crime_trends_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offense",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Offense"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CrimeTrendPoint"
+                  },
+                  "title": "Response Crime Trends V1 Public Data Crime Trends Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Crime Trends",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/incidents": {
+      "get": {
+        "description": "MPD-reviewed incidents (NIBRS, updated daily, may lag weeks), newest\nfirst, each at about 1 km and with the app's map category.",
+        "operationId": "incidents_v1_public_data_incidents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5000,
+              "maximum": 20000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentPoint"
+                  },
+                  "title": "Response Incidents V1 Public Data Incidents Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Incidents",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/incidents/by-tract": {
+      "get": {
+        "description": "Incident counts per census tract; tracts with fewer than 5 are left out.",
+        "operationId": "incidents_by_tract_v1_public_data_incidents_by_tract_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "A NIBRS code, e.g. 13A.",
+            "in": "query",
+            "name": "offense_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A NIBRS code, e.g. 13A.",
+              "title": "Offense Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TractCount"
+                  },
+                  "title": "Response Incidents By Tract V1 Public Data Incidents By Tract Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Incidents By Tract",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/sources": {
+      "get": {
+        "description": "Each source's latest loader run and when it last succeeded.",
+        "operationId": "sources_v1_public_data_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceHealth"
+                  },
+                  "title": "Response Sources V1 Public Data Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/transit/nearby": {
+      "get": {
+        "description": "The nearest MCTS stops, their next arrivals and any service alerts.",
+        "operationId": "transit_nearby_v1_public_data_transit_nearby_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "latitude",
+            "required": true,
+            "schema": {
+              "maximum": 43.5,
+              "minimum": 42.5,
+              "title": "Latitude",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "longitude",
+            "required": true,
+            "schema": {
+              "maximum": -87.5,
+              "minimum": -88.5,
+              "title": "Longitude",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "radius_m",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 2000,
+              "minimum": 50,
+              "title": "Radius M",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "maximum": 10,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransitNearby"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transit Nearby",
+        "tags": [
+          "public data"
+        ]
+      }
+    },
+    "/v1/public-data/weather-alerts": {
+      "get": {
+        "description": "National Weather Service alerts in effect for Milwaukee County.",
+        "operationId": "weather_alerts_v1_public_data_weather_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WeatherAlert"
+                  },
+                  "title": "Response Weather Alerts V1 Public Data Weather Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Weather Alerts",
+        "tags": [
+          "public data"
         ]
       }
     },

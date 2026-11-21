@@ -9,3 +9,5 @@ db_secret_path = "deployments/hacksgiving/staging/db"
 app_secret_path = "deployments/hacksgiving/staging/app"
 # The worker portal in a browser (npx expo start --web) against staging.
 cors_origins = ["http://localhost:8081"]
+# The data loader's source credentials (optional; see loader.tf).
+loader_secret_path = "deployments/hacksgiving/staging/loader"

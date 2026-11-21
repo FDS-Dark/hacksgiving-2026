@@ -37,11 +37,30 @@ export type CreateResource = Schemas['CreateResourceRequest'];
 export type CaseSummary = Schemas['CaseSummary'];
 export type ResourceSuggestions = Schemas['ResourceSuggestions'];
 
-// ── Volunteer and job opportunities ──────────────────────────────────────
+// ── Volunteer, job and education opportunities ─────────────────────────────
 export type Opportunity = Schemas['Opportunity'];
 export type OpportunityKind = Schemas['OpportunityKind'];
 export type CreateOpportunity = Schemas['CreateOpportunityRequest'];
-export const OPPORTUNITY_KINDS = ['job', 'volunteer'] as const satisfies readonly OpportunityKind[];
+export type Audience = Schemas['Audience'];
+export type Cost = Schemas['Cost'];
+export type OpportunityOrigin = Schemas['OpportunityOrigin'];
+export const OPPORTUNITY_KINDS = ['job', 'education', 'volunteer'] as const satisfies readonly OpportunityKind[];
+export const AUDIENCES = [
+  'second_chance',
+  'unhoused',
+  'no_experience',
+  'no_id_required',
+  'youth',
+] as const satisfies readonly Audience[];
+export const COSTS = ['free', 'low_cost', 'paid'] as const satisfies readonly Cost[];
+/** Opportunities staff post by hand; everything else came from the data loader. */
+export const MANUAL_SOURCE = 'manual';
+
+// ── Public data (the data loader, docs/data-loader.md) ────────────────────────
+export type IncidentPoint = Schemas['IncidentPoint'];
+export type DispatchCall = Schemas['DispatchCall'];
+export type TransitNearby = Schemas['TransitNearby'];
+export type WeatherAlert = Schemas['WeatherAlert'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];

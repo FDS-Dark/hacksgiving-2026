@@ -318,14 +318,14 @@ export interface paths {
         };
         /**
          * List Opportunities
-         * @description Open opportunities, newest first. `q` matches the title,
-         *     organization, description or location.
+         * @description Open opportunities: staff postings first, then the newest. `q`
+         *     matches the title, organization, description or location.
          */
         get: operations["list_opportunities_v1_opportunities_get"];
         put?: never;
         /**
          * Create Opportunity
-         * @description Post a volunteer or job opportunity. Staff only.
+         * @description Post a volunteer, job or education opportunity. Staff only.
          */
         post: operations["create_opportunity_v1_opportunities_post"];
         delete?: never;
@@ -356,6 +356,169 @@ export interface paths {
          * @description Close (`active: false`) or reopen a posting. Staff only.
          */
         patch: operations["update_opportunity_v1_opportunities__opportunity_id__patch"];
+        trace?: never;
+    };
+    "/v1/public-data/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Calls
+         * @description Delayed dispatch calls (MPD 30-90 minutes, MFD 15-105): not confirmed
+         *     incidents. Sensitive call types are never listed.
+         */
+        get: operations["calls_v1_public_data_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/community-needs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Community Needs
+         * @description CDC PLACES modeled estimates of health-related social needs by tract
+         *     (yearly). Context only: never for prioritizing people.
+         */
+        get: operations["community_needs_v1_public_data_community_needs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/crime-trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Crime Trends
+         * @description FBI monthly totals and rates for MPD, Wisconsin and the US.
+         */
+        get: operations["crime_trends_v1_public_data_crime_trends_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Incidents
+         * @description MPD-reviewed incidents (NIBRS, updated daily, may lag weeks), newest
+         *     first, each at about 1 km and with the app's map category.
+         */
+        get: operations["incidents_v1_public_data_incidents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/incidents/by-tract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Incidents By Tract
+         * @description Incident counts per census tract; tracts with fewer than 5 are left out.
+         */
+        get: operations["incidents_by_tract_v1_public_data_incidents_by_tract_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sources
+         * @description Each source's latest loader run and when it last succeeded.
+         */
+        get: operations["sources_v1_public_data_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/transit/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transit Nearby
+         * @description The nearest MCTS stops, their next arrivals and any service alerts.
+         */
+        get: operations["transit_nearby_v1_public_data_transit_nearby_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-data/weather-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Weather Alerts
+         * @description National Weather Service alerts in effect for Milwaukee County.
+         */
+        get: operations["weather_alerts_v1_public_data_weather_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/public/requests": {
@@ -1150,6 +1313,13 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /**
+         * Audience
+         * @description Who a posting is open to, beyond everyone: staff tag their own postings,
+         *     and an import is tagged when its source says so.
+         * @enum {string}
+         */
+        Audience: "second_chance" | "unhoused" | "no_experience" | "no_id_required" | "youth";
         /** Case */
         Case: {
             /** Assigned Worker Id */
@@ -1337,6 +1507,23 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** CommunityMeasure */
+        CommunityMeasure: {
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Measure */
+            measure: string;
+            /** Measure Id */
+            measure_id: string;
+            /** Tract Geoid */
+            tract_geoid: string;
+            /** Value */
+            value: number | null;
+            /** Year */
+            year: number;
+        };
         /**
          * ConfirmRecordRequest
          * @description The author's reviewed version of the extraction: this becomes the case.
@@ -1386,6 +1573,11 @@ export interface components {
          */
         ContactMethod: "call" | "text" | "none";
         /**
+         * Cost
+         * @enum {string}
+         */
+        Cost: "free" | "low_cost" | "paid";
+        /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
          */
@@ -1432,10 +1624,14 @@ export interface components {
              * @description An http(s) link to apply or sign up.
              */
             apply_url?: string | null;
+            /** Audiences */
+            audiences?: components["schemas"]["Audience"][];
             /** Contact Email */
             contact_email?: string | null;
             /** Contact Phone */
             contact_phone?: string | null;
+            /** @description Mostly for education: free, low cost or paid. */
+            cost?: components["schemas"]["Cost"] | null;
             /**
              * Description
              * @default
@@ -1513,6 +1709,49 @@ export interface components {
             due_at?: string | null;
             /** Title */
             title: string;
+        };
+        /** CrimeTrendPoint */
+        CrimeTrendPoint: {
+            /** Measure */
+            measure: string;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Offense */
+            offense: string;
+            /** Series */
+            series: string;
+            /** Value */
+            value: number | null;
+        };
+        /**
+         * DispatchCall
+         * @description A delayed dispatch call: not a confirmed incident.
+         */
+        DispatchCall: {
+            /** Call Number */
+            call_number: string;
+            /** Category */
+            category: string;
+            /** City */
+            city: string | null;
+            /** District */
+            district: string | null;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string | null;
         };
         /**
          * DraftMessage
@@ -1612,6 +1851,32 @@ export interface components {
             transfers_connected: number;
         };
         /**
+         * IncidentPoint
+         * @description A reviewed incident, generalized to about 1 km.
+         */
+        IncidentPoint: {
+            /**
+             * Category
+             * @description The app's map category, from the NIBRS codes.
+             */
+            category: string | null;
+            /** District */
+            district: string | null;
+            /**
+             * Incident At
+             * Format: date-time
+             */
+            incident_at: string;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Offense Codes */
+            offense_codes: string[];
+            /** Weapons */
+            weapons: string[];
+        };
+        /**
          * JobStat
          * @description One kind and status in the queue: how many, and the oldest one due.
          */
@@ -1635,10 +1900,13 @@ export interface components {
             active: boolean;
             /** Apply Url */
             apply_url: string | null;
+            /** Audiences */
+            audiences: components["schemas"]["Audience"][];
             /** Contact Email */
             contact_email: string | null;
             /** Contact Phone */
             contact_phone: string | null;
+            cost: components["schemas"]["Cost"] | null;
             /**
              * Created At
              * Format: date-time
@@ -1646,6 +1914,11 @@ export interface components {
             created_at: string;
             /** Description */
             description: string;
+            /**
+             * Expires At
+             * @description When applications close, if the source says.
+             */
+            expires_at: string | null;
             /**
              * Id
              * Format: uuid
@@ -1658,8 +1931,19 @@ export interface components {
             organization: string;
             /** Pay */
             pay: string | null;
+            /**
+             * Posted At
+             * @description Imports: when the source posted it.
+             */
+            posted_at: string | null;
             /** Schedule */
             schedule: string | null;
+            /**
+             * Source
+             * @description 'manual' for staff postings, else the import's source.
+             * @default manual
+             */
+            source: string;
             /** Title */
             title: string;
             /**
@@ -1672,7 +1956,13 @@ export interface components {
          * OpportunityKind
          * @enum {string}
          */
-        OpportunityKind: "volunteer" | "job";
+        OpportunityKind: "volunteer" | "job" | "education";
+        /**
+         * OpportunityOrigin
+         * @description A list filter: staff postings, imported ones, or (no filter) both.
+         * @enum {string}
+         */
+        OpportunityOrigin: "manual" | "imported";
         /**
          * OutcomeStatus
          * @enum {string}
@@ -1897,6 +2187,12 @@ export interface components {
             neighborhood: string | null;
             /** Phone */
             phone: string | null;
+            /**
+             * Source
+             * @description 'manual' for staff-entered, else the import's source.
+             * @default manual
+             */
+            source: string;
             /** Website */
             website: string | null;
         };
@@ -1945,6 +2241,26 @@ export interface components {
         /** SetRoleRequest */
         SetRoleRequest: {
             role: components["schemas"]["Role"];
+        };
+        /** SourceHealth */
+        SourceHealth: {
+            /** Detail */
+            detail: string;
+            /** Fetched */
+            fetched: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+            /** Target */
+            target: string;
         };
         /** StaffMember */
         StaffMember: {
@@ -2069,6 +2385,84 @@ export interface components {
          * @enum {string}
          */
         TaskStatus: "open" | "done";
+        /** TractCount */
+        TractCount: {
+            /** Incidents */
+            incidents: number;
+            /** Tract Geoid */
+            tract_geoid: string;
+            /** Tract Name */
+            tract_name: string | null;
+        };
+        /** TransitAlert */
+        TransitAlert: {
+            /** Active Until */
+            active_until: string | null;
+            /** Description */
+            description: string;
+            /** Effect */
+            effect: string | null;
+            /** Header */
+            header: string;
+            /** Id */
+            id: string;
+            /** Routes */
+            routes: string[];
+            /** Url */
+            url: string | null;
+        };
+        /** TransitArrival */
+        TransitArrival: {
+            /**
+             * Arrives At
+             * Format: date-time
+             */
+            arrives_at: string;
+            /** Minutes */
+            minutes: number;
+            /** Route Id */
+            route_id: string;
+            /** Route Name */
+            route_name: string | null;
+        };
+        /** TransitNearby */
+        TransitNearby: {
+            /** Alerts */
+            alerts: components["schemas"]["TransitAlert"][];
+            /**
+             * Arrivals Live
+             * @description false when the live arrivals feed couldn't be read.
+             */
+            arrivals_live: boolean;
+            /**
+             * Attribution
+             * @default Transit data from MCTS. Not sponsored or operated by MTS or MCTS.
+             */
+            attribution: string;
+            /** Stops */
+            stops: components["schemas"]["TransitStop"][];
+        };
+        /** TransitStop */
+        TransitStop: {
+            /** Arrivals */
+            arrivals: components["schemas"]["TransitArrival"][];
+            /** Code */
+            code: string | null;
+            /** Distance M */
+            distance_m: number;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /** Route Names */
+            route_names: string[];
+            /** Routes */
+            routes: string[];
+            /** Stop Id */
+            stop_id: string;
+        };
         /**
          * UpdateCaseRequest
          * @description Only the fields sent change. Send `assigned_worker_id: null` to
@@ -2322,6 +2716,31 @@ export interface components {
             record: components["schemas"]["Record"];
             /** Upload Url */
             upload_url: string;
+        };
+        /** WeatherAlert */
+        WeatherAlert: {
+            /** Area */
+            area: string | null;
+            /** Description */
+            description: string;
+            /** Effective At */
+            effective_at: string | null;
+            /** Event */
+            event: string;
+            /** Expires At */
+            expires_at: string | null;
+            /** Headline */
+            headline: string | null;
+            /** Id */
+            id: string;
+            /** Instruction */
+            instruction: string | null;
+            /** Severity */
+            severity: string | null;
+            /** Urgency */
+            urgency: string | null;
+            /** Url */
+            url: string | null;
         };
         /** WebhookAccepted */
         WebhookAccepted: {
@@ -2882,8 +3301,13 @@ export interface operations {
             query?: {
                 q?: string | null;
                 kind?: components["schemas"]["OpportunityKind"] | null;
+                /** @description Only postings open to this audience. */
+                audience?: components["schemas"]["Audience"] | null;
+                /** @description manual: staff postings; imported: from the data loader. */
+                origin?: components["schemas"]["OpportunityOrigin"] | null;
                 /** @description Staff only; ignored for everyone else. */
                 include_closed?: boolean;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -3006,6 +3430,241 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calls_v1_public_data_calls_get: {
+        parameters: {
+            query?: {
+                source?: string | null;
+                hours?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DispatchCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    community_needs_v1_public_data_community_needs_get: {
+        parameters: {
+            query?: {
+                tract_geoid?: string | null;
+                measure_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityMeasure"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crime_trends_v1_public_data_crime_trends_get: {
+        parameters: {
+            query?: {
+                offense?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrimeTrendPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    incidents_v1_public_data_incidents_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentPoint"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    incidents_by_tract_v1_public_data_incidents_by_tract_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                /** @description A NIBRS code, e.g. 13A. */
+                offense_code?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TractCount"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sources_v1_public_data_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceHealth"][];
+                };
+            };
+        };
+    };
+    transit_nearby_v1_public_data_transit_nearby_get: {
+        parameters: {
+            query: {
+                latitude: number;
+                longitude: number;
+                radius_m?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransitNearby"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    weather_alerts_v1_public_data_weather_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherAlert"][];
                 };
             };
         };
