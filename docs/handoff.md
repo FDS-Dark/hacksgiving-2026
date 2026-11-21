@@ -1,6 +1,6 @@
 # Handoff: where things stand
 
-Last updated 2026-11-22. Update this file when you finish a piece of work or
+Last updated 2026-11-22 (after the production deploy). Update this file when you finish a piece of work or
 change what's deployed, so the next person (or agent) starts from the truth.
 
 ## What the app is
@@ -45,38 +45,30 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 `AGENTS.md`, section "Run it locally": `scripts/dev-setup.sh`, then
 `scripts/dev.sh`. Main's CI is green (tests, lint, audits, secret scan).
 
-## Production: half deployed
+## Production
 
 Production runs on the homelab k8s cluster (`terraform/`) with Supabase
 Postgres; CI applies everything (`.gitlab-ci.yml`), production steps are
-manual buttons on `main`.
+manual buttons on `main` (`migrate-production`, `db-apply`, `tf-apply`; a
+pipeline's `tf-apply` needs that same pipeline's `migrate-production` run
+first, which is a no-op when migrations are current).
 
-| Piece | State |
-|---|---|
-| Migrations 0010 + 0011 | **Applied** to production |
-| API image and the new worker (`tf-apply`) | **Not deployed**: production still runs the API from before Phantom |
-| Supabase storage keys (`db-apply`) | **Blocked**: CI's Vault role may not write secret metadata, which the Vault provider does on every update |
-| OpenAI key for the worker | In Vault (`secret/deployments/hacksgiving/app`, `openai_api_key`) |
-| Staging branch | Behind `main` |
+Deployed 2026-11-22: migrations through 0011, the API with Phantom, the
+worker Deployment, and the storage and OpenAI secrets (smoke test passed).
+The storage key lives in the runtime secret `<prefix>/db` as `storage_*`
+(database/terraform writes it; CI's database Vault role may update its
+metadata since vault-config MR !18). Staging's branch is behind `main`:
+merge `main` into `staging` to deploy it.
 
-To finish:
-
-1. In the homelab repo `infra/vault-config`, let the hacksgiving CI role
-   `create`/`update` `secret/metadata/deployments/hacksgiving/*` (it can
-   already write the data paths).
-2. On the newest `main` pipeline: `db-plan` -> `db-apply` (writes the
-   `storage_*` fields into `<prefix>/db`), then `tf-plan` -> `tf-apply`
-   (API, worker, secrets), then `smoke-production`.
-3. Smoke test by hand: sign in as a staff account, record one debrief, see it
-   reach "Check before saving".
-
-Until step 1, `tf-apply` alone is safe: voice answers "type it instead" and
-typed debriefs work.
+CI runners sometimes drop connections (a `tf-apply` once failed fetching
+`curl`/`jq` from Alpine's mirror); retry the job.
 
 ## Not verified yet
 
-- A real `.m4a` from an iPhone through the whole voice path (each part is
-  tested separately; transcription of real speech works).
+- A real `.m4a` from an iPhone through the whole voice path, locally or in
+  production (each part is tested separately; transcription of real speech
+  works). The first production debrief is the test: record one as staff and
+  check it reaches "Check before saving".
 - The Supabase Storage adapter against a real project (unit tests pin its
   requests; it sends the secret key as both `apikey` and `Authorization:
   Bearer`, like supabase-js).
