@@ -53,7 +53,7 @@ export default function MeTab() {
       </Group>
 
       <Group header="ComForce MKE">
-        <Row title="Volunteer and jobs" icon="heart-outline" accessory="chevron" onPress={() => Linking.openURL(COMFORCE_SITE)} />
+        <Row title="Volunteer and jobs" icon="heart-outline" accessory="chevron" onPress={() => router.push('/opportunities')} />
         <Row title="About ComForce" icon="information-circle-outline" accessory="chevron" onPress={() => Linking.openURL(COMFORCE_SITE)} />
       </Group>
 

@@ -22,7 +22,8 @@ const TABS: TabItem[] = [
     href: '/staff/me',
     icon: 'person-outline',
     iconActive: 'person',
-    match: (p) => p.startsWith('/staff/me') || p.startsWith('/staff/team') || p.startsWith('/staff/insights'),
+    match: (p) =>
+      p.startsWith('/staff/me') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities'),
   },
 ];
 
@@ -55,6 +56,7 @@ export default function StaffLayout() {
           <Stack.Screen name="me" />
           <Stack.Screen name="team" />
           <Stack.Screen name="insights" />
+          <Stack.Screen name="opportunities" />
         </Stack>
         {fullScreen ? null : <TabBar tabs={TABS} />}
       </>
