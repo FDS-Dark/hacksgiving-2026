@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+
 import { Button, ErrorBanner, Group, Loading, Notice, Row } from '@/components/ui';
 import { Page } from '@/components/Page';
 import { SectionHeading } from '@/components/brand';
@@ -32,6 +34,23 @@ export default function AccountScreen() {
           <Row title="Signed in with" detail={mode === 'dev' ? 'Dev token' : 'Auth0'} />
         </Group>
       ) : null}
+
+      <Group header="Work">
+        <Row
+          title="Training"
+          subtitle="Courses for workers and volunteers"
+          icon="school-outline"
+          accessory="chevron"
+          onPress={() => router.navigate('/training')}
+        />
+        <Row
+          title="Admin"
+          subtitle="For ComForce staff and partners"
+          icon="settings-outline"
+          accessory="chevron"
+          onPress={() => router.navigate('/admin')}
+        />
+      </Group>
 
       <Button label="Sign out" variant="plain" onPress={signOut} />
     </Page>
