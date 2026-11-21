@@ -22,11 +22,13 @@ from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
+from databridge.opportunity import OpportunityDatabridge
 from databridge.task import TaskDatabridge
 from databridge.user import UserDatabridge
 from dependencies import (
     get_case_assistant,
     get_case_service,
+    get_opportunity_service,
     get_staff_service,
     get_task_service,
     get_triager,
@@ -36,6 +38,7 @@ from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
+from services.opportunity import OpportunityService
 from services.staff import StaffService
 from services.tasks import TaskService
 from services.user import UserService
@@ -146,6 +149,7 @@ async def api(database):
         get_staff_service: lambda: staff,
         get_case_service: lambda: cases,
         get_task_service: lambda: tasks,
+        get_opportunity_service: lambda: OpportunityService(OpportunityDatabridge(executor)),
         get_triager: lambda: None,
         get_case_assistant: lambda: None,
     })

@@ -266,6 +266,55 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Opportunities
+         * @description Open opportunities, newest first. `q` matches the title,
+         *     organization, description or location.
+         */
+        get: operations["list_opportunities_v1_opportunities_get"];
+        put?: never;
+        /**
+         * Create Opportunity
+         * @description Post a volunteer or job opportunity. Staff only.
+         */
+        post: operations["create_opportunity_v1_opportunities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/opportunities/{opportunity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Opportunity
+         * @description One opportunity. A closed one is 404 except to staff.
+         */
+        get: operations["get_opportunity_v1_opportunities__opportunity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Opportunity
+         * @description Close (`active: false`) or reopen a posting. Staff only.
+         */
+        patch: operations["update_opportunity_v1_opportunities__opportunity_id__patch"];
+        trace?: never;
+    };
     "/v1/public/requests": {
         parameters: {
             query?: never;
@@ -1099,6 +1148,40 @@ export interface components {
             /** Conversation Id */
             conversation_id: string;
         };
+        /** CreateOpportunityRequest */
+        CreateOpportunityRequest: {
+            /**
+             * Apply Url
+             * @description An http(s) link to apply or sign up.
+             */
+            apply_url?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location?: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Pay
+             * @description Jobs: the pay, e.g. '$17/hour'.
+             */
+            pay?: string | null;
+            /**
+             * Schedule
+             * @description When: hours, days, or the commitment.
+             */
+            schedule?: string | null;
+            /** Title */
+            title: string;
+        };
         /** CreateReferralRequest */
         CreateReferralRequest: {
             /** Conversation Id */
@@ -1175,6 +1258,50 @@ export interface components {
             /** Transfers Connected */
             transfers_connected: number;
         };
+        /** Opportunity */
+        Opportunity: {
+            /** Active */
+            active: boolean;
+            /** Apply Url */
+            apply_url: string | null;
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location: string | null;
+            /** Organization */
+            organization: string;
+            /** Pay */
+            pay: string | null;
+            /** Schedule */
+            schedule: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * OpportunityKind
+         * @enum {string}
+         */
+        OpportunityKind: "volunteer" | "job";
         /**
          * OutcomeStatus
          * @enum {string}
@@ -1541,6 +1668,14 @@ export interface components {
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /** UpdateOpportunityRequest */
+        UpdateOpportunityRequest: {
+            /**
+             * Active
+             * @description false closes the posting (hidden from residents); true reopens it.
+             */
+            active: boolean;
         };
         /** UpdateReferralRequest */
         UpdateReferralRequest: {
@@ -2183,6 +2318,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_opportunities_v1_opportunities_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                kind?: components["schemas"]["OpportunityKind"] | null;
+                /** @description Staff only; ignored for everyone else. */
+                include_closed?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_opportunity_v1_opportunities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_opportunity_v1_opportunities__opportunity_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_opportunity_v1_opportunities__opportunity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
                 };
             };
             /** @description Validation Error */

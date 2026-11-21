@@ -10,6 +10,7 @@ from dependencies import get_executor
 from logging_setup import configure_logging
 from routers.case import router as cases
 from routers.health import router as health
+from routers.opportunity import router as opportunities
 from routers.request import router as requests
 from routers.resource import router as resources
 from routers.routing import router as routing
@@ -52,7 +53,7 @@ app.add_middleware(
 
 errors.install(app)
 
-for router in (health, user, routing, requests, public_requests, cases, tasks, resources, staff, voice):
+for router in (health, user, routing, requests, public_requests, cases, tasks, resources, opportunities, staff, voice):
     app.include_router(router, prefix="/v1")
 
 

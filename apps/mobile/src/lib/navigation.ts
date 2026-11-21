@@ -23,6 +23,7 @@ export interface NavItem {
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Get Help', href: '/help', icon: 'hand-left', blurb: 'Tell us what you need and we will connect you with the right ComForce service.' },
+  { label: 'Opportunities', href: '/opportunities', icon: 'briefcase-outline', blurb: 'Search jobs and volunteer work posted by ComForce MKE and partners.' },
   { label: 'Safety Map', href: '/safety', icon: 'map', blurb: 'Explore generalized Milwaukee public-safety activity without exposing identities or exact addresses.' },
   { label: 'Alerts', href: '/alerts', icon: 'notifications', blurb: 'See nearby public incident and dispatch updates, plus your ComForce call follow-ups.' },
   {

@@ -8,7 +8,7 @@ import { Page } from '@/components/Page';
 import { ServiceGuide } from '@/components/ServiceGuide';
 import { StaffGate } from '@/components/StaffGate';
 import { SectionHeading } from '@/components/brand';
-import { Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
+import { Button, Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
 import { PRIORITY_INFO, SERVICE_INFO, STAFF_STATUS_LABEL, timeAgo } from '@/lib/requests';
 import { useCases } from '@/services/cases';
 import { radius, space, useTheme } from '@/theme/tokens';
@@ -25,6 +25,13 @@ export default function WorkerScreen() {
     <Page contentStyle={{ gap: space.lg }}>
       <SectionHeading title="ComForce Portal" kicker="Every request from the community, sorted by ComForce service." />
       <StaffGate>
+        <Button
+          label="Volunteer & job opportunities"
+          icon="briefcase-outline"
+          variant="tinted"
+          onPress={() => router.navigate('/worker/opportunities')}
+          style={{ alignSelf: 'flex-start' }}
+        />
         <Queue />
       </StaffGate>
     </Page>
