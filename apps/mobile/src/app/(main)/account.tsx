@@ -50,6 +50,14 @@ export default function AccountScreen() {
           accessory="chevron"
           onPress={() => router.navigate('/admin')}
         />
+        {/* ComForce staff: the worker portal (it checks access itself). */}
+        <Row
+          title="ComForce staff portal"
+          subtitle="Cases, resources and your team"
+          icon="briefcase-outline"
+          accessory="chevron"
+          onPress={() => router.navigate('/worker')}
+        />
       </Group>
 
       <Button label="Sign out" variant="plain" onPress={signOut} />

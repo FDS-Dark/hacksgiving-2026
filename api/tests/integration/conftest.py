@@ -18,12 +18,17 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.resource import ResourceDatabridge
+from databridge.staff import StaffDatabridge
 from databridge.user import UserDatabridge
-from dependencies import get_user_service
+from dependencies import get_case_assistant, get_case_service, get_staff_service, get_triager, get_user_service
 from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
+from services.case import CaseService
+from services.staff import StaffService
 from services.user import UserService
 
 DATABASE_DIR = Path(__file__).resolve().parents[3] / "database"
@@ -122,8 +127,16 @@ def app_executor(database: str) -> PostgresExecutor:
 async def api(database):
     """An HTTP client for the app, wired to the test database as the app role."""
     executor = app_executor(database)
+    staff = StaffService(StaffDatabridge(executor))
+    cases = CaseService(CaseDatabridge(executor), ResourceDatabridge(executor), staff)
+    # Every service the routers use, so no test reaches api/.env's database.
+    # No AI in integration tests: triage and the assistant are off.
     app.dependency_overrides.update({
         get_user_service: lambda: UserService(UserDatabridge(executor)),
+        get_staff_service: lambda: staff,
+        get_case_service: lambda: cases,
+        get_triager: lambda: None,
+        get_case_assistant: lambda: None,
     })
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

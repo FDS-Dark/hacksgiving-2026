@@ -57,7 +57,7 @@ def test_migrations_round_trip(empty_database):
     alembic(empty_database, "upgrade", "head")
     assert _fetch(empty_database, "SELECT version_num FROM alembic_version") == [(_head(),)]
     tables = [name for (name,) in _fetch(empty_database, APP_TABLES)]
-    assert "users" in tables
+    assert {"users", "cases", "case_updates", "resources", "case_referrals"} <= set(tables)
 
     alembic(empty_database, "downgrade", "base")
     assert _fetch(empty_database, "SELECT version_num FROM alembic_version") == []
@@ -68,12 +68,16 @@ def test_migrations_round_trip(empty_database):
 
 
 def test_every_api_function_is_declared_for_the_downgrade(empty_database):
-    """0003's (and later revisions') downgrades drop the functions they list;
-    one missing from the lists would survive a downgrade and break the next
-    upgrade. A later revision that adds or drops functions extends this."""
+    """Each revision's downgrade drops the functions it lists; one missing
+    from the lists would survive a downgrade and break the next upgrade. A
+    later revision that adds functions adds its file here."""
     alembic(empty_database, "upgrade", "head")
     created = {name for (name,) in _fetch(empty_database, API_FUNCTIONS)}
-    declared = set(_revision("0003_api_functions").FUNCTIONS)
+    declared = {
+        name
+        for revision in ("0003_api_functions", "0005_case_management")
+        for name in _revision(revision).FUNCTIONS
+    }
     assert created == declared
 
 

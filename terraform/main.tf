@@ -146,9 +146,10 @@ locals {
     {
       APP__ENVIRONMENT__NAME = var.environment
       APP__LOGGING__FORMAT   = "json"
-      # No browser app is deployed (the clients are native), so no origin
-      # may call the API cross-origin. The default list is for local dev.
-      APP__CORS_ORIGINS = jsonencode([])
+      # Browser origins allowed to call the API (var.cors_origins): none in
+      # production (the clients are native); staging allows the Expo web
+      # dev server, for the worker portal on a laptop.
+      APP__CORS_ORIGINS = jsonencode(var.cors_origins)
     },
     var.auth0_domain == "" ? {} : {
       APP__JWT__ALGORITHM = "RS256"

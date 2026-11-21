@@ -8,6 +8,8 @@ screen. Features go on top.
 
 - **Security, data handling, known gaps:** [`SECURITY.md`](SECURITY.md)
 - **Decisions** (inherited from Cooli): [`docs/decisions/`](docs/decisions/)
+- **Case management** (worker portal at `/worker`, request and case API,
+  demo script): [`docs/case-management.md`](docs/case-management.md)
 
 ## Layout
 

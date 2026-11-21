@@ -12,13 +12,20 @@ from typing import Any
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
-from databridge.executor import PostgresExecutor
 from openai import AsyncOpenAI
 
+from databridge.case import CaseDatabridge
+from databridge.executor import PostgresExecutor
+from databridge.resource import ResourceDatabridge
+from databridge.staff import StaffDatabridge
 from databridge.user import UserDatabridge
 from engine.postgres_engine import PostgresDBEngine
+from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
+from services.case import CaseService, Triager
+from services.case_assist import CaseAssistant, triage_with
 from services.rout_request import RoutingService
+from services.staff import StaffService
 from services.user import UserService
 from settings import config
 
@@ -42,11 +49,40 @@ def get_user_service() -> UserService:
 
 
 @cache
+def get_staff_service() -> StaffService:
+    return StaffService(StaffDatabridge(get_executor()))
+
+
+@cache
+def get_case_service() -> CaseService:
+    executor = get_executor()
+    return CaseService(CaseDatabridge(executor), ResourceDatabridge(executor), get_staff_service())
+
+
+@cache
+def _openai() -> AsyncOpenAI:
+    return AsyncOpenAI(api_key=config.openai.api_key, timeout=config.openai.timeout, max_retries=1)
+
+
+@cache
 def get_routing_service() -> RoutingService:
     if not config.openai.api_key:
         raise RuntimeError("APP__OPENAI__API_KEY is not set")
-    client = AsyncOpenAI(api_key=config.openai.api_key, timeout=config.openai.timeout, max_retries=1)
-    return RoutingService(client.responses, config.openai.model)
+    return RoutingService(_openai().responses, config.openai.model)
+
+
+# The AI extras are optional: with no APP__OPENAI__API_KEY these give None,
+# and the case workflow carries on without them.
+
+
+@cache
+def get_case_assistant() -> CaseAssistant | None:
+    return CaseAssistant(_openai().responses, config.openai.model) if config.openai.api_key else None
+
+
+@cache
+def get_triager() -> Triager | None:
+    return triage_with(get_routing_service()) if config.openai.api_key else None
 
 
 # --- Identity -------------------------------------------------------------------
@@ -110,3 +146,19 @@ async def get_current_user(
 ) -> AppUser:
     """The caller as an app.users row, provisioned on first request."""
     return await user_service.get_or_create(claims)
+
+
+async def get_current_worker(
+    user: AppUser = Depends(get_current_user),
+    staff: StaffService = Depends(get_staff_service),
+) -> StaffMember:
+    """The caller, who must be ComForce staff (role worker or admin); 403 otherwise."""
+    return await staff.require_worker(user)
+
+
+async def get_current_admin(
+    user: AppUser = Depends(get_current_user),
+    staff: StaffService = Depends(get_staff_service),
+) -> StaffMember:
+    """The caller, who must be a staff admin; 403 otherwise."""
+    return await staff.require_admin(user)
