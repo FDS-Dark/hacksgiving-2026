@@ -968,10 +968,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * My Referrals
+         * @description Reviewed resources referred during calls linked to this account.
+         */
+        get: operations["my_referrals_v1_voice_referrals_get"];
         put?: never;
         /** Create Referral */
         post: operations["create_referral_v1_voice_referrals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/referrals/{referral_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Referral */
+        get: operations["my_referral_v1_voice_referrals__referral_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1012,6 +1033,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/voice/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Voice Request
+         * @description Create a consented anonymous Get Help case from approved fields only.
+         */
+        post: operations["submit_voice_request_v1_voice_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/resources": {
         parameters: {
             query?: never;
@@ -1046,6 +1087,43 @@ export interface paths {
          * @description Use the app's classifier and keep its structured route on the call.
          */
         post: operations["route_voice_request_v1_voice_route_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/staff/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Staff Call Reviews
+         * @description Structured call outcomes for ComForce review; never transcripts.
+         */
+        get: operations["staff_call_reviews_v1_voice_staff_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/staff/calls/{call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Staff Call Review */
+        get: operations["staff_call_review_v1_voice_staff_calls__call_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2184,6 +2262,83 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** VoiceCallReview */
+        VoiceCallReview: {
+            /** Callback Consent */
+            callback_consent: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Disposition */
+            disposition: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Need Category */
+            need_category: string | null;
+            /** Referral Count */
+            referral_count: number;
+            /** Referral Names */
+            referral_names: string[];
+            /** Request Id */
+            request_id: string | null;
+            /** Request Number */
+            request_number: number | null;
+            /** Started At */
+            started_at: string | null;
+            urgency_tier: components["schemas"]["UrgencyTier"] | null;
+        };
+        /** VoiceCallReviewDetail */
+        VoiceCallReviewDetail: {
+            call: components["schemas"]["VoiceCallReview"];
+            /** Referrals */
+            referrals: components["schemas"]["VoiceReferralDetail"][];
+        };
+        /** VoiceCaseReceipt */
+        VoiceCaseReceipt: {
+            /** Access Code */
+            access_code: string;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Number */
+            request_number: number;
+            /** Status */
+            status: string;
+        };
+        /**
+         * VoiceCaseRequest
+         * @description A minimal request the caller explicitly approved for ComForce staff.
+         */
+        VoiceCaseRequest: {
+            /** Approved Summary */
+            approved_summary: string;
+            /** Caller Id */
+            caller_id?: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Consent
+             * @constant
+             */
+            consent: true;
+            /** @default none */
+            contact_method?: components["schemas"]["ContactMethod"];
+            /** Conversation Id */
+            conversation_id: string;
+            /** General Location */
+            general_location?: string | null;
+            /** Safe To Contact */
+            safe_to_contact?: boolean | null;
+        };
         /** VoiceDashboard */
         VoiceDashboard: {
             /** Active Referrals */
@@ -2239,6 +2394,46 @@ export interface components {
              * Format: uuid
              */
             resource_id: string;
+            status: components["schemas"]["VoiceReferralStatus"];
+        };
+        /** VoiceReferralDetail */
+        VoiceReferralDetail: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Hours Label */
+            hours_label: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Languages */
+            languages: string[];
+            /** Need Category */
+            need_category: string | null;
+            /** Outcome Reason Code */
+            outcome_reason_code: string | null;
+            outcome_status: components["schemas"]["OutcomeStatus"] | null;
+            /** Phone E164 */
+            phone_e164: string | null;
+            /** Resource Category */
+            resource_category: string;
+            /** Resource Description */
+            resource_description: string;
+            /** Resource Name */
+            resource_name: string;
+            /** Resource Slug */
+            resource_slug: string;
+            /** Service Area */
+            service_area: string;
             status: components["schemas"]["VoiceReferralStatus"];
         };
         /**
@@ -3974,6 +4169,26 @@ export interface operations {
             };
         };
     };
+    my_referrals_v1_voice_referrals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferralDetail"][];
+                };
+            };
+        };
+    };
     create_referral_v1_voice_referrals_post: {
         parameters: {
             query?: never;
@@ -3996,6 +4211,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceReferral"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_referral_v1_voice_referrals__referral_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referral_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceReferralDetail"];
                 };
             };
             /** @description Validation Error */
@@ -4081,6 +4327,41 @@ export interface operations {
             };
         };
     };
+    submit_voice_request_v1_voice_requests_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCaseReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     resources_v1_voice_resources_get: {
         parameters: {
             query?: {
@@ -4137,6 +4418,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceRouteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    staff_call_reviews_v1_voice_staff_calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCallReview"][];
+                };
+            };
+        };
+    };
+    staff_call_review_v1_voice_staff_calls__call_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCallReviewDetail"];
                 };
             };
             /** @description Validation Error */
