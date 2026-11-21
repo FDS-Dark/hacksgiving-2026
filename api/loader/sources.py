@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
 
-from adapters import careeronestop, federal, hunger_task_force, mcts, milwaukee, usajobs
+from adapters import careeronestop, comforce, federal, hunger_task_force, mcts, milwaukee, usajobs
 from settings import LoaderConfig
 
 
@@ -118,6 +118,10 @@ async def _food_sites(config: LoaderConfig) -> Fetched:
         return (await hunger_task_force.fetch_sites(http))[: config.max_per_source]
 
 
+async def _reviewed_resources(_: LoaderConfig) -> Fetched:
+    return comforce.resources()
+
+
 # --- Public data --------------------------------------------------------------------------
 
 
@@ -180,6 +184,8 @@ SOURCES: tuple[Source, ...] = (
     Source(careeronestop.TRAINING_SOURCE, O, "Training programs WIOA can pay for (CareerOneStop)",
            _careeronestop_missing, _careeronestop_training),
     # Resources.
+    Source(comforce.SOURCE, R, "ComForce-reviewed Milwaukee phone and city services", _public,
+           _reviewed_resources),
     Source(careeronestop.JOB_CENTERS_SOURCE, R, "American Job Centers (CareerOneStop download)", _public,
            _job_centers),
     Source(careeronestop.REENTRY_SOURCE, R, "Youth and reentry programs (CareerOneStop download)", _public,

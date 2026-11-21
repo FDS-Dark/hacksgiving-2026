@@ -30,6 +30,7 @@ minutes).
 | `usajobs` | opportunities | daily | `APP__LOADER__USAJOBS_API_KEY`, `APP__LOADER__USAJOBS_EMAIL` ([free key](https://developer.usajobs.gov/apirequest/)) | Federal jobs open to the public near Milwaukee |
 | `careeronestop_jobs` | opportunities | daily | `APP__LOADER__CAREERONESTOP_USER_ID`, `..._TOKEN` | National Labor Exchange jobs; fair-chance employers tagged |
 | `careeronestop_training` | opportunities (education) | daily | the same | Training programs WIOA can pay for |
+| `comforce_reviewed` | resources | daily | nothing | ComForce-reviewed Milwaukee Mobile Crisis, police non-emergency, and City Services contacts shared with the phone navigator |
 | `careeronestop_ajc` | resources | daily | nothing | American Job Centers |
 | `careeronestop_reentry` | resources | daily | nothing | Youth and reentry programs |
 | `hunger_task_force` | resources (meal programs) | daily | nothing | Pantries, meal sites, WIC, formula, mobile markets, Stockbox; placed with the Census geocoder |

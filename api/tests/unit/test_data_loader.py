@@ -10,16 +10,32 @@ import httpx
 import pytest
 from openpyxl import Workbook
 
-from adapters import careeronestop, usajobs
+from adapters import careeronestop, comforce, usajobs
 from adapters.dates import parse_datetime
 from loader.runner import Status, opportunity_fingerprint, run
-from loader.sources import Source, Target
+from loader.sources import BY_NAME, Source, Target
 from models.case_enums import CaseCategory
 from models.loader import ImportedOpportunity, ImportedResource, SyncResult
 from models.opportunity import Audience, OpportunityKind
 from settings import LoaderConfig
 
 NOW = datetime(2026, 11, 21, 12, tzinfo=UTC)
+
+
+def test_comforce_reviewed_resources_match_the_phone_directory():
+    mobile_crisis, police, city = comforce.resources()
+
+    assert [item.external_id for item in (mobile_crisis, police, city)] == [
+        "milwaukee-mobile-crisis", "mpd-non-emergency", "milwaukee-city-services",
+    ]
+    assert mobile_crisis.category is CaseCategory.INCIDENT_DEESCALATION
+    assert (mobile_crisis.phone, police.phone, city.phone) == (
+        "+14142577222", "+14149334444", "+14142862489",
+    )
+    assert all(item.source == comforce.SOURCE and item.hours == "24/7"
+               for item in (mobile_crisis, police, city))
+    assert all("911" in (item.description or "") for item in (mobile_crisis, police))
+    assert BY_NAME[comforce.SOURCE].target is Target.RESOURCES
 
 
 # --- CareerOneStop jobs ----------------------------------------------------------
