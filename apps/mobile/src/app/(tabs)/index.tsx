@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { SafetyMap, type AreaSelection } from '@/components/SafetyMap';
-import { Button, Chip, Chips, EmptyState, Field, Group, Header, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
+import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Screen, Sheet, Txt, success } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import {
   INCIDENT_CATEGORIES,
@@ -11,7 +11,7 @@ import {
   type SafetyPoint,
   usePublicSafetyPoints,
 } from '@/services/publicSafety';
-import { useRecentCalls } from '@/services/recentCalls';
+import { milesBetween, useRecentCalls } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 
 const REPORT_COLOR = '#247A63';
@@ -21,6 +21,14 @@ const NEIGHBORHOODS = [
   { name: 'South Side', latitude: 42.99, longitude: -87.93 },
   { name: 'East Side', latitude: 43.06, longitude: -87.89 },
 ];
+
+function approximateDistance(
+  center: { latitude: number; longitude: number },
+  point: { latitude?: number; longitude?: number },
+) {
+  if (point.latitude === undefined || point.longitude === undefined) return undefined;
+  return `Approx. ${milesBetween(center, { latitude: point.latitude, longitude: point.longitude }).toFixed(1)} mi`;
+}
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -40,6 +48,7 @@ export default function HomeScreen() {
   const allPoints = useMemo(() => [...safety.points, ...reports], [reports, safety.points]);
   const visiblePoints = useMemo(() => allPoints.filter((point) => active.has(point.category)), [active, allPoints]);
   const updatedAt = safety.dataUpdatedAt ? new Date(safety.dataUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading';
+  const allSelected = INCIDENT_CATEGORIES.every((item) => active.has(item.id));
   const areaSummary = useMemo(() => {
     if (!selectedArea) return null;
     const counts = new Map<string, number>();
@@ -66,6 +75,15 @@ export default function HomeScreen() {
     });
   };
 
+  const toggleAll = () => {
+    setActive((current) => {
+      const next = new Set(current);
+      if (allSelected) INCIDENT_CATEGORIES.forEach((item) => next.delete(item.id));
+      else INCIDENT_CATEGORIES.forEach((item) => next.add(item.id));
+      return next;
+    });
+  };
+
   const submitReport = () => {
     setReports((current) => [{
       id: `community-${Date.now()}`,
@@ -86,20 +104,16 @@ export default function HomeScreen() {
     <>
       <Screen refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
         <View style={styles.brandRow}>
-          <View>
+          <View style={styles.brandTitle}>
             <Txt variant="headline" color={theme.brand}>NearMKE</Txt>
-            <Txt variant="caption" tone="secondary">Public safety & nearby help</Txt>
+            <View style={[styles.brandDivider, { backgroundColor: theme.separator }]} />
+            <Txt variant="headline">Know what’s nearby.</Txt>
           </View>
           <Pressable onPress={signOut} accessibilityRole="button" accessibilityLabel="Sign out" hitSlop={10}>
             <Ionicons name="person-circle-outline" size={30} color={theme.textSecondary} />
           </Pressable>
         </View>
-
-        <Header title="Know what’s nearby." subtitle="Explore recent public safety patterns and find trusted Milwaukee resources." />
-
-        <Notice icon="warning-outline" tone="warning">
-          For an emergency or immediate danger, call 911. This map is informational and is not monitored by emergency services.
-        </Notice>
+        <Txt variant="subhead" tone="secondary">Recent, generalized public safety activity across Milwaukee.</Txt>
 
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
@@ -107,6 +121,7 @@ export default function HomeScreen() {
             <Txt variant="footnote" tone="secondary">Updated {updatedAt}</Txt>
           </View>
           <Chips scroll>
+            <Chip label="All" active={allSelected} onPress={toggleAll} />
             {INCIDENT_CATEGORIES.map((item) => (
               <Chip
                 key={item.id}
@@ -127,7 +142,7 @@ export default function HomeScreen() {
           </Chips>
           <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
-            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Red markers are delayed police calls—not confirmed crimes. All locations are generalized.
+            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Outlined markers are delayed police calls—not confirmed crimes. All locations are generalized.
           </Txt>
           {safety.isUsingFallback ? (
             <Notice icon="cloud-offline-outline">Live city data is unavailable, so sample locations are shown. Pull down to retry.</Notice>
@@ -135,6 +150,10 @@ export default function HomeScreen() {
         </View>
 
         <Button label="Report nearby activity" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />
+
+        <Notice icon="warning-outline" tone="warning">
+          For an emergency or immediate danger, call 911. This map is informational and is not monitored by emergency services.
+        </Notice>
 
         <Group
           header="Get help"
@@ -214,17 +233,25 @@ export default function HomeScreen() {
           <>
             {areaSummary?.total ? (
               <>
-                <Notice icon="analytics-outline">
-                  This area appears warmer because {areaSummary.total} reports cluster near the selected point in the 30-day window
-                  {areaSummary.top ? `; ${areaSummary.top[0]} is the largest category (${areaSummary.top[1]})` : ''}. This describes report density, not why crime occurs or whether an area is safe.
-                </Notice>
+                <View style={[styles.areaSummary, { backgroundColor: theme.accentSoft }]}>
+                  <Ionicons name="analytics-outline" size={24} color={theme.accent} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Txt variant="headline">{areaSummary.total} reports in the past 30 days</Txt>
+                    {areaSummary.top ? (
+                      <Txt variant="subhead" tone="secondary">Most common: {areaSummary.top[0]} ({areaSummary.top[1]})</Txt>
+                    ) : null}
+                  </View>
+                </View>
+                <Txt variant="footnote" tone="secondary">
+                  Higher heat means more public reports overlap here. It does not explain why incidents occur or predict whether an area is safe.
+                </Txt>
                 <Group header="Category breakdown">
                   {areaSummary.breakdown.map(([label, count]) => (
                     <Row key={label} title={label} detail={String(count)} />
                   ))}
                 </Group>
                 <Group header="Recent reported incidents" footer="Classifications may be revised. Exact addresses and incident numbers are intentionally omitted.">
-                  {selectedArea?.incidents.map((point) => {
+                  {selectedArea?.incidents.slice(0, 12).map((point) => {
                     const categoryName = point.category === 'community-report'
                       ? 'Community report'
                       : INCIDENT_CATEGORIES.find((item) => item.id === point.category)?.label ?? 'Reported incident';
@@ -240,6 +267,7 @@ export default function HomeScreen() {
                         key={point.id}
                         title={categoryName}
                         subtitle={point.weaponUsed ? `${time} · Weapon detail: ${point.weaponUsed}` : time}
+                        detail={approximateDistance(selectedArea.center, point)}
                         tile={{ icon: 'map-marker-alert', color: '#B42318' }}
                       />
                     );
@@ -249,11 +277,12 @@ export default function HomeScreen() {
             ) : null}
             {selectedArea?.calls.length ? (
               <Group header="Recent dispatch calls" footer="Calls are delayed and unconfirmed; they are not counted in the heat intensity.">
-                {selectedArea.calls.map((call) => (
+                {selectedArea.calls.slice(0, 10).map((call) => (
                   <Row
                     key={call.id}
                     title={call.nature}
                     subtitle={`${call.occurredAt} · District ${call.district} · ${call.status}`}
+                    detail={approximateDistance(selectedArea.center, call)}
                     tile={{ icon: 'phone-alert', color: '#D76B18' }}
                   />
                 ))}
@@ -274,7 +303,10 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   brandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  brandTitle: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexShrink: 1 },
+  brandDivider: { width: 1, height: 24 },
   sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   noteField: { minHeight: 84, textAlignVertical: 'top' },
   privacyCard: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start', padding: space.md, borderRadius: radius.lg },
+  areaSummary: { flexDirection: 'row', gap: space.md, alignItems: 'center', padding: space.md, borderRadius: radius.lg },
 });
