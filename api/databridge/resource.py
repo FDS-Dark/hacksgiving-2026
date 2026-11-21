@@ -19,5 +19,5 @@ class ResourceDatabridge(Databridge):
             "resource_create",
             name=body.name, category=body.category, description=body.description, address=body.address or None,
             neighborhood=body.neighborhood or None, phone=body.phone or None, website=body.website or None,
-            hours=body.hours or None, created_by=created_by,
+            hours=body.hours or None, latitude=body.latitude, longitude=body.longitude, created_by=created_by,
         ))

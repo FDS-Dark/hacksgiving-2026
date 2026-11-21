@@ -205,6 +205,24 @@ class VoiceService:
             )
         return referral
 
+    async def record_route(
+        self, conversation_id: str, need_category: str, urgent: bool
+    ) -> None:
+        """Persist the shared app/phone route without storing free-form speech."""
+        await self.voice.ingest_call(
+            conversation_id=conversation_id,
+            event_timestamp=int(time.time()),
+            language=None,
+            need_category=_short_string(need_category, 64),
+            urgency_tier="emergency" if urgent else "routine",
+            neighborhood=None,
+            callback_consent=False,
+            disposition="redirect_911" if urgent else "comforce_routed",
+            caller_hash=None,
+            started_at=None,
+            ended_at=None,
+        )
+
     @staticmethod
     def _handoff_hash(code: str, secret: str) -> str:
         if not secret:

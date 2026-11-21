@@ -53,7 +53,7 @@ export default function MeTab() {
       </Group>
 
       <Group header="ComForce MKE">
-        <Row title="Volunteer and jobs" icon="heart-outline" accessory="chevron" onPress={() => Linking.openURL(COMFORCE_SITE)} />
+        <Row title="Volunteer and jobs" icon="heart-outline" accessory="chevron" onPress={() => router.push('/opportunities')} />
         <Row title="About ComForce" icon="information-circle-outline" accessory="chevron" onPress={() => Linking.openURL(COMFORCE_SITE)} />
       </Group>
 
@@ -73,6 +73,7 @@ function PhoneCalls() {
   const followUps = useVoiceFollowUps();
   const claim = useClaimVoiceHandoff();
   const [code, setCode] = useState('');
+  const [callConnected, setCallConnected] = useState(false);
 
   const connect = () =>
     claim.mutate(
@@ -80,6 +81,7 @@ function PhoneCalls() {
       {
         onSuccess: () => {
           setCode('');
+          setCallConnected(true);
           success();
         },
       },
@@ -93,7 +95,10 @@ function PhoneCalls() {
           right={
             <Field
               value={code}
-              onChangeText={(value) => setCode(value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8))}
+              onChangeText={(value) => {
+                setCallConnected(false);
+                setCode(value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8));
+              }}
               placeholder="ABCD2345"
               autoCapitalize="characters"
               autoCorrect={false}
@@ -112,6 +117,11 @@ function PhoneCalls() {
           />
         ))}
       </Group>
+      {callConnected ? (
+        <Notice icon="checkmark-circle-outline">
+          Call connected. Open Alerts to see your ComForce notification.
+        </Notice>
+      ) : null}
       {claim.error ? <ErrorBanner error={claim.error} /> : null}
     </>
   );

@@ -6,7 +6,7 @@ from datetime import datetime
 from uuid import UUID
 
 from models.base import ApiModel
-from models.case import ContactField, Location, LongText, Title
+from models.case import ContactField, Latitude, Location, LongText, Longitude, Title
 from models.case_enums import CaseCategory
 
 
@@ -20,6 +20,8 @@ class Resource(ApiModel):
     phone: str | None = None
     website: str | None = None
     hours: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     is_sample: bool
     active: bool
     created_at: datetime
@@ -34,3 +36,5 @@ class CreateResourceRequest(ApiModel):
     phone: ContactField | None = None
     website: ContactField | None = None
     hours: ContactField | None = None
+    latitude: Latitude | None = None
+    longitude: Longitude | None = None

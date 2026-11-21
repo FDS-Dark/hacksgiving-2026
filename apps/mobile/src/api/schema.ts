@@ -199,6 +199,28 @@ export interface paths {
         patch: operations["update_referral_v1_cases__case_id__referrals__referral_id__patch"];
         trace?: never;
     };
+    "/v1/cases/{case_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Task
+         * @description Add a task to the case, optionally due at a time and assigned to a
+         *     worker (422 if they aren't staff). Without an assignee it follows the
+         *     case. Noted in the case history.
+         */
+        post: operations["add_task_v1_cases__case_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/updates": {
         parameters: {
             query?: never;
@@ -264,6 +286,55 @@ export interface paths {
          *     An email address is never kept as a name.
          */
         patch: operations["update_me_v1_me_patch"];
+        trace?: never;
+    };
+    "/v1/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Opportunities
+         * @description Open opportunities, newest first. `q` matches the title,
+         *     organization, description or location.
+         */
+        get: operations["list_opportunities_v1_opportunities_get"];
+        put?: never;
+        /**
+         * Create Opportunity
+         * @description Post a volunteer or job opportunity. Staff only.
+         */
+        post: operations["create_opportunity_v1_opportunities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/opportunities/{opportunity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Opportunity
+         * @description One opportunity. A closed one is 404 except to staff.
+         */
+        get: operations["get_opportunity_v1_opportunities__opportunity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Opportunity
+         * @description Close (`active: false`) or reopen a posting. Staff only.
+         */
+        patch: operations["update_opportunity_v1_opportunities__opportunity_id__patch"];
         trace?: never;
     };
     "/v1/public/requests": {
@@ -606,6 +677,26 @@ export interface paths {
         patch: operations["update_task_v1_tasks__task_id__patch"];
         trace?: never;
     };
+    "/v1/voice/app-capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * App Capabilities
+         * @description The public app actions a phone agent may accurately describe.
+         */
+        get: operations["app_capabilities_v1_voice_app_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/dashboard": {
         parameters: {
             query?: never;
@@ -762,6 +853,26 @@ export interface paths {
         get: operations["resources_v1_voice_resources_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Voice Request
+         * @description Use the app's classifier and keep its structured route on the call.
+         */
+        post: operations["route_voice_request_v1_voice_route_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1099,6 +1210,40 @@ export interface components {
             /** Conversation Id */
             conversation_id: string;
         };
+        /** CreateOpportunityRequest */
+        CreateOpportunityRequest: {
+            /**
+             * Apply Url
+             * @description An http(s) link to apply or sign up.
+             */
+            apply_url?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Contact Phone */
+            contact_phone?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location?: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Pay
+             * @description Jobs: the pay, e.g. '$17/hour'.
+             */
+            pay?: string | null;
+            /**
+             * Schedule
+             * @description When: hours, days, or the commitment.
+             */
+            schedule?: string | null;
+            /** Title */
+            title: string;
+        };
         /** CreateReferralRequest */
         CreateReferralRequest: {
             /** Conversation Id */
@@ -1120,6 +1265,10 @@ export interface components {
             description?: string;
             /** Hours */
             hours?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
@@ -1128,6 +1277,19 @@ export interface components {
             phone?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /**
+         * CreateTaskRequest
+         * @description A task a worker adds to a case. Without `assigned_worker_id` it
+         *     follows the case (whoever holds it).
+         */
+        CreateTaskRequest: {
+            /** Assigned Worker Id */
+            assigned_worker_id?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Title */
+            title: string;
         };
         /**
          * DraftMessage
@@ -1175,6 +1337,50 @@ export interface components {
             /** Transfers Connected */
             transfers_connected: number;
         };
+        /** Opportunity */
+        Opportunity: {
+            /** Active */
+            active: boolean;
+            /** Apply Url */
+            apply_url: string | null;
+            /** Contact Email */
+            contact_email: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["OpportunityKind"];
+            /** Location */
+            location: string | null;
+            /** Organization */
+            organization: string;
+            /** Pay */
+            pay: string | null;
+            /** Schedule */
+            schedule: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * OpportunityKind
+         * @enum {string}
+         */
+        OpportunityKind: "volunteer" | "job";
         /**
          * OutcomeStatus
          * @enum {string}
@@ -1338,6 +1544,10 @@ export interface components {
             id: string;
             /** Is Sample */
             is_sample: boolean;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
             /** Name */
             name: string;
             /** Neighborhood */
@@ -1542,6 +1752,14 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /** UpdateOpportunityRequest */
+        UpdateOpportunityRequest: {
+            /**
+             * Active
+             * @description false closes the posting (hidden from residents); true reopens it.
+             */
+            active: boolean;
+        };
         /** UpdateReferralRequest */
         UpdateReferralRequest: {
             /** Outcome */
@@ -1602,6 +1820,27 @@ export interface components {
          * @enum {string}
          */
         Visibility: "internal" | "public";
+        /** VoiceAppCapabilities */
+        VoiceAppCapabilities: {
+            /** Features */
+            features: string[];
+            /** Handoff Steps */
+            handoff_steps: string[];
+            /** Limitations */
+            limitations: string[];
+            /** Services */
+            services: components["schemas"]["VoiceAppService"][];
+        };
+        /** VoiceAppService */
+        VoiceAppService: {
+            /** App Destination */
+            app_destination: string;
+            /** Description */
+            description: string;
+            key: components["schemas"]["Service"];
+            /** Name */
+            name: string;
+        };
         /** VoiceDashboard */
         VoiceDashboard: {
             /** Active Referrals */
@@ -1696,6 +1935,34 @@ export interface components {
             slug: string;
             /** Transfer Approved */
             transfer_approved: boolean;
+        };
+        /** VoiceRouteRequest */
+        VoiceRouteRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Message */
+            message: string;
+        };
+        /** VoiceRouteResponse */
+        VoiceRouteResponse: {
+            /** Also Relevant */
+            also_relevant: components["schemas"]["Service"][];
+            /** Also Relevant Names */
+            also_relevant_names: string[];
+            /**
+             * App Destination
+             * @default Get Help
+             */
+            app_destination: string;
+            /** Follow Up Question */
+            follow_up_question: string | null;
+            /** Reason */
+            reason: string;
+            service: components["schemas"]["Service"];
+            /** Service Name */
+            service_name: string;
+            /** Urgent */
+            urgent: boolean;
         };
         /** WebhookAccepted */
         WebhookAccepted: {
@@ -2086,6 +2353,41 @@ export interface operations {
             };
         };
     };
+    add_task_v1_cases__case_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_case_update_v1_cases__case_id__updates_post: {
         parameters: {
             query?: never;
@@ -2183,6 +2485,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_opportunities_v1_opportunities_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                kind?: components["schemas"]["OpportunityKind"] | null;
+                /** @description Staff only; ignored for everyone else. */
+                include_closed?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_opportunity_v1_opportunities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_opportunity_v1_opportunities__opportunity_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_opportunity_v1_opportunities__opportunity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOpportunityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opportunity"];
                 };
             };
             /** @description Validation Error */
@@ -2735,6 +3170,37 @@ export interface operations {
             };
         };
     };
+    app_capabilities_v1_voice_app_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceAppCapabilities"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dashboard_v1_voice_dashboard_get: {
         parameters: {
             query?: never;
@@ -2991,6 +3457,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceResource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    route_voice_request_v1_voice_route_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceRouteResponse"];
                 };
             };
             /** @description Validation Error */

@@ -52,3 +52,9 @@ export const REFERRAL_LABEL: Record<ReferralStatus, string> = {
   completed: 'Completed',
   declined: 'Declined',
 };
+
+/** "Family evicted today and nowhere to sleep. Two kids." → a short title for the queue. */
+export function titleFrom(description: string) {
+  const first = description.trim().split(/(?<=[.!?])\s|\n/)[0] ?? '';
+  return first.length > 80 ? `${first.slice(0, 77).trimEnd()}…` : first;
+}

@@ -12,9 +12,13 @@ from uuid import UUID
 from pydantic import Field, StringConstraints
 
 from models.base import ApiModel
+from models.routing import Service
 
 ShortText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)
+]
+VoiceMessage = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
 ]
 HandoffCodeText = Annotated[
     str,
@@ -111,6 +115,36 @@ class CreateReferralRequest(ApiModel):
 class CreateHandoffRequest(ApiModel):
     conversation_id: ShortText
     caller_id: CallerId | None = None
+
+
+class VoiceRouteRequest(ApiModel):
+    conversation_id: ShortText
+    message: VoiceMessage
+
+
+class VoiceRouteResponse(ApiModel):
+    service: Service
+    service_name: str
+    also_relevant: list[Service]
+    also_relevant_names: list[str]
+    urgent: bool
+    reason: str
+    follow_up_question: str | None = None
+    app_destination: str = "Get Help"
+
+
+class VoiceAppService(ApiModel):
+    key: Service
+    name: str
+    description: str
+    app_destination: str
+
+
+class VoiceAppCapabilities(ApiModel):
+    services: list[VoiceAppService]
+    features: list[str]
+    handoff_steps: list[str]
+    limitations: list[str]
 
 
 class ClaimHandoffRequest(ApiModel):

@@ -2,9 +2,10 @@
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, StringConstraints
 
 from models.base import ApiModel
 from models.case_enums import CaseCategory, CasePriority
@@ -44,6 +45,17 @@ class TaskFilters(ApiModel):
     mine: bool = False
     open_only: bool = True
     limit: int = Field(default=200, ge=1, le=500)
+
+
+class CreateTaskRequest(ApiModel):
+    """A task a worker adds to a case. Without `assigned_worker_id` it
+    follows the case (whoever holds it)."""
+
+    # Same limit as the column (models/case.py Title; that module imports
+    # this one).
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=160)]
+    due_at: datetime | None = None
+    assigned_worker_id: UUID | None = None
 
 
 class UpdateTaskRequest(ApiModel):

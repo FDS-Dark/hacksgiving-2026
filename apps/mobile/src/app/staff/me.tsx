@@ -51,6 +51,12 @@ export default function StaffMeScreen() {
           accessory="chevron"
           onPress={() => router.push('/staff/insights')}
         />
+        <Row
+          title="Volunteer & job opportunities"
+          icon="briefcase-outline"
+          accessory="chevron"
+          onPress={() => router.push('/staff/opportunities')}
+        />
       </Group>
 
       <Group>

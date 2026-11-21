@@ -22,6 +22,15 @@ class TaskDatabridge(Databridge):
         )
         return Task(**row) if row else None
 
+    async def add(
+        self, case_id: UUID, title: str, due_at: datetime | None, assigned_worker_id: UUID | None, actor_id: UUID
+    ) -> Task | None:
+        row = await self._first(
+            "task_add",
+            case_id=case_id, title=title, due_at=due_at, assigned_worker_id=assigned_worker_id, actor_id=actor_id,
+        )
+        return Task(**row) if row else None
+
     async def search(
         self, *, case_id: UUID | None, assigned_worker_id: UUID | None, open_only: bool, limit: int
     ) -> list[Task]:

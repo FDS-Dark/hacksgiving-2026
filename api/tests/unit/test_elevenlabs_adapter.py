@@ -56,6 +56,9 @@ def test_agent_payload_carries_tool_ids_and_emergency_disclosure():
     )["conversation_config"]["agent"]
     assert "call 911" in agent["first_message"]
     assert agent["prompt"]["tool_ids"] == ["tool_lookup"]
+    assert agent["prompt"]["built_in_tools"]["end_call"]["params"] == {
+        "system_tool_type": "end_call"
+    }
 
 
 @pytest.mark.asyncio

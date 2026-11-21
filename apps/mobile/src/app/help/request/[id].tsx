@@ -1,20 +1,25 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { PublicRequestUpdate } from '@/api/types';
-import { BigButton, Card, Pill, ResidentScreen, StatusChip, opened, requestHeading, when } from '@/components/resident';
-import { Button, ErrorBanner, Loading, success } from '@/components/ui';
+import type { PublicRequest, PublicRequestUpdate } from '@/api/types';
+import { CardSkeleton } from '@/components/Skeleton';
+import { Pill, REQUEST_STEPS, ResidentScreen, StatusChip, isOpenStatus, opened, requestStep, when } from '@/components/resident';
+import { ErrorBanner, success } from '@/components/ui';
 import { useReply, useResidentRequest } from '@/services/requests';
-import { useTheme } from '@/theme/tokens';
+import { space, useTheme } from '@/theme/tokens';
 
-/** My request (Figma A4): status, and only what staff chose to share. */
-export default function MyRequestScreen() {
+/**
+ * Figma R2 "Request thread": where the request stands, then the
+ * conversation in order (only what staff chose to share), with a quick
+ * "Call me" reply and a composer at the bottom.
+ */
+export default function RequestThreadScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const request = useResidentRequest(id);
   const reply = useReply(id);
-  const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
 
   const send = (content: string) =>
@@ -22,7 +27,6 @@ export default function MyRequestScreen() {
       onSuccess: () => {
         success();
         setDraft('');
-        setComposing(false);
       },
     });
 
@@ -30,60 +34,53 @@ export default function MyRequestScreen() {
   if (request.needsCode) return <Redirect href="/help/requests" />;
 
   const detail = request.data;
-  const updates = detail ? [...detail.updates].reverse() : [];
+  const updates = detail?.updates ?? [];
   // Offer "Call me" on the newest message until they've answered it.
-  const messageAt = updates.findIndex((u) => u.update_type === 'message');
-  const replyAt = updates.findIndex((u) => u.update_type === 'reply');
-  const answerable = messageAt >= 0 && (replyAt === -1 || replyAt > messageAt) ? updates[messageAt] : undefined;
+  const lastMessage = updates.findLastIndex((u) => u.update_type === 'message');
+  const lastReply = updates.findLastIndex((u) => u.update_type === 'reply');
+  const answerable = lastMessage >= 0 && lastReply < lastMessage ? updates[lastMessage] : undefined;
 
   return (
     <ResidentScreen
-      title="My request"
+      title={detail?.request.title ?? 'My request'}
       refreshing={request.isRefetching}
       onRefresh={request.refetch}
       footer={
         detail ? (
-          composing ? (
-            <View style={{ gap: 8 }}>
+          <View style={{ gap: space.sm }}>
+            {reply.error ? <ErrorBanner error={reply.error} /> : null}
+            <View style={styles.inputRow}>
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
-                placeholder="Write to ComForce"
+                placeholder="Message ComForce"
                 placeholderTextColor={theme.textTertiary}
                 selectionColor={theme.accent}
                 accessibilityLabel="Message to ComForce"
                 multiline
-                autoFocus
                 maxLength={2000}
-                style={[styles.composer, { color: theme.text, backgroundColor: theme.surface, borderColor: theme.separator }]}
+                style={[styles.input, { color: theme.text, backgroundColor: theme.fill }]}
               />
-              {reply.error ? <ErrorBanner error={reply.error} /> : null}
-              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <Button label="Cancel" variant="plain" onPress={() => setComposing(false)} />
-                <View style={{ flex: 1 }}>
-                  <BigButton label="Send" onPress={() => send(draft.trim())} loading={reply.isPending} disabled={!draft.trim()} />
-                </View>
-              </View>
+              <Pressable
+                onPress={() => send(draft.trim())}
+                disabled={!draft.trim() || reply.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Send"
+                style={({ pressed }) => [styles.send, { backgroundColor: theme.accent }, (!draft.trim() || reply.isPending) && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
+              >
+                <Ionicons name="send" size={18} color={theme.onAccent} />
+              </Pressable>
             </View>
-          ) : (
-            <BigButton label="Message ComForce" onPress={() => setComposing(true)} />
-          )
+          </View>
         ) : null
       }
     >
-      {request.error ? <ErrorBanner error={request.error} onRetry={request.refetch} /> : null}
+      {request.error && !detail ? <ErrorBanner error={request.error} onRetry={request.refetch} /> : null}
       {!detail ? (
-        request.isPending ? <Loading /> : null
+        request.isPending ? <CardSkeleton lines={4} /> : null
       ) : (
         <>
-          <Text style={[styles.heading, { color: theme.text }]} accessibilityRole="header">
-            {requestHeading(detail.request)}
-          </Text>
-          <View style={styles.row}>
-            <StatusChip status={detail.request.status} />
-            <Text style={{ fontSize: 13, color: theme.textSecondary }}>{opened(detail.request.created_at)}</Text>
-          </View>
-
+          <Where request={detail.request} />
           {updates.map((u) => (
             <Update
               key={u.id}
@@ -91,9 +88,8 @@ export default function MyRequestScreen() {
               onCallMe={u.id === answerable?.id && !reply.isPending ? () => send('Please call me.') : undefined}
             />
           ))}
-
-          <Text style={{ fontSize: 12, color: theme.textSecondary }}>
-            Only messages staff send you appear here. Internal notes stay private.
+          <Text style={[styles.small, { color: theme.textSecondary, textAlign: 'center' }]}>
+            Only messages ComForce sends you appear here. Internal notes stay private.
           </Text>
         </>
       )}
@@ -101,34 +97,48 @@ export default function MyRequestScreen() {
   );
 }
 
+/** The strip under the title: status, which step it's on, and when it was opened. */
+function Where({ request: r }: { request: PublicRequest }) {
+  const theme = useTheme();
+  const open = isOpenStatus(r.status);
+  return (
+    <View style={[styles.where, { backgroundColor: open ? theme.infoSoft : theme.accentSoft }]}>
+      <StatusChip status={r.status} />
+      <Text style={[styles.small, { color: theme.text, flex: 1 }]}>
+        #{r.number}
+        {open ? ` · step ${requestStep(r.status)} of ${REQUEST_STEPS}` : ''} · {opened(r.created_at)}
+      </Text>
+    </View>
+  );
+}
+
 function Update({ update, onCallMe }: { update: PublicRequestUpdate; onCallMe?: () => void }) {
   const theme = useTheme();
   if (update.update_type === 'message') {
     return (
-      <Card tone="accent">
-        <Text style={[styles.meta, { color: theme.accent }]}>ComForce · {when(update.created_at)}</Text>
-        <Text style={[styles.body, { color: theme.text }]}>{update.content}</Text>
-        {onCallMe ? (
-          <View style={styles.row}>
-            <Pill label="Call me" icon="call-outline" tone="light" onPress={onCallMe} />
-          </View>
-        ) : null}
-      </Card>
+      <View style={{ gap: space.sm, alignItems: 'flex-start' }}>
+        <View style={[styles.bubble, { backgroundColor: theme.surface, borderColor: theme.separator, borderWidth: 1 }]}>
+          <Text style={[styles.body, { color: theme.text }]}>{update.content}</Text>
+          <Text style={[styles.meta, { color: theme.textSecondary }]}>ComForce · {when(update.created_at)}</Text>
+        </View>
+        {onCallMe ? <Pill label="Call me" icon="call-outline" tone="light" onPress={onCallMe} /> : null}
+      </View>
     );
   }
   if (update.update_type === 'reply') {
     return (
-      <Card style={{ marginLeft: 32 }}>
-        <Text style={[styles.meta, { color: theme.textSecondary }]}>You · {when(update.created_at)}</Text>
-        <Text style={[styles.body, { color: theme.text }]}>{update.content}</Text>
-      </Card>
+      <View style={{ alignItems: 'flex-end' }}>
+        <View style={[styles.bubble, { backgroundColor: theme.text }]}>
+          <Text style={[styles.body, { color: theme.bg }]}>{update.content}</Text>
+          <Text style={[styles.meta, { color: theme.textTertiary }]}>You · {when(update.created_at)}</Text>
+        </View>
+      </View>
     );
   }
   return (
-    <Card style={{ gap: 4 }}>
-      <Text style={[styles.meta, { color: theme.textSecondary, fontSize: 12 }]}>{when(update.created_at)}</Text>
-      <Text style={[styles.body, { color: theme.text }]}>{readable(update)}</Text>
-    </Card>
+    <Text style={[styles.small, { color: theme.textSecondary, textAlign: 'center' }]}>
+      {when(update.created_at)} · {readable(update)}
+    </Text>
   );
 }
 
@@ -144,9 +154,12 @@ function readable(update: PublicRequestUpdate) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 22, fontWeight: '800' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  meta: { fontSize: 13, fontWeight: '600' },
+  where: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.sm, borderRadius: 12 },
+  bubble: { maxWidth: '85%', borderRadius: 16, padding: space.md, gap: 4 },
   body: { fontSize: 15, lineHeight: 21 },
-  composer: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 15, minHeight: 80, maxHeight: 160, textAlignVertical: 'top' },
+  meta: { fontSize: 12 },
+  small: { fontSize: 12, lineHeight: 17 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
+  input: { flex: 1, minHeight: 44, maxHeight: 140, borderRadius: 22, paddingHorizontal: space.md, paddingTop: 12, paddingBottom: 12, fontSize: 15 },
+  send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

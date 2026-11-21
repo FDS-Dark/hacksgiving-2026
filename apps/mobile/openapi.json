@@ -879,6 +879,114 @@
         "title": "CreateHandoffRequest",
         "type": "object"
       },
+      "CreateOpportunityRequest": {
+        "properties": {
+          "apply_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "pattern": "^https?://\\S+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An http(s) link to apply or sign up.",
+            "title": "Apply Url"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OpportunityKind"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "organization": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Organization",
+            "type": "string"
+          },
+          "pay": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Jobs: the pay, e.g. '$17/hour'.",
+            "title": "Pay"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When: hours, days, or the commitment.",
+            "title": "Schedule"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "organization"
+        ],
+        "title": "CreateOpportunityRequest",
+        "type": "object"
+      },
       "CreateReferralRequest": {
         "properties": {
           "conversation_id": {
@@ -940,6 +1048,32 @@
             ],
             "title": "Hours"
           },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
           "name": {
             "maxLength": 160,
             "minLength": 1,
@@ -988,6 +1122,46 @@
           "category"
         ],
         "title": "CreateResourceRequest",
+        "type": "object"
+      },
+      "CreateTaskRequest": {
+        "description": "A task a worker adds to a case. Without `assigned_worker_id` it\nfollows the case (whoever holds it).",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "CreateTaskRequest",
         "type": "object"
       },
       "DraftMessage": {
@@ -1100,6 +1274,136 @@
         ],
         "title": "ImpactSummary",
         "type": "object"
+      },
+      "Opportunity": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "apply_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apply Url"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OpportunityKind"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "organization": {
+            "title": "Organization",
+            "type": "string"
+          },
+          "pay": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pay"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "organization",
+          "description",
+          "location",
+          "schedule",
+          "pay",
+          "contact_phone",
+          "contact_email",
+          "apply_url",
+          "active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Opportunity",
+        "type": "object"
+      },
+      "OpportunityKind": {
+        "enum": [
+          "volunteer",
+          "job"
+        ],
+        "title": "OpportunityKind",
+        "type": "string"
       },
       "OutcomeStatus": {
         "enum": [
@@ -1486,6 +1790,28 @@
             "title": "Is Sample",
             "type": "boolean"
           },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1534,6 +1860,8 @@
           "phone",
           "website",
           "hours",
+          "latitude",
+          "longitude",
           "is_sample",
           "active",
           "created_at"
@@ -2176,6 +2504,20 @@
         "title": "UpdateMeRequest",
         "type": "object"
       },
+      "UpdateOpportunityRequest": {
+        "properties": {
+          "active": {
+            "description": "false closes the posting (hidden from residents); true reopens it.",
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "active"
+        ],
+        "title": "UpdateOpportunityRequest",
+        "type": "object"
+      },
       "UpdateReferralRequest": {
         "properties": {
           "outcome": {
@@ -2341,6 +2683,73 @@
         ],
         "title": "Visibility",
         "type": "string"
+      },
+      "VoiceAppCapabilities": {
+        "properties": {
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "handoff_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Handoff Steps",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceAppService"
+            },
+            "title": "Services",
+            "type": "array"
+          }
+        },
+        "required": [
+          "services",
+          "features",
+          "handoff_steps",
+          "limitations"
+        ],
+        "title": "VoiceAppCapabilities",
+        "type": "object"
+      },
+      "VoiceAppService": {
+        "properties": {
+          "app_destination": {
+            "title": "App Destination",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "description",
+          "app_destination"
+        ],
+        "title": "VoiceAppService",
+        "type": "object"
       },
       "VoiceDashboard": {
         "properties": {
@@ -2572,6 +2981,89 @@
           "last_verified_at"
         ],
         "title": "VoiceResource",
+        "type": "object"
+      },
+      "VoiceRouteRequest": {
+        "properties": {
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "message"
+        ],
+        "title": "VoiceRouteRequest",
+        "type": "object"
+      },
+      "VoiceRouteResponse": {
+        "properties": {
+          "also_relevant": {
+            "items": {
+              "$ref": "#/components/schemas/Service"
+            },
+            "title": "Also Relevant",
+            "type": "array"
+          },
+          "also_relevant_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Also Relevant Names",
+            "type": "array"
+          },
+          "app_destination": {
+            "default": "Get Help",
+            "title": "App Destination",
+            "type": "string"
+          },
+          "follow_up_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Question"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "service": {
+            "$ref": "#/components/schemas/Service"
+          },
+          "service_name": {
+            "title": "Service Name",
+            "type": "string"
+          },
+          "urgent": {
+            "title": "Urgent",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "service",
+          "service_name",
+          "also_relevant",
+          "also_relevant_names",
+          "urgent",
+          "reason",
+          "follow_up_question",
+          "app_destination"
+        ],
+        "title": "VoiceRouteResponse",
         "type": "object"
       },
       "WebhookAccepted": {
@@ -3274,6 +3766,60 @@
         ]
       }
     },
+    "/v1/cases/{case_id}/tasks": {
+      "post": {
+        "description": "Add a task to the case, optionally due at a time and assigned to a\nworker (422 if they aren't staff). Without an assignee it follows the\ncase. Noted in the case history.",
+        "operationId": "add_task_v1_cases__case_id__tasks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Task",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
     "/v1/cases/{case_id}/updates": {
       "post": {
         "description": "An internal note (default), or with `visibility: public` a message\nthe requester sees on their request.",
@@ -3413,6 +3959,225 @@
         "summary": "Update Me",
         "tags": [
           "user"
+        ]
+      }
+    },
+    "/v1/opportunities": {
+      "get": {
+        "description": "Open opportunities, newest first. `q` matches the title,\norganization, description or location.",
+        "operationId": "list_opportunities_v1_opportunities_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OpportunityKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "description": "Staff only; ignored for everyone else.",
+            "in": "query",
+            "name": "include_closed",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Staff only; ignored for everyone else.",
+              "title": "Include Closed",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Opportunity"
+                  },
+                  "title": "Response List Opportunities V1 Opportunities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Opportunities",
+        "tags": [
+          "opportunities"
+        ]
+      },
+      "post": {
+        "description": "Post a volunteer or job opportunity. Staff only.",
+        "operationId": "create_opportunity_v1_opportunities_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOpportunityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Opportunity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Opportunity",
+        "tags": [
+          "opportunities"
+        ]
+      }
+    },
+    "/v1/opportunities/{opportunity_id}": {
+      "get": {
+        "description": "One opportunity. A closed one is 404 except to staff.",
+        "operationId": "get_opportunity_v1_opportunities__opportunity_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "opportunity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Opportunity Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Opportunity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Opportunity",
+        "tags": [
+          "opportunities"
+        ]
+      },
+      "patch": {
+        "description": "Close (`active: false`) or reopen a posting. Staff only.",
+        "operationId": "update_opportunity_v1_opportunities__opportunity_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "opportunity_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Opportunity Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOpportunityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Opportunity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Opportunity",
+        "tags": [
+          "opportunities"
         ]
       }
     },
@@ -4235,6 +5000,56 @@
         ]
       }
     },
+    "/v1/voice/app-capabilities": {
+      "get": {
+        "description": "The public app actions a phone agent may accurately describe.",
+        "operationId": "app_capabilities_v1_voice_app_capabilities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceAppCapabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "App Capabilities",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/dashboard": {
       "get": {
         "operationId": "dashboard_v1_voice_dashboard_get",
@@ -4668,6 +5483,66 @@
           }
         },
         "summary": "Resources",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/route": {
+      "post": {
+        "description": "Use the app's classifier and keep its structured route on the call.",
+        "operationId": "route_voice_request_v1_voice_route_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceRouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceRouteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Voice Request",
         "tags": [
           "voice"
         ]

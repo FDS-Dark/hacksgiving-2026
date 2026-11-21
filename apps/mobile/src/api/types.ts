@@ -36,6 +36,12 @@ export type Resource = Schemas['Resource'];
 export type CreateResource = Schemas['CreateResourceRequest'];
 export type CaseSummary = Schemas['CaseSummary'];
 export type ResourceSuggestions = Schemas['ResourceSuggestions'];
+
+// ── Volunteer and job opportunities ──────────────────────────────────────
+export type Opportunity = Schemas['Opportunity'];
+export type OpportunityKind = Schemas['OpportunityKind'];
+export type CreateOpportunity = Schemas['CreateOpportunityRequest'];
+export const OPPORTUNITY_KINDS = ['job', 'volunteer'] as const satisfies readonly OpportunityKind[];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];
@@ -49,7 +55,11 @@ export type AnonymousRequestReceipt = Schemas['AnonymousRequestReceipt'];
 export type ReplyRequest = Schemas['ReplyRequest'];
 export type ContactMethod = Schemas['ContactMethod'];
 export type Task = Schemas['Task'];
+export type RouteRequest = Schemas['RouteRequest'];
+export type RouteResponse = Schemas['RouteResponse'];
+export type Service = Schemas['Service'];
 export type TaskStatus = Schemas['TaskStatus'];
+export type CreateTask = Schemas['CreateTaskRequest'];
 export type UpdateTask = Schemas['UpdateTaskRequest'];
 export type TaskFilters = NonNullable<operations['list_tasks_v1_tasks_get']['parameters']['query']>;
 export type ClaimHandoff = Schemas['ClaimHandoffRequest'];

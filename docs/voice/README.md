@@ -26,6 +26,11 @@ dial 911 without continuing intake.
    `POST /v1/voice/webhooks/elevenlabs` and store its HMAC secret in Vault.
 6. Import the Twilio number into ElevenLabs and attach it to the tested agent.
 7. Configure server-side tools using `X-Voice-Tool-Secret`:
+   - `GET /v1/voice/app-capabilities` so app screens, departments, handoff
+     steps, and limitations come from the backend rather than the model.
+   - `POST /v1/voice/route` with `system__conversation_id` and a short need
+     description. This uses the same ComForce service classifier as Get Help
+     and stores only its structured category on the call.
    - `GET /v1/voice/resources`
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`
