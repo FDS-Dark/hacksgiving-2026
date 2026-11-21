@@ -5,7 +5,8 @@ FastAPI backend for hacksgiving.
 ## Architecture
 
 Layered, one direction of dependency, and the same domains in every layer
-(today just `user`; see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)).
+(see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)):
+`user`, `staff`, `case`, `task`, `resource`, `routing` and `voice`.
 
 ```
 routers/<domain>.py     HTTP: request/response models, status codes, auth dependencies
@@ -13,7 +14,7 @@ routers/<domain>.py     HTTP: request/response models, status codes, auth depend
     -> databridge/<domain>.py  one method per stored function; returns models
       -> app.<domain>_<verb>(...)  the SQL, a PostgreSQL function (database/migrations)
 models/<domain>.py      Pydantic models passed between the layers (base: models/base.py)
-adapters/               (add when needed) clients for external services, called from services
+adapters/               clients for external services, called only from services
 engine/                 owns the SQLAlchemy async engine + connection URL
 ```
 
@@ -26,7 +27,22 @@ engine/                 owns the SQLAlchemy async engine + connection URL
   a transaction across databridges: `async with executor.transaction() as tx:`
   then `databridge.within(tx)`.
 - `dependencies.py` wires the layers as cached FastAPI dependencies, so the
-  engine, pool and services are built once per process.
+  engine, pool and services are built once per process. Auth dependencies
+  live there too (`get_current_user`, `get_current_worker`,
+  `get_current_admin`, and `require_tool_secret` for the voice agent's tools).
+- Routers are HTTP glue only: they pick the dependencies and call one
+  service method. Any branching is in the service.
+- Not every domain has every layer. `routing` has no databridge (it asks
+  OpenAI). `models/case_enums.py` holds `CaseCategory` and `CasePriority`,
+  which tasks and resources share with cases.
+- Helpers in `services/`: `case_assist.py` (the optional AI help for
+  workers, and the triager for new requests), `access_code.py` (codes for
+  requests sent without an account) and `rate_limit.py` (limits on the
+  routes that need no token).
+- `routers/request.py` and `routers/public_request.py` are the resident's
+  view of the case domain, so they use `CaseService` rather than a service
+  of their own. Referrals are part of the case domain too
+  (`models/case.py`, `databridge/case.py`).
 - `errors.py` gives every failure the same body,
   `{"code", "message", "request_id"}`, and every response, failures
   included, carries `X-Request-ID`.
@@ -65,6 +81,15 @@ stored.
 |---|---|
 | `GET /v1/health` | — |
 | `GET/PATCH /v1/me` (display name, IANA timezone) | `UserService` |
+| `/v1/staff/...` (roles, workers, first admin) | `StaffService` |
+| `/v1/cases/...` (queue, insights, activity, updates, referrals) | `CaseService` |
+| `POST /v1/cases/{id}/assist/...` (summary, resources, draft message) | `case_assist`, with `CaseService` and `ResourceService` |
+| `/v1/requests/...` (a signed-in resident's own requests) | `CaseService` |
+| `/v1/public/requests/...` (requests without an account, by access code) | `CaseService` |
+| `/v1/tasks/...` | `TaskService` |
+| `/v1/resources/...` (the resource directory) | `ResourceService` |
+| `POST /v1/route` (sort a request for help) | `RoutingService` |
+| `/v1/voice/...` (ElevenLabs webhook and tools, handoffs, follow-ups) | `VoiceService` |
 
 ## Adding a resource
 

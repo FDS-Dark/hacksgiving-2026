@@ -19,19 +19,20 @@ from errors import ApiError
 from main import app
 from models.case import (
     AddCaseUpdateRequest,
-    CaseCategory,
     CaseDetail,
     SubmitRequest,
     UpdateCaseRequest,
     UpdateReferralRequest,
     Visibility,
 )
+from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
 from models.user import AppUser
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
+from services.resource import ResourceService
 from services.staff import StaffService
-from services.tasks import TaskService
+from services.task import TaskService
 from tests.helpers import auth_header
 from tests.unit.fakes import FakeFunctions
 
@@ -78,7 +79,9 @@ def staff_row(user_id: UUID, role: str) -> dict[str, Any]:
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
-    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), staff, TaskService(TaskDatabridge(db), staff))
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+    )
 
 
 def worker(user_id: UUID | None = None) -> StaffMember:
@@ -283,7 +286,7 @@ def test_rule_based_suggestions_fit_the_category_and_skip_what_is_already_referr
                 "resource_category": "transportation", "resource_phone": None, "resource_website": None,
                 "resource_is_sample": True, "status": "suggested", "outcome": None, "created_by": None,
                 "created_at": NOW, "updated_at": NOW}
-    from models.case import Resource
+    from models.resource import Resource
 
     result = rule_based_suggestions(detail_with(case, [], [referral]),
                                     [Resource(**r) for r in (ride, bus, food, hub)])
@@ -302,7 +305,7 @@ class FakeResponses:
 
 async def test_the_assistant_drops_resources_that_are_not_in_the_directory():
     from models.assist import PickedResource, RecommendationOutput
-    from models.case import Resource
+    from models.resource import Resource
 
     case = case_row()
     real = Resource(**resource_row())

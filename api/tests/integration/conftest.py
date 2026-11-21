@@ -27,6 +27,7 @@ from databridge.user import UserDatabridge
 from dependencies import (
     get_case_assistant,
     get_case_service,
+    get_resource_service,
     get_staff_service,
     get_task_service,
     get_triager,
@@ -36,8 +37,9 @@ from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
+from services.resource import ResourceService
 from services.staff import StaffService
-from services.tasks import TaskService
+from services.task import TaskService
 from services.user import UserService
 
 DATABASE_DIR = Path(__file__).resolve().parents[3] / "database"
@@ -138,13 +140,15 @@ async def api(database):
     executor = app_executor(database)
     staff = StaffService(StaffDatabridge(executor))
     tasks = TaskService(TaskDatabridge(executor), staff)
-    cases = CaseService(CaseDatabridge(executor), ResourceDatabridge(executor), staff, tasks)
+    resources = ResourceService(ResourceDatabridge(executor))
+    cases = CaseService(CaseDatabridge(executor), resources, staff, tasks)
     # Every service the routers use, so no test reaches api/.env's database.
     # No AI in integration tests: triage and the assistant are off.
     app.dependency_overrides.update({
         get_user_service: lambda: UserService(UserDatabridge(executor)),
         get_staff_service: lambda: staff,
         get_case_service: lambda: cases,
+        get_resource_service: lambda: resources,
         get_task_service: lambda: tasks,
         get_triager: lambda: None,
         get_case_assistant: lambda: None,

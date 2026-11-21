@@ -5,12 +5,13 @@ services are built once per process, not per request. Tests replace any of
 them through `app.dependency_overrides`.
 """
 
+import hmac
 import logging
 from functools import cache
-from typing import Any
+from typing import Annotated, Any
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 
 from openai import AsyncOpenAI
 
@@ -22,13 +23,15 @@ from databridge.task import TaskDatabridge
 from databridge.user import UserDatabridge
 from databridge.voice import VoiceDatabridge
 from engine.postgres_engine import PostgresDBEngine
+from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
 from services.case_assist import CaseAssistant, triage_with
-from services.rout_request import RoutingService
+from services.resource import ResourceService
+from services.routing import RoutingService
 from services.staff import StaffService
-from services.tasks import TaskService
+from services.task import TaskService
 from services.user import UserService
 from services.voice import VoiceService
 from settings import config
@@ -63,10 +66,14 @@ def get_task_service() -> TaskService:
 
 
 @cache
+def get_resource_service() -> ResourceService:
+    return ResourceService(ResourceDatabridge(get_executor()))
+
+
+@cache
 def get_case_service() -> CaseService:
-    executor = get_executor()
     return CaseService(
-        CaseDatabridge(executor), ResourceDatabridge(executor), get_staff_service(), get_task_service()
+        CaseDatabridge(get_executor()), get_resource_service(), get_staff_service(), get_task_service()
     )
 
 
@@ -179,3 +186,13 @@ async def get_current_admin(
 ) -> StaffMember:
     """The caller, who must be a staff admin; 403 otherwise."""
     return await staff.require_admin(user)
+
+
+def require_tool_secret(
+    supplied: Annotated[str | None, Header(alias="X-Voice-Tool-Secret")] = None,
+) -> None:
+    """The ElevenLabs voice agent's tool calls carry a shared secret, not a
+    user token (routers/voice.py)."""
+    expected = config.voice.tool_secret
+    if not expected or not supplied or not hmac.compare_digest(expected, supplied):
+        raise ApiError(401, "invalid_tool_secret", "Invalid voice tool credentials")

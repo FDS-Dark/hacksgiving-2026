@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 
-import { SectionHeading } from '@/components/brand';
+import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
+import { ResidentHeader } from '@/components/resident';
 import { Button, EmptyState, Group, Loading, Notice, Row, Txt } from '@/components/ui';
 import { useDeviceLocation } from '@/services/deviceLocation';
 import { INCIDENT_CATEGORIES, type SafetyPoint, usePublicSafetyPoints } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
-import { useVoiceFollowUps } from '@/services/user';
+import { useVoiceFollowUps } from '@/services/voice';
 
 function categoryLabel(point: SafetyPoint) {
   if (point.category === 'community-report') return 'Community report';
@@ -56,7 +57,8 @@ export default function AlertsScreen() {
 
   return (
     <Page refreshing={calls.isRefetching || safety.isRefetching} onRefresh={refresh}>
-      <SectionHeading title="Safety Alerts" kicker="Visible updates from Milwaukee’s official public incident and dispatch feeds." />
+      <BackLink label="Back" fallback="/me" />
+      <ResidentHeader title="Safety alerts" />
 
       <Notice icon="information-circle-outline">
         Dispatch calls are delayed 30–90 minutes and are not confirmed crimes. Incident locations and distances are approximate.

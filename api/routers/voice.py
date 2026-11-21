@@ -1,11 +1,9 @@
-import hmac
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 
-from dependencies import get_current_user, get_voice_service
-from errors import ApiError
+from dependencies import get_current_user, get_voice_service, require_tool_secret
 from models.user import AppUser
 from models.voice import (
     ClaimHandoffRequest,
@@ -25,14 +23,6 @@ from services.voice import VoiceService
 from settings import config
 
 router = APIRouter(prefix="/voice", tags=["voice"])
-
-
-def require_tool_secret(
-    supplied: Annotated[str | None, Header(alias="X-Voice-Tool-Secret")] = None,
-) -> None:
-    expected = config.voice.tool_secret
-    if not expected or not supplied or not hmac.compare_digest(expected, supplied):
-        raise ApiError(401, "invalid_tool_secret", "Invalid voice tool credentials")
 
 
 @router.post("/webhooks/elevenlabs", response_model=WebhookAccepted)

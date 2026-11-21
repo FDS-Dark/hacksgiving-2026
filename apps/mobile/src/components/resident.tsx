@@ -1,7 +1,8 @@
 /**
- * The resident's "get help" screens (Figma: Mockups → Flow 1). They work
- * signed in or out, so they have their own bar instead of the AppHeader:
- * back, a title, and the red Quick exit that every resident screen carries.
+ * Building blocks for the resident app. ResidentScreen is the full-screen
+ * page for flows pushed over the tabs (get help, a request, a place): they
+ * work signed in or out, so they carry their own bar with back, a title,
+ * and the red Quick exit that every resident screen has.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -293,7 +294,7 @@ export function StatusChip({ status }: { status: CaseStatus }) {
 }
 
 /** What a resident would call each kind of help. */
-export const HELP_LABELS: Record<CaseCategory, string> = {
+const HELP_LABELS: Record<CaseCategory, string> = {
   homelessness: 'Housing help',
   meal_programs: 'Food help',
   transportation: 'A ride',
@@ -335,6 +336,58 @@ export function updatedAgo(iso: string) {
   return `Updated ${when(iso)}`;
 }
 
+/** Still being worked on (not resolved or closed). */
+export function isOpenStatus(status: CaseStatus) {
+  return status === 'new' || status === 'in_progress' || status === 'awaiting_resources';
+}
+
+/** Where a request stands, as steps for the progress bar (Figma R1). */
+const STEP: Record<CaseStatus, number> = { new: 1, in_progress: 2, awaiting_resources: 3, resolved: 4, closed: 4 };
+const REQUEST_STEPS = 4;
+
+/** Four segments, filled up to where the request stands. */
+export function RequestProgress({ status }: { status: CaseStatus }) {
+  const theme = useTheme();
+  const done = STEP[status];
+  return (
+    <View style={styles.progress} accessible accessibilityLabel={`Step ${done} of ${REQUEST_STEPS}`}>
+      {Array.from({ length: REQUEST_STEPS }, (_, i) => (
+        <View key={i} style={[styles.progressStep, { backgroundColor: i < done ? theme.accent : theme.separator }]} />
+      ))}
+    </View>
+  );
+}
+
+/** "Sample listing": on directory entries made up for the demo, not real partners. */
+export function SampleTag() {
+  const theme = useTheme();
+  return (
+    <View style={[styles.sample, { backgroundColor: theme.fill }]}>
+      <Text style={[styles.sampleText, { color: theme.textSecondary }]}>Sample listing</Text>
+    </View>
+  );
+}
+
+/**
+ * The top of a resident screen under the tab bar (Home, Requests, Nearby,
+ * Me, Safety map, Alerts): a large title,
+ * an optional kicker above it, and Quick exit on the right.
+ */
+export function ResidentHeader({ title, kicker }: { title: string; kicker?: string }) {
+  const theme = useTheme();
+  return (
+    <View style={styles.tabHeader}>
+      <View style={{ flex: 1, gap: 2 }}>
+        {kicker ? <Text style={[styles.kicker, { color: theme.accent }]}>{kicker}</Text> : null}
+        <Text style={[styles.tabTitle, { color: theme.text }]} accessibilityRole="header" numberOfLines={1}>
+          {title}
+        </Text>
+      </View>
+      <QuickExitButton />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: COLUMN, alignSelf: 'center' },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingBottom: 10 },
@@ -355,4 +408,11 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   checkLabel: { flex: 1, fontSize: 14, fontWeight: '500' },
+  progress: { flexDirection: 'row', gap: 4 },
+  progressStep: { flex: 1, height: 4, borderRadius: 2 },
+  sample: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  sampleText: { fontSize: 11, fontWeight: '600' },
+  tabHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
+  tabTitle: { fontSize: 28, fontWeight: '800' },
 });

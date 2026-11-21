@@ -1,8 +1,9 @@
 # App flow and mockups
 
-Where the app is going after the Nov 21 reset (the app was cut back to the
-landing page, sign-in and account; the old prototype is on the
-`archive/full-prototype` branch). This page is the plan we build from, one
+Where the app is going after the Nov 21 reset (the old prototype is on the
+`archive/full-prototype` branch). The app shell follows the Figma page
+**App shell v2**: a resident app and a staff app, each with its own bottom
+tabs. This page is the plan we build from, one
 step at a time.
 
 **Figma:** [Hacksgiving 2027](https://www.figma.com/design/5nncReT4jVQR4P83fm7Dpz/Hacksgiving-2027)
@@ -65,9 +66,9 @@ Lock-screen push → Respond → En route.
 - En route: ETA, an arrival checklist, **Call 911** and **I've arrived**.
 
 ### 4. Staff run the operation
-Dashboard → Insights.
+Today → Insights (under Me → Manage).
 
-- Dashboard: active, new, urgent and unassigned counts; who's on call now;
+- Today: active, new, urgent and unassigned counts; who's on call now;
   what needs attention.
 - Insights: average response time, cases resolved, requests by need, and
   spotted patterns (e.g. repeat calls at one intersection on weekend nights).
@@ -162,19 +163,23 @@ flowchart LR
 
 | Screen | Who | Step | Status |
 |---|---|---|---|
-| Landing | everyone | 0 | have |
-| Sign in / Account | everyone | 0 | have |
+| Launch / Welcome | everyone | 0 | **built** (splash in `_layout.tsx`, `/sign-in`) |
+| Resident tabs: Home, Requests, Nearby, Me | resident | 0 / 1 | **built** (`/`, `/requests`, `/nearby`, `/me`) |
+| Place details | resident | 1 | **built** (`/nearby/[id]`); no map of places yet: resources have no coordinates |
 | Get help (form) | resident | 1 | have (`/help`, works signed out) |
 | Request received | resident | 1 | have (`/help/received`) |
-| My requests / My request | resident | 1 | have (`/help/requests`, `/help/request/[id]`) |
+| My request (thread) | resident | 1 | have (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
+| Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
+| Notifications ask, notification settings | resident | 2 | new (no push yet) |
 | New record (text, then voice) | worker | 1 / 3 | new |
 | Review extraction | worker | 3 | new |
 | My tasks | worker | 1 | new |
-| Queue + dashboard | admin | 1 | new (API have) |
-| Case detail (history, tasks) | staff | 1 | new (API have) |
+| Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
+| Case detail (history, tasks) | staff | 1 | **built** without tasks (`/staff/cases/[id]`) |
 | On-call toggle / schedule | worker, admin | 2 | new |
 | Push → accept / hand off | on-call | 2 | new |
-| Insights | admin | 3 | new (stats API have) |
+| Insights | admin | 3 | **built** from case stats (`/staff/insights`); patterns wait on step 3 |
+| Team + roles | admin | 1 | **built** (`/staff/team`) |
 | Training | worker | 4 | archived prototype |
 | Share with partner / authority | staff | 4 | new |
 

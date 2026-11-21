@@ -4,15 +4,25 @@ Expo (SDK 58) + React Native + TypeScript, with Expo Router.
 
 ```
 src/app/         routes (screens); Expo Router treats every file here as one
-src/components/  UI building blocks
-src/services/    one module per domain: API calls, query keys, hooks, mutations
+  (main)/          the resident app: tabs (Home, Requests, Nearby, Me)
+  help/            asking for help and following a request (works signed out)
+  staff/           the staff app: its own tab bar (Today, Queue, Record, Map, Me)
+src/components/  UI building blocks (staff/ for the staff app's)
+src/services/    one module per API domain: API calls, query keys, hooks, mutations
 src/api/         the HTTP client, and the API's types generated from openapi.json
-src/lib/         sign-in, small helpers
+src/lib/         sign-in, labels and formatting, small helpers
 ```
 
+Each API domain has one service module, named after its router in
+`api/routers/`: `user`, `staff`, `cases`, `requests` (a resident's view of
+a case), `resources`, `tasks`, `voice` and `health`. A module holds its
+`<domain>Api` calls, its `<domain>Keys` query keys and its hooks.
+`publicSafety`, `recentCalls` and `deviceLocation` read public data or
+the device, not our API.
+
 Screens call service hooks (`useMe()`), never the client. TanStack Query
-caches what they load, under keys from `services/queryClient.ts`; each
-mutation refreshes what it changed
+caches what they load, under each domain's keys; each mutation refreshes
+what it changed
 ([ADR 0008](../../docs/decisions/0008-mobile-services-and-query-cache.md)).
 
 ```bash

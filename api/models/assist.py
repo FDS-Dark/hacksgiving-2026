@@ -7,7 +7,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from models.base import ApiModel
-from models.case import Resource
+from models.resource import Resource
 
 
 class SuggestionMethod(StrEnum):

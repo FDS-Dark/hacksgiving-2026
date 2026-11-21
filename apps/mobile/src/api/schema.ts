@@ -1469,7 +1469,7 @@ export interface components {
         /**
          * Task
          * @description A piece of work on a case: generated when the case comes in
-         *     (services/tasks.py), or added by a worker.
+         *     (services/task.py), or added by a worker.
          */
         Task: {
             /** Assigned Worker Id */

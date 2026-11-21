@@ -1,0 +1,94 @@
+import { router } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { CASE_STATUSES } from '@/api/types';
+import { BackLink } from '@/components/BackLink';
+import { Page } from '@/components/Page';
+import { ErrorBanner, Loading } from '@/components/ui';
+import { BarList, Card, CardTitle, PageTitle, StatTile, statusColor } from '@/components/staff/kit';
+import { CATEGORY_LABEL, STATUS_LABEL } from '@/lib/cases';
+import { dateTime, hours } from '@/lib/format';
+import { useInsights } from '@/services/cases';
+import { space, type, useTheme } from '@/theme/tokens';
+
+/**
+ * Figma "D2 Admin · Insights", from the live case tables. The mockup's
+ * date/district filters and "Pattern spotted" card wait on data we don't
+ * have yet (locations by district, AI over debriefs in step 3).
+ */
+export default function InsightsScreen() {
+  const theme = useTheme();
+  const insights = useInsights();
+
+  if (insights.isPending) return <Loading label="Loading insights" />;
+  if (insights.error) {
+    return (
+      <Page>
+        <ErrorBanner error={insights.error} onRetry={() => insights.refetch()} />
+      </Page>
+    );
+  }
+  const { stats, by_category, by_status, recent_activity } = insights.data;
+
+  const byNeed = [...by_category]
+    .filter((c) => c.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .map((c) => ({ key: c.category, label: CATEGORY_LABEL[c.category], value: c.total, color: theme.accent, detail: c.active ? `${c.active} open` : undefined }));
+
+  const statusCounts = new Map(by_status.map((s) => [s.status, s.total]));
+  const byStatus = CASE_STATUSES.map((s) => ({ key: s, label: STATUS_LABEL[s], value: statusCounts.get(s) ?? 0, color: statusColor(theme, s) })).filter((s) => s.value > 0);
+
+  return (
+    <Page refreshing={insights.isRefetching} onRefresh={() => insights.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
+      <BackLink label="Me" fallback="/staff/me" />
+      <PageTitle title="Insights" subtitle={`All time · ${stats.total} case${stats.total === 1 ? '' : 's'}`} />
+
+      <View style={{ gap: 10 }}>
+        <View style={styles.tiles}>
+          <StatTile label="Avg time to resolve" value={hours(stats.avg_resolution_hours)} color={theme.accent} />
+          <StatTile label="Cases resolved" value={stats.resolved} />
+        </View>
+        <View style={styles.tiles}>
+          <StatTile label="Opened this week" value={stats.opened_last_7_days} />
+          <StatTile label="Resolved this week" value={stats.resolved_last_7_days} color={theme.accent} />
+        </View>
+      </View>
+
+      <Card style={{ gap: space.md }}>
+        <CardTitle title="Requests by need" />
+        <BarList items={byNeed} empty="No cases yet." />
+      </Card>
+
+      <Card style={{ gap: space.md }}>
+        <CardTitle title="Where cases stand" />
+        <BarList items={byStatus} empty="No cases yet." />
+      </Card>
+
+      {recent_activity.length ? (
+        <Card style={{ gap: space.sm }}>
+          <CardTitle title="Recent activity" />
+          {recent_activity.slice(0, 8).map((u) => (
+            <Text
+              key={u.id}
+              onPress={() => router.push({ pathname: '/staff/cases/[id]', params: { id: u.case_id } })}
+              accessibilityRole="link"
+              style={[type.footnote, styles.activity, { color: theme.text, borderTopColor: theme.separator }]}
+              numberOfLines={2}
+            >
+              <Text style={{ fontWeight: '700' }}>#{u.case_number}</Text> {u.content}
+              <Text style={{ color: theme.textSecondary }}>
+                {' '}
+                · {u.author_name ?? 'System'} · {dateTime(u.created_at)}
+              </Text>
+            </Text>
+          ))}
+        </Card>
+      ) : null}
+    </Page>
+  );
+}
+
+const styles = StyleSheet.create({
+  tiles: { flexDirection: 'row', gap: 10 },
+  activity: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
+});

@@ -9,7 +9,9 @@ from uuid import UUID
 
 from databridge.task import TaskDatabridge
 from errors import ApiError, not_found
-from models.case import Case, CaseCategory, CasePriority, ContactMethod, Task, TaskFilters, UpdateTaskRequest
+from models.case import Case, ContactMethod
+from models.case_enums import CaseCategory, CasePriority
+from models.task import Task, TaskFilters, UpdateTaskRequest
 from models.staff import StaffMember
 from services.staff import StaffService
 

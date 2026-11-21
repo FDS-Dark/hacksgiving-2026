@@ -8,40 +8,37 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from databridge.case import CaseDatabridge
-from databridge.resource import ResourceDatabridge
 from errors import ApiError, not_found
 from models.case import (
     AddCaseUpdateRequest,
     AddReferralRequest,
     AnonymousRequestReceipt,
     Case,
-    CaseCategory,
     CaseDetail,
     CaseFilters,
     CaseInsights,
-    CasePriority,
     CaseSource,
     CaseUpdate,
     ContactMethod,
     CreateCaseRequest,
-    CreateResourceRequest,
     PublicRequest,
     PublicRequestDetail,
     PublicRequestUpdate,
     Referral,
     ReplyRequest,
-    Resource,
     SubmitRequest,
     UpdateCaseRequest,
     UpdateReferralRequest,
     UpdateType,
     Visibility,
 )
+from models.case_enums import CaseCategory, CasePriority
 from models.staff import StaffMember
 from models.user import AppUser
 from services import access_code
+from services.resource import ResourceService
 from services.staff import StaffService
-from services.tasks import TaskService
+from services.task import TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +75,7 @@ def title_from(description: str) -> str:
 
 class CaseService:
     def __init__(
-        self, cases: CaseDatabridge, resources: ResourceDatabridge, staff: StaffService, tasks: TaskService
+        self, cases: CaseDatabridge, resources: ResourceService, staff: StaffService, tasks: TaskService
     ) -> None:
         self.cases = cases
         self.resources = resources
@@ -231,7 +228,7 @@ class CaseService:
         return CaseDetail(
             case=case,
             updates=await self.cases.list_updates(case_id),
-            referrals=await self.resources.list_referrals(case_id),
+            referrals=await self.cases.list_referrals(case_id),
             tasks=await self.tasks.for_case(case_id),
         )
 
@@ -262,24 +259,12 @@ class CaseService:
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return await self.cases.recent_activity(limit)
 
-    # --- Resources and referrals -------------------------------------------------
-
-    async def list_resources(self, query: str | None, category: CaseCategory | None) -> list[Resource]:
-        return await self.resources.search(query, category)
-
-    async def get_resource(self, resource_id: UUID) -> Resource:
-        resource = await self.resources.get(resource_id)
-        if resource is None:
-            raise not_found("resource")
-        return resource
-
-    async def create_resource(self, worker: StaffMember, body: CreateResourceRequest) -> Resource:
-        return await self.resources.create(body, worker.id)
+    # --- Referrals -----------------------------------------------------------------
 
     async def add_referral(self, worker: StaffMember, case_id: UUID, body: AddReferralRequest) -> Referral:
         await self.get(case_id)
-        await self.get_resource(body.resource_id)
-        referral = await self.resources.add_referral(case_id, body.resource_id, body.status, worker.id)
+        await self.resources.get(body.resource_id)
+        referral = await self.cases.add_referral(case_id, body.resource_id, body.status, worker.id)
         if referral is None:
             raise ApiError(409, "already_referred", "That resource is already on this case")
         return referral
@@ -287,7 +272,7 @@ class CaseService:
     async def update_referral(
         self, worker: StaffMember, case_id: UUID, referral_id: UUID, body: UpdateReferralRequest
     ) -> Referral:
-        referral = await self.resources.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
+        referral = await self.cases.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
         if referral is None:
             raise not_found("referral")
         return referral

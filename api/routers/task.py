@@ -6,9 +6,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from dependencies import get_current_worker, get_task_service
-from models.case import Task, TaskFilters, UpdateTaskRequest
+from models.task import Task, TaskFilters, UpdateTaskRequest
 from models.staff import StaffMember
-from services.tasks import TaskService
+from services.task import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 

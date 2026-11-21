@@ -5,19 +5,23 @@ ComForce MKE workers handle community requests for help and incidents as
 to community resources, and resolve. This page is the contract for any
 screen that uses it.
 
-> **Frontend status:** the app was cut back to the landing page, sign-in and
-> account (branch `chore/bare-bones`) so the flow can be rebuilt step by step.
-> Everything on this page still runs in the API and database, and the
-> TanStack hooks are still in `apps/mobile/src/services/cases.ts`, but no
-> screen uses them yet. The old worker portal (`/worker`) and the sample
-> pages are on the `archive/full-prototype` branch.
+> **Frontend status:** the staff app is at `/staff` (`apps/mobile/src/app/staff`).
+> The tab bar, Today and Me follow the Figma "App shell v2" frames; Queue,
+> case detail and New case keep their earlier layouts for now. Workers and admins land
+> there after signing in. It has its own tab bar: Today, Queue, Record (a
+> new case for now), Map and Me, with Team & roles and Insights under
+> Me → Manage. The service playbooks (`lib/playbooks.ts`) show on a case and
+> when the queue is filtered to one service. The resident app (Home, Requests,
+> Nearby, Me) is under `(main)`; asking for help and a request's thread are
+> under `/help`, which also works signed out.
 
 All paths are under `/v1`, need a signed-in Auth0 access token
 (`Authorization: Bearer …`), and return the usual error body
 `{"code", "message", "request_id"}`. The full schemas are in
 `apps/mobile/openapi.json` and the generated `apps/mobile/src/api/schema.ts`.
-Types by name: `apps/mobile/src/api/types.ts`. Ready-made TanStack hooks:
-`apps/mobile/src/services/cases.ts`.
+Types by name: `apps/mobile/src/api/types.ts`. Ready-made TanStack hooks,
+one module per domain: `apps/mobile/src/services/` (`cases.ts`, `staff.ts`,
+`resources.ts`, `tasks.ts`, `requests.ts`).
 
 ## Who can do what
 
@@ -28,9 +32,9 @@ Types by name: `apps/mobile/src/api/types.ts`. Ready-made TanStack hooks:
 | `admin` | A worker who also manages roles (`/v1/staff/users`) |
 
 **Setting up staff:** on a fresh deployment, the first person to press
-"Claim staff admin" in the portal (`POST /v1/staff/bootstrap`) becomes an
+"Claim staff admin" on `/staff` (`POST /v1/staff/bootstrap`) becomes an
 admin. It returns 409 once anyone is staff. From then on admins promote
-people on the portal's Team page. Someone has to sign in once before they
+people under Me → Team & roles. Someone has to sign in once before they
 show up there.
 
 ## For the community app: requests for help
@@ -129,7 +133,7 @@ Statuses: `new` → `in_progress` → `awaiting_resources` → `resolved` / `clo
 (any order is allowed; reopening clears `resolved_at`). Priorities: `low`,
 `medium`, `high`, `critical`.
 
-## Tasks (services/tasks.py)
+## Tasks (services/task.py)
 
 Every new case (a resident's request or one a worker opens) gets tasks from
 `plan_tasks(case)`: first reach the person the way they asked (call, text,
@@ -157,19 +161,19 @@ public/internal split done in SQL (`request_*` functions return only public
 columns and public updates). `0006_sample_resources` adds the sample
 directory; remove it with the SQL in that file once real partners are in.
 
-## Demo script (for the archived portal on `archive/full-prototype`)
+## Demo script (staff side at `/staff`)
 
-1. Sign in, open **Account → ComForce staff portal**, and claim staff admin
-   (first person only).
+1. Sign in. Staff land on `/staff` (Today); on a fresh deployment, open
+   `/staff` and claim staff admin (first person only).
 2. As a community member (another account, or `curl`), `POST /v1/requests`.
-3. The request is on the dashboard under **New requests**. Open it, then
+3. The request is on **Today** under **Needs attention**. Open it, then
    **Assign to me** (which moves it to in progress) and set the priority and
    category.
 4. Add an internal note, then send a message to the requester.
 5. **Resources & referrals → Add**: pick a suggested resource. Set the
    status to *Awaiting resources*, then move the referral to *Shared*, then
    *Completed*, and record the outcome.
-6. **Mark resolved**. The dashboard numbers, status chart and activity feed
+6. **Mark resolved**. Today's numbers and the Insights charts and activity feed
    update, and the requester's `GET /v1/requests/{id}` shows the status and
    the message, but none of the notes.
 

@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { SafetyMap, type AreaSelection } from '@/components/SafetyMap';
-import { SectionHeading } from '@/components/brand';
+import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
+import { ResidentHeader } from '@/components/resident';
 import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Sheet, Txt, success } from '@/components/ui';
 import {
   INCIDENT_CATEGORIES,
@@ -14,6 +15,7 @@ import {
 } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
+import { callPhone } from '@/lib/phone';
 
 const REPORT_COLOR = '#247A63';
 const NEIGHBORHOODS = [
@@ -103,10 +105,9 @@ export default function SafetyScreen() {
   return (
     <>
       <Page refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
-        <SectionHeading
-          title="Milwaukee Safety Map"
-          kicker="Recent, generalized public safety activity from official public feeds."
-        />
+        <BackLink label="Back" fallback="/nearby" />
+        <ResidentHeader title="Safety map" />
+        <Txt variant="subhead" tone="secondary">Recent, generalized public safety activity from official public feeds.</Txt>
 
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
@@ -158,7 +159,7 @@ export default function SafetyScreen() {
             detail="Call 911"
             tile={{ icon: 'phone-alert', color: '#B42318' }}
             accessory="chevron"
-            onPress={() => Linking.openURL('tel:911')}
+            onPress={() => callPhone('911')}
           />
           <Row
             title="Milwaukee 211"
@@ -166,7 +167,7 @@ export default function SafetyScreen() {
             detail="Call 211"
             tile={{ icon: 'hand-heart', color: theme.brand }}
             accessory="chevron"
-            onPress={() => Linking.openURL('tel:211')}
+            onPress={() => callPhone('211')}
           />
         </Group>
       </Page>

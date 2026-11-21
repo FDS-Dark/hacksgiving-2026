@@ -1907,7 +1907,7 @@
         "type": "string"
       },
       "Task": {
-        "description": "A piece of work on a case: generated when the case comes in\n(services/tasks.py), or added by a worker.",
+        "description": "A piece of work on a case: generated when the case comes in\n(services/task.py), or added by a worker.",
         "properties": {
           "assigned_worker_id": {
             "anyOf": [

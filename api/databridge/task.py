@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
-from models.case import Task, TaskStatus
+from models.task import Task, TaskStatus
 
 
 class TaskDatabridge(Databridge):

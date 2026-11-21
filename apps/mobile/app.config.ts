@@ -32,6 +32,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: config.name ?? 'Hacksgiving',
     slug: config.slug ?? 'hacksgiving',
     scheme: v.scheme,
+    // Read at runtime by src/lib/phone.ts (911 only dials in production).
+    extra: { ...config.extra, variant: variant() },
     ios: {
       ...config.ios,
       bundleIdentifier: v.bundleIdentifier,

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from dependencies import get_case_assistant, get_case_service, get_current_worker
+from dependencies import get_case_assistant, get_case_service, get_current_worker, get_resource_service
 from models.assist import CaseSummary, DraftMessage, ResourceSuggestions
 from models.case import (
     AddCaseUpdateRequest,
@@ -21,8 +21,10 @@ from models.case import (
     UpdateReferralRequest,
 )
 from models.staff import StaffMember
+from services import case_assist
 from services.case import CaseService
-from services.case_assist import CaseAssistant, rule_based_suggestions, unavailable
+from services.case_assist import CaseAssistant
+from services.resource import ResourceService
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -138,9 +140,7 @@ async def summarize_case(
     assistant: CaseAssistant | None = Depends(get_case_assistant),
 ) -> CaseSummary:
     """A short summary of the case and its history. 503 when AI isn't configured."""
-    if assistant is None:
-        raise unavailable()
-    return await assistant.summarize(await service.detail(case_id))
+    return await case_assist.summarize(service, assistant, case_id)
 
 
 @router.post("/{case_id}/assist/resources", response_model=ResourceSuggestions)
@@ -148,16 +148,13 @@ async def suggest_resources(
     case_id: UUID,
     _: StaffMember = Depends(get_current_worker),
     service: CaseService = Depends(get_case_service),
+    resources: ResourceService = Depends(get_resource_service),
     assistant: CaseAssistant | None = Depends(get_case_assistant),
 ) -> ResourceSuggestions:
     """Resources that fit the case, each with a reason, chosen only from the
     resource directory. Without AI (`method: rules`), the resources in the
     case's category."""
-    detail = await service.detail(case_id)
-    resources = await service.list_resources(None, None)
-    if assistant is None:
-        return rule_based_suggestions(detail, resources)
-    return await assistant.suggest_resources(detail, resources)
+    return await case_assist.suggest_resources(service, resources, assistant, case_id)
 
 
 @router.post("/{case_id}/assist/draft-message", response_model=DraftMessage)
@@ -169,6 +166,4 @@ async def draft_message(
 ) -> DraftMessage:
     """A draft update to the requester, for the worker to edit and send (as a
     public update). Never sent by itself. 503 when AI isn't configured."""
-    if assistant is None:
-        raise unavailable()
-    return await assistant.draft_message(await service.detail(case_id))
+    return await case_assist.draft_message(service, assistant, case_id)

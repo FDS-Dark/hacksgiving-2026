@@ -1,7 +1,8 @@
 from uuid import UUID
 
 from databridge.base import Databridge
-from models.case import CaseCategory, CreateResourceRequest, Referral, ReferralStatus, Resource
+from models.case_enums import CaseCategory
+from models.resource import CreateResourceRequest, Resource
 
 
 class ResourceDatabridge(Databridge):
@@ -20,20 +21,3 @@ class ResourceDatabridge(Databridge):
             neighborhood=body.neighborhood or None, phone=body.phone or None, website=body.website or None,
             hours=body.hours or None, created_by=created_by,
         ))
-
-    async def list_referrals(self, case_id: UUID) -> list[Referral]:
-        return [Referral(**row) for row in await self._rows("referral_list", case_id=case_id)]
-
-    async def add_referral(
-        self, case_id: UUID, resource_id: UUID, status: ReferralStatus, actor_id: UUID
-    ) -> Referral | None:
-        row = await self._first("referral_add", case_id=case_id, resource_id=resource_id, status=status,
-                                actor_id=actor_id)
-        return Referral(**row) if row else None
-
-    async def update_referral(
-        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID
-    ) -> Referral | None:
-        row = await self._first("referral_update", case_id=case_id, referral_id=referral_id, status=status,
-                                outcome=outcome, actor_id=actor_id)
-        return Referral(**row) if row else None

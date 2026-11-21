@@ -15,21 +15,26 @@ from databridge.task import TaskDatabridge
 from dependencies import get_case_service, get_triager
 from errors import ApiError
 from main import app
-from models.case import Case, CaseCategory, ContactMethod, ReplyRequest, SubmitRequest, UpdateTaskRequest
+from models.case import Case, ContactMethod, ReplyRequest, SubmitRequest
+from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
+from models.task import UpdateTaskRequest
 from models.user import AppUser
 from services import access_code
 from services.case import CaseService
 from services.rate_limit import RateLimit, anonymous_submissions, code_lookups
+from services.resource import ResourceService
 from services.staff import StaffService
-from services.tasks import TaskService, plan_tasks
+from services.task import TaskService, plan_tasks
 from tests.unit.fakes import FakeFunctions
 from tests.unit.test_cases import NOW, case_row, public_row
 
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
-    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), staff, TaskService(TaskDatabridge(db), staff))
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+    )
 
 
 def task_row(case: dict[str, Any], **overrides: Any) -> dict[str, Any]:
