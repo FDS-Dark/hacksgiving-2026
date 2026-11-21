@@ -8,6 +8,8 @@ screen. Features go on top.
 
 - **Security, data handling, known gaps:** [`SECURITY.md`](SECURITY.md)
 - **Decisions** (inherited from Cooli): [`docs/decisions/`](docs/decisions/)
+- **App flow and mockups** (the plan we build from, with Figma links):
+  [`docs/app-flow.md`](docs/app-flow.md)
 - **Case management** (request and case API; no screens yet, the old
   portal is on `archive/full-prototype`): [`docs/case-management.md`](docs/case-management.md)
 - **Shared test accounts** (admin, worker, member; hackathon only):
