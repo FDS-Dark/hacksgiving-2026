@@ -19,11 +19,14 @@ locals {
       memory   = "768Mi"
       deadline = 1800
     }
+    # A live run also catches up any daily source that hasn't succeeded in
+    # a day (api/loader/schedule.py), so a fresh deploy seeds itself within
+    # minutes: it needs the daily job's memory and more time.
     live = {
       schedule = var.loader_live_schedule
       cadence  = "live"
-      memory   = "256Mi"
-      deadline = 240
+      memory   = "768Mi"
+      deadline = 600
     }
   }
 }

@@ -183,7 +183,11 @@ APP__LOADER__CAREERONESTOP_TOKEN
 APP__LOADER__FBI_API_KEY
 ```
 
-To run the daily job by hand:
+A live run also **catches up** any daily source that hasn't succeeded in
+the last 24 hours (`api/loader/schedule.py`), retrying a failing one at most
+hourly. A fresh deploy or an empty database therefore seeds itself within
+about 5 minutes, and a night a source was down fixes itself. To run the
+daily job by hand anyway:
 
 ```bash
 kubectl -n hacksgiving create job --from=cronjob/hacksgiving-api-loader-daily loader-now
