@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { hours, soft, timeAgo } from '@/components/worker/kit';
 
 const NOW = Date.parse('2026-11-21T12:00:00Z');

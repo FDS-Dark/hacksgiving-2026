@@ -168,8 +168,13 @@ class CaseAssistant:
         return DraftMessage(message=out.message.strip())
 
 
-# The router's services are the case categories, except "unclear".
-_SERVICE_TO_CATEGORY: dict[Service, CaseCategory] = {s: CaseCategory(s.value) for s in Service if s != Service.UNCLEAR}
+# The router's services are the case categories, except "unclear". A
+# service with no category of the same name (one added to the router later)
+# sorts as other.
+_CATEGORY_VALUES = {c.value for c in CaseCategory}
+_SERVICE_TO_CATEGORY: dict[Service, CaseCategory] = {
+    s: CaseCategory(s.value) for s in Service if s.value in _CATEGORY_VALUES
+}
 
 
 def triage_with(router: RoutingService) -> Triager:

@@ -27,7 +27,8 @@ export function ResourcePicker({ visible, onClose, item: c, referred }: { visibl
   }, [visible]);
 
   const taken = new Set(referred);
-  const addResource = (r: Resource) => add.mutate({ resource_id: r.id }, { onSuccess: () => suggest.reset() });
+  // The suggestion list hides whatever is already on the case, so it stays put after an add.
+  const addResource = (r: Resource) => add.mutate({ resource_id: r.id });
   const suggestions = (suggest.data?.suggestions ?? []).filter((s) => !taken.has(s.resource.id));
 
   return (
