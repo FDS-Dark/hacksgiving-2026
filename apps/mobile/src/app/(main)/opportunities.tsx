@@ -1,11 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useDeferredValue, useState } from 'react';
-import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { OPPORTUNITY_KINDS, type OpportunityKind } from '@/api/types';
 import { KIND_INFO, OpportunityCard } from '@/components/OpportunityCard';
 import { Page } from '@/components/Page';
-import { SectionHeading } from '@/components/brand';
+import { ResidentHeader } from '@/components/resident';
 import { Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
 import { useOpportunities } from '@/services/opportunities';
 import { radius, space, useTheme } from '@/theme/tokens';
@@ -23,7 +23,8 @@ export default function OpportunitiesScreen() {
 
   return (
     <Page refreshing={list.isRefetching} onRefresh={() => list.refetch()} contentStyle={{ gap: space.lg }}>
-      <SectionHeading title="Opportunities" kicker="Jobs and volunteer work posted by ComForce MKE and our partners." />
+      <ResidentHeader kicker="Volunteer and jobs" title="Opportunities" />
+      <Text style={{ fontSize: 15, color: theme.textSecondary }}>Jobs and volunteer work posted by ComForce MKE and our partners.</Text>
 
       <View style={[styles.search, { backgroundColor: theme.fill }]}>
         <Ionicons name="search" size={18} color={theme.textSecondary} />

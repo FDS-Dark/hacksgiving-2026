@@ -12,6 +12,8 @@ from models.case import (
     ContactMethod,
     PublicRequest,
     PublicRequestUpdate,
+    Referral,
+    ReferralStatus,
     StatusCount,
     UpdateCaseRequest,
     UpdateType,
@@ -121,6 +123,25 @@ class CaseDatabridge(Databridge):
 
     async def counts_by_status(self) -> list[StatusCount]:
         return [StatusCount(**row) for row in await self._rows("case_counts_by_status")]
+
+    # --- Referrals (a case connected with a directory resource) -----------------
+
+    async def list_referrals(self, case_id: UUID) -> list[Referral]:
+        return [Referral(**row) for row in await self._rows("referral_list", case_id=case_id)]
+
+    async def add_referral(
+        self, case_id: UUID, resource_id: UUID, status: ReferralStatus, actor_id: UUID
+    ) -> Referral | None:
+        row = await self._first("referral_add", case_id=case_id, resource_id=resource_id, status=status,
+                                actor_id=actor_id)
+        return Referral(**row) if row else None
+
+    async def update_referral(
+        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID
+    ) -> Referral | None:
+        row = await self._first("referral_update", case_id=case_id, referral_id=referral_id, status=status,
+                                outcome=outcome, actor_id=actor_id)
+        return Referral(**row) if row else None
 
     # --- The requester's view ----------------------------------------------------
 

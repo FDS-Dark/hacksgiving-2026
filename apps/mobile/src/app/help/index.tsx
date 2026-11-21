@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
@@ -19,7 +19,9 @@ const METHODS: { value: ContactMethod; label: string; icon?: IconName }[] = [
 export default function GetHelpScreen() {
   const theme = useTheme();
   const send = useSendRequest();
-  const [description, setDescription] = useState('');
+  // Nearby → "Ask ComForce for a ride here" opens this with the request started.
+  const params = useLocalSearchParams<{ description?: string }>();
+  const [description, setDescription] = useState(params.description ?? '');
   const [location, setLocation] = useState('');
   const [method, setMethod] = useState<ContactMethod>('call');
   const [phone, setPhone] = useState('');

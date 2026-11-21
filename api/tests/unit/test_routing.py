@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from dependencies import get_routing_service, get_user_service
 from main import app
 from models.routing import Routing, Service
-from services.rout_request import RoutingService, build_instructions
+from services.routing import RoutingService, build_instructions
 from tests.helpers import auth_header
 
 

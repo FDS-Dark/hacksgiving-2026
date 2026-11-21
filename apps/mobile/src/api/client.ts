@@ -52,6 +52,12 @@ export function setUnauthorizedHandler(handler: () => void) {
 
 // ── Requests ───────────────────────────────────────────────────────────────
 
+/** `?a=1&b=x` from the set values (skips undefined, null, '' and false); '' when none are set. */
+export function queryString(params: Record<string, string | number | boolean | null | undefined>) {
+  const pairs = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false);
+  return pairs.length ? `?${pairs.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')}` : '';
+}
+
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   /** JSON-encoded unless it is FormData. */

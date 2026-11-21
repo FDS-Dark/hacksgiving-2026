@@ -15,21 +15,26 @@ from databridge.task import TaskDatabridge
 from dependencies import get_case_service, get_triager
 from errors import ApiError
 from main import app
-from models.case import Case, CaseCategory, ContactMethod, ReplyRequest, SubmitRequest, UpdateTaskRequest
+from models.case import Case, ContactMethod, ReplyRequest, SubmitRequest
+from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
+from models.task import CreateTaskRequest, UpdateTaskRequest
 from models.user import AppUser
 from services import access_code
 from services.case import CaseService
 from services.rate_limit import RateLimit, anonymous_submissions, code_lookups
+from services.resource import ResourceService
 from services.staff import StaffService
-from services.tasks import TaskService, plan_tasks
+from services.task import TaskService, plan_tasks
 from tests.unit.fakes import FakeFunctions
 from tests.unit.test_cases import NOW, case_row, public_row
 
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
-    return CaseService(CaseDatabridge(db), ResourceDatabridge(db), staff, TaskService(TaskDatabridge(db), staff))
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+    )
 
 
 def task_row(case: dict[str, Any], **overrides: Any) -> dict[str, Any]:
@@ -238,3 +243,66 @@ async def test_tasks_are_only_handed_to_staff():
 
     assert e.value.code == "not_a_worker"
     assert db.called("task_update") == []
+
+
+def task_service(db: FakeFunctions) -> TaskService:
+    return TaskService(TaskDatabridge(db), StaffService(StaffDatabridge(db)))
+
+
+async def test_a_worker_adds_a_task_to_a_case():
+    case = case_row()
+    assignee = uuid4()
+    db = FakeFunctions(
+        staff_get=[{"id": assignee, "display_name": "Ana", "role": "worker"}],
+        task_add=lambda p: [task_row(case, title=p["title"], due_at=p["due_at"],
+                                     assigned_worker_id=p["assigned_worker_id"], created_by=p["actor_id"])],
+    )
+    worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
+
+    task = await task_service(db).add(
+        worker, case["id"], CreateTaskRequest(title="  Drop off groceries ", due_at=NOW, assigned_worker_id=assignee)
+    )
+
+    (sent,) = db.called("task_add")
+    assert sent == {"case_id": case["id"], "title": "Drop off groceries", "due_at": NOW,
+                    "assigned_worker_id": assignee, "actor_id": worker.id}
+    assert (task.title, task.assigned_worker_id, task.created_by) == ("Drop off groceries", assignee, worker.id)
+
+
+async def test_a_task_without_an_assignee_needs_no_staff_lookup():
+    case = case_row()
+    db = FakeFunctions(task_add=lambda p: [task_row(case, title=p["title"], due_at=p["due_at"])])
+    worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
+
+    task = await task_service(db).add(worker, case["id"], CreateTaskRequest(title="Call back"))
+
+    assert task.due_at is None and db.called("task_add")[0]["assigned_worker_id"] is None
+    assert db.called("staff_get") == []
+
+
+async def test_a_task_on_a_missing_case_is_a_404():
+    db = FakeFunctions(task_add=[])
+    worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
+
+    with pytest.raises(ApiError) as e:
+        await task_service(db).add(worker, uuid4(), CreateTaskRequest(title="Call back"))
+
+    assert (e.value.status_code, e.value.code) == (404, "case_not_found")
+
+
+async def test_an_added_task_is_only_handed_to_staff():
+    member_id = uuid4()
+    db = FakeFunctions(staff_get=[{"id": member_id, "display_name": "Mo", "role": "member"}])
+    worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
+
+    with pytest.raises(ApiError) as e:
+        await task_service(db).add(worker, uuid4(), CreateTaskRequest(title="Call back", assigned_worker_id=member_id))
+
+    assert e.value.code == "not_a_worker"
+    assert db.called("task_add") == []
+
+
+@pytest.mark.parametrize("title", ["", "   ", "x" * 161])
+def test_a_task_needs_a_title_that_fits(title: str):
+    with pytest.raises(ValidationError):
+        CreateTaskRequest(title=title)

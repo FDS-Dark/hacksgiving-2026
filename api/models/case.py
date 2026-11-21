@@ -11,27 +11,8 @@ from uuid import UUID
 from pydantic import ConfigDict, Field, StringConstraints, model_validator
 
 from models.base import ApiModel
-
-
-class CaseCategory(StrEnum):
-    """ComForce MKE's services (models/routing.py Service), plus other."""
-
-    HOMELESSNESS = "homelessness"
-    MISSING_PERSONS = "missing_persons"
-    MEAL_PROGRAMS = "meal_programs"
-    VIOLENCE_PREVENTION = "violence_prevention"
-    TRANSPORTATION = "transportation"
-    INCIDENT_DEESCALATION = "incident_deescalation"
-    BURIAL_ASSISTANCE = "burial_assistance"
-    BRIDGE_TO_EMPLOYMENT = "bridge_to_employment"
-    OTHER = "other"
-
-
-class CasePriority(StrEnum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+from models.case_enums import CaseCategory, CasePriority
+from models.task import Task
 
 
 class CaseStatus(StrEnum):
@@ -79,11 +60,6 @@ class ContactMethod(StrEnum):
     CALL = "call"
     TEXT = "text"
     NONE = "none"
-
-
-class TaskStatus(StrEnum):
-    OPEN = "open"
-    DONE = "done"
 
 
 class ReferralStatus(StrEnum):
@@ -172,29 +148,6 @@ class Referral(ApiModel):
     updated_at: datetime
 
 
-class Task(ApiModel):
-    """A piece of work on a case: generated when the case comes in
-    (services/tasks.py), or added by a worker."""
-
-    id: UUID
-    case_id: UUID
-    case_number: int
-    case_title: str
-    case_category: CaseCategory
-    case_priority: CasePriority
-    title: str
-    detail: str
-    status: TaskStatus
-    # The task's own assignee, or the case's when the task has none.
-    assigned_worker_id: UUID | None = None
-    assigned_worker_name: str | None = None
-    due_at: datetime | None = None
-    created_by: UUID | None = None
-    created_at: datetime
-    completed_at: datetime | None = None
-    completed_by: UUID | None = None
-
-
 class CaseDetail(ApiModel):
     case: Case
     updates: list[CaseUpdate]
@@ -243,26 +196,6 @@ class AddCaseUpdateRequest(ApiModel):
 
     content: RequiredText
     visibility: Visibility = Visibility.INTERNAL
-
-
-class TaskFilters(ApiModel):
-    case_id: UUID | None = None
-    # Only tasks the caller holds (theirs, or unassigned on a case they hold).
-    mine: bool = False
-    open_only: bool = True
-    limit: int = Field(default=200, ge=1, le=500)
-
-
-class UpdateTaskRequest(ApiModel):
-    """Only the fields sent change. Send `assigned_worker_id: null` to hand
-    the task back to whoever holds the case."""
-
-    status: TaskStatus | None = None
-    assigned_worker_id: UUID | None = None
-
-    @property
-    def unassign(self) -> bool:
-        return "assigned_worker_id" in self.model_fields_set and self.assigned_worker_id is None
 
 
 class CaseFilters(ApiModel):
@@ -314,33 +247,7 @@ class CaseInsights(ApiModel):
     recent_activity: list[CaseUpdate]
 
 
-# --- Referrals and resources -----------------------------------------------------
-
-
-class Resource(ApiModel):
-    id: UUID
-    name: str
-    category: CaseCategory
-    description: str
-    address: str | None = None
-    neighborhood: str | None = None
-    phone: str | None = None
-    website: str | None = None
-    hours: str | None = None
-    is_sample: bool
-    active: bool
-    created_at: datetime
-
-
-class CreateResourceRequest(ApiModel):
-    name: Title
-    category: CaseCategory
-    description: LongText = ""
-    address: Location | None = None
-    neighborhood: ContactField | None = None
-    phone: ContactField | None = None
-    website: ContactField | None = None
-    hours: ContactField | None = None
+# --- Referrals -------------------------------------------------------------------
 
 
 class AddReferralRequest(ApiModel):

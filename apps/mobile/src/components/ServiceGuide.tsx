@@ -4,8 +4,9 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { CaseCategory } from '@/api/types';
 import { PLAYBOOKS, PLAYBOOKS_CHECKED_ON, type Contact } from '@/lib/playbooks';
-import { SERVICE_INFO } from '@/lib/requests';
+import { CATEGORY_LABEL } from '@/lib/cases';
 import { radius, space, useTheme } from '@/theme/tokens';
+import { callPhone } from '@/lib/phone';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -17,20 +18,20 @@ export function ServiceGuide({ category, initiallyOpen = false }: { category: Ca
   const theme = useTheme();
   const [open, setOpen] = useState(initiallyOpen);
   const guide = PLAYBOOKS[category];
-  const service = SERVICE_INFO[category];
+  const label = CATEGORY_LABEL[category];
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.accent }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
       <Pressable
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityLabel={`How to handle ${service.label} requests`}
+        accessibilityLabel={`How to handle ${label} requests`}
         style={({ pressed }) => [styles.header, pressed && { opacity: 0.7 }]}
       >
         <Ionicons name="book" size={20} color={theme.accent} />
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: theme.text }]}>How to handle {service.label}</Text>
+          <Text style={[styles.title, { color: theme.text }]}>How to handle {label}</Text>
           <Text style={[styles.small, { color: theme.textSecondary }]}>{guide.summary}</Text>
         </View>
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={theme.textSecondary} />
@@ -116,7 +117,7 @@ function ContactRow({ contact }: { contact: Contact }) {
       </View>
       <View style={styles.contactActions}>
         {contact.phone ? (
-          <LinkPill icon="call" label={contact.phone} onPress={() => open(`tel:${contact.phone!.replace(/[^\d+]/g, '')}`)} />
+          <LinkPill icon="call" label={contact.phone} onPress={() => callPhone(contact.phone!)} />
         ) : null}
         {contact.url ? <LinkPill icon="open-outline" label="Website" onPress={() => open(contact.url!)} /> : null}
       </View>

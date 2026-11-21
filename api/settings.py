@@ -72,7 +72,7 @@ class LoggingConfig(BaseModel):
 
 
 class OpenAIConfig(BaseModel):
-    """The model that routes requests for help (services/rout_request.py)."""
+    """The model that routes requests for help (services/routing.py)."""
 
     api_key: str | None = Field(default=None)
     model: str = Field(default="gpt-5.4-mini")

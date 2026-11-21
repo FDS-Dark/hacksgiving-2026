@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from dependencies import get_current_user, get_routing_service
 from models.routing import RouteRequest, RouteResponse
 from models.user import AppUser
-from services.rout_request import RoutingService
+from services.routing import RoutingService
 
 router = APIRouter(prefix="/route", tags=["routing"])
 

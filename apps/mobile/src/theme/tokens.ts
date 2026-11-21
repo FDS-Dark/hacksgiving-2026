@@ -7,7 +7,6 @@ import { Platform, useColorScheme } from 'react-native';
  *
  * - brand / accent (ComForce green): the logo, links, primary buttons.
  * - red: the short "red rule" accent under headings and cards, and urgent things.
- * - charcoal: dark bands (stats, footer).
  */
 
 const light = {
@@ -29,9 +28,6 @@ const light = {
   onAccent: '#FFFFFF',
   brand: '#0F6B3A',
   red: '#E92626',
-  /** Dark bands: stats, footer. Stays dark in both schemes. */
-  charcoal: '#10191B',
-  onCharcoal: '#FFFFFF',
   soon: '#9A5800',
   danger: '#B42318',
   dangerSoft: 'rgba(180,35,24,0.09)',
@@ -63,8 +59,6 @@ const dark: Theme = {
   onAccent: '#0E1517',
   brand: '#4DBB7E',
   red: '#FF5A5A',
-  charcoal: '#0A1012',
-  onCharcoal: '#FFFFFF',
   soon: '#E5A64A',
   danger: '#F0796D',
   dangerSoft: 'rgba(240,121,109,0.14)',

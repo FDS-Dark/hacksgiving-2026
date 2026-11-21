@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
-from models.case import Task, TaskStatus
+from models.task import Task, TaskStatus
 
 
 class TaskDatabridge(Databridge):
@@ -19,6 +19,15 @@ class TaskDatabridge(Databridge):
             "task_create",
             case_id=case_id, title=title, detail=detail, due_at=due_at,
             assigned_worker_id=assigned_worker_id, created_by=created_by,
+        )
+        return Task(**row) if row else None
+
+    async def add(
+        self, case_id: UUID, title: str, due_at: datetime | None, assigned_worker_id: UUID | None, actor_id: UUID
+    ) -> Task | None:
+        row = await self._first(
+            "task_add",
+            case_id=case_id, title=title, due_at=due_at, assigned_worker_id=assigned_worker_id, actor_id=actor_id,
         )
         return Task(**row) if row else None
 

@@ -2,7 +2,7 @@
  * Quick exit: leave the app for an ordinary site at once, for someone who
  * may be watched (domestic violence). On the web the page is replaced, so
  * Back doesn't return to it. On a phone the browser opens on the weather
- * and the app goes back to its landing page, with nothing cached on screen.
+ * and the app goes back to its first screen, with nothing cached on screen.
  */
 import { router } from 'expo-router';
 import { Linking, Platform } from 'react-native';

@@ -6,7 +6,9 @@ without it.
   APP__OPENAI__API_KEY is set.
 - `rule_based_suggestions` is the fallback for resource suggestions: the
   active resources in the case's category.
-- `triage_with` adapts the existing request router (services/rout_request.py)
+- `summarize`, `suggest_resources` and `draft_message` are what the case
+  routes call: they load the case and pick the assistant or the fallback.
+- `triage_with` adapts the existing request router (services/routing.py)
   to sort new public requests.
 
 What the model sees: the case text, its category, priority, status and
@@ -19,6 +21,7 @@ import asyncio
 import json
 import logging
 from typing import Any, TypeVar
+from uuid import UUID
 
 from openai.resources.responses import AsyncResponses
 from pydantic import BaseModel
@@ -34,10 +37,13 @@ from models.assist import (
     SuggestionMethod,
     SummaryOutput,
 )
-from models.case import CaseCategory, CaseDetail, Resource, Visibility
+from models.case import CaseDetail, Visibility
+from models.case_enums import CaseCategory
+from models.resource import Resource
 from models.routing import Service
-from services.case import Triage, Triager
-from services.rout_request import RoutingService
+from services.case import CaseService, Triage, Triager
+from services.resource import ResourceService
+from services.routing import RoutingService
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +172,34 @@ class CaseAssistant:
             DraftOutput,
         )
         return DraftMessage(message=out.message.strip())
+
+
+# --- What the case routes call (suggestions only; nothing changes the case) ------
+
+
+async def summarize(cases: CaseService, assistant: CaseAssistant | None, case_id: UUID) -> CaseSummary:
+    """503 when AI isn't configured, before the case is looked up."""
+    if assistant is None:
+        raise unavailable()
+    return await assistant.summarize(await cases.detail(case_id))
+
+
+async def suggest_resources(
+    cases: CaseService, resources: ResourceService, assistant: CaseAssistant | None, case_id: UUID
+) -> ResourceSuggestions:
+    """The assistant's picks, or without AI the rule-based ones."""
+    detail = await cases.detail(case_id)
+    directory = await resources.search(None, None)
+    if assistant is None:
+        return rule_based_suggestions(detail, directory)
+    return await assistant.suggest_resources(detail, directory)
+
+
+async def draft_message(cases: CaseService, assistant: CaseAssistant | None, case_id: UUID) -> DraftMessage:
+    """503 when AI isn't configured, before the case is looked up."""
+    if assistant is None:
+        raise unavailable()
+    return await assistant.draft_message(await cases.detail(case_id))
 
 
 # The router's services are the case categories, except "unclear". A

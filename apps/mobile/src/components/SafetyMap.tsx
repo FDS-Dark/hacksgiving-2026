@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { Txt } from '@/components/ui';
+import { ESCAPE_HTML_JS, LEAFLET_CSS, LEAFLET_JS, MILWAUKEE, safeJson } from '@/lib/leaflet';
 import { INCIDENT_CATEGORIES, type SafetyPoint } from '@/services/publicSafety';
 import { milesBetween, type RecentCall } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
@@ -39,10 +40,6 @@ function callColor(nature: string) {
   return '#5A6569';
 }
 
-function safeJson(value: unknown) {
-  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/&/g, '\\u0026');
-}
-
 function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
   const cells = heatCells(points);
   const maxCount = Math.max(1, ...cells.map((cell) => cell.count));
@@ -76,22 +73,22 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
   return `<!doctype html>
 <html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+${LEAFLET_CSS}
 <style>
 html,body,#map{height:100%;width:100%;margin:0;background:#e9edef} .leaflet-control-attribution{font-size:9px}
 .leaflet-popup-content-wrapper{border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.leaflet-popup-content{margin:12px 14px;line-height:1.35}
 .pin-title{font-size:14px;font-weight:700;margin-bottom:4px}.pin-time{font-size:12px;color:#4f5b60}.pin-detail{font-size:11px;color:#6f797d;margin-top:4px}
 </style></head><body><div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+${LEAFLET_JS}
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
 const heat=${safeJson(heat)}; const incidents=${safeJson(recentPins)}; const calls=${safeJson(callPins)};
-const map=L.map('map',{zoomControl:true,minZoom:10,maxZoom:18}).setView([43.045,-87.95],11);
+const map=L.map('map',{zoomControl:true,minZoom:10,maxZoom:18}).setView([${MILWAUKEE.latitude},${MILWAUKEE.longitude}],11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap · MPD public data'}).addTo(map);
 if(L.heatLayer){L.heatLayer(heat,{radius:34,blur:26,maxZoom:15,minOpacity:.28,gradient:{.12:'#2a75bb',.32:'#36b37e',.52:'#f4d03f',.72:'#f08a24',1:'#c62026'}}).addTo(map);}
 else{heat.forEach(p=>L.circle([p[0],p[1]],{radius:700,stroke:false,fillColor:'#e54b25',fillOpacity:.22}).addTo(map));}
 function addPin(pin,live){const marker=L.circleMarker([pin.lat,pin.lng],{radius:live?7:5,color:live?'#141a1d':'#fff',weight:live?3:2,fillColor:pin.color,fillOpacity:.96});marker.bindPopup('<div class="pin-title">'+escapeHtml(pin.label)+'</div><div class="pin-time">'+escapeHtml(pin.time)+'</div><div class="pin-detail">'+escapeHtml(pin.detail)+(live?' · Unconfirmed call':' · Generalized location')+'</div>');marker.addTo(map);}
-function escapeHtml(text){return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+${ESCAPE_HTML_JS}
 incidents.forEach(p=>addPin(p,false)); calls.forEach(p=>addPin(p,true));
 map.on('click',e=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'area',latitude:e.latlng.lat,longitude:e.latlng.lng})));
 </script></body></html>`;
