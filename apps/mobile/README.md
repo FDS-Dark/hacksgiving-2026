@@ -15,7 +15,8 @@ src/lib/         sign-in, labels and formatting, small helpers
 
 Each API domain has one service module, named after its router in
 `api/routers/`: `user`, `staff`, `cases`, `requests` (a resident's view of
-a case), `resources`, `tasks`, `voice` and `health`. A module holds its
+a case), `resources`, `tasks`, `oncall`, `notifications`, `voice` and
+`health`. A module holds its
 `<domain>Api` calls, its `<domain>Keys` query keys and its hooks.
 `publicSafety`, `recentCalls` and `deviceLocation` read public data or
 the device, not our API.
@@ -28,9 +29,15 @@ what it changed
 ```bash
 cp .env.example .env.local   # API base URL, Auth0 ids, optional dev token
 npm ci
-npx expo start               # Expo Go on the iPhone, or i for the simulator
+npx expo start --go          # Expo Go on the iPhone, or i for the simulator
 npx tsc --noEmit && npx eslint . --max-warnings=0 && npm test
 ```
+
+`--go` keeps Expo Go as the target: the project includes `expo-dev-client`
+(for push, which Expo Go can't receive), and without the flag `expo start`
+would wait for a development build instead. To try push, install a
+development build from the Mac (`npx expo run:ios --device`, signed with
+team D36AR26A38) and run `npm run start:dev-client`.
 
 ### API types
 

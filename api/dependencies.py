@@ -8,6 +8,7 @@ them through `app.dependency_overrides`.
 import hmac
 import logging
 from functools import cache
+from zoneinfo import ZoneInfo
 from typing import Annotated, Any
 
 import jwt
@@ -21,6 +22,9 @@ from databridge.executor import PostgresExecutor
 from databridge.opportunity import OpportunityDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
+from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
@@ -33,6 +37,9 @@ from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
 from services.job import JobService
+from services.notification import NotificationService
+from services.oncall import OncallService
+from services.push import PushService
 from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
@@ -71,7 +78,20 @@ def get_staff_service() -> StaffService:
 
 @cache
 def get_task_service() -> TaskService:
-    return TaskService(TaskDatabridge(get_executor()), get_staff_service())
+    executor = get_executor()
+    return TaskService(TaskDatabridge(executor), get_staff_service(), JobDatabridge(executor), executor)
+
+
+@cache
+def get_notification_service() -> NotificationService:
+    executor = get_executor()
+    return NotificationService(NotificationDatabridge(executor), executor)
+
+
+@cache
+def get_push_service() -> PushService:
+    executor = get_executor()
+    return PushService(PushDatabridge(executor), get_notification_service(), executor)
 
 
 @cache
@@ -81,8 +101,10 @@ def get_resource_service() -> ResourceService:
 
 @cache
 def get_case_service() -> CaseService:
+    executor = get_executor()
     return CaseService(
-        CaseDatabridge(get_executor()), get_resource_service(), get_staff_service(), get_task_service()
+        CaseDatabridge(executor), get_resource_service(), get_staff_service(), get_task_service(),
+        get_notification_service(), executor, get_oncall_service(),
     )
 
 
@@ -120,6 +142,15 @@ def get_audio_storage() -> AudioStorage | None:
 @cache
 def get_job_service() -> JobService:
     return JobService(JobDatabridge(get_executor()))
+
+
+@cache
+def get_oncall_service() -> OncallService:
+    executor = get_executor()
+    return OncallService(
+        OncallDatabridge(executor), executor, ZoneInfo(config.oncall.timezone),
+        jobs=JobDatabridge(executor), notifications=get_notification_service(), tasks=get_task_service(),
+    )
 
 
 @cache

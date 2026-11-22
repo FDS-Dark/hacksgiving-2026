@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CASE_STATUSES } from '@/api/types';
@@ -8,8 +9,12 @@ import { ErrorBanner, Loading } from '@/components/ui';
 import { BarList, Card, CardTitle, PageTitle, StatTile, statusColor } from '@/components/staff/kit';
 import { CATEGORY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { dateTime, hours } from '@/lib/format';
+import { addDays, startOfDay } from '@/lib/oncall';
+import { responseTime } from '@/lib/urgent';
 import { useInsights } from '@/services/cases';
 import { sourceLabel, useCrimeTrends, useSourceHealth, yearOverYear } from '@/services/publicData';
+import { useOncallStats } from '@/services/oncall';
+import { useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
 /**
@@ -22,6 +27,7 @@ export default function InsightsScreen() {
   const insights = useInsights();
   const trends = useCrimeTrends();
   const sources = useSourceHealth();
+  const isAdmin = !!useStaffStatus().data?.is_admin;
 
   if (insights.isPending) return <Loading label="Loading insights" />;
   if (insights.error) {
@@ -61,6 +67,8 @@ export default function InsightsScreen() {
           <StatTile label="Resolved this week" value={stats.resolved_last_7_days} color={theme.accent} />
         </View>
       </View>
+
+      {isAdmin ? <OncallResponse /> : null}
 
       <Card style={{ gap: space.md }}>
         <CardTitle title="Requests by need" />
@@ -134,6 +142,38 @@ export default function InsightsScreen() {
         </Card>
       ) : null}
     </Page>
+  );
+}
+
+/**
+ * Urgent alerts over the last 30 days (admins: GET /oncall/stats): how long
+ * until someone accepts, and how many were accepted or went unanswered.
+ * Its own query, so a failure here never hides the rest of the page.
+ */
+function OncallResponse() {
+  const theme = useTheme();
+  // Whole days, fixed for the screen's life, so the query key stays put.
+  const [range] = useState(() => {
+    const to = addDays(startOfDay(new Date()), 1);
+    return { from: addDays(to, -30).toISOString(), to: to.toISOString() };
+  });
+  const stats = useOncallStats(range.from, range.to);
+
+  return (
+    <Card style={{ gap: space.md }}>
+      <CardTitle title="Urgent response" icon="warning-outline" right={<Text style={[type.caption, { color: theme.textSecondary }]}>Last 30 days</Text>} />
+      {stats.data ? (
+        <View style={styles.tiles}>
+          <StatTile label="Average response" value={responseTime(stats.data.avg_seconds_to_accept)} color={theme.accent} />
+          <StatTile label="Accepted" value={stats.data.accepted} />
+          <StatTile label="Unanswered" value={stats.data.unanswered} color={stats.data.unanswered ? theme.danger : undefined} />
+        </View>
+      ) : stats.error ? (
+        <ErrorBanner error={stats.error} onRetry={() => stats.refetch()} />
+      ) : (
+        <Loading />
+      )}
+    </Card>
   );
 }
 

@@ -14,7 +14,8 @@ import {
   type SafetyPoint,
   usePublicSafetyPoints,
 } from '@/services/publicSafety';
-import { milesBetween, useRecentCalls } from '@/services/recentCalls';
+import { CallSummary } from '@/components/CallSummary';
+import { type CallCategory, type CallWindow, milesBetween, useCallFeed } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 import { callPhone } from '@/lib/phone';
 
@@ -37,11 +38,13 @@ function approximateDistance(
 export default function SafetyScreen() {
   const theme = useTheme();
   const [windowDays, setWindowDays] = useState<SafetyWindowDays>(7);
+  const [callWindow, setCallWindow] = useState<CallWindow>('6');
+  const [callCategory, setCallCategory] = useState<CallCategory | null>(null);
   const [showReviewed, setShowReviewed] = useState(true);
   const [showMpdCalls, setShowMpdCalls] = useState(true);
   const [showMfdCalls, setShowMfdCalls] = useState(true);
   const safety = usePublicSafetyPoints(windowDays);
-  const calls = useRecentCalls('all');
+  const calls = useCallFeed(Number(callWindow), 'all');
   const [active, setActive] = useState<Set<IncidentCategory | 'community-report'>>(
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
@@ -56,9 +59,10 @@ export default function SafetyScreen() {
   const visiblePoints = useMemo(() => allPoints.filter((point) => (
     active.has(point.category) && (point.category === 'community-report' || showReviewed)
   )), [active, allPoints, showReviewed]);
-  const visibleCalls = useMemo(() => (calls.data ?? []).filter((call) => (
-    call.source === 'mfd_calls' ? showMfdCalls : showMpdCalls
-  )), [calls.data, showMfdCalls, showMpdCalls]);
+  const visibleCalls = useMemo(() => (calls.data?.calls ?? []).filter((call) => (
+    (call.source === 'mfd_calls' ? showMfdCalls : showMpdCalls)
+    && (!callCategory || call.category === callCategory)
+  )), [calls.data, callCategory, showMfdCalls, showMpdCalls]);
   const updatedAt = safety.dataUpdatedAt ? new Date(safety.dataUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading';
   const allSelected = INCIDENT_CATEGORIES.every((item) => active.has(item.id));
   const areaSummary = useMemo(() => {
@@ -159,7 +163,7 @@ export default function SafetyScreen() {
           </Chips>
           <SafetyMap points={visiblePoints} recentCalls={visibleCalls} windowDays={windowDays} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
-            Tap anywhere on the heatmap to inspect activity within about 1.5 miles. Outlined markers are delayed dispatch calls—not confirmed incidents. All locations are generalized.
+            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls at approximate locations—not confirmed crimes. All locations are generalized.
           </Txt>
           {safety.isUnavailable ? (
             <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
@@ -169,6 +173,22 @@ export default function SafetyScreen() {
             </Txt>
           )}
         </View>
+
+        <CallSummary
+          feed={calls.data}
+          window={callWindow}
+          onWindowChange={setCallWindow}
+          selectedCategory={callCategory}
+          onSelectCategory={(value) => {
+            setCallCategory(value);
+            if (value) {
+              setShowMpdCalls(true);
+              setShowMfdCalls(true);
+            }
+          }}
+          loading={calls.isPending}
+          error={calls.isError}
+        />
 
         <Button label="Report nearby activity" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />
 

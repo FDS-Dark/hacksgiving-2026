@@ -3,12 +3,16 @@
 
 from typing import Any
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
 from databridge.case import CaseDatabridge
+from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -21,19 +25,30 @@ from models.staff import Role, StaffMember
 from models.task import CreateTaskRequest, UpdateTaskRequest
 from models.user import AppUser
 from services import access_code
+from services.notification import NotificationService
+from services.oncall import OncallService
 from services.case import CaseService
 from services.rate_limit import RateLimit, anonymous_submissions, code_lookups
 from services.resource import ResourceService
 from services.staff import StaffService
 from services.task import TaskService, plan_tasks
-from tests.unit.fakes import FakeFunctions
+from tests.unit.fakes import FakeFunctions, queued_job
 from tests.unit.test_cases import NOW, case_row, public_row
 
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
+    tasks = TaskService(TaskDatabridge(db), staff, JobDatabridge(db), db)
+    notifications = NotificationService(NotificationDatabridge(db), db)
+    # No alert to open or close unless a test says otherwise.
+    db.handlers.setdefault("oncall_alert_open", [])
+    db.handlers.setdefault("oncall_resolve_for_case", [])
+    oncall = OncallService(
+        OncallDatabridge(db), db, ZoneInfo("America/Chicago"), jobs=JobDatabridge(db), notifications=notifications,
+        tasks=tasks,
+    )
     return CaseService(
-        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db, oncall
     )
 
 
@@ -128,7 +143,7 @@ async def test_a_reply_needs_access_to_the_request(sample_user: AppUser):
 async def test_a_reply_by_code_is_anonymous():
     case = case_row(requester_id=None)
     reply = {"id": uuid4(), "update_type": "reply", "content": "Yes", "created_at": NOW}
-    db = FakeFunctions(request_get_by_code=[public_row(case)], request_add_reply=[reply])
+    db = FakeFunctions(request_get_by_code=[public_row(case)], request_add_reply=[reply], case_get=[case])
 
     await service(db).reply_by_code(case["number"], "K7QM-4XPA", ReplyRequest(content="Yes"))
 
@@ -209,7 +224,8 @@ def test_every_category_has_follow_ups(category: CaseCategory):
 
 async def test_a_submission_generates_tasks_due_from_when_it_came_in(sample_user: AppUser):
     case = case_row(category="meal_programs")
-    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=echo_task(case))
+    db = FakeFunctions(request_create=[case], request_get_for_user=[public_row(case)], task_create=echo_task(case),
+                       job_enqueue=queued_job)
 
     await service(db).submit_request(sample_user, SubmitRequest(description="No food"), None)
 
@@ -235,7 +251,7 @@ async def test_failing_task_generation_never_loses_the_request(sample_user: AppU
 async def test_tasks_are_only_handed_to_staff():
     member_id = uuid4()
     db = FakeFunctions(staff_get=[{"id": member_id, "display_name": "Mo", "role": "member"}])
-    tasks = TaskService(TaskDatabridge(db), StaffService(StaffDatabridge(db)))
+    tasks = task_service(db)
     worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
 
     with pytest.raises(ApiError) as e:
@@ -246,7 +262,7 @@ async def test_tasks_are_only_handed_to_staff():
 
 
 def task_service(db: FakeFunctions) -> TaskService:
-    return TaskService(TaskDatabridge(db), StaffService(StaffDatabridge(db)))
+    return TaskService(TaskDatabridge(db), StaffService(StaffDatabridge(db)), JobDatabridge(db), db)
 
 
 async def test_a_worker_adds_a_task_to_a_case():
@@ -256,6 +272,7 @@ async def test_a_worker_adds_a_task_to_a_case():
         staff_get=[{"id": assignee, "display_name": "Ana", "role": "worker"}],
         task_add=lambda p: [task_row(case, title=p["title"], due_at=p["due_at"],
                                      assigned_worker_id=p["assigned_worker_id"], created_by=p["actor_id"])],
+        job_enqueue=queued_job,
     )
     worker = StaffMember(id=uuid4(), display_name="Wes", role=Role.WORKER)
 

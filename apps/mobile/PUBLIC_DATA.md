@@ -31,6 +31,9 @@ The loader reads the official MPD and MFD dispatched-call pages. The Awareness s
 - Crime-related dispatch categories include shootings, weapons, assault, sexual assault, robbery, burglary, theft, stolen vehicles, arson, criminal damage, drug dealing, and reckless driving. Generic 911 calls and administrative calls are omitted.
 - Coordinates from the calls page are rounded before display. The phone's foreground location is used only in memory to calculate distance and is not uploaded or saved.
 - The server-side loader monitors source health, deduplicates calls, generalizes locations, and publishes a stable sanitized API. Production deployment should still confirm automated-access expectations with MPD and MFD.
+- When MPD does not publish coordinates, the loader geocodes only the start of the block, never a house number, and retains a rounded point of roughly 110 meters. Sensitive calls and highway segments remain unplotted.
+- The 911 summary offers 2-, 6-, and 24-hour windows, totals, calls per hour, and breakdowns by category and district. Selecting a category filters the map.
+- The phone refreshes from our API every 30 seconds; the loader remains within the upstream five-minute schedule and published rate limit.
 
 ## Trends, source health, and transit
 

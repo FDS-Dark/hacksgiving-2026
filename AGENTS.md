@@ -25,7 +25,7 @@ Do these in order; each step ends on a check.
 3. **Run.** `scripts/dev.sh` starts the API, the background worker and Expo
    together; Ctrl+C stops all three. Done when all of these hold:
    - `curl http://localhost:8000/v1/health` returns `{"status":"healthy"}`
-   - `curl http://localhost:8090/` returns `ok` (the worker; needs the OpenAI key)
+   - `curl http://localhost:8090/` returns `ok` (the worker)
    - Expo prints a QR code with an `exp://<this machine's IP>:8081` URL
 4. **Phone.** Scan the QR code, sign in with a test account from
    `docs/test-accounts.md`. Done when the app opens past sign-in: staff
@@ -34,8 +34,9 @@ Do these in order; each step ends on a check.
 ## Gotchas
 
 - **OpenAI key.** `APP__OPENAI__API_KEY` in `api/.env` is the one value a
-  person supplies; it is never in git. Without it the worker doesn't start,
-  debriefs sit at "processing" and then fail, and "Suggest" on New case errors.
+  person supplies; it is never in git. Without it the worker runs only task
+  reminders: debriefs sit at "processing" and then fail, and "Suggest" on New
+  case errors.
 - **Sign-in callback per IP.** Auth0 only accepts Expo Go redirects it knows:
   `exp://<IP>:8081/--/auth` must be in `dev_callback_urls` in
   `auth0/terraform/variables.tf` (CI applies it on `main`). Tailscale IPs are

@@ -5,12 +5,16 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
 from databridge.case import CaseDatabridge
+from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -28,6 +32,8 @@ from models.case import (
 from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
 from models.user import AppUser
+from services.notification import NotificationService
+from services.oncall import OncallService
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.resource import ResourceService
@@ -80,8 +86,17 @@ def staff_row(user_id: UUID, role: str) -> dict[str, Any]:
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
+    tasks = TaskService(TaskDatabridge(db), staff, JobDatabridge(db), db)
+    notifications = NotificationService(NotificationDatabridge(db), db)
+    # No alert to open or close unless a test says otherwise.
+    db.handlers.setdefault("oncall_alert_open", [])
+    db.handlers.setdefault("oncall_resolve_for_case", [])
+    oncall = OncallService(
+        OncallDatabridge(db), db, ZoneInfo("America/Chicago"), jobs=JobDatabridge(db), notifications=notifications,
+        tasks=tasks,
+    )
     return CaseService(
-        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db, oncall
     )
 
 
@@ -173,7 +188,7 @@ async def test_cases_are_only_assigned_to_staff():
 
 async def test_null_assignee_unassigns_and_a_missing_one_leaves_it():
     case = case_row()
-    db = FakeFunctions(case_update=[case])
+    db = FakeFunctions(case_update=[case], case_list_updates_this_transaction=[])
     cases = service(db)
 
     await cases.update(worker(), case["id"], UpdateCaseRequest.model_validate({"assigned_worker_id": None}))
@@ -191,7 +206,8 @@ async def test_an_empty_update_is_rejected():
 
 async def test_a_public_update_is_a_message_and_an_internal_one_a_note():
     case = case_row()
-    db = FakeFunctions(case_add_update=lambda p: [update_row(case, update_type=p["update_type"])])
+    db = FakeFunctions(case_add_update=lambda p: [update_row(case, update_type=p["update_type"])],
+                       case_get=[case], notification_create=[])
     cases = service(db)
 
     await cases.add_update(worker(), case["id"], AddCaseUpdateRequest(content="Bed found", visibility="public"))

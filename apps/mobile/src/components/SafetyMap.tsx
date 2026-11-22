@@ -5,7 +5,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { Txt } from '@/components/ui';
 import { ESCAPE_HTML_JS, LEAFLET_CSS, LEAFLET_JS, MILWAUKEE, safeJson } from '@/lib/leaflet';
 import { INCIDENT_CATEGORIES, type SafetyPoint } from '@/services/publicSafety';
-import { milesBetween, type RecentCall } from '@/services/recentCalls';
+import { callCategory, milesBetween, type RecentCall } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 
 export type AreaSelection = {
@@ -31,14 +31,9 @@ function heatCells(points: SafetyPoint[]) {
   return [...cells.values()];
 }
 
-function callColor(nature: string, source: RecentCall['source']) {
+function callColor(category: RecentCall['category'], source: RecentCall['source']) {
   if (source === 'mfd_calls') return '#B93815';
-  const lower = nature.toLowerCase();
-  if (lower.includes('shoot') || lower.includes('weapon') || lower.includes('stabbing')) return '#B42318';
-  if (lower.includes('assault') || lower.includes('battery') || lower.includes('fight')) return '#D76B18';
-  if (lower.includes('robbery') || lower.includes('burglary') || lower.includes('entry')) return '#7A4EAB';
-  if (lower.includes('vehicle') || lower.includes('theft')) return '#2877A8';
-  return '#5A6569';
+  return callCategory(category).color;
 }
 
 function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
@@ -60,15 +55,15 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
     }));
   const callPins = calls
     .filter((call): call is RecentCall & { latitude: number; longitude: number } => call.latitude !== undefined && call.longitude !== undefined)
-    .slice(0, 100)
+    .slice(0, 600)
     .map((call) => ({
       id: call.id,
       lat: call.latitude,
       lng: call.longitude,
       label: call.nature,
-      color: callColor(call.nature, call.source),
+      color: callColor(call.category, call.source),
       time: call.occurredAt,
-      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : 'MPD'} dispatch · ${call.district ? `District ${call.district} · ` : ''}${call.status}`,
+      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : `MPD · ${callCategory(call.category).label}`} dispatch${call.district ? ` · District ${call.district}` : ''} · ${call.status}`,
     }));
 
   return `<!doctype html>
@@ -100,11 +95,14 @@ export function SafetyMap({
   recentCalls = [],
   windowDays = 30,
   onSelectArea,
+  callsOnly = false,
 }: {
   points: SafetyPoint[];
   recentCalls?: RecentCall[];
   windowDays?: number;
   onSelectArea?: (selection: AreaSelection) => void;
+  /** Just the 911-call layer (the staff map): a legend for calls only. */
+  callsOnly?: boolean;
 }) {
   const theme = useTheme();
   const html = useMemo(() => mapHtml(points, recentCalls), [points, recentCalls]);
@@ -138,9 +136,19 @@ export function SafetyMap({
         allowsInlineMediaPlayback={false}
         style={styles.webview}
       />
+      {callsOnly ? (
+        <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
+          <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
+            {recentCalls.filter((call) => call.latitude !== undefined).length} 911 CALLS ON THE MAP
+          </Txt>
+          <Txt variant="caption" tone="secondary">Pin color: call type · tap a pin for details</Txt>
+          <Txt variant="caption" tone="secondary">Delayed 30–90 min by MPD · not live</Txt>
+        </View>
+      ) : (
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
         <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
           {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · {windowDays === 365 ? '1 YEAR' : `${windowDays} DAYS`}
+          {recentCalls.length ? ` · ${recentCalls.filter((call) => call.latitude !== undefined).length} 911 CALLS` : ''}
         </Txt>
         <View style={styles.legendRow}>
           <View style={[styles.gradient, { backgroundColor: '#2A75BB' }]} />
@@ -148,9 +156,10 @@ export function SafetyMap({
           <View style={[styles.gradient, { backgroundColor: '#C62026' }]} />
           <Txt variant="caption" tone="secondary">Higher</Txt>
         </View>
-        <Txt variant="caption" tone="secondary">Colored pins: recent reports · outlined pins: dispatch</Txt>
+        <Txt variant="caption" tone="secondary">Small pins: reports · dark-ringed pins: 911 calls (30–90 min delay)</Txt>
         <Txt variant="caption" tone="secondary">Tap the map or a pin for details</Txt>
       </View>
+      )}
     </View>
   );
 }
