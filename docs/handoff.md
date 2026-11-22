@@ -72,6 +72,9 @@ CI runners sometimes drop connections (a `tf-apply` once failed fetching
 - Migration 0015 on a real Postgres instance. This branch's environment had
   no Docker/Postgres command, so API unit tests cover its service contracts but
   `test_migrations.py` was skipped. Run the full integration suite before merge.
+- The existing ElevenLabs agent has redacted DTMF enabled for keypad follow-up.
+  The new Awareness/checkpoint tools must remain unattached until migration
+  0015 and this branch's API endpoints are deployed.
 
 - A real `.m4a` from an iPhone through the whole voice path, locally or in
   production (each part is tested separately; transcription of real speech
