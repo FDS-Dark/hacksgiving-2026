@@ -836,14 +836,17 @@ pruned.
 6. **Is a resident push silent by default?** (Proposed: yes; a sound at the
    wrong moment can be dangerous.) And quiet hours for residents?
 7. **Signed-out residents:** stay with no push, or allow a phone to subscribe
-   to one request with its access code?
+   to one request with its access code? *Decided 2026-11-21: allowed (the
+   code already opens the thread; generic text; max 3 phones). See
+   `services/request_push.py`.*
 8. **App name and icon on the lock screen:** keep "Hacksgiving"/ComForce, or
    a neutral name?
 9. **Location:** keep it on-device only (proposed), or share the responder's
    location or ETA with staff while responding, as flow 3's "Staff can see
    you're en route" might mean?
 10. **R5 "Community alerts":** build safety-alert pushes, or remove the
-    switch?
+    switch? *Decided 2026-11-21: built for serious weather, opt-in and off
+    by default (`services/weather_jobs.py`).*
 11. **Staff Me "Urgent alerts":** OK to make it the off-call opt-in?
 
 ---
