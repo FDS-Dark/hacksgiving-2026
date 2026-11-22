@@ -12,9 +12,13 @@
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
       }
     },
     "android": {
+      "package": "com.austinkoske.hacksgiving",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -44,7 +48,8 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone to record a debrief. The recording is deleted as soon as it is turned into text.",
           "enableBackgroundRecording": false
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "scheme": "hacksgiving",
     "experiments": {

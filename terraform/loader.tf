@@ -1,16 +1,18 @@
 # ── Data loader ──────────────────────────────────────────────────────────
 #
 # CronJobs that keep imported opportunities, resources and public data current
-# (api/loader, docs/data-loader.md). It runs the API's image and connects as
-# the API's database role, through the same stored functions.
+# (dataloader/, docs/data-loader.md). They run the loader's own image and
+# connect as the API's database role, through the same stored functions.
 
 locals {
   loader_name = "${local.api_name}-loader"
 
   # Two jobs from one template: the nightly run, and the live sources
   # (dispatch calls, transit and weather alerts) every few minutes. MPD's
-  # calls page allows 10 requests per 30 minutes per address, so keep the
-  # live schedule at 5 minutes or slower.
+  # calls page allows 10 requests per 30 minutes per address, and production,
+  # staging and local dev share one address: whatever the schedule, the
+  # loader asks MPD at most every var.loader_mpd_min_interval_seconds, and
+  # backs off after MPD refuses (dataloader/utils/rate_gate.py).
   loader_jobs = {
     daily = {
       schedule = var.loader_schedule
@@ -20,7 +22,7 @@ locals {
       deadline = 1800
     }
     # A live run also catches up any daily source that hasn't succeeded in
-    # a day (api/loader/schedule.py), so a fresh deploy seeds itself within
+    # a day (dataloader/loader/schedule.py), so a fresh deploy seeds itself within
     # minutes: it needs the daily job's memory and more time.
     live = {
       schedule = var.loader_live_schedule
@@ -97,8 +99,8 @@ resource "kubernetes_cron_job_v1" "hacksgiving_loader" {
 
             container {
               name    = "loader"
-              image   = var.api_image
-              command = ["python", "-m", "loader", "--cadence", each.value.cadence]
+              image   = var.dataloader_image
+              command = ["python", "main.py", "--cadence", each.value.cadence]
 
               security_context {
                 allow_privilege_escalation = false
@@ -127,6 +129,10 @@ resource "kubernetes_cron_job_v1" "hacksgiving_loader" {
               env {
                 name  = "APP__LOGGING__FORMAT"
                 value = "json"
+              }
+              env {
+                name  = "APP__LOADER__MPD_MIN_INTERVAL_SECONDS"
+                value = tostring(var.loader_mpd_min_interval_seconds)
               }
               resources {
                 requests = { cpu = "100m", memory = "256Mi" }

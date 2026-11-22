@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs the whole app locally: the API, the background worker (debriefs), the
-# data loader (public data, every few minutes) and Expo for your phone.
+# data loader (dataloader/: public data, every few minutes) and Expo for your
+# phone.
 # Ctrl+C stops all of it. Run scripts/dev-setup.sh once first (and again
 # after pulls that change env files or migrations).
 set -euo pipefail
@@ -10,7 +11,7 @@ cd "$ROOT"
 
 get() { [ -f "$1" ] && { grep -E "^$2=" "$1" | tail -1 | cut -d= -f2- | tr -d '\r'; } || true; }
 
-if [ ! -f api/.env ] || [ ! -f apps/mobile/.env.local ]; then
+if [ ! -f api/.env ] || [ ! -f dataloader/.env ] || [ ! -f apps/mobile/.env.local ]; then
   echo "Run scripts/dev-setup.sh first." >&2
   exit 1
 fi
@@ -28,22 +29,23 @@ tag() { while IFS= read -r line; do printf '%s %s\n' "$1" "$line"; done; }
 
 (cd api && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000 2>&1 | tag "[api]") &
 
-if [ -n "$(get api/.env APP__OPENAI__API_KEY)" ]; then
-  (cd api && uv run python -m worker 2>&1 | tag "[worker]") &
-else
-  echo "[worker] not started: add APP__OPENAI__API_KEY to api/.env (debriefs stay 'processing' without it)"
+if [ -z "$(get api/.env APP__OPENAI__API_KEY)" ]; then
+  echo "[worker] no APP__OPENAI__API_KEY in api/.env: task reminders only (debriefs stay 'processing')"
 fi
+(cd api && uv run python -m worker 2>&1 | tag "[worker]") &
 
 # Public data (docs/data-loader.md): daily sources now and every 24 hours,
-# live ones (MPD/MFD calls, alerts) every 5 minutes. HACKSGIVING_NO_LOADER=1
-# skips it, e.g. when a teammate on the same network already polls MPD (it
-# allows 10 requests per 30 minutes per address).
+# live ones (MFD calls, alerts) every 5 minutes, MPD's calls at most every 15
+# (its page allows 10 requests per 30 minutes per address, shared with
+# production and staging; the loader's rate gate holds it back).
+# HACKSGIVING_NO_LOADER=1 skips it, e.g. when a teammate on the same network
+# already runs one.
 if [ -z "${HACKSGIVING_NO_LOADER:-}" ]; then
-  (cd api && uv run python -m loader --watch 2>&1 | tag "[loader]") &
+  (cd dataloader && uv run python main.py --watch 2>&1 | tag "[loader]") &
 fi
 
 sleep 2
 cd apps/mobile
 HOST=$(get .env.local REACT_NATIVE_PACKAGER_HOSTNAME)
 echo "Scan the QR code with your phone's camera (Expo Go). API: $(get .env.local EXPO_PUBLIC_API_BASE_URL)"
-REACT_NATIVE_PACKAGER_HOSTNAME="$HOST" npx expo start
+REACT_NATIVE_PACKAGER_HOSTNAME="$HOST" npx expo start --go

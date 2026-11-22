@@ -59,7 +59,7 @@ export function queryString(params: Record<string, string | number | boolean | n
 }
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** JSON-encoded unless it is FormData. */
   body?: unknown;
   /** false for calls that need no sign-in (health, asking for help without an account). */

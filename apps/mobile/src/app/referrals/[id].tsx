@@ -3,11 +3,12 @@ import { Linking } from 'react-native';
 
 import { ResidentScreen } from '@/components/resident';
 import { Button, ErrorBanner, Group, Loading, Notice, Row } from '@/components/ui';
-import { useVoiceReferral } from '@/services/voice';
+import { useRecordVoiceOutcome, useVoiceReferral } from '@/services/voice';
 
 export default function ReferralDetailScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
   const referral = useVoiceReferral(id);
+  const outcome = useRecordVoiceOutcome(id);
   const item = referral.data;
 
   return (
@@ -20,6 +21,9 @@ export default function ReferralDetailScreen() {
             <Row title="Service area" detail={item.service_area} />
             {item.hours_label ? <Row title="Hours" detail={item.hours_label} /> : null}
             <Row title="Referral status" detail={item.outcome_status ?? item.status} />
+            <Row title="Follow-up" detail={item.follow_up_status === 'pending' && item.follow_up_due_at
+              ? `Check in ${new Date(item.follow_up_due_at).toLocaleDateString()}`
+              : item.follow_up_status.replaceAll('_', ' ')} />
             <Row title="Languages" detail={item.languages.join(', ')} />
           </Group>
           {item.phone_e164 ? (
@@ -32,6 +36,23 @@ export default function ReferralDetailScreen() {
           ) : (
             <Notice icon="information-circle-outline">This reviewed resource does not publish a phone number.</Notice>
           )}
+          {item.follow_up_status === 'pending' || item.follow_up_status === 'needs_help' ? (
+            <Group header="Did this connection help?" footer="Your answer updates ComForce without sharing a recording or transcript.">
+              <Row
+                title="Yes, I reached help"
+                icon="checkmark-circle-outline"
+                accessory="chevron"
+                onPress={() => outcome.mutate({ status: 'completed', reason_code: null })}
+              />
+              <Row
+                title="I still need help"
+                icon="help-circle-outline"
+                accessory="chevron"
+                onPress={() => outcome.mutate({ status: 'follow_up_needed', reason_code: 'resident_requested_follow_up' })}
+              />
+            </Group>
+          ) : null}
+          {outcome.error ? <ErrorBanner error={outcome.error} /> : null}
         </>
       ) : null}
     </ResidentScreen>

@@ -11,8 +11,10 @@ import { Segmented } from '@/components/Segmented';
 import { ServiceGuide } from '@/components/ServiceGuide';
 import { CardSkeleton, CaseListSkeleton } from '@/components/Skeleton';
 import { CaseAssist } from '@/components/staff/case/CaseAssist';
+import { CaseAttachments } from '@/components/staff/case/CaseAttachments';
 import { CaseHistory } from '@/components/staff/case/CaseHistory';
 import { CaseReferrals } from '@/components/staff/case/CaseReferrals';
+import { CaseShares } from '@/components/staff/case/CaseShares';
 import { CaseTasks } from '@/components/staff/case/CaseTasks';
 import { UpdateCaseSheet } from '@/components/staff/case/UpdateCaseSheet';
 import { Badge, Card, PriorityBadge, StatusBadge } from '@/components/staff/kit';
@@ -21,10 +23,11 @@ import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/cases';
 import { dateTime, timeAgo } from '@/lib/format';
 import { callPhone } from '@/lib/phone';
 import { useCase, useUpdateCase } from '@/services/cases';
+import { useMarkCaseRead } from '@/services/notifications';
 import { useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
-type Tab = 'tasks' | 'history' | 'referrals' | 'guide';
+type Tab = 'tasks' | 'history' | 'referrals' | 'files' | 'guide';
 
 /**
  * Figma S3 "Case": status and owner at the top, the next actions as
@@ -36,6 +39,8 @@ export default function CaseScreen() {
   const detail = useCase(id);
   const [tab, setTab] = useState<Tab>('tasks');
   const [updating, setUpdating] = useState(false);
+  // Opening a case clears its notifications; again when a refetch brings new updates.
+  useMarkCaseRead(id, !!detail.data, detail.data?.updates.length);
 
   if (detail.isPending) {
     return (
@@ -85,6 +90,7 @@ export default function CaseScreen() {
           { value: 'tasks', label: taskCount ? `Tasks ${taskCount}` : 'Tasks' },
           { value: 'history', label: 'History' },
           { value: 'referrals', label: referrals.length ? `Referrals ${referrals.length}` : 'Referrals' },
+          { value: 'files', label: 'Files' },
           { value: 'guide', label: 'Guide' },
         ]}
       />
@@ -92,6 +98,8 @@ export default function CaseScreen() {
       {tab === 'tasks' ? <CaseTasks caseId={c.id} tasks={tasks} /> : null}
       {tab === 'history' ? <CaseHistory updates={updates} /> : null}
       {tab === 'referrals' ? <CaseReferrals item={c} referrals={referrals} /> : null}
+      {tab === 'referrals' ? <CaseShares item={c} /> : null}
+      {tab === 'files' ? <CaseAttachments caseId={c.id} /> : null}
       {tab === 'guide' ? (
         <View style={{ gap: space.md }}>
           {/* Re-routing the case to another service swaps in that service's guide. */}
@@ -138,6 +146,13 @@ function Person({ item: c }: { item: Case }) {
   const reach = [c.contact_phone, c.contact_email].filter(Boolean).length ? null : 'No contact details shared';
   return (
     <Card style={styles.person}>
+      {/* The person page: their contact details and every case that looks like them. */}
+      <Pressable
+        onPress={() => router.push({ pathname: '/staff/cases/[id]/person', params: { id: c.id } })}
+        accessibilityRole="button"
+        accessibilityLabel={`${c.contact_name ?? 'This person'}: see all their cases`}
+        style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md }, pressed && { opacity: 0.7 }]}
+      >
       <Avatar name={c.contact_name ?? '?'} size={40} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[type.subhead, { color: theme.text, fontWeight: '700' }]}>{c.contact_name ?? 'Name not given'}</Text>
@@ -148,7 +163,9 @@ function Person({ item: c }: { item: Case }) {
         ) : null}
         {reach ? <Text style={[type.caption, { color: theme.textTertiary }]}>{reach}</Text> : null}
         {c.resolved_at ? <Text style={[type.caption, { color: theme.textSecondary }]}>Resolved {dateTime(c.resolved_at)}</Text> : null}
+        <Text style={[type.caption, { color: theme.accent, fontWeight: '600' }]}>All their cases ›</Text>
       </View>
+      </Pressable>
       {c.contact_phone ? <IconButton icon="call-outline" label={`Call ${c.contact_phone}`} onPress={() => callPhone(c.contact_phone!)} /> : null}
       {c.contact_email ? <IconButton icon="mail-outline" label={`Email ${c.contact_email}`} onPress={() => Linking.openURL(`mailto:${c.contact_email}`)} /> : null}
     </Card>

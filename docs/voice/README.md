@@ -22,6 +22,8 @@ dial 911 without continuing intake.
    transfer destination. The adapter rejects emergency short codes.
 4. Disable audio saving and set transcript/audio retention to zero (or enable
    Zero Retention Mode) before the first real call.
+   Enable DTMF input with redaction so a follow-up can offer "press 1: reached
+   help / press 2: still need help" without requiring speech.
 5. Configure the signed post-call webhook at
    `POST /v1/voice/webhooks/elevenlabs` and store its HMAC secret in Vault.
 6. Import the Twilio number into ElevenLabs and attach it to the tested agent.
@@ -31,17 +33,30 @@ dial 911 without continuing intake.
    - `POST /v1/voice/route` with `system__conversation_id` and a short need
      description. This uses the same ComForce service classifier as Get Help
      and stores only its structured category on the call.
+   - `POST /v1/voice/checkpoints` after material routing steps and
+     `POST /v1/voice/checkpoints/resume` at the start of a returning call.
+     These retain only allowlisted structured state for 24 hours, never speech.
+   - `GET /v1/voice/awareness?district=<1-7>&days=7` for generalized historical
+     activity. Its disclaimer must be read with the counts; it is not a safety score.
    - `POST /v1/voice/requests` only after explicit caller consent. It creates an
      anonymous ComForce Get Help case from the caller-approved summary,
      structured category, general location, and optional callback preference.
      It returns the case number and private access code, which is shown only in
      that response. Audio and transcripts are never submitted or stored by
-     this tool.
+     this tool. Its `urgency` (`routine`, the default, or `urgent`: needs
+     someone today, nobody in danger now) decides whether the case goes in
+     at high priority and pages whoever is on call; `urgent: true` in the
+     response says it did. There is no emergency level: the schema rejects
+     one. `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns paging off while
+     still recording Ava's judgement on the call.
    - `GET /v1/voice/opportunities` for the same active job and volunteer
      postings residents can search under Me > Volunteer and jobs.
    - `GET /v1/voice/resources`
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`
+   - `GET /v1/voice/follow-ups/due` for an approved scheduler. The endpoint
+     contains no caller number; the linked case/app workflow supplies the
+     consented contact path.
    - `POST /v1/voice/handoffs` with `system__conversation_id` and
      `system__caller_id` when the caller
      explicitly asks to continue in the app. Read the returned eight-character

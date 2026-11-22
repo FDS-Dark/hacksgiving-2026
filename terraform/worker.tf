@@ -5,11 +5,22 @@
 # claimed with SKIP LOCKED).
 #
 # Needs `openai_api_key` in the app secret in Vault (var.app_secret_path),
-# beside jwt_secret. Until it's there, this ExternalSecret can't render and
-# the worker doesn't start; the API is unaffected.
+# beside jwt_secret. Until it's there, that ExternalSecret can't render, the
+# worker doesn't start, and the API keeps serving with AI routing unavailable.
+#
+# The APNs push key (`apns_key_p8`, the .p8 file's contents, plus
+# `apns_key_id` and `apns_team_id`, same Vault secret) has its own
+# ExternalSecret, mounted as optional: without it the worker still starts
+# and runs with push off (api/worker/__main__.py logs it).
 
 locals {
   worker_name = local.is_production ? "hacksgiving-worker" : "hacksgiving-worker-${var.environment}"
+  # Push goes straight to Apple (api/adapters/push.py). The topic is the
+  # app's bundle ID; staging's build variant has its own.
+  push_env = {
+    APP__PUSH__PROVIDER   = "apns"
+    APP__PUSH__APNS_TOPIC = local.is_production ? "com.austinkoske.hacksgiving" : "com.austinkoske.hacksgiving.staging"
+  }
 }
 
 resource "kubernetes_manifest" "hacksgiving_openai_es" {
@@ -29,6 +40,33 @@ resource "kubernetes_manifest" "hacksgiving_openai_es" {
           engineVersion = "v2"
           data = {
             APP__OPENAI__API_KEY = "{{ .openai_api_key }}"
+          }
+        }
+      }
+      dataFrom = [{ extract = { key = var.app_secret_path } }]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "hacksgiving_apns_es" {
+  manifest = {
+    apiVersion = "external-secrets.io/v1beta1"
+    kind       = "ExternalSecret"
+    metadata = {
+      name      = "${local.worker_name}-apns"
+      namespace = local.namespace
+    }
+    spec = {
+      refreshInterval = "1h"
+      secretStoreRef  = { name = local.secret_store_name, kind = "SecretStore" }
+      target = {
+        name = "${local.worker_name}-apns"
+        template = {
+          engineVersion = "v2"
+          data = {
+            APP__PUSH__APNS_KEY     = "{{ .apns_key_p8 }}"
+            APP__PUSH__APNS_KEY_ID  = "{{ .apns_key_id }}"
+            APP__PUSH__APNS_TEAM_ID = "{{ .apns_team_id }}"
           }
         }
       }
@@ -86,6 +124,13 @@ resource "kubernetes_deployment" "hacksgiving_worker" {
           env_from {
             secret_ref { name = "${local.worker_name}-openai" }
           }
+          # Optional: no APNs key in Vault means push off, not a stuck worker.
+          env_from {
+            secret_ref {
+              name     = "${local.worker_name}-apns"
+              optional = true
+            }
+          }
           env_from {
             secret_ref {
               name     = local.storage_secret_name
@@ -93,7 +138,7 @@ resource "kubernetes_deployment" "hacksgiving_worker" {
             }
           }
           dynamic "env" {
-            for_each = merge(local.api_env, local.storage_env, {
+            for_each = merge(local.api_env, local.storage_env, local.push_env, {
               APP__WORKER__CONCURRENCY = tostring(var.worker_concurrency)
               APP__WORKER__HEALTH_PORT = "8081"
             })

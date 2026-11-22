@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from databridge.base import Databridge
+from databridge.executor import Row
 from models.case import (
     Case,
     CaseFilters,
@@ -90,6 +91,18 @@ class CaseDatabridge(Databridge):
         row = await self._first("case_get", case_id=case_id)
         return Case(**row) if row else None
 
+    async def language(self, case_id: UUID) -> Row | None:
+        return await self._first("case_language_get", case_id=case_id)
+
+    async def set_language(self, case_id: UUID, language: str | None, source: str, actor_id: UUID | None) -> Row | None:
+        return await self._first(
+            "case_language_set", case_id=case_id, language=language, source=source, actor_id=actor_id
+        )
+
+    async def person_cases(self, case_id: UUID, limit: int) -> list[Case]:
+        """The case and every case that looks like the same person (0024)."""
+        return [Case(**row) for row in await self._rows("person_cases", case_id=case_id, limit=limit)]
+
     async def update(self, case_id: UUID, actor_id: UUID, changes: UpdateCaseRequest) -> Case | None:
         row = await self._first(
             "case_update",
@@ -111,6 +124,13 @@ class CaseDatabridge(Databridge):
 
     async def list_updates(self, case_id: UUID) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_list_updates", case_id=case_id)]
+
+    async def updates_this_transaction(self, case_id: UUID, author_id: UUID | None) -> list[CaseUpdate]:
+        """The history entries this transaction wrote on the case by `author_id`
+        (case_update and referral_update write their own), oldest first.
+        Only meaningful inside a shared transaction (`within`)."""
+        rows = await self._rows("case_list_updates_this_transaction", case_id=case_id, author_id=author_id)
+        return [CaseUpdate(**row) for row in rows]
 
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_recent_activity", limit=limit)]

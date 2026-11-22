@@ -5,12 +5,16 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
 from databridge.case import CaseDatabridge
+from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -28,6 +32,8 @@ from models.case import (
 from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
 from models.user import AppUser
+from services.notification import NotificationService
+from services.oncall import OncallService
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.resource import ResourceService
@@ -80,8 +86,17 @@ def staff_row(user_id: UUID, role: str) -> dict[str, Any]:
 
 def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
+    tasks = TaskService(TaskDatabridge(db), staff, JobDatabridge(db), db)
+    notifications = NotificationService(NotificationDatabridge(db), db)
+    # No alert to open or close unless a test says otherwise.
+    db.handlers.setdefault("oncall_alert_open", [])
+    db.handlers.setdefault("oncall_resolve_for_case", [])
+    oncall = OncallService(
+        OncallDatabridge(db), db, ZoneInfo("America/Chicago"), jobs=JobDatabridge(db), notifications=notifications,
+        tasks=tasks,
+    )
     return CaseService(
-        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, TaskService(TaskDatabridge(db), staff)
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db, oncall
     )
 
 
@@ -107,6 +122,35 @@ async def test_a_submission_is_triaged_and_an_urgent_one_is_high_priority(sample
     assert created["requester_id"] == sample_user.id and created["access_code_hash"] is None
     (note,) = db.called("case_add_update")
     assert note["visibility"] == "internal" and "Evicted today." in note["content"]
+
+
+async def test_an_urgent_note_makes_an_anonymous_request_high_priority_and_pages():
+    """Ava's urgent (not 911) phone requests: high priority, the note in the
+    history, and the on-call alert opened in the same write."""
+    case = case_row(priority="high", requester_id=None)
+    db = FakeFunctions(request_create=[case], case_add_update=[update_row(case)],
+                       request_get_by_code=[public_row(case)], task_create=[])
+    body = SubmitRequest(description="Sleeping outside tonight", category=CaseCategory.HOMELESSNESS)
+
+    receipt = await service(db).submit_anonymous_request(body, None, urgent_note="Ava marked this urgent.")
+
+    (created,) = db.called("request_create")
+    assert created["priority"] == "high" and created["access_code_hash"] is not None
+    (note,) = db.called("case_add_update")
+    assert (note["visibility"], note["content"]) == ("internal", "Ava marked this urgent.")
+    assert db.called("oncall_alert_open") == [{"case_id": case["id"]}]
+    assert receipt.access_code
+
+
+async def test_an_anonymous_request_without_an_urgent_note_stays_medium():
+    case = case_row(requester_id=None)
+    db = FakeFunctions(request_create=[case], request_get_by_code=[public_row(case)], task_create=[])
+    body = SubmitRequest(description="A ride on Tuesday", category=CaseCategory.TRANSPORTATION)
+
+    await service(db).submit_anonymous_request(body, None)
+
+    assert db.called("request_create")[0]["priority"] == "medium"
+    assert db.called("case_add_update") == []
 
 
 async def test_a_failing_triage_never_blocks_a_submission(sample_user: AppUser):
@@ -173,7 +217,7 @@ async def test_cases_are_only_assigned_to_staff():
 
 async def test_null_assignee_unassigns_and_a_missing_one_leaves_it():
     case = case_row()
-    db = FakeFunctions(case_update=[case])
+    db = FakeFunctions(case_update=[case], case_list_updates_this_transaction=[])
     cases = service(db)
 
     await cases.update(worker(), case["id"], UpdateCaseRequest.model_validate({"assigned_worker_id": None}))
@@ -191,7 +235,8 @@ async def test_an_empty_update_is_rejected():
 
 async def test_a_public_update_is_a_message_and_an_internal_one_a_note():
     case = case_row()
-    db = FakeFunctions(case_add_update=lambda p: [update_row(case, update_type=p["update_type"])])
+    db = FakeFunctions(case_add_update=lambda p: [update_row(case, update_type=p["update_type"])],
+                       case_get=[case], notification_create=[])
     cases = service(db)
 
     await cases.add_update(worker(), case["id"], AddCaseUpdateRequest(content="Bed found", visibility="public"))
@@ -295,6 +340,29 @@ def test_rule_based_suggestions_fit_the_category_and_skip_what_is_already_referr
 
     assert result.method == "rules"
     assert [s.resource.name for s in result.suggestions] == ["Bus", "Hub"]
+
+
+def test_suggestions_learn_from_referral_outcomes():
+    """Within the same fit, the resource whose referrals helped more comes
+    first; one lucky referral doesn't beat a solid track record."""
+    from models.assist import ResourceOutcomes
+    from models.resource import Resource
+    from services.case_assist import learned_score
+
+    case = case_row(category="transportation")
+    proven, new, poor = (Resource(**resource_row(name=n, is_sample=False)) for n in ("Proven", "New", "Poor"))
+    outcomes = {
+        proven.id: ResourceOutcomes(referred=10, helped=8, declined=1, success_rate=0.89),
+        poor.id: ResourceOutcomes(referred=6, helped=1, declined=5, success_rate=0.17),
+    }
+
+    result = rule_based_suggestions(detail_with(case, []), [poor, new, proven], outcomes)
+    assert [s.resource.name for s in result.suggestions] == ["Proven", "New", "Poor"]
+    assert "Helped 8 of 9 people" in result.suggestions[0].reason
+
+    one_lucky = ResourceOutcomes(referred=1, helped=1, declined=0, success_rate=1.0)
+    assert learned_score(one_lucky) < learned_score(outcomes[proven.id])
+    assert learned_score(None) == 0.5
 
 
 class FakeResponses:

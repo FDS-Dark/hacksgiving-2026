@@ -72,7 +72,7 @@ The pieces separately, if you'd rather:
 cd database && docker compose up -d && ./migrate.sh --local        # Postgres + storage, migrations, dev user
 cd api && uv sync && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 cd api && uv run python -m worker                                 # background jobs (debriefs)
-cd apps/mobile && npm ci && npx expo start                         # Expo Go
+cd apps/mobile && npm ci && npx expo start --go                    # Expo Go
 ```
 
 To install a standalone build on an iPhone, see

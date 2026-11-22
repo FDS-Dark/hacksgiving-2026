@@ -8,10 +8,18 @@ from fastapi.middleware.cors import CORSMiddleware
 import errors
 from dependencies import get_audio_storage, get_executor
 from logging_setup import configure_logging
+from routers.attachment import router as attachments
+from routers.training import router as training
 from routers.case import router as cases
+from routers.community import router as community
 from routers.health import router as health
+from routers.insights import router as insights
 from routers.opportunity import router as opportunities
+from routers.partner import router as partners
 from routers.job import router as jobs
+from routers.notification import router as notifications
+from routers.oncall import router as oncall
+from routers.push import router as push
 from routers.record import router as records
 from routers.request import router as requests
 from routers.resource import router as resources
@@ -53,7 +61,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.cors_origins,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Accept", "Authorization", "X-Request-ID", "X-Access-Code"],
     expose_headers=["X-Request-ID"],
     max_age=3600,
@@ -63,7 +71,9 @@ errors.install(app)
 
 for router in (
     health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
-    staff, voice, records, jobs, public_data,
+    # push before notifications: /notifications/test and /stats aren't ids.
+    staff, voice, records, jobs, public_data, oncall, push, notifications, community, insights, partners,
+    attachments, training,
 ):
     app.include_router(router, prefix="/v1")
 

@@ -18,6 +18,11 @@ variable "api_image" {
   description = "Full image ref for the api service, e.g. registry.gitlab.com/group/hacksgiving/api:abc1234"
 }
 
+variable "dataloader_image" {
+  type        = string
+  description = "Full image ref for the data loader (dataloader/Dockerfile), e.g. registry.gitlab.com/group/hacksgiving/dataloader:abc1234"
+}
+
 variable "api_replicas" {
   type    = number
   default = 1
@@ -96,8 +101,19 @@ variable "loader_schedule" {
 
 variable "loader_live_schedule" {
   type        = string
-  description = "Cron schedule for the loader's live sources (dispatch calls, alerts). MPD allows 10 requests per 30 minutes: keep it at every 5 minutes or slower."
+  description = "Cron schedule for the loader's live sources (dispatch calls, alerts), in America/Chicago time."
   default     = "*/5 * * * *"
+}
+
+variable "loader_mpd_min_interval_seconds" {
+  type        = number
+  description = "Least seconds between two requests to MPD's calls page from this environment. MPD allows 10 per 30 minutes per IP, shared by production (300), staging (3600) and local dev (900)."
+  default     = 300
+
+  validation {
+    condition     = var.loader_mpd_min_interval_seconds >= 300
+    error_message = "MPD allows 10 requests per 30 minutes per IP, shared across environments: ask at most every 300 seconds."
+  }
 }
 
 variable "loader_secret_path" {

@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { File } from 'expo-file-system';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -32,6 +32,9 @@ function deleteLocal(uri: string | null) {
  */
 export default function NewDebriefScreen() {
   const theme = useTheme();
+  // From the Responding screen: the debrief is about the accepted case, and
+  // confirming it updates that case instead of opening a new one.
+  const { caseId, caseNumber } = useLocalSearchParams<{ caseId?: string; caseNumber?: string }>();
   // Recording needs the phone's microphone; on the web, type it.
   const [mode, setMode] = useState<Mode>(Platform.OS === 'web' ? 'type' : 'speak');
 
@@ -48,10 +51,17 @@ export default function NewDebriefScreen() {
         </Text>
       </View>
 
-      <Text style={[type.subhead, { color: theme.textSecondary }]}>
-        Say what happened in your own words, right after the call or visit. We’ll turn it into a case for you to check before
-        anything is saved.
-      </Text>
+      {caseId ? (
+        <Notice icon="link-outline">
+          This debrief is for case{caseNumber ? ` #${caseNumber}` : ''}. When you confirm it, its notes and next steps are added
+          to that case.
+        </Notice>
+      ) : (
+        <Text style={[type.subhead, { color: theme.textSecondary }]}>
+          Say what happened in your own words, right after the call or visit. We’ll turn it into a case for you to check before
+          anything is saved.
+        </Text>
+      )}
 
       {Platform.OS !== 'web' ? (
         <Segmented
@@ -65,12 +75,12 @@ export default function NewDebriefScreen() {
         />
       ) : null}
 
-      {mode === 'speak' ? <Speak onDone={opened} /> : <Type onDone={opened} />}
+      {mode === 'speak' ? <Speak caseId={caseId} onDone={opened} /> : <Type caseId={caseId} onDone={opened} />}
     </Page>
   );
 }
 
-function Speak({ onDone }: { onDone: (record: DebriefRecord) => void }) {
+function Speak({ caseId, onDone }: { caseId?: string; onDone: (record: DebriefRecord) => void }) {
   const theme = useTheme();
   const submit = useSubmitVoice();
   const [recording, setRecording] = useState<{ uri: string; durationMs: number } | null>(null);
@@ -83,7 +93,7 @@ function Speak({ onDone }: { onDone: (record: DebriefRecord) => void }) {
 
   const send = () => {
     if (!recording) return;
-    submit.mutate(recording.uri, {
+    submit.mutate({ fileUri: recording.uri, caseId }, {
       onSuccess: (record) => {
         deleteLocal(recording.uri);
         onDone(record);
@@ -123,7 +133,7 @@ function Speak({ onDone }: { onDone: (record: DebriefRecord) => void }) {
   );
 }
 
-function Type({ onDone }: { onDone: (record: DebriefRecord) => void }) {
+function Type({ caseId, onDone }: { caseId?: string; onDone: (record: DebriefRecord) => void }) {
   const create = useCreateRecord();
   const [text, setText] = useState('');
   return (
@@ -148,7 +158,7 @@ function Type({ onDone }: { onDone: (record: DebriefRecord) => void }) {
         size="lg"
         disabled={!text.trim()}
         loading={create.isPending}
-        onPress={() => create.mutate({ text: text.trim() }, { onSuccess: onDone })}
+        onPress={() => create.mutate({ text: text.trim(), case_id: caseId ?? null }, { onSuccess: onDone })}
       />
     </View>
   );

@@ -1,4 +1,6 @@
+import { router } from 'expo-router';
 import { useMemo } from 'react';
+import { Linking } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
@@ -8,6 +10,8 @@ import { useDeviceLocation } from '@/services/deviceLocation';
 import { INCIDENT_CATEGORIES, type SafetyPoint, usePublicSafetyPoints } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
 import { useVoiceFollowUps } from '@/services/voice';
+import { useWeatherAlerts } from '@/services/weather';
+import { dateTime } from '@/lib/format';
 
 function categoryLabel(point: SafetyPoint) {
   if (point.category === 'community-report') return 'Community report';
@@ -30,6 +34,7 @@ export default function AlertsScreen() {
   const safety = usePublicSafetyPoints();
   const device = useDeviceLocation();
   const followUps = useVoiceFollowUps();
+  const weather = useWeatherAlerts();
 
   const recentIncidents = useMemo(
     () => safety.points
@@ -53,6 +58,7 @@ export default function AlertsScreen() {
     calls.refetch();
     safety.refetch();
     followUps.refetch();
+    weather.refetch();
   };
 
   return (
@@ -64,27 +70,36 @@ export default function AlertsScreen() {
         Dispatch calls are delayed 30–90 minutes and are not confirmed crimes. Incident locations and distances are approximate.
       </Notice>
 
-      <Group
-        header="Your ComForce notifications"
-        footer="These private follow-ups are visible only while signed in. Connect your first call from the Account page."
-      >
-        {followUps.data?.length ? (
-          followUps.data.map((item) => (
+      {weather.active.length ? (
+        <Group header="Weather" footer="From the National Weather Service for Milwaukee County.">
+          {weather.active.map((alert) => (
             <Row
-              key={item.id}
-              title={item.need_category?.replaceAll('-', ' ') ?? 'ComForce call follow-up'}
-              subtitle={item.resources.length ? `Resources: ${item.resources.join(', ')}` : 'Your call is connected; resources can be added as the response progresses.'}
-              detail={item.urgency_tier ?? 'new'}
-              tile={{ icon: 'bell-ring', color: '#247A63' }}
+              key={alert.id}
+              title={alert.event}
+              subtitle={alert.instruction ?? alert.headline ?? alert.description}
+              detail={alert.expires_at ? `Until ${dateTime(alert.expires_at)}` : undefined}
+              detailTint="rgba(154,88,0,0.10)"
+              detailColor="#9A5800"
+              tile={{ icon: 'weather-cloudy-alert', color: '#9A5800' }}
+              onPress={alert.url ? () => Linking.openURL(alert.url!) : undefined}
             />
-          ))
-        ) : (
-          <Row
-            title="No call notifications yet"
-            subtitle="Ask the phone assistant to connect your call, then enter its code under Account."
-            tile={{ icon: 'phone-check', color: '#247A63' }}
-          />
-        )}
+          ))}
+        </Group>
+      ) : null}
+
+      {/* Phone-call follow-ups live in one place, Me > Phone calls; this row points there. */}
+      <Group header="Your ComForce notifications">
+        <Row
+          title="Phone call follow-ups"
+          subtitle={
+            followUps.data?.length
+              ? `${followUps.data.length} connected call${followUps.data.length === 1 ? '' : 's'} · under Me > Phone calls`
+              : 'Connect a call with the phone assistant under Me > Phone calls.'
+          }
+          tile={{ icon: 'phone-check', color: '#247A63' }}
+          accessory="chevron"
+          onPress={() => router.push('/me')}
+        />
       </Group>
 
       {!device.location ? (
@@ -133,13 +148,13 @@ export default function AlertsScreen() {
       ) : calls.data?.length ? (
         <Group
           header={`Live dispatch feed · ${calls.data.length}`}
-          footer="Updated every five minutes while the app is open. Exact addresses are intentionally not displayed."
+          footer="Safety-related calls from the last six hours. Not live: MPD publishes calls 30–90 min after dispatch; the app checks every 30 seconds. Locations are approximate."
         >
           {calls.data.slice(0, 8).map((call) => (
             <Row
               key={call.id}
               title={call.nature}
-              subtitle={`Police call · District ${call.district} · ${call.occurredAt}`}
+              subtitle={`${call.occurredAt} · District ${call.district}`}
               detail={call.status === 'Service in Progress' ? 'Active' : 'Updated'}
               detailTint="rgba(215,107,24,0.12)"
               detailColor="#9A5800"
@@ -151,7 +166,7 @@ export default function AlertsScreen() {
         <EmptyState
           icon="checkmark-circle-outline"
           title="No matching live calls"
-          body="The city feed currently has no coordinate-safe calls in the selected safety categories. Pull down to check again."
+          body="No weapon, violence or property calls in the last two hours. Pull down to check again."
           action={<Button label="Refresh" variant="tinted" onPress={refresh} />}
         />
       )}

@@ -6,7 +6,8 @@ FastAPI backend for hacksgiving.
 
 Layered, one direction of dependency, and the same domains in every layer
 (see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)):
-`user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record` and `job`.
+`user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record`, `job`, `oncall`,
+`notification` and `push`.
 
 ```
 routers/<domain>.py     HTTP: request/response models, status codes, auth dependencies
@@ -95,6 +96,10 @@ stored.
 | `/v1/voice/...` (ElevenLabs webhook and tools, handoffs, follow-ups) | `VoiceService` |
 | `/v1/records/...` (Phantom debriefs: create, follow, retry, confirm into a case, discard) | `RecordService` |
 | `GET /v1/jobs/stats` (queue health, admins) | `JobService` |
+| `/v1/oncall/...` (who is on now and next, the "On call" switch, the rota; admins edit shifts) | `OncallService` |
+| `/v1/oncall/alerts/...` (urgent alerts: list, detail, accept, pass, arrived), `GET /v1/oncall/stats` (admins) | `OncallService` |
+| `/v1/notifications/...`, `/v1/me/notification-preferences` (the inbox: list, unread count, mark read; push settings) | `NotificationService` |
+| `PUT`/`DELETE /v1/me/devices` (push tokens), `POST /v1/notifications/test`, `GET /v1/notifications/stats` (admins) | `PushService` |
 
 ## Background work (Phantom)
 
@@ -116,6 +121,33 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
 
 - `services/pipeline.py` holds the stages; `worker/runner.py` claims, runs,
   retries and dead-letters them; `worker/__main__.py` wires it all up.
+- The inbox uses the same queue: `task.remind` (`services/notification_jobs.py`)
+  is queued when a task is created or its due time or assignee changes,
+  and 30 minutes before it is due gives the task's owner a `task_due`
+  notification. Other notifications are written by the services, in the
+  transaction of the change (`NotificationService.notify`). Upkeep deletes
+  notifications after 90 days.
+- Push: `notify` also queues `notification.push` (`services/push_jobs.py`),
+  which sends straight to Apple (`adapters/push.py`, APNs over HTTP/2) with
+  fixed text per kind, never case details. It skips read, muted and
+  push-off rows, holds non-urgent ones through quiet hours, coalesces and
+  caps them; one `app.notification_deliveries` row per device stops double
+  sends. `APP__PUSH__PROVIDER` is `off` by default (inbox only), `fake`, or
+  `apns` with the team's .p8 key. Upkeep deletes devices unseen for 60 days
+  and deliveries after 30.
+- Urgent escalation: a case that pages on call (open, unassigned, `high`
+  or `critical`: `pages_on_call` in `models/case_enums.py`) gets an alert in
+  the same transaction as the case write (`OncallService.open_for_case`,
+  called by resident requests, `POST /cases` and `PATCH /cases/{id}`;
+  assigning or closing the case ends it). `oncall.offer` offers it to the
+  ladder's current step (primary, then backup or whoever is next, then
+  admins and workers with "urgent when off call"), `oncall.escalate` moves
+  on when the step's `APP__ONCALL__OFFER_SECONDS` run out, and
+  `oncall.remind` tells admins when nobody accepted (every
+  `REMIND_SECONDS`, at most `MAX_REMINDERS`), all in
+  `services/oncall_jobs.py`. The first accept wins (one guarded UPDATE in
+  `0018_urgent_alerts.sql`). Upkeep sweeps for paging cases a code path
+  missed.
 - Name removal is best effort (rules, not a model): the app says "names we
   can spot are removed", never "all names". For voice, the audio itself goes
   to the transcription service before redaction; the app says that too.
@@ -128,8 +160,9 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
   `../database/terraform/storage.tf` creates and writes into the runtime db secret in Vault (no manual
   setup; the API and worker create the private bucket on startup), and any
   S3-compatible store locally (the `storage` container).
-- Run it locally beside the API: `uv run python -m worker` (needs
-  `APP__OPENAI__API_KEY`; liveness on `:8090`).
+- Run it locally beside the API: `uv run python -m worker` (liveness on
+  `:8090`). Without `APP__OPENAI__API_KEY` it still runs task reminders, but
+  not Phantom's stages (it logs a warning).
 
 ## Adding a resource
 
@@ -153,11 +186,10 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
 
 ## Data loader
 
-`python -m loader` keeps outside data current: opportunities and resources
-(USAJOBS, CareerOneStop, Hunger Task Force) and public data (NIBRS incidents,
-MPD/MFD calls, boundaries, MCTS transit, NWS alerts, CDC PLACES, FBI
-trends), served at `/v1/public-data`. Daily sources run nightly, live ones
-every 5 minutes. See [docs/data-loader.md](../docs/data-loader.md).
+The data that comes from outside (imported opportunities and resources, and
+the public data served at `/v1/public-data`) is written by a separate batch
+app, [`dataloader/`](../dataloader/README.md), through its own stored
+functions. The API only reads it. See [docs/data-loader.md](../docs/data-loader.md).
 
 ## Local development
 

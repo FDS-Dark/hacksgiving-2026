@@ -1,0 +1,141 @@
+"""Partner organizations, and sharing a case with one (Figma P1, P2).
+
+Sharing needs the resident's consent, recorded with how it was given. The
+share goes in the case's history (internal) in the same transaction, so the
+record of who was told what never depends on the app. The API doesn't send
+anything to the partner itself: it returns the message (the summary, plus
+only what the resident agreed to) for the worker to send from their own
+email or phone, and keeps the share until someone revokes it."""
+
+from uuid import UUID
+
+from databridge.case import CaseDatabridge
+from databridge.executor import Transactions
+from databridge.partner import PartnerDatabridge
+from errors import ApiError, not_found
+from models.case import Case, UpdateType, Visibility
+from models.case_enums import CaseCategory
+from models.partner import CaseShare, ConsentMethod, CreateShareRequest, Partner, PartnerBody, SharedCase
+from models.staff import StaffMember
+
+CONSENT_WORDS = {
+    ConsentMethod.VERBAL: "told a worker",
+    ConsentMethod.WRITTEN: "signed a release",
+    ConsentMethod.IN_APP: "agreed in the app",
+}
+CATEGORY_WORDS = {
+    CaseCategory.HOMELESSNESS: "Housing and shelter",
+    CaseCategory.MISSING_PERSONS: "Missing person",
+    CaseCategory.MEAL_PROGRAMS: "Food",
+    CaseCategory.VIOLENCE_PREVENTION: "Violence prevention",
+    CaseCategory.TRANSPORTATION: "Transportation",
+    CaseCategory.INCIDENT_DEESCALATION: "De-escalation",
+    CaseCategory.BURIAL_ASSISTANCE: "Burial assistance",
+    CaseCategory.BRIDGE_TO_EMPLOYMENT: "Employment",
+    CaseCategory.OTHER: "Other",
+}
+
+
+def share_message(case: Case, share: CaseShare, worker: StaffMember) -> tuple[str, str]:
+    """The subject and body for the partner. The summary always; name,
+    phone and location only when the resident agreed to them."""
+    lines = [
+        f"Hello {share.partner_name},",
+        "",
+        f"ComForce MKE is sharing case #{case.number} with you, with the person's consent.",
+        "",
+        f"Why: {share.purpose}",
+        f"Need: {CATEGORY_WORDS[case.category]}",
+        f"Summary: {case.description.strip() or case.title}",
+    ]
+    if share.include_location and case.location:
+        lines.append(f"Location: {case.location}")
+    if share.include_contact:
+        if case.contact_name:
+            lines.append(f"Name: {case.contact_name}")
+        if case.contact_phone:
+            careful = "" if case.safe_to_contact is not False else (
+                " (not safe to leave a message; don't say why you're calling to anyone else)"
+            )
+            lines.append(f"Phone: {case.contact_phone}{careful}")
+    lines += [
+        "",
+        "Please don't share this further, and let us know if you can't help.",
+        "",
+        f"{worker.display_name}, ComForce MKE",
+    ]
+    return f"ComForce MKE referral: case #{case.number}", "\n".join(lines)
+
+
+class PartnerService:
+    def __init__(self, partners: PartnerDatabridge, cases: CaseDatabridge, transactions: Transactions) -> None:
+        self.partners = partners
+        self.cases = cases
+        self.transactions = transactions
+
+    async def search(self, q: str | None, category: CaseCategory | None, include_inactive: bool) -> list[Partner]:
+        return await self.partners.search((q or "").strip() or None, category, include_inactive)
+
+    async def get(self, partner_id: UUID) -> Partner:
+        partner = await self.partners.get(partner_id)
+        if partner is None:
+            raise not_found("partner")
+        return partner
+
+    async def create(self, worker: StaffMember, body: PartnerBody) -> Partner:
+        return await self.partners.create(body, worker.id)
+
+    async def update(self, partner_id: UUID, body: PartnerBody) -> Partner:
+        partner = await self.partners.update(partner_id, body)
+        if partner is None:
+            raise not_found("partner")
+        return partner
+
+    # --- Sharing a case ------------------------------------------------------------
+
+    async def _case(self, case_id: UUID) -> Case:
+        case = await self.cases.get(case_id)
+        if case is None:
+            raise not_found("case")
+        return case
+
+    async def shares(self, case_id: UUID) -> list[CaseShare]:
+        await self._case(case_id)
+        return await self.partners.shares(case_id)
+
+    async def share(self, worker: StaffMember, case_id: UUID, body: CreateShareRequest) -> SharedCase:
+        if not body.consent:
+            raise ApiError(422, "consent_required", "Share a case only after the person agrees to it")
+        case = await self._case(case_id)
+        partner = await self.get(body.partner_id)
+        if not partner.active or not partner.accepts_shares:
+            raise ApiError(409, "partner_not_accepting", f"{partner.name} hasn't agreed to receive shared cases")
+        async with self.transactions.transaction() as tx:
+            share = await self.partners.within(tx).share(
+                case_id=case_id, partner_id=partner.id, shared_by=worker.id, purpose=body.purpose,
+                include_contact=body.include_contact, include_location=body.include_location,
+                consent_method=body.consent_method, consent_note=body.consent_note,
+            )
+            if share is None:
+                raise ApiError(409, "already_shared", f"This case is already shared with {partner.name}")
+            extras = [word for word, on in (("name and phone", body.include_contact),
+                                            ("location", body.include_location)) if on]
+            included = "the summary" + (" and " + " and ".join(extras) if extras else "")
+            await self.cases.within(tx).add_update(
+                case_id, worker.id, UpdateType.NOTE, Visibility.INTERNAL,
+                f"Shared with {partner.name} ({included}). The person {CONSENT_WORDS[body.consent_method]}"
+                + (f": {body.consent_note}" if body.consent_note else "") + f". Why: {body.purpose}",
+            )
+        subject, message = share_message(case, share, worker)
+        return SharedCase(share=share, subject=subject, message=message)
+
+    async def revoke(self, worker: StaffMember, case_id: UUID, share_id: UUID) -> CaseShare:
+        async with self.transactions.transaction() as tx:
+            share = await self.partners.within(tx).revoke(case_id, share_id, worker.id)
+            if share is None:
+                raise not_found("share")
+            await self.cases.within(tx).add_update(
+                case_id, worker.id, UpdateType.NOTE, Visibility.INTERNAL,
+                f"Stopped sharing with {share.partner_name}. Let them know they shouldn't use it further.",
+            )
+        return share

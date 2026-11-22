@@ -169,24 +169,26 @@ flowchart LR
 |---|---|---|---|
 | Launch / Welcome | everyone | 0 | **built** (splash in `_layout.tsx`, `/sign-in`) |
 | Resident tabs: Home, Requests, Nearby, Me | resident | 0 / 1 | **built** (`/`, `/requests`, `/nearby`, `/me`) |
-| Nearby map + Place details | resident | 1 | **built** (`/nearby`, `/place/[id]`); resources have coordinates since 0009 |
-| Get help (form) | resident | 1 | have (`/help`, works signed out) |
-| Request received | resident | 1 | have (`/help/received`) |
+| Nearby map + Place details | resident | 1 | **built** (`/nearby`, `/place/[id]`); resources have coordinates since 0009; open bed counts (staff set them on the place) since 0019 |
+| Get help (form) | resident | 1 | have (`/help`, works signed out); offline queue (E3) built: sent on reconnect |
+| Request received | resident | 1 | have (`/help/received`); "Notify me on this phone" for signed-out requests |
 | My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
-| Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
-| Notifications ask, notification settings | resident | 2 | new (no push yet) |
+| Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me; weather alerts, and a Home banner |
+| Notifications ask, notification settings | resident | 2 | **built** (`/help/notifications` (R6), Me → Notifications, Community alerts opt-in) |
 | New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`, the Record tab) |
 | Review extraction | worker | 3 | **built** (`/staff/records/[id]`), with "Your debriefs" on Today |
 | My tasks | worker | 1 | new |
 | Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
 | Case (tasks, history, referrals, guide), Update sheet, Message resident | staff | 1 | **built** to Figma S3–S5 (`/staff/cases/[id]`, `/staff/cases/[id]/messages`) |
 | New case | staff | 1 | **built** to Figma S6 (`/staff/cases/new`), with suggested service and urgency from `/v1/route` |
-| On-call toggle / schedule | worker, admin | 2 | new |
-| Push → accept / hand off | on-call | 2 | new |
-| Insights | admin | 3 | **built** from case stats (`/staff/insights`); patterns wait on step 3 |
+| On-call toggle / schedule | worker, admin | 2 | **built** (Today card, Me → Shift, `/staff/oncall`) |
+| Notifications inbox (S7) | staff | 2 | **built** (`/staff/notifications`, in-app; push in phase 2) |
+| Push → accept / hand off | on-call | 2 | **built** (`/staff/alerts/[id]`, Today banners, S7 urgent card) |
+| Insights | admin | 3 | **built** (`/staff/insights`): period and police-district filters, "Pattern spotted" (repeat cases at one block or intersection, or a neighborhood that doubled) from case places (`GET /v1/insights`, migration 0020), Ava's phone numbers |
 | Team + roles | admin | 1 | **built** (`/staff/team`) |
 | Training | worker | 4 | archived prototype |
-| Share with partner / authority | staff | 4 | new |
+| Partners directory (P1) | staff | 4 | **built** (`/staff/partners`) |
+| Share with partner / authority (P2) | staff | 4 | **built** for partners (case Referrals tab: consent recorded, logged in `case_shares`, revocable); authorities not yet |
 
 ## Data
 
@@ -198,8 +200,9 @@ flowchart LR
 | `resources`, `case_referrals` | partner directory, referrals | have |
 | `tasks` | generated work items per case | have (API, and the case's Tasks tab; workers can add tasks) |
 | `records` | captured text / transcript + extraction (no audio kept) | have (0011), with `jobs`, the background queue |
-| `on_call_shifts`, `push_tokens` | who's on call, where to notify | new |
-| `shares` | what was shared with whom, when | new |
+| `oncall_shifts`, `notifications`, `notification_preferences` | who's on call, the in-app inbox | have (0015, 0016) |
+| `push_devices`, `notification_deliveries`, `oncall_alerts`, `oncall_offers` | where to push, what was sent, urgent offers | have (0017, 0018) |
+| `case_shares` | what was shared with whom, when, with what consent | have (0021) |
 | `training_*` | modules, completion | new |
 
 ## Open questions

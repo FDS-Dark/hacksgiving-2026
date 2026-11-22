@@ -25,6 +25,24 @@ export type CaseDetail = Schemas['CaseDetail'];
 export type CaseUpdate = Schemas['CaseUpdate'];
 export type CaseInsights = Schemas['CaseInsights'];
 export type CaseStats = Schemas['CaseStats'];
+
+// ── Insights with filters, and patterns (/v1/insights) ─────────────────
+export type Insights = Schemas['Insights'];
+export type InsightsDistrict = Schemas['InsightsDistrict'];
+export type Pattern = Schemas['Pattern'];
+export type Coverage = Schemas['Coverage'];
+export type TractCoverage = Schemas['TractCoverage'];
+export type NeedMeasure = Schemas['NeedMeasure'];
+
+// ── Partners and consented sharing (/v1/partners, /v1/cases/{id}/shares) ──
+export type Partner = Schemas['Partner'];
+export type PartnerBody = Schemas['PartnerBody'];
+export type CaseShare = Schemas['CaseShare'];
+export type CreateShare = Schemas['CreateShareRequest'];
+export type SharedCase = Schemas['SharedCase'];
+export type ConsentMethod = Schemas['ConsentMethod'];
+export type CaseText = Schemas['CaseText'];
+
 export type CreateCase = Schemas['CreateCaseRequest'];
 export type UpdateCase = Schemas['UpdateCaseRequest'];
 export type AddCaseUpdate = Schemas['AddCaseUpdateRequest'];
@@ -61,6 +79,9 @@ export type IncidentPoint = Schemas['IncidentPoint'];
 export type DispatchCall = Schemas['DispatchCall'];
 export type TransitNearby = Schemas['TransitNearby'];
 export type WeatherAlert = Schemas['WeatherAlert'];
+export type CrimeTrendPoint = Schemas['CrimeTrendPoint'];
+export type SourceHealth = Schemas['SourceHealth'];
+export type CommunityAlerts = Schemas['CommunityAlerts-Output'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];
@@ -96,6 +117,11 @@ export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
 export type VoiceCallReview = Schemas['VoiceCallReview'];
 export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
+export type VoiceImpactSummary = Schemas['ImpactSummary'];
+export type VoiceOutcomeStatus = Schemas['OutcomeStatus'];
+export type RecordVoiceOutcome = Schemas['RecordOutcomeRequest'];
+export type VoiceDashboard = Schemas['VoiceDashboard'];
+export type ImpactSummary = Schemas['ImpactSummary'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.
@@ -113,3 +139,53 @@ export const CASE_CATEGORIES = [
 export const CASE_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const satisfies readonly CasePriority[];
 export const CASE_STATUSES = ['new', 'in_progress', 'awaiting_resources', 'resolved', 'closed'] as const satisfies readonly CaseStatus[];
 export const REFERRAL_STATUSES = ['suggested', 'shared', 'accepted', 'completed', 'declined'] as const satisfies readonly ReferralStatus[];
+
+// ── On call (/v1/oncall) ──────────────────────────────────────────────────
+export type OncallSource = Schemas['ShiftSource'];
+export type OncallShift = Schemas['OncallShift'];
+export type OncallNow = Schemas['OncallNow'];
+export type ToggleOncall = Schemas['ToggleOncallRequest'];
+export type CreateShift = Schemas['CreateShiftRequest'];
+export type UpdateShift = Schemas['UpdateShiftRequest'];
+
+// ── Inbox (/v1/notifications) ─────────────────────────────────────────────
+export type NotificationKind = Schemas['NotificationKind'];
+export type NotificationItem = Schemas['NotificationItem'];
+export type UnreadCount = Schemas['UnreadCount'];
+export type ReadAllResult = Schemas['ReadAllResult'];
+export type NotificationPreferences = Schemas['NotificationPreferences'];
+export type UpdateNotificationPreferences = Schemas['UpdateNotificationPreferences'];
+
+// ── Urgent alerts (/v1/oncall/alerts) ─────────────────────────────────────
+export type AlertStatus = Schemas['AlertStatus'];
+export type OfferOutcome = Schemas['OfferOutcome'];
+export type PassReason = Schemas['PassReason'];
+export type OncallOffer = Schemas['MyOffer'];
+export type OncallAlert = Schemas['OncallAlert'];
+export type OncallAlertDetail = Schemas['OncallAlertDetail'];
+export type OncallStats = Schemas['OncallStats'];
+
+// ── Push devices (/v1/me/devices) ─────────────────────────────────────────
+export type RegisterDevice = Schemas['RegisterDeviceRequest'];
+
+// ── Shift handoffs ───────────────────────────────────────────────────────
+export type ShiftHandoff = Schemas['ShiftHandoff'];
+export type HandoffBrief = Schemas['HandoffBrief'];
+
+// ── The person behind a case ─────────────────────────────────────────────
+export type Person = Schemas['Person'];
+
+// ── Reply languages ──────────────────────────────────────────────────────
+export type CaseLanguage = Schemas['CaseLanguage'];
+export type LanguageOption = Schemas['LanguageOption'];
+export type Translation = Schemas['Translation'];
+export type ResourceSuggestion = Schemas['ResourceSuggestion'];
+
+// ── Attachments and knowledge search ─────────────────────────────────────
+export type Attachment = Schemas['Attachment'];
+export type AttachmentUpload = Schemas['AttachmentUpload'];
+export type AttachmentLink = Schemas['AttachmentLink'];
+export type KnowledgeHit = Schemas['KnowledgeHit'];
+
+// ── Training ─────────────────────────────────────────────────────────────
+export type TrainingProgress = Schemas['TrainingProgress'];

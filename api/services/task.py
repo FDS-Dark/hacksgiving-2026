@@ -7,12 +7,15 @@ from dataclasses import dataclass
 from datetime import timedelta
 from uuid import UUID
 
+from databridge.executor import FunctionCaller, Transactions
+from databridge.job import JobDatabridge
 from databridge.task import TaskDatabridge
 from errors import ApiError, not_found
 from models.case import Case, ContactMethod
 from models.case_enums import CaseCategory, CasePriority
-from models.task import CreateTaskRequest, Task, TaskFilters, UpdateTaskRequest
+from models.task import CreateTaskRequest, Task, TaskFilters, TaskStatus, UpdateTaskRequest
 from models.staff import StaffMember
+from services.notification_jobs import enqueue_task_reminder
 from services.staff import StaffService
 
 logger = logging.getLogger(__name__)
@@ -101,19 +104,29 @@ def plan_tasks(case: Case) -> list[PlannedTask]:
 
 
 class TaskService:
-    def __init__(self, tasks: TaskDatabridge, staff: StaffService) -> None:
+    def __init__(
+        self, tasks: TaskDatabridge, staff: StaffService, jobs: JobDatabridge, transactions: Transactions
+    ) -> None:
         self.tasks = tasks
         self.staff = staff
+        # Each task and its reminder job (services/notification_jobs.py) are
+        # written in one transaction.
+        self.jobs = jobs
+        self.transactions = transactions
 
     async def generate_for(self, case: Case) -> list[Task]:
-        """Creates the planned tasks for a case that just came in. Never
-        raises: a case without tasks is better than a lost request."""
+        """Creates the planned tasks for a case that just came in, each with
+        its reminder. Never raises: a case without tasks is better than a
+        lost request."""
         created: list[Task] = []
         try:
             for plan in plan_tasks(case):
-                task = await self.tasks.create(
-                    case.id, plan.title, plan.detail, case.created_at + plan.due_in, None, None
-                )
+                async with self.transactions.transaction() as tx:
+                    task = await self.tasks.within(tx).create(
+                        case.id, plan.title, plan.detail, case.created_at + plan.due_in, None, None
+                    )
+                    if task:
+                        await enqueue_task_reminder(self.jobs.within(tx), task)
                 if task:
                     created.append(task)
         except Exception:
@@ -134,19 +147,38 @@ class TaskService:
     async def add(self, worker: StaffMember, case_id: UUID, body: CreateTaskRequest) -> Task:
         """A task a worker adds by hand; noted in the case history."""
         await self._check_assignee(body.assigned_worker_id)
-        task = await self.tasks.add(case_id, body.title, body.due_at, body.assigned_worker_id, worker.id)
-        if task is None:
-            raise not_found("case")
+        async with self.transactions.transaction() as tx:
+            task = await self.tasks.within(tx).add(case_id, body.title, body.due_at, body.assigned_worker_id, worker.id)
+            if task is None:
+                raise not_found("case")
+            await enqueue_task_reminder(self.jobs.within(tx), task)
         return task
 
     async def update(self, worker: StaffMember, task_id: UUID, changes: UpdateTaskRequest) -> Task:
         if not changes.model_fields_set:
             raise ApiError(422, "no_changes", "Send at least one field to change")
         await self._check_assignee(changes.assigned_worker_id)
-        task = await self.tasks.update(task_id, worker.id, changes.status, changes.assigned_worker_id, changes.unassign)
-        if task is None:
-            raise not_found("task")
+        async with self.transactions.transaction() as tx:
+            task = await self.tasks.within(tx).update(
+                task_id, worker.id, changes.status, changes.assigned_worker_id, changes.unassign
+            )
+            if task is None:
+                raise not_found("task")
+            if "assigned_worker_id" in changes.model_fields_set or changes.status == TaskStatus.OPEN:
+                # A new owner, or a task reopened: queue its reminder again
+                # (one per due time; the notification is once per person).
+                await enqueue_task_reminder(self.jobs.within(tx), task)
         return task
+
+    async def remind_new_case_owner(self, tx: FunctionCaller, case_id: UUID) -> None:
+        """The case changed hands: tasks without their own assignee follow it,
+        so queue the open tasks' reminders again (one that already ran found
+        no owner, or told the previous holder). A task whose owner didn't
+        change is harmless: its notification is deduplicated per person."""
+        for task in await self.tasks.within(tx).search(
+            case_id=case_id, assigned_worker_id=None, open_only=True, limit=500
+        ):
+            await enqueue_task_reminder(self.jobs.within(tx), task)
 
     async def _check_assignee(self, worker_id: UUID | None) -> None:
         if worker_id is not None and not await self.staff.is_worker(worker_id):

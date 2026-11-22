@@ -6,11 +6,14 @@ import type { CaseCategory, PublicRequest } from '@/api/types';
 import { Page } from '@/components/Page';
 import { Card, RequestProgress, StatusChip, ResidentHeader, isOpenStatus } from '@/components/resident';
 import type { IconName } from '@/components/ui';
+import { jobsLine, places, shelterLine } from '@/lib/homeCounts';
 import { prefersCommunityView } from '@/lib/viewMode';
-import { useResidentRequest, useResidentRequests } from '@/services/requests';
+import { useOpportunities } from '@/services/opportunities';
+import { usePendingRequests, useResidentRequest, useResidentRequests } from '@/services/requests';
 import { useResources } from '@/services/resources';
 import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
+import { needsShelter, useWeatherAlerts } from '@/services/weather';
 import { radius, space, useTheme } from '@/theme/tokens';
 import { callPhone } from '@/lib/phone';
 
@@ -35,10 +38,17 @@ function HomeScreen() {
   const me = useMe();
   const list = useResidentRequests();
   const resources = useResources();
+  const pending = usePendingRequests();
+  const jobs = useOpportunities({});
   const open = list.requests.find((r) => isOpenStatus(r.status));
   const first = me.data?.display_name?.trim().split(/\s+/)[0];
 
-  const count = (category: CaseCategory) => (resources.data ?? []).filter((r) => r.category === category).length;
+  const inCategory = (category: CaseCategory) => (resources.data ?? []).filter((r) => r.category === category);
+  const line = (category: CaseCategory) => {
+    if (category === 'homelessness') return shelterLine(inCategory(category));
+    if (category === 'bridge_to_employment' && jobs.data) return jobsLine(jobs.data);
+    return places(inCategory(category).length);
+  };
 
   return (
     <Page
@@ -46,6 +56,7 @@ function HomeScreen() {
       onRefresh={() => {
         list.refetch();
         resources.refetch();
+        jobs.refetch();
       }}
       contentStyle={{ maxWidth: 560, gap: space.lg }}
     >
@@ -77,6 +88,21 @@ function HomeScreen() {
         <Text style={[styles.dangerCall, { color: theme.danger }]}>Call</Text>
       </Pressable>
 
+      <WeatherBanner />
+
+      {pending.data?.length ? (
+        <Card style={{ gap: 4 }}>
+          <View style={styles.row}>
+            <Ionicons name="cloud-offline-outline" size={18} color={theme.soon} />
+            <Text style={[styles.weatherTitle, { color: theme.soon }]}>Queued to send</Text>
+          </View>
+          <Text style={[styles.small, { color: theme.textSecondary }]}>
+            {pending.data.length === 1 ? 'Your request is' : `${pending.data.length} requests are`} saved on this phone and will send as soon as you have
+            signal.
+          </Text>
+        </Card>
+      ) : null}
+
       {open ? <OpenRequest request={open} /> : null}
 
       <View style={{ gap: space.sm }}>
@@ -90,19 +116,24 @@ function HomeScreen() {
         </View>
         <View style={styles.tiles}>
           {SUPPORT.map((s) => {
-            const n = count(s.category);
+            const detail = line(s.category);
+            // Jobs are postings, not places: that tile opens the listings.
+            const open = () =>
+              s.category === 'bridge_to_employment'
+                ? router.push('/opportunities')
+                : router.replace({ pathname: '/nearby', params: { category: s.category } });
             return (
               <Pressable
                 key={s.category}
-                onPress={() => router.replace({ pathname: '/nearby', params: { category: s.category } })}
+                onPress={open}
                 accessibilityRole="button"
-                accessibilityLabel={`${s.label}, ${n} places`}
+                accessibilityLabel={`${s.label}, ${detail}`}
                 style={({ pressed }) => [styles.tile, { backgroundColor: theme.surface, borderColor: theme.separator }, pressed && { opacity: 0.7 }]}
               >
                 <Ionicons name={s.icon} size={22} color={theme.accent} />
                 <Text style={[styles.tileTitle, { color: theme.text }]}>{s.label}</Text>
                 <Text style={[styles.small, { color: theme.textSecondary }]}>
-                  {resources.isPending ? ' ' : `${n} place${n === 1 ? '' : 's'}`}
+                  {resources.isPending ? ' ' : detail}
                 </Text>
               </Pressable>
             );
@@ -110,6 +141,53 @@ function HomeScreen() {
         </View>
       </View>
     </Page>
+  );
+}
+
+/**
+ * The most severe National Weather Service alert in effect, if any. Opens
+ * Safety alerts for the details. For cold or heat it also points to shelter,
+ * since someone outside needs a warm or cool place tonight.
+ */
+function WeatherBanner() {
+  const theme = useTheme();
+  const { active } = useWeatherAlerts();
+  const top = active[0];
+  if (!top) return null;
+  const more = active.length - 1;
+  const heat = /heat/i.test(top.event);
+  return (
+    <View style={[styles.weather, { backgroundColor: theme.warningSoft }]}>
+      <Pressable
+        onPress={() => router.push('/alerts')}
+        accessibilityRole="button"
+        accessibilityLabel={`Weather alert: ${top.event}. Open safety alerts`}
+        style={({ pressed }) => [{ gap: 4 }, pressed && { opacity: 0.7 }]}
+      >
+        <View style={styles.row}>
+          <Ionicons name={heat ? 'sunny-outline' : 'cloudy-outline'} size={18} color={theme.soon} />
+          <Text style={[styles.weatherTitle, { color: theme.soon }]} numberOfLines={1}>
+            {top.event}
+          </Text>
+          {more > 0 ? <Text style={[styles.small, { color: theme.soon }]}>+{more} more</Text> : null}
+          <Ionicons name="chevron-forward" size={16} color={theme.soon} />
+        </View>
+        {top.headline ? (
+          <Text style={[styles.small, { color: theme.text }]} numberOfLines={2}>
+            {top.headline}
+          </Text>
+        ) : null}
+      </Pressable>
+      {needsShelter(top) ? (
+        <Text
+          onPress={() => router.replace({ pathname: '/nearby', params: { category: 'homelessness' } })}
+          accessibilityRole="link"
+          style={[styles.link, { color: theme.soon }]}
+        >
+          {heat ? 'Find a cool place to stay' : 'Find a warm place tonight'}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -155,6 +233,8 @@ const styles = StyleSheet.create({
   danger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
   dangerText: { fontSize: 14, fontWeight: '600', flex: 1 },
   dangerCall: { fontSize: 14, fontWeight: '800' },
+  weather: { gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
+  weatherTitle: { flex: 1, fontSize: 14, fontWeight: '800' },
   section: { fontSize: 17, fontWeight: '800' },
   link: { fontSize: 14, fontWeight: '700' },
   kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, flex: 1 },

@@ -8,6 +8,7 @@ them through `app.dependency_overrides`.
 import hmac
 import logging
 from functools import cache
+from zoneinfo import ZoneInfo
 from typing import Annotated, Any
 
 import jwt
@@ -16,31 +17,51 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from openai import AsyncOpenAI
 
 from adapters.storage import AudioStorage, make_audio_storage
+from databridge.attachment import AttachmentDatabridge
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.handoff import HandoffDatabridge
+from databridge.insights import InsightsDatabridge
 from databridge.opportunity import OpportunityDatabridge
+from databridge.partner import PartnerDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
+from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
+from databridge.community import CommunityDatabridge
+from databridge.request_push import RequestPushDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
+from databridge.text import TextDatabridge
 from databridge.user import UserDatabridge
 from databridge.voice import VoiceDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
+from services.attachment import AttachmentService
 from services.case import CaseService, Triager
+from services.handoff import HandoffService
+from services.insights import InsightsService
 from services.job import JobService
+from services.notification import NotificationService
+from services.oncall import OncallService
+from services.push import PushService
 from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
+from services.partner import PartnerService
 from services.public_data import PublicDataService
+from services.community import CommunityService
+from services.request_push import RequestPushService
 from services.resource import ResourceService
 from services.routing import RoutingService
 from services.staff import StaffService
 from services.task import TaskService
+from services.text import CaseTextService
 from services.user import UserService
 from services.voice import VoiceService
 from settings import config
@@ -71,7 +92,30 @@ def get_staff_service() -> StaffService:
 
 @cache
 def get_task_service() -> TaskService:
-    return TaskService(TaskDatabridge(get_executor()), get_staff_service())
+    executor = get_executor()
+    return TaskService(TaskDatabridge(executor), get_staff_service(), JobDatabridge(executor), executor)
+
+
+@cache
+def get_notification_service() -> NotificationService:
+    executor = get_executor()
+    return NotificationService(NotificationDatabridge(executor), executor)
+
+
+@cache
+def get_push_service() -> PushService:
+    executor = get_executor()
+    return PushService(PushDatabridge(executor), get_notification_service(), executor)
+
+
+@cache
+def get_community_service() -> CommunityService:
+    return CommunityService(CommunityDatabridge(get_executor()))
+
+
+@cache
+def get_request_push_service() -> RequestPushService:
+    return RequestPushService(RequestPushDatabridge(get_executor()))
 
 
 @cache
@@ -81,8 +125,10 @@ def get_resource_service() -> ResourceService:
 
 @cache
 def get_case_service() -> CaseService:
+    executor = get_executor()
     return CaseService(
-        CaseDatabridge(get_executor()), get_resource_service(), get_staff_service(), get_task_service()
+        CaseDatabridge(executor), get_resource_service(), get_staff_service(), get_task_service(),
+        get_notification_service(), executor, get_oncall_service(),
     )
 
 
@@ -94,6 +140,22 @@ def get_opportunity_service() -> OpportunityService:
 @cache
 def get_public_data_service() -> PublicDataService:
     return PublicDataService(PublicDataDatabridge(get_executor()))
+
+
+@cache
+def get_case_text_service() -> CaseTextService:
+    return CaseTextService(TextDatabridge(get_executor()))
+
+
+@cache
+def get_partner_service() -> PartnerService:
+    executor = get_executor()
+    return PartnerService(PartnerDatabridge(executor), CaseDatabridge(executor), executor)
+
+
+@cache
+def get_insights_service() -> InsightsService:
+    return InsightsService(InsightsDatabridge(get_executor()), config.oncall.timezone)
 
 
 @cache
@@ -123,6 +185,15 @@ def get_job_service() -> JobService:
 
 
 @cache
+def get_oncall_service() -> OncallService:
+    executor = get_executor()
+    return OncallService(
+        OncallDatabridge(executor), executor, ZoneInfo(config.oncall.timezone),
+        jobs=JobDatabridge(executor), notifications=get_notification_service(), tasks=get_task_service(),
+    )
+
+
+@cache
 def get_voice_service() -> VoiceService:
     executor = get_executor()
     return VoiceService(VoiceDatabridge(executor), executor)
@@ -147,6 +218,20 @@ def get_routing_service() -> RoutingService:
 @cache
 def get_case_assistant() -> CaseAssistant | None:
     return CaseAssistant(_openai().responses, config.openai.model) if config.openai.api_key else None
+
+
+@cache
+def get_attachment_service() -> AttachmentService:
+    return AttachmentService(AttachmentDatabridge(get_executor()), get_case_service(), get_audio_storage())
+
+
+@cache
+def get_handoff_service() -> HandoffService:
+    executor = get_executor()
+    return HandoffService(
+        HandoffDatabridge(executor), OncallDatabridge(executor), get_case_service(), get_task_service(),
+        get_case_assistant(),
+    )
 
 
 @cache

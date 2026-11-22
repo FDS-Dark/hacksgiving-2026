@@ -88,6 +88,7 @@ class VoiceResource(ApiModel):
     transfer_approved: bool
     is_emergency: bool
     last_verified_at: datetime
+    verification_status: Literal["current", "review_due"] = "current"
 
 
 class VoiceCall(ApiModel):
@@ -142,6 +143,18 @@ class VoiceRouteResponse(ApiModel):
     app_destination: str = "Get Help"
 
 
+class VoiceCaseUrgency(StrEnum):
+    """How soon a phone request needs a person. There is deliberately no
+    emergency level: danger now means the caller hangs up and calls 911, and
+    the request is never submitted (docs/voice/agent-prompt.md)."""
+
+    ROUTINE = "routine"
+    # Needs someone today but nobody is in danger right now: sleeping outside
+    # in the cold, no food tonight, a person missing since this morning. It
+    # pages whoever is on call (docs/design/on-call-and-push.md D3).
+    URGENT = "urgent"
+
+
 class VoiceCaseRequest(ApiModel):
     """A minimal request the caller explicitly approved for ComForce staff."""
 
@@ -149,10 +162,19 @@ class VoiceCaseRequest(ApiModel):
     consent: Literal[True]
     approved_summary: ApprovedCaseSummary
     category: CaseCategory
+    urgency: VoiceCaseUrgency = Field(
+        default=VoiceCaseUrgency.ROUTINE,
+        description="`urgent` (needs someone today, not an emergency) pages "
+        "the ComForce worker on call. Emergencies are never submitted: they "
+        "go to 911.",
+    )
     general_location: GeneralLocation | None = None
     contact_method: ContactMethod = ContactMethod.NONE
     caller_id: CallerId | None = None
     safe_to_contact: bool | None = None
+    voicemail_allowed: bool = False
+    neutral_message_only: bool = False
+    safe_contact_window: Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)] | None = None
 
     @model_validator(mode="after")
     def _contact_consent_is_complete(self) -> "VoiceCaseRequest":
@@ -166,6 +188,16 @@ class VoiceCaseRequest(ApiModel):
             raise ValueError("Call or text follow-up requires safe-to-contact consent")
         if not wants_contact and self.safe_to_contact is not None:
             raise ValueError("safe_to_contact is only valid for call or text follow-up")
+        if not wants_contact and (
+            self.voicemail_allowed
+            or self.neutral_message_only
+            or self.safe_contact_window is not None
+        ):
+            raise ValueError("contact safety preferences require call or text follow-up")
+        if wants_contact and self.safe_to_contact is False and self.voicemail_allowed:
+            raise ValueError("Voicemail cannot be allowed when contact is not marked safe")
+        if self.neutral_message_only and not self.voicemail_allowed:
+            raise ValueError("A neutral message requires voicemail or message permission")
         return self
 
     def as_submit_request(self) -> SubmitRequest:
@@ -189,6 +221,11 @@ class VoiceCaseReceipt(ApiModel):
     category: CaseCategory
     access_code: str
     status: str
+    urgent: bool = Field(
+        default=False,
+        description="The request went in as urgent and the on-call worker "
+        "was alerted. It is not a dispatch: nobody is promised to arrive.",
+    )
 
 
 class VoiceAppService(ApiModel):
@@ -232,6 +269,72 @@ class VoiceReferral(ApiModel):
     created_at: datetime
 
 
+class SafeContactPlan(ApiModel):
+    contact_method: ContactMethod
+    safe_to_contact: bool
+    voicemail_allowed: bool
+    neutral_message_only: bool
+    safe_contact_window: str | None = None
+
+
+class VoiceCheckpointRequest(ApiModel):
+    conversation_id: ShortText
+    caller_id: CallerId
+    service: Annotated[str, StringConstraints(strip_whitespace=True, max_length=64)] | None = None
+    neighborhood: GeneralLocation | None = None
+    language: Annotated[str, StringConstraints(strip_whitespace=True, max_length=12)] | None = None
+    referral_slug: ShortText | None = None
+    consent_pending: bool = False
+
+
+class VoiceCheckpoint(ApiModel):
+    service: str | None = None
+    neighborhood: str | None = None
+    language: str | None = None
+    referral_slug: str | None = None
+    consent_pending: bool
+    saved_at: datetime
+
+
+class VoiceResumeRequest(ApiModel):
+    caller_id: CallerId
+
+
+class VoiceResumeResponse(ApiModel):
+    checkpoint: VoiceCheckpoint | None = None
+
+
+class VoiceAwarenessCategory(ApiModel):
+    category: str
+    count: int = Field(ge=0)
+
+
+class VoiceAwarenessSummary(ApiModel):
+    district: str
+    days: int
+    reviewed_incidents: int = Field(ge=0)
+    police_dispatch_calls: int = Field(ge=0)
+    fire_ems_calls: int = Field(ge=0)
+    categories: list[VoiceAwarenessCategory]
+    source_note: str
+
+
+class ReferralFollowUp(ApiModel):
+    referral_id: UUID
+    due_at: datetime | None = None
+    status: Literal["not_scheduled", "pending", "completed", "needs_help"]
+
+
+class ReferralFollowUpDue(ApiModel):
+    referral_id: UUID
+    call_id: UUID
+    resource_name: str
+    due_at: datetime
+    need_category: str | None = None
+    language: str | None = None
+    neighborhood: str | None = None
+
+
 class VoiceReferralDetail(ApiModel):
     id: UUID
     call_id: UUID
@@ -248,6 +351,8 @@ class VoiceReferralDetail(ApiModel):
     outcome_status: OutcomeStatus | None = None
     outcome_reason_code: str | None = None
     created_at: datetime
+    follow_up_due_at: datetime | None = None
+    follow_up_status: str = "not_scheduled"
 
 
 class VoiceCallReview(ApiModel):
@@ -268,6 +373,7 @@ class VoiceCallReview(ApiModel):
 class VoiceCallReviewDetail(ApiModel):
     call: VoiceCallReview
     referrals: list[VoiceReferralDetail]
+    contact_plan: SafeContactPlan | None = None
 
 
 class RecordOutcomeRequest(ApiModel):
@@ -294,6 +400,13 @@ class ImpactSummary(ApiModel):
     referrals_offered: int = Field(ge=0)
     transfers_connected: int = Field(ge=0)
     follow_ups_completed: int = Field(ge=0)
+    routed_calls: int = Field(default=0, ge=0)
+    referrals_accepted: int = Field(default=0, ge=0)
+    connection_attempts: int = Field(default=0, ge=0)
+    residents_helped: int = Field(default=0, ge=0)
+    follow_ups_due: int = Field(default=0, ge=0)
+    incomplete_calls: int = Field(default=0, ge=0)
+    tool_failures: int = Field(default=0, ge=0)
     categories: list[ImpactCategory]
 
 

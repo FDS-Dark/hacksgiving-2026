@@ -128,8 +128,8 @@ function Failed({ record: r }: { record: DebriefRecord }) {
 function Confirmed({ record: r }: { record: DebriefRecord }) {
   return (
     <View style={{ gap: space.lg }}>
-      <Title>Saved as a case</Title>
-      <Notice icon="checkmark-circle-outline">This debrief is a case now, with its tasks. You can keep working on it there.</Notice>
+      <Title>Saved to a case</Title>
+      <Notice icon="checkmark-circle-outline">This debrief is saved on its case, with its tasks. You can keep working on it there.</Notice>
       {r.case_id ? (
         <Button label="Open the case" icon="arrow-forward" onPress={() => router.replace({ pathname: '/staff/cases/[id]', params: { id: r.case_id! } })} />
       ) : null}
@@ -141,6 +141,9 @@ function Confirmed({ record: r }: { record: DebriefRecord }) {
 function Review({ record: r, extraction: x }: { record: DebriefRecord; extraction: Extraction }) {
   const theme = useTheme();
   const confirm = useConfirmRecord(r.id);
+  // A debrief taken from the Responding screen is about an existing case:
+  // confirming adds a note and tasks to it (and raises its priority if needed).
+  const forCase = Boolean(r.case_id);
   const [title, setTitle] = useState(x.title);
   const [summary, setSummary] = useState(x.summary);
   const [kind, setKind] = useState(x.kind);
@@ -175,7 +178,9 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
     <View style={{ gap: space.lg }}>
       <Title>Check before saving</Title>
       <Text style={[type.subhead, { color: theme.textSecondary }]}>
-        The AI’s suggestion from your debrief. Fix anything that’s wrong; nothing is saved until you create the case.
+        {forCase
+          ? 'The AI’s reading of your debrief. Fix anything that’s wrong; it’s added to the case you responded to as a note, with the tasks you keep.'
+          : 'The AI’s suggestion from your debrief. Fix anything that’s wrong; nothing is saved until you create the case.'}
       </Text>
 
       {x.risk_flags.length ? (
@@ -192,6 +197,7 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
 
       <Field label="Title" value={title} onChangeText={setTitle} maxLength={160} />
       <Field label="Summary" value={summary} onChangeText={setSummary} multiline maxLength={4000} style={styles.multiline} />
+      {forCase ? null : (
       <Segmented
         label="Kind of case"
         value={kind}
@@ -201,14 +207,19 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
           { value: 'incident', label: 'Incident' },
         ]}
       />
-      <ChoiceRow label="Service" options={CASE_CATEGORIES} labels={CATEGORY_LABEL} value={category} onChange={(c) => c && setCategory(c)} />
+      )}
+      {forCase ? null : (
+        <ChoiceRow label="Service" options={CASE_CATEGORIES} labels={CATEGORY_LABEL} value={category} onChange={(c) => c && setCategory(c)} />
+      )}
       <ChoiceRow label="Priority" options={CASE_PRIORITIES} labels={PRIORITY_LABEL} value={priority} onChange={(p) => p && setPriority(p)} colorOf={(p) => priorityColor(theme, p)} />
       <Field label="Where" icon="location-outline" value={location} onChangeText={setLocation} maxLength={300} placeholder="Street, intersection or neighborhood" />
 
+      {forCase ? null : (
       <View style={{ gap: space.sm }}>
         <Field label="Contact (staff only, optional)" icon="person-outline" placeholder="Name" value={contactName} onChangeText={setContactName} maxLength={160} />
         <Field icon="call-outline" placeholder="Phone" value={contactPhone} onChangeText={setContactPhone} keyboardType="phone-pad" maxLength={40} />
       </View>
+      )}
 
       {x.tasks.length ? (
         <View style={{ gap: 6 }}>
@@ -236,14 +247,16 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
               </Pressable>
             ))}
           </View>
-          <Text style={[type.caption, { color: theme.textSecondary }]}>The service’s usual follow-ups are added too.</Text>
+          {forCase ? null : (
+            <Text style={[type.caption, { color: theme.textSecondary }]}>The service’s usual follow-ups are added too.</Text>
+          )}
         </View>
       ) : null}
 
       <Original text={r.raw_text} spoken={r.source === 'audio'} />
 
       {confirm.error ? <ErrorBanner error={confirm.error} /> : null}
-      <Button label="Create case" icon="checkmark" size="lg" disabled={!title.trim()} loading={confirm.isPending} onPress={save} />
+      <Button label={forCase ? 'Add to case' : 'Create case'} icon="checkmark" size="lg" disabled={!title.trim()} loading={confirm.isPending} onPress={save} />
       <Discard id={r.id} />
     </View>
   );

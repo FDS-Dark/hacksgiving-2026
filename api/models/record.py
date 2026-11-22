@@ -78,6 +78,15 @@ class CreateRecordRequest(ApiModel):
     """A typed debrief. (Voice records upload audio first; see the pipeline.)"""
 
     text: RecordText
+    case_id: UUID | None = Field(
+        default=None,
+        description="The case this debrief is about (e.g. the urgent case being responded to). Confirming it "
+        "then updates that case instead of opening a new one.",
+    )
+
+
+class StartVoiceRecordRequest(ApiModel):
+    case_id: UUID | None = Field(default=None, description="As for a typed debrief: the case it's about.")
 
 
 class Record(ApiModel):
@@ -89,6 +98,8 @@ class Record(ApiModel):
     # What the author typed or said (the transcript). Staff only.
     raw_text: str | None
     extraction: Extraction | None
+    # Before confirm: the existing case the debrief is about (None: it will
+    # open a new case). After: the case it became or updated.
     case_id: UUID | None
     error: str | None
     created_at: datetime
@@ -136,3 +147,6 @@ class ConfirmRecordRequest(ApiModel):
 class ConfirmedRecord(ApiModel):
     record: Record
     case: Case
+    updated_existing: bool = Field(
+        default=False, description="True when the debrief was added to an existing case rather than opening one."
+    )

@@ -17,6 +17,7 @@ import { ApiError, setAccessTokenProvider, setUnauthorizedHandler } from '@/api/
 import { appScheme } from '@/lib/appScheme';
 import { refreshFailure } from '@/lib/authRefresh';
 import { debug } from '@/lib/debug';
+import { forgetDevice, unregisterDevice } from '@/lib/push';
 import { queryClient } from '@/services/queryClient';
 import { userApi } from '@/services/user';
 
@@ -205,8 +206,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus(next ? 'signedIn' : 'signedOut');
   }, []);
 
-  const signOut = useCallback(async () => {
+  // Ends the session. The forced paths (token refused, dev token expired)
+  // call this directly; signing out by hand goes through signOut below.
+  const endSession = useCallback(async () => {
     const current = sessionRef.current;
+    // Whatever ended the session, this phone stops getting its pushes (a
+    // forced end can't reach DELETE /me/devices). Not awaited: bounded, and
+    // never throws.
+    void forgetDevice();
     await adopt(null);
     // Best effort: revoke the refresh token so it can't be reused.
     const refreshToken = current?.mode === 'auth0' ? current.refreshToken : undefined;
@@ -222,6 +229,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [adopt]);
 
+  // Stop pushes to this phone first, while the token still works. Bounded
+  // and never throws (lib/push.ts), so sign-out can't hang on it. Its
+  // request can only end the session through endSession, never back here.
+  const signOut = useCallback(async () => {
+    await unregisterDevice();
+    await endSession();
+  }, [endSession]);
+
   // A valid access token for the API, refreshing it first when it's about
   // to expire. Concurrent callers share one refresh. Only Auth0 refusing the
   // refresh token ends the session; when Auth0 can't be reached the current
@@ -232,7 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const exp = expiryOf(current);
     if (exp === undefined || exp - REFRESH_MARGIN_SECONDS > now()) return current.accessToken;
     if (current.mode === 'dev') {
-      await signOut();
+      await endSession();
       return null;
     }
     refreshing.current ??= refresh(current).finally(() => {
@@ -244,19 +259,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return result.session.accessToken;
     }
     if (result.kind === 'rejected') {
-      await signOut();
+      await endSession();
       return null;
     }
     if (exp > now()) return current.accessToken;
     throw new ApiError(0, 'network_error', 'Can’t reach sign-in right now. Check your connection and try again.');
-  }, [adopt, signOut]);
+  }, [adopt, endSession]);
 
   useEffect(() => {
     setAccessTokenProvider(accessToken);
     setUnauthorizedHandler(() => {
-      signOut();
+      endSession();
     });
-  }, [accessToken, signOut]);
+  }, [accessToken, endSession]);
 
   // Restore the last session on launch.
   useEffect(() => {

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -136,6 +137,32 @@ class WorkerConfig(BaseModel):
     stalled_record_seconds: int = Field(default=600, ge=60)
     # Finished jobs are kept this many days (dead ones 4x longer).
     keep_jobs_days: int = Field(default=7, ge=1)
+    # Inbox notifications are kept this many days.
+    keep_notifications_days: int = Field(default=90, ge=1)
+    # Push devices not seen this many days, and push deliveries older than
+    # this, are deleted.
+    keep_push_devices_days: int = Field(default=60, ge=1)
+    keep_push_deliveries_days: int = Field(default=30, ge=1)
+    # Place cases for Insights (services/place.py). The geocoder sends only
+    # a block or intersection to the City of Milwaukee's locator; off, cases
+    # are placed from their coordinates and neighborhood names alone.
+    place_cases: bool = Field(default=True)
+    geocode_cases: bool = Field(default=True)
+
+
+class SmsConfig(BaseModel):
+    """Texts to requesters who chose "text me" and said it's safe
+    (adapters/sms.py, services/text.py). Off unless a provider is set."""
+
+    provider: Literal["off", "fake", "twilio"] = Field(default="off")
+    twilio_account_sid: str = Field(default="")
+    twilio_auth_token: str = Field(default="")
+    # Either a number on the account (E.164) or a Messaging Service.
+    from_number: str = Field(default="")
+    twilio_messaging_service_sid: str = Field(default="")
+    # At most one text per case in this many minutes; later updates in the
+    # window are skipped (the text only says "there's an update").
+    coalesce_minutes: int = Field(default=30, ge=0, le=24 * 60)
 
 
 class VoiceConfig(BaseModel):
@@ -143,52 +170,71 @@ class VoiceConfig(BaseModel):
 
     elevenlabs_webhook_secret: str = Field(default="")
     tool_secret: str = Field(default="")
+    # A phone request Ava marks urgent goes in at high priority, which pages
+    # on call (D3). False keeps every phone request at medium: the urgency is
+    # still recorded on the call, but nobody is paged.
+    urgent_pages_on_call: bool = Field(default=True)
 
 
-class LoaderConfig(BaseModel):
-    """The data loader (api/loader, docs/data-loader.md): where to look, and
-    the sources' credentials. A source without credentials is skipped."""
+class OncallConfig(BaseModel):
+    """On call (services/oncall.py)."""
 
-    # Job and training searches: a "City, ST" place and a radius in miles.
-    location: str = Field(default="Milwaukee, WI")
-    radius_miles: int = Field(default=25, ge=1, le=100)
-    # Directory downloads (no search): keep rows in this state whose ZIP code
-    # starts with one of these. 530-532 is the Milwaukee metro.
-    state: str = Field(default="WI")
-    zip_prefixes: list[str] = Field(default_factory=lambda: ["530", "531", "532"])
-    # Postings older than this many days aren't fetched.
-    max_age_days: int = Field(default=30, ge=1, le=60)
-    # At most this many rows per source and run.
-    max_per_source: int = Field(default=500, ge=1, le=2000)
-    timeout: float = Field(default=30.0)
+    # The org's time zone: the "On call" switch ends by default at the next
+    # 07:00, 17:00 or 23:00 here.
+    timezone: str = Field(default="America/Chicago")
+    # Urgent escalation (services/oncall_jobs.py): how long each step of the
+    # ladder has to accept, then how often admins are reminded when nobody
+    # did, and how many times.
+    offer_seconds: int = Field(default=300, ge=10, le=3600)
+    remind_seconds: int = Field(default=600, ge=10, le=24 * 3600)
+    max_reminders: int = Field(default=3, ge=0, le=10)
 
-    # USAJOBS (developer.usajobs.gov): an API key and the email address it
-    # was requested with, which USAJOBS wants as the User-Agent.
-    usajobs_api_key: str = Field(default="")
-    usajobs_email: str = Field(default="")
-    # CareerOneStop Web API (careeronestop.org/Developers): the user id and
-    # token from registration. Jobs and training programs need them; the
-    # American Job Center and reentry directories are public downloads.
-    careeronestop_user_id: str = Field(default="")
-    careeronestop_token: str = Field(default="")
-    # Job search terms; "0" means every job in the area.
-    careeronestop_job_keywords: list[str] = Field(default_factory=lambda: ["0"])
+    @field_validator("timezone")
+    @classmethod
+    def _known_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(f"Unknown time zone: {value!r}")
+        return value
 
-    # Public data (docs/real-data-sources.md). NIBRS: how many days back each
-    # nightly run refreshes (the source edits records for weeks).
-    nibrs_window_days: int = Field(default=90, ge=7, le=730)
-    # Dispatch calls (MPD, MFD) are kept this long, then deleted.
-    signal_ttl_hours: int = Field(default=24, ge=1, le=168)
-    # NWS forecast zones: Milwaukee County and its lakeshore zone.
-    nws_zones: list[str] = Field(default_factory=lambda: ["WIC079", "WIZ066"])
-    # CDC PLACES: Milwaukee County.
-    county_fips: str = Field(default="55079")
-    # FBI Crime Data Explorer: an api.data.gov key (optional; it answers
-    # without one), and how many months back.
-    fbi_api_key: str = Field(default="")
-    fbi_months: int = Field(default=24, ge=1, le=120)
-    # Seconds between live runs in --watch mode (MPD/MFD calls, alerts).
-    live_every_seconds: int = Field(default=300, ge=60)
+
+class PushConfig(BaseModel):
+    """Push notifications, sent by the worker straight to Apple
+    (adapters/push.py, D4 of docs/design/on-call-and-push.md).
+
+    - `off` (default): inbox only; push jobs finish without sending.
+    - `fake`: pretend every push was accepted (local runs, tests).
+    - `apns`: Apple Push Notification service, with the team's .p8 auth key:
+      inline (`apns_key`, the file's contents) or from `apns_key_path`. The
+      worker treats push as off, with a warning, when the key is missing.
+    """
+
+    provider: Literal["off", "fake", "apns"] = Field(default="off")
+    apns_key: str | None = Field(default=None)
+    apns_key_path: str | None = Field(default=None)
+    apns_key_id: str | None = Field(default=None)
+    apns_team_id: str | None = Field(default=None)
+    # The app's bundle ID (staging's variant has its own).
+    apns_topic: str = Field(default="com.austinkoske.hacksgiving")
+
+    @field_validator("apns_key", "apns_key_path", "apns_key_id", "apns_team_id", mode="before")
+    @classmethod
+    def _blank_is_unset(cls, value: Any) -> Any:
+        return None if isinstance(value, str) and not value.strip() else value
+
+    def signing_key(self) -> str | None:
+        """The .p8 key's PEM text, or None when neither setting gives one. An
+        inline key may arrive with its newlines escaped (a literal `\\n`)."""
+        key = self.apns_key
+        if key is None and self.apns_key_path:
+            path = Path(self.apns_key_path).expanduser()
+            key = path.read_text(encoding="utf-8") if path.is_file() else None
+        if key is None:
+            return None
+        if "\\n" in key and "\n" not in key:
+            key = key.replace("\\n", "\n")
+        return key.strip() + "\n"
 
 
 class AppConfig(BaseSettings):
@@ -205,9 +251,11 @@ class AppConfig(BaseSettings):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    sms: SmsConfig = Field(default_factory=SmsConfig)
     worker: WorkerConfig = Field(default_factory=WorkerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
-    loader: LoaderConfig = Field(default_factory=LoaderConfig)
+    oncall: OncallConfig = Field(default_factory=OncallConfig)
+    push: PushConfig = Field(default_factory=PushConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(

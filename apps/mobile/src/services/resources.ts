@@ -11,6 +11,8 @@ export const resourcesApi = {
   list: (q?: string, category?: string | null) => request<Resource[]>(`/resources${queryString({ q, category })}`),
   get: (id: string) => request<Resource>(`/resources/${id}`),
   create: (body: CreateResource) => request<Resource>('/resources', { method: 'POST', body }),
+  setBeds: (id: string, beds: number | null) =>
+    request<Resource>(`/resources/${id}/beds`, { method: 'PUT', body: { beds_available: beds } }),
 };
 
 export const resourceKeys = {
@@ -25,6 +27,18 @@ export function useResources(q?: string, category?: string | null) {
 
 export function useResource(id: string) {
   return useQuery({ queryKey: resourceKeys.detail(id), queryFn: () => resourcesApi.get(id) });
+}
+
+/** Staff: tonight's open beds at a place (null: unknown). */
+export function useSetBeds(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (beds: number | null) => resourcesApi.setBeds(id, beds),
+    onSuccess: (resource) => {
+      qc.setQueryData(resourceKeys.detail(id), resource);
+      qc.invalidateQueries({ queryKey: resourceKeys.all });
+    },
+  });
 }
 
 export function useCreateResource() {

@@ -5,9 +5,13 @@ import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/Avatar';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
-import { Button, ErrorBanner, Field, Group, Notice, Row, success } from '@/components/ui';
+import { Button, ErrorBanner, Field, Group, Notice, Row, success, Toggle } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { ensurePermission, openSettings, usePushPermission } from '@/lib/push';
+import { withKindMuted } from '@/lib/pushRules';
+import { useCommunityAlerts, useSetCommunityAlerts } from '@/services/community';
 import { useApiHealth } from '@/services/health';
+import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
 import { useClaimVoiceHandoff, useVoiceFollowUps } from '@/services/voice';
@@ -18,7 +22,7 @@ const COMFORCE_SITE = 'https://comforcemilwaukee.com';
 /** Figma R5 "Me (resident)": who you are, safety, phone calls, the neighborhood, ComForce, sign out. */
 export default function MeTab() {
   const theme = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, status } = useAuth();
   const health = useApiHealth();
   const me = useMe();
   const isStaff = useIsStaff();
@@ -45,10 +49,12 @@ export default function MeTab() {
         <Row title="Quick exit opens" icon="close-circle-outline" detail="A weather site" />
       </Group>
 
+      {status === 'signedIn' ? <NotificationSettings /> : null}
+
       <PhoneCalls />
 
       <Group header="Your neighborhood">
-        <Row title="Safety map" icon="map-outline" accessory="chevron" onPress={() => router.push('/safety')} />
+        <Row title="Neighborhood awareness" icon="map-outline" accessory="chevron" onPress={() => router.push('/safety')} />
         <Row title="Safety alerts" icon="notifications-outline" accessory="chevron" onPress={() => router.push('/alerts')} />
       </Group>
 
@@ -65,6 +71,69 @@ export default function MeTab() {
 
       <Button label="Sign out" variant="plain" onPress={signOut} />
     </Page>
+  );
+}
+
+/** R5 "Notifications": replies and updates on requests (`request_update`).
+ *  No lock-screen text switch: a resident push never carries message text. */
+function NotificationSettings() {
+  const prefs = useNotificationPreferences();
+  const update = useUpdateNotificationPreferences();
+  const community = useCommunityAlerts();
+  const setCommunity = useSetCommunityAlerts();
+  const permission = usePushPermission();
+  const muted = (update.isPending ? update.variables?.muted_kinds : undefined) ?? prefs.data?.muted_kinds ?? [];
+  const on = !muted.includes('request_update');
+  const blocked = permission.state === 'blocked';
+
+  return (
+    <>
+      <Group
+        header="Notifications"
+        footer={
+          blocked
+            ? 'Notifications are off for ComForce in Settings, so nothing reaches your phone.'
+            : 'We tell you when ComForce answers or your request changes. Message text never shows on your lock screen.'
+        }
+      >
+        <Row
+          title="Replies and updates"
+          icon="chatbubble-outline"
+          right={
+            <Toggle
+              value={on}
+              onChange={(next) => {
+                if (!prefs.data) return;
+                update.mutate({ muted_kinds: withKindMuted(prefs.data.muted_kinds, 'request_update', !next) });
+                // Turning it on after "Not now" on R6 is the moment to ask again.
+                if (next && permission.state === 'off') void ensurePermission('resident');
+              }}
+              disabled={update.isPending || !prefs.data}
+              label="Replies and updates"
+            />
+          }
+        />
+        <Row
+          title="Community alerts"
+          subtitle="Serious weather in Milwaukee, like extreme cold. Off unless you turn it on."
+          icon="cloudy-outline"
+          right={
+            <Toggle
+              value={(setCommunity.isPending ? setCommunity.variables : community.data?.subscribed) ?? false}
+              onChange={(next) => {
+                setCommunity.mutate(next);
+                if (next && permission.state === 'off') void ensurePermission('resident');
+              }}
+              disabled={setCommunity.isPending || !community.data}
+              label="Community alerts"
+            />
+          }
+        />
+        {blocked ? <Row title="Open Settings" icon="settings-outline" accessory="chevron" onPress={openSettings} /> : null}
+      </Group>
+      {update.error ? <ErrorBanner error={update.error} /> : null}
+      {setCommunity.error ? <ErrorBanner error={setCommunity.error} /> : null}
+    </>
   );
 }
 

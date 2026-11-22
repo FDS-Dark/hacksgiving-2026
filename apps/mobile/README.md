@@ -15,7 +15,8 @@ src/lib/         sign-in, labels and formatting, small helpers
 
 Each API domain has one service module, named after its router in
 `api/routers/`: `user`, `staff`, `cases`, `requests` (a resident's view of
-a case), `resources`, `tasks`, `voice` and `health`. A module holds its
+a case), `resources`, `tasks`, `oncall`, `notifications`, `voice` and
+`health`. A module holds its
 `<domain>Api` calls, its `<domain>Keys` query keys and its hooks.
 `publicSafety`, `recentCalls` and `deviceLocation` read public data or
 the device, not our API.
@@ -28,9 +29,15 @@ what it changed
 ```bash
 cp .env.example .env.local   # API base URL, Auth0 ids, optional dev token
 npm ci
-npx expo start               # Expo Go on the iPhone, or i for the simulator
+npx expo start --go          # Expo Go on the iPhone, or i for the simulator
 npx tsc --noEmit && npx eslint . --max-warnings=0 && npm test
 ```
+
+`--go` keeps Expo Go as the target: the project includes `expo-dev-client`
+(for push, which Expo Go can't receive), and without the flag `expo start`
+would wait for a development build instead. To try push, install a
+development build from the Mac (`npx expo run:ios --device`, signed with
+team D36AR26A38) and run `npm run start:dev-client`.
 
 ### API types
 
@@ -151,6 +158,23 @@ After the first install, Xcode can install over Wi-Fi when the Mac and phone
 share a network. A developer-signed install lasts about a year. For
 TestFlight, use Xcode → Product → Archive → Distribute App, and bump
 `ios.buildNumber` in `app.json` for each upload.
+
+## TestFlight (teammates' phones)
+
+The production app goes to TestFlight from the Mac mini: the `testflight` CI
+job (manual; on `main` after a production deploy, or on any branch to try a
+build) runs `scripts/testflight.sh`. It archives a release with a new build
+number (UTC time) and uploads it with an App Store Connect API key (Admin
+role), which also lets Apple sign it in the cloud: the Mac needs no
+distribution certificate. The key is on the Mac at
+`~/.appstoreconnect/AuthKey_<ASC_KEY_ID>.p8`; `ASC_KEY_ID` and `ASC_ISSUER_ID`
+are CI/CD variables. Signing needs the Mac's login session (the CI runner or
+Terminal there), not SSH.
+
+After Apple processes a build (10-30 min) it shows up in the TestFlight app
+for the internal testing group. To add a teammate: invite them in App Store
+Connect (Users and Access), add them to the group under TestFlight, and have
+them install TestFlight and accept.
 
 ## Staging app
 
