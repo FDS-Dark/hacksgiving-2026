@@ -28,3 +28,11 @@ def test_addresses_stay_because_staff_need_the_location():
 
 def test_a_bare_name_with_no_cue_is_missed_which_is_why_the_app_says_best_effort():
     assert redact("Keisha was crying.") == "Keisha was crying."
+
+
+def test_find_phone_returns_the_callback_number_as_written():
+    from services.redaction import find_phone
+
+    assert find_phone("needs a ride; call back at 414-555-0199 tonight") == "414-555-0199"
+    assert find_phone("no number here") is None
+    assert find_phone(None) is None

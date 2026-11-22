@@ -25,6 +25,7 @@ import type {
   ResourceSuggestions,
   UpdateCase,
   UpdateReferral,
+  WorkedCase,
 } from '@/api/types';
 import { staffKeys } from '@/services/staff';
 
@@ -32,6 +33,7 @@ const POLL_MS = 30_000;
 
 export const casesApi = {
   list: (filters: Partial<CaseFilters>) => request<Case[]>(`/cases${queryString(filters)}`),
+  recent: (limit = 30) => request<WorkedCase[]>(`/cases/recent?limit=${limit}`),
   get: (id: string) => request<CaseDetail>(`/cases/${id}`),
   create: (body: CreateCase) => request<Case>('/cases', { method: 'POST', body }),
   update: (id: string, body: UpdateCase) => request<Case>(`/cases/${id}`, { method: 'PATCH', body }),
@@ -57,7 +59,13 @@ export const caseKeys = {
   list: (filters: Partial<CaseFilters>) => ['cases', 'list', filters] as const,
   detail: (id: string) => ['cases', 'detail', id] as const,
   insights: ['cases', 'insights'] as const,
+  recent: ['cases', 'recent'] as const,
 };
+
+/** The cases I touched most recently (Queue → Recently worked). Only while that view is open. */
+export function useRecentlyWorked(enabled = true) {
+  return useQuery({ queryKey: caseKeys.recent, queryFn: () => casesApi.recent(), refetchInterval: POLL_MS, enabled });
+}
 
 export function useCases(filters: Partial<CaseFilters>, enabled = true) {
   return useQuery({ queryKey: caseKeys.list(filters), queryFn: () => casesApi.list(filters), refetchInterval: POLL_MS, enabled });

@@ -118,6 +118,13 @@ class Case(ApiModel):
     safe_to_contact: bool | None = None
 
 
+class WorkedCase(Case):
+    """A case the current worker touched, with when and how they last did."""
+
+    worked_at: datetime = Field(description="When this worker last wrote on the case (or opened it).")
+    worked_type: UpdateType = Field(description="What that last entry was: a note, a status change, opening it…")
+
+
 class CaseUpdate(ApiModel):
     """One entry in a case's history: a note, a message to the requester, or
     a change the system recorded."""

@@ -21,6 +21,8 @@ export type UpdateType = Schemas['UpdateType'];
 export type Visibility = Schemas['Visibility'];
 
 export type Case = Schemas['Case'];
+/** A case the signed-in worker touched, with when and how they last did (Queue → Recently worked). */
+export type WorkedCase = Schemas['WorkedCase'];
 export type CaseDetail = Schemas['CaseDetail'];
 export type CaseUpdate = Schemas['CaseUpdate'];
 export type CaseInsights = Schemas['CaseInsights'];

@@ -36,6 +36,7 @@ from models.case import (
     UpdateReferralRequest,
     UpdateType,
     Visibility,
+    WorkedCase,
 )
 from models.case_enums import CaseCategory, CasePriority, pages_on_call
 from models.notification import NotificationKind
@@ -425,6 +426,11 @@ class CaseService:
             by_status=await self.cases.counts_by_status(),
             recent_activity=await self.cases.recent_activity(activity_limit),
         )
+
+    async def recently_worked(self, worker: StaffMember, limit: int) -> list[WorkedCase]:
+        """The cases this worker touched most recently: for finding a case
+        again after an interruption."""
+        return await self.cases.recently_worked(worker.id, limit)
 
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return await self.cases.recent_activity(limit)

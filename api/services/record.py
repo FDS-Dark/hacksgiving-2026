@@ -30,6 +30,7 @@ from models.record import (
 from models.staff import Role, StaffMember
 from models.task import CreateTaskRequest
 from services.case import CaseService
+from services.redaction import PHONE, find_phone
 from services.pipeline import AUDIO_CONTENT_TYPE, audio_key, enqueue_stage
 from services.task import TaskService
 
@@ -39,8 +40,12 @@ PRIORITY_RANK = {CasePriority.LOW: 0, CasePriority.MEDIUM: 1, CasePriority.HIGH:
 
 
 def public(record: StoredRecord) -> Record:
-    """The record without the redacted text (pipeline-internal)."""
-    return Record(**record.model_dump(exclude={"redacted_text"}))
+    """The record without the redacted text (pipeline-internal), plus the
+    callback number found in what the author wrote."""
+    return Record(
+        **record.model_dump(exclude={"redacted_text", "callback_phone"}),
+        callback_phone=find_phone(record.raw_text),
+    )
 
 
 class RecordService:
@@ -165,25 +170,35 @@ class RecordService:
         if record.case_id is not None:
             return await self._confirm_into(worker, record, body)
 
+        # The callback number the author gave is redacted before the AI reads
+        # the debrief, so it isn't in the extraction. The app offers it on the
+        # review screen; a client that leaves the field out entirely still
+        # gets it from what the author wrote. (An explicit null means the
+        # author removed it.)
+        phone = body.contact_phone if "contact_phone" in body.model_fields_set else find_phone(record.raw_text)
+
+        def restore(text: str) -> str:
+            return text.replace(PHONE, phone) if phone else text
+
         try:
             case = await self.cases.create(
                 worker,
                 CreateCaseRequest(
-                    title=body.title,
-                    description=body.summary,
+                    title=restore(body.title)[:160],
+                    description=restore(body.summary),
                     kind=body.kind,
                     category=body.category,
                     priority=body.priority,
                     location=body.location,
                     contact_name=body.contact_name,
-                    contact_phone=body.contact_phone,
+                    contact_phone=phone,
                     assigned_worker_id=worker.id,
                 ),
             )
             now = datetime.now(timezone.utc)
             for task in body.tasks:
                 due = now + timedelta(hours=task.due_in_hours) if task.due_in_hours else None
-                await self.tasks.add(worker, case.id, CreateTaskRequest(title=task.title, due_at=due))
+                await self.tasks.add(worker, case.id, CreateTaskRequest(title=restore(task.title)[:160], due_at=due))
             await self.cases.add_update(
                 worker,
                 case.id,

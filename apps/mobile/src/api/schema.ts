@@ -90,6 +90,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recently Worked
+         * @description The cases the signed-in worker touched most recently (a note, a
+         *     message, a change, a finished task, or opening it), newest first, each
+         *     with when and how they last did.
+         */
+        get: operations["recently_worked_v1_cases_recent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}": {
         parameters: {
             query?: never;
@@ -4170,6 +4192,11 @@ export interface components {
              * Format: uuid
              */
             author_id: string;
+            /**
+             * Callback Phone
+             * @description The first phone number in `raw_text`, for the review screen to offer as the contact phone. Found by the API, never shown to the AI (the redacted text has no phone numbers).
+             */
+            callback_phone: string | null;
             /** Case Id */
             case_id: string | null;
             /** Confirmed At */
@@ -5460,6 +5487,78 @@ export interface components {
              */
             status: string;
         };
+        /**
+         * WorkedCase
+         * @description A case the current worker touched, with when and how they last did.
+         */
+        WorkedCase: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /** Contact Email */
+            contact_email: string | null;
+            contact_method: components["schemas"]["ContactMethod"] | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["CaseKind"];
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Location */
+            location: string | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Number */
+            number: number;
+            priority: components["schemas"]["CasePriority"];
+            /** Referral Count */
+            referral_count: number;
+            /** Requester Id */
+            requester_id: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
+            source: components["schemas"]["CaseSource"];
+            status: components["schemas"]["CaseStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Worked At
+             * Format: date-time
+             * @description When this worker last wrote on the case (or opened it).
+             */
+            worked_at: string;
+            /** @description What that last entry was: a note, a status change, opening it… */
+            worked_type: components["schemas"]["UpdateType"];
+        };
         /** Worker */
         Worker: {
             /** Display Name */
@@ -5622,6 +5721,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LanguageOption"][];
+                };
+            };
+        };
+    };
+    recently_worked_v1_cases_recent_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkedCase"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

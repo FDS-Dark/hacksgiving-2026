@@ -144,3 +144,32 @@ async def test_resources_have_coordinates(api, people):
         "name": "Nowhere", "category": "other", "latitude": 95,
     })
     assert off_the_map.status_code == 422
+
+
+async def test_recently_worked_lists_my_cases_by_my_last_touch(api, people, admin_conn):
+    """The Queue's "Recently worked" view: the cases I touched, newest touch
+    first, with when and how. Someone else's activity doesn't count."""
+    worker = people["worker"]
+    other = auth_header(_sub(), name="Olive Other")
+    other_id = (await api.get("/v1/me", headers=other)).json()["id"]
+    await admin_conn.execute("UPDATE app.users SET role = 'worker' WHERE id = $1", other_id)
+
+    first = (await api.post("/v1/cases", headers=worker, json={"title": "Ride to court"})).json()
+    second = (await api.post("/v1/cases", headers=worker, json={"title": "Bed tonight"})).json()
+    theirs = (await api.post("/v1/cases", headers=other, json={"title": "Not mine"})).json()
+
+    # Touching the first case again moves it back to the top; a teammate's
+    # note on the second doesn't.
+    await api.post(f"/v1/cases/{first['id']}/updates", headers=worker, json={"content": "Called the court."})
+    await api.post(f"/v1/cases/{second['id']}/updates", headers=other, json={"content": "Drove by."})
+
+    recent = await api.get("/v1/cases/recent", headers=worker, params={"limit": 10})
+    assert recent.status_code == 200, recent.text
+    rows = recent.json()
+    ids = [c["id"] for c in rows]
+    assert ids[:2] == [first["id"], second["id"]] and theirs["id"] not in ids
+    assert (rows[0]["worked_type"], rows[1]["worked_type"]) == ("note", "created")
+    assert rows[0]["worked_at"] >= rows[1]["worked_at"]
+
+    member = await api.get("/v1/cases/recent", headers=people["member"])
+    assert member.status_code == 403

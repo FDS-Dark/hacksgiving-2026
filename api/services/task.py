@@ -85,9 +85,16 @@ def _contact_task(case: Case, due: timedelta) -> PlannedTask:
             if verb == "Call"
             else "Not safe to text freely: keep messages short and don't name ComForce or the request."
         )
-    else:
+    elif case.safe_to_contact is True:
         caution = "They said it's safe to reach them."
-    return PlannedTask(f"{verb} the requester", caution, due)
+    else:
+        # A case staff opened: nobody asked the person how to reach them.
+        caution = "Nobody asked if a voicemail is safe, so keep any message short."
+    # The number goes on the task itself, so whoever picks it up can call
+    # without hunting for it (a debrief's callback number used to vanish).
+    phone = (case.contact_phone or "").strip()
+    detail = f"{verb} {phone}. {caution}" if phone else f"No phone number on the case yet. {caution}"
+    return PlannedTask(f"{verb} the requester", detail, due)
 
 
 def plan_tasks(case: Case) -> list[PlannedTask]:

@@ -4724,6 +4724,18 @@
             "title": "Author Id",
             "type": "string"
           },
+          "callback_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The first phone number in `raw_text`, for the review screen to offer as the contact phone. Found by the API, never shown to the AI (the redacted text has no phone numbers).",
+            "title": "Callback Phone"
+          },
           "case_id": {
             "anyOf": [
               {
@@ -4813,6 +4825,7 @@
           "stage",
           "raw_text",
           "extraction",
+          "callback_phone",
           "case_id",
           "error",
           "created_at",
@@ -8414,6 +8427,250 @@
         "title": "WebhookAccepted",
         "type": "object"
       },
+      "WorkedCase": {
+        "description": "A case the current worker touched, with when and how they last did.",
+        "properties": {
+          "assigned_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Id"
+          },
+          "assigned_worker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Worker Name"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CaseKind"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "referral_count": {
+            "title": "Referral Count",
+            "type": "integer"
+          },
+          "requester_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requester Id"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CaseSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "worked_at": {
+            "description": "When this worker last wrote on the case (or opened it).",
+            "format": "date-time",
+            "title": "Worked At",
+            "type": "string"
+          },
+          "worked_type": {
+            "$ref": "#/components/schemas/UpdateType",
+            "description": "What that last entry was: a note, a status change, opening it\u2026"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "kind",
+          "title",
+          "description",
+          "category",
+          "priority",
+          "status",
+          "source",
+          "location",
+          "latitude",
+          "longitude",
+          "contact_name",
+          "contact_phone",
+          "contact_email",
+          "requester_id",
+          "assigned_worker_id",
+          "assigned_worker_name",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "resolved_at",
+          "referral_count",
+          "last_activity_at",
+          "contact_method",
+          "safe_to_contact",
+          "worked_at",
+          "worked_type"
+        ],
+        "title": "WorkedCase",
+        "type": "object"
+      },
       "Worker": {
         "properties": {
           "display_name": {
@@ -8769,6 +9026,56 @@
           }
         },
         "summary": "Reply Languages",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/recent": {
+      "get": {
+        "description": "The cases the signed-in worker touched most recently (a note, a\nmessage, a change, a finished task, or opening it), newest first, each\nwith when and how they last did.",
+        "operationId": "recently_worked_v1_cases_recent_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WorkedCase"
+                  },
+                  "title": "Response Recently Worked V1 Cases Recent Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recently Worked",
         "tags": [
           "cases"
         ]

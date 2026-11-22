@@ -19,6 +19,7 @@ from models.case import (
     UpdateCaseRequest,
     UpdateType,
     Visibility,
+    WorkedCase,
 )
 
 
@@ -131,6 +132,11 @@ class CaseDatabridge(Databridge):
         Only meaningful inside a shared transaction (`within`)."""
         rows = await self._rows("case_list_updates_this_transaction", case_id=case_id, author_id=author_id)
         return [CaseUpdate(**row) for row in rows]
+
+    async def recently_worked(self, worker_id: UUID, limit: int) -> list[WorkedCase]:
+        """The cases `worker_id` touched, most recent first (0033)."""
+        rows = await self._rows("case_recently_worked", worker_id=worker_id, limit=limit)
+        return [WorkedCase(**row) for row in rows]
 
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_recent_activity", limit=limit)]
