@@ -61,6 +61,7 @@ export type IncidentPoint = Schemas['IncidentPoint'];
 export type DispatchCall = Schemas['DispatchCall'];
 export type TransitNearby = Schemas['TransitNearby'];
 export type WeatherAlert = Schemas['WeatherAlert'];
+export type CommunityAlerts = Schemas['CommunityAlerts-Output'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];

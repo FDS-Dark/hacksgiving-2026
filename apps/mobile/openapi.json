@@ -743,6 +743,31 @@
         "title": "ClaimHandoffRequest",
         "type": "object"
       },
+      "CommunityAlerts-Input": {
+        "properties": {
+          "subscribed": {
+            "default": false,
+            "title": "Subscribed",
+            "type": "boolean"
+          }
+        },
+        "title": "CommunityAlerts",
+        "type": "object"
+      },
+      "CommunityAlerts-Output": {
+        "properties": {
+          "subscribed": {
+            "default": false,
+            "title": "Subscribed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "subscribed"
+        ],
+        "title": "CommunityAlerts",
+        "type": "object"
+      },
       "CommunityMeasure": {
         "properties": {
           "high": {
@@ -2057,7 +2082,8 @@
           "referral_update",
           "test",
           "urgent_offer",
-          "urgent_unanswered"
+          "urgent_unanswered",
+          "community_alert"
         ],
         "title": "NotificationKind",
         "type": "string"
@@ -6768,6 +6794,67 @@
         "summary": "Update Me",
         "tags": [
           "user"
+        ]
+      }
+    },
+    "/v1/me/community-alerts": {
+      "get": {
+        "operationId": "get_community_alerts_v1_me_community_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityAlerts-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Community Alerts",
+        "tags": [
+          "community alerts"
+        ]
+      },
+      "put": {
+        "description": "Turn community alerts on or off. Pushes still follow the person's\npush switch and quiet hours.",
+        "operationId": "set_community_alerts_v1_me_community_alerts_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityAlerts-Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityAlerts-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Community Alerts",
+        "tags": [
+          "community alerts"
         ]
       }
     },

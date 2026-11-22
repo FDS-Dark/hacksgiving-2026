@@ -24,6 +24,8 @@ class NotificationKind(StrEnum):
     URGENT_OFFER = "urgent_offer"
     # Nobody accepted an urgent case (admins, at most 3 times).
     URGENT_UNANSWERED = "urgent_unanswered"
+    # A serious weather alert, to residents who opted in (services/weather_jobs.py).
+    COMMUNITY_ALERT = "community_alert"
 
 
 class StoredNotification(ApiModel):

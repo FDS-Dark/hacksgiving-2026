@@ -1,6 +1,10 @@
 -- 0019: the resident lane.
 --   * Open bed counts on a resource (Figma R3 "12 beds"): staff enter them,
 --     residents see them on Nearby while they are fresh.
+--   * Weather alerts the worker has acted on, once each: cold and heat
+--     alerts give every open homelessness case a check-in task.
+--   * Community alerts (Figma R5): residents who opt in get a push for a
+--     serious weather alert. The `community_alert` notification kind.
 
 -- =============================================================================
 -- BED COUNTS
@@ -23,3 +27,109 @@ LANGUAGE sql AS $$
     WHERE r.id = p_resource_id
     RETURNING r.*
 $$;
+
+-- =============================================================================
+-- WEATHER ALERTS THE WORKER HAS ACTED ON
+-- =============================================================================
+
+-- One row per alert, written when the worker first sees it in effect; its
+-- primary key is what makes the outreach happen once across replicas.
+CREATE TABLE app.weather_alert_handled (
+    source      TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    handled_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (source, external_id)
+);
+
+-- Alerts in effect that no worker has handled yet, marked handled as they
+-- are returned. Call it inside the transaction that acts on them: a
+-- rollback leaves them for the next round.
+CREATE FUNCTION app.weather_alert_claim_new()
+RETURNS SETOF app.weather_alerts
+LANGUAGE sql AS $$
+    WITH claimed AS (
+        INSERT INTO app.weather_alert_handled (source, external_id)
+        SELECT w.source, w.external_id FROM app.weather_alerts w
+        WHERE (w.effective_at IS NULL OR w.effective_at <= now())
+          AND (w.expires_at IS NULL OR w.expires_at > now())
+        ON CONFLICT DO NOTHING
+        RETURNING source, external_id
+    )
+    SELECT w.* FROM app.weather_alerts w JOIN claimed c USING (source, external_id)
+$$;
+
+-- A check-in task on every open homelessness case. Unassigned tasks follow
+-- whoever holds the case. Returns the new tasks' ids.
+CREATE FUNCTION app.weather_outreach_tasks(p_title TEXT, p_detail TEXT, p_due_at TIMESTAMPTZ)
+RETURNS TABLE (id UUID)
+LANGUAGE sql AS $$
+    INSERT INTO app.tasks AS t (case_id, title, detail, due_at)
+    SELECT c.id, p_title, p_detail, p_due_at FROM app.cases c
+    WHERE c.category = 'homelessness' AND c.status NOT IN ('resolved', 'closed')
+    RETURNING t.id
+$$;
+
+-- =============================================================================
+-- COMMUNITY ALERTS
+-- =============================================================================
+
+-- Opted in. Off by default: a buzz at the wrong moment can put someone at
+-- risk, so a resident chooses it (Me -> Community alerts).
+CREATE TABLE app.community_alert_subscribers (
+    user_id    UUID PRIMARY KEY REFERENCES app.users (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE FUNCTION app.community_alerts_get(p_user_id UUID)
+RETURNS TABLE (subscribed BOOLEAN)
+LANGUAGE sql STABLE AS $$
+    SELECT EXISTS (SELECT 1 FROM app.community_alert_subscribers s WHERE s.user_id = p_user_id)
+$$;
+
+CREATE FUNCTION app.community_alerts_set(p_user_id UUID, p_subscribed BOOLEAN)
+RETURNS TABLE (subscribed BOOLEAN)
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF p_subscribed THEN
+        INSERT INTO app.community_alert_subscribers (user_id) VALUES (p_user_id) ON CONFLICT DO NOTHING;
+    ELSE
+        DELETE FROM app.community_alert_subscribers s WHERE s.user_id = p_user_id;
+    END IF;
+    RETURN QUERY SELECT p_subscribed;
+END
+$$;
+
+CREATE FUNCTION app.community_alert_recipients()
+RETURNS TABLE (user_id UUID)
+LANGUAGE sql STABLE AS $$
+    SELECT s.user_id FROM app.community_alert_subscribers s ORDER BY s.created_at
+$$;
+
+-- 0018's kinds plus community_alert.
+ALTER TABLE app.notifications DROP CONSTRAINT notifications_kind_check;
+ALTER TABLE app.notifications ADD CONSTRAINT notifications_kind_check CHECK (kind IN (
+    'assignment', 'reply', 'request_update', 'task_due', 'referral_update', 'test',
+    'urgent_offer', 'urgent_unanswered', 'community_alert'));
+
+-- 0018's view; residents may now also read their community alerts.
+CREATE OR REPLACE VIEW app.notification_view AS
+SELECT n.id, n.user_id, n.kind, n.case_id, c.number AS case_number, c.title AS case_title,
+       c.status AS case_status, n.task_id, t.title AS task_title, n.created_at, n.read_at,
+       s.staff AS reader_is_staff,
+       CASE WHEN s.staff OR u.visibility = 'public' THEN u.update_type END AS update_type,
+       CASE WHEN s.staff OR u.visibility = 'public' THEN u.content END AS update_content,
+       CASE WHEN s.staff THEN a.display_name END AS actor_name,
+       CASE WHEN s.staff THEN c.contact_name END AS contact_name,
+       CASE WHEN s.staff THEN f.status END AS referral_status,
+       CASE WHEN s.staff THEN res.name END AS resource_name,
+       n.alert_id
+FROM app.notifications n
+JOIN app.users reader ON reader.id = n.user_id
+CROSS JOIN LATERAL (SELECT reader.role IN ('worker', 'admin') AS staff) s
+LEFT JOIN app.cases c ON c.id = n.case_id
+LEFT JOIN app.case_updates u ON u.id = n.case_update_id
+LEFT JOIN app.tasks t ON t.id = n.task_id
+LEFT JOIN app.case_referrals f ON f.id = n.referral_id
+LEFT JOIN app.resources res ON res.id = f.resource_id
+LEFT JOIN app.users a ON a.id = n.actor_id
+WHERE s.staff OR n.kind IN ('request_update', 'test', 'community_alert');

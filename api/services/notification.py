@@ -59,6 +59,8 @@ def render(facts: NotificationFacts) -> NotificationItem:
             title, body = f"Nobody has accepted {n}", facts.case_title or ""
     elif facts.kind == NotificationKind.TEST:
         title, body, route = "Test notification", "Push works on this phone.", None
+    elif facts.kind == NotificationKind.COMMUNITY_ALERT:
+        title, body, route = "Weather alert", "The National Weather Service issued an alert for Milwaukee.", "/alerts"
     elif facts.kind == NotificationKind.ASSIGNMENT:
         title, body = f"{facts.actor_name or 'Someone'} assigned you {n}", facts.case_title or ""
     elif facts.kind == NotificationKind.REPLY:

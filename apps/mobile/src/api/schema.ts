@@ -309,6 +309,28 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/me/community-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Community Alerts */
+        get: operations["get_community_alerts_v1_me_community_alerts_get"];
+        /**
+         * Set Community Alerts
+         * @description Turn community alerts on or off. Pushes still follow the person's
+         *     push switch and quiet hours.
+         */
+        put: operations["set_community_alerts_v1_me_community_alerts_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/devices": {
         parameters: {
             query?: never;
@@ -2026,6 +2048,22 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** CommunityAlerts */
+        "CommunityAlerts-Input": {
+            /**
+             * Subscribed
+             * @default false
+             */
+            subscribed?: boolean;
+        };
+        /** CommunityAlerts */
+        "CommunityAlerts-Output": {
+            /**
+             * Subscribed
+             * @default false
+             */
+            subscribed: boolean;
+        };
         /** CommunityMeasure */
         CommunityMeasure: {
             /** High */
@@ -2495,7 +2533,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered";
+        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered" | "community_alert";
         /**
          * NotificationPreferences
          * @description Push settings (push arrives in phase 2). The inbox ignores them: it
@@ -4335,6 +4373,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_community_alerts_v1_me_community_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityAlerts-Output"];
+                };
+            };
+        };
+    };
+    set_community_alerts_v1_me_community_alerts_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityAlerts-Input"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityAlerts-Output"];
                 };
             };
             /** @description Validation Error */
