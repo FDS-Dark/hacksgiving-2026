@@ -1,4 +1,5 @@
 /** Today's "You're on call" card (Figma 26:122), and the switch it shares with Me. */
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/staff/kit';
@@ -27,7 +28,9 @@ export function useOncallSwitch() {
     error: toggle.error ? shiftError(toggle.error) : null,
     pushBlocked: on && permission.state === 'blocked',
     set: (next: boolean) => {
-      toggle.mutate({ on: next });
+      const wasOn = now.data?.me.on_call ?? false;
+      // Going off call writes a shift handoff brief for the next person: show it.
+      toggle.mutate({ on: next }, { onSuccess: () => (wasOn && !next ? router.push('/staff/handoffs') : undefined) });
       if (next) void ensurePermission('staff');
     },
   };
