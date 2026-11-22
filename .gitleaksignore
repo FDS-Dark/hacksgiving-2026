@@ -1,2 +1,4 @@
 # Reviewed gitleaks findings that are not secrets, as <commit>:<file>:<rule>:<line>.
 # Public-by-design values matched by pattern live in .gitleaks.toml instead.
+# Public Auth0 client id (Hacksgiving Mobile (dev), PKCE, no secret) in build-web-staging; since moved to apps/mobile/.env.web-staging.
+d4b5dbd6b5dffaa55b80c43b9f104a355ddd33d4:.gitlab-ci.yml:generic-api-key:240
