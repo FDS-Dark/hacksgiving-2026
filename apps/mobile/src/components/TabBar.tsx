@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { IconName } from '@/components/ui';
+import { setTabReplaceAnimation, tabDirection } from '@/lib/tabDirection';
 import { space, useTheme } from '@/theme/tokens';
 
 export interface TabItem {
@@ -27,12 +28,13 @@ export function TabBar({ tabs }: { tabs: TabItem[] }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const activeIndex = tabs.findIndex((t) => t.match(pathname));
   return (
     <View
       accessibilityRole="tablist"
       style={[styles.bar, { backgroundColor: theme.surface, borderTopColor: theme.separator, paddingBottom: Math.max(insets.bottom, space.md) }]}
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, index) => {
         const active = tab.match(pathname);
         const color = active || tab.raised ? theme.accent : theme.textSecondary;
         const go = () => {
@@ -41,6 +43,9 @@ export function TabBar({ tabs }: { tabs: TabItem[] }) {
           if (!tab.href) return;
           // Pop anything pushed over the current tab first, so Back never lands on an old tab.
           if (router.canDismiss()) router.dismissAll();
+          // Slide toward the tab that was pressed: from the right for a tab
+          // to the right, from the left for one to the left.
+          setTabReplaceAnimation(tabDirection(activeIndex, index));
           router.replace(tab.href);
         };
         return (

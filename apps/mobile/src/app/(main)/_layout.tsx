@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TabBar, type TabItem } from '@/components/TabBar';
+import { tabReplaceAnimation } from '@/lib/tabDirection';
 import { useTheme } from '@/theme/tokens';
 
 /** Figma "App shell v2" resident tabs. Get help pushes the request flow (/help) over them. */
@@ -23,7 +24,13 @@ export default function MainLayout() {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg, paddingTop: insets.top }}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }} />
+      <Stack
+        screenOptions={() => ({
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.bg },
+          animationTypeForReplace: tabReplaceAnimation(),
+        })}
+      />
       <TabBar tabs={TABS} />
     </View>
   );
