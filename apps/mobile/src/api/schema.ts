@@ -9014,7 +9014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Resource"][];
+                    "application/json": components["schemas"]["VoiceResource"][];
                 };
             };
             /** @description Validation Error */

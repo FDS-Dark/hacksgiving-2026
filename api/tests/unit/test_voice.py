@@ -380,19 +380,19 @@ async def test_voice_opportunities_use_same_open_directory_as_app():
 
 
 async def test_phone_agent_gets_named_places_for_the_routed_service():
-    class Resources:
+    class Voice:
         called = None
 
-        async def search(self, query, category):
-            self.called = (query, category)
+        async def directory_resources(self, category, query):
+            self.called = (category, query)
             return []
 
-    service = Resources()
+    service = Voice()
     result = await directory_resources(
-        CaseCategory.MEAL_PROGRAMS, "27th and Center", cast(Any, service)
+        CaseCategory.MEAL_PROGRAMS, "27th and Center", cast(VoiceService, service)
     )
     assert result == []
-    assert service.called == ("27th and Center", CaseCategory.MEAL_PROGRAMS)
+    assert service.called == (CaseCategory.MEAL_PROGRAMS, "27th and Center")
 
 
 def test_voice_case_request_requires_explicit_and_complete_contact_consent():

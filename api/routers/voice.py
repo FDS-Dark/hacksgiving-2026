@@ -11,15 +11,13 @@ from dependencies import (
     get_current_worker,
     get_opportunity_service,
     get_public_data_service,
-    get_resource_service,
     get_routing_service,
     get_voice_service,
     require_tool_secret,
 )
 from models.case import AnonymousRequestReceipt
-from models.case_enums import CaseCategory
 from models.opportunity import Opportunity, OpportunityKind
-from models.resource import Resource
+from models.case_enums import CaseCategory
 from models.routing import SERVICE_DESCRIPTIONS, Service
 from models.staff import StaffMember
 from models.user import AppUser
@@ -58,7 +56,6 @@ from models.voice import (
 from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.public_data import PublicDataService
-from services.resource import ResourceService
 from services.routing import RoutingService
 from services.voice import VoiceService
 from settings import config
@@ -115,19 +112,19 @@ async def resources(
 
 @router.get(
     "/directory-resources",
-    response_model=list[Resource],
+    response_model=list[VoiceResource],
     dependencies=[Depends(require_tool_secret)],
 )
 async def directory_resources(
     category: CaseCategory,
     q: Annotated[str | None, Query(max_length=200)] = None,
-    service: ResourceService = Depends(get_resource_service),
-) -> list[Resource]:
+    service: VoiceService = Depends(get_voice_service),
+) -> list[VoiceResource]:
     """Return named community places for a routed ComForce service.
 
     Results are directory listings, not guaranteed real-time availability.
     """
-    return await service.search(q, category)
+    return await service.directory_resources(category, q)
 
 
 @router.get(

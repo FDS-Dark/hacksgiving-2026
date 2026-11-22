@@ -13991,7 +13991,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/Resource"
+                    "$ref": "#/components/schemas/VoiceResource"
                   },
                   "title": "Response Directory Resources V1 Voice Directory Resources Get",
                   "type": "array"

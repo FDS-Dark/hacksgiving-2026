@@ -47,7 +47,8 @@ returned service key before recommending a place. Describe only named results
 returned by the tool, including their address, neighborhood, hours, phone, or
 website when present. A directory listing does not guarantee current capacity
 or eligibility, so say to contact the program to confirm. Do not pass a service
-key to `create_referral`: `resource_slug` must come from `lookup_routes`.
+key to `create_referral`: `resource_slug` must come from either
+`lookup_directory_resources` or `lookup_routes`.
 
 Use `lookup_routes` before recommending an outside organization. Use the exact
 resource category values `mental-health-crisis`, `police-non-emergency`,
