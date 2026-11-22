@@ -2054,6 +2054,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/voice/directory-resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Directory Resources
+         * @description Return named community places for a routed ComForce service.
+         *
+         *     Results are directory listings, not guaranteed real-time availability.
+         */
+        get: operations["directory_resources_v1_voice_directory_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/follow-ups": {
         parameters: {
             query?: never;
@@ -2252,7 +2274,7 @@ export interface paths {
         /**
          * Submit Voice Request
          * @description Create a consented anonymous Get Help case from approved fields only.
-         *     One Ava marks urgent (needs someone today, not 911) goes in at high
+         *     A request the phone agent marks urgent (needs someone today, not 911) goes in at high
          *     priority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`
          *     is off.
          */
@@ -5164,11 +5186,8 @@ export interface components {
             safe_contact_window?: string | null;
             /** Safe To Contact */
             safe_to_contact?: boolean | null;
-            /**
-             * @description `urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911.
-             * @default routine
-             */
-            urgency?: components["schemas"]["VoiceCaseUrgency"];
+            /** @description `urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911. */
+            urgency: components["schemas"]["VoiceCaseUrgency"];
             /**
              * Voicemail Allowed
              * @default false
@@ -8971,6 +8990,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceDashboard"];
+                };
+            };
+        };
+    };
+    directory_resources_v1_voice_directory_resources_get: {
+        parameters: {
+            query: {
+                category: components["schemas"]["CaseCategory"];
+                q?: string | null;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

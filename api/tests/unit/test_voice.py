@@ -31,6 +31,7 @@ from routers.voice import (
     awareness,
     URGENT_NOTE,
     app_capabilities,
+    directory_resources,
     opportunities,
     route_voice_request,
     submit_voice_request,
@@ -378,12 +379,30 @@ async def test_voice_opportunities_use_same_open_directory_as_app():
     assert service.called == ("mentor", None, False, 25)
 
 
+async def test_phone_agent_gets_named_places_for_the_routed_service():
+    class Resources:
+        called = None
+
+        async def search(self, query, category):
+            self.called = (query, category)
+            return []
+
+    service = Resources()
+    result = await directory_resources(
+        CaseCategory.MEAL_PROGRAMS, "27th and Center", cast(Any, service)
+    )
+    assert result == []
+    assert service.called == ("27th and Center", CaseCategory.MEAL_PROGRAMS)
+
+
 def test_voice_case_request_requires_explicit_and_complete_contact_consent():
     base = {
         "conversation_id": "conv-case",
         "approved_summary": "Caller approved this short summary.",
         "category": "transportation",
     }
+    with pytest.raises(ValidationError, match="urgency"):
+        VoiceCaseRequest.model_validate({**base, "consent": True})
     with pytest.raises(ValidationError):
         VoiceCaseRequest.model_validate({**base, "consent": False})
     with pytest.raises(ValidationError, match="system caller id"):
@@ -391,6 +410,7 @@ def test_voice_case_request_requires_explicit_and_complete_contact_consent():
             {
                 **base,
                 "consent": True,
+                "urgency": "routine",
                 "contact_method": "text",
                 "safe_to_contact": True,
             }
@@ -435,6 +455,7 @@ async def test_voice_request_creates_anonymous_case_from_approved_fields_only():
         consent=True,
         approved_summary="Caller approved this short summary.",
         category=CaseCategory.TRANSPORTATION,
+        urgency=VoiceCaseUrgency.ROUTINE,
         general_location="North Side",
         contact_method=ContactMethod.TEXT,
         caller_id="+14145550123",
@@ -534,7 +555,7 @@ async def test_the_switch_keeps_urgent_voice_requests_from_paging(monkeypatch):
 
     assert cases.urgent_note is None
     assert result.urgent is False
-    # The call still records what Ava judged.
+    # The call still records what the phone agent judged.
     assert voice.recorded[5] == VoiceCaseUrgency.URGENT
 
 
