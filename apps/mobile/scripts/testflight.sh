@@ -37,9 +37,6 @@ auth=(-allowProvisioningUpdates
 # CocoaPods crashes without a UTF-8 locale, and the CI runner's shell has none.
 export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
-rm -rf "$work"
-mkdir -p "$work"
-log="$work/xcodebuild.log"
 # xcodebuild's output runs to megabytes (more than a CI log keeps): it goes
 # to a file, and only its tail is shown when a step fails.
 quietly() {
@@ -54,6 +51,11 @@ npm ci --no-audit --no-fund
 scripts/variant.sh "$variant" npx expo prebuild --platform ios --clean
 # prebuild exits 0 even when `pod install` fails.
 [ -d ios/Hacksgiving.xcworkspace ] || { echo "prebuild didn't create ios/Hacksgiving.xcworkspace (see pod install above)." >&2; exit 1; }
+
+# After prebuild: `--clean` deletes ios/, which holds the work directory.
+rm -rf "$work"
+mkdir -p "$work"
+log="$work/xcodebuild.log"
 
 echo "Archiving $bundle_id build $IOS_BUILD_NUMBER..."
 archive="$work/Hacksgiving.xcarchive"
