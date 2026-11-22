@@ -88,7 +88,7 @@ variable "auth0_audience" {
 
 variable "cors_origins" {
   type        = list(string)
-  description = "Browser origins the API accepts cross-origin requests from. Empty in production."
+  description = "Browser origins the API accepts cross-origin requests from: the website and, on staging, the Expo web dev server."
   default     = []
 }
 

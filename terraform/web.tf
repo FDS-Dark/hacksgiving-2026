@@ -1,7 +1,7 @@
 # The app as a website (apps/mobile/web.Dockerfile): a static Expo web export
-# served by unprivileged nginx. Off unless web_image is set, which CI does for
-# staging only (build-web-staging); production gets its own build, Auth0
-# client and hostname when it's wanted.
+# served by unprivileged nginx. Off unless web_image is set; CI builds one per
+# environment (build-web-staging, build-web-production), because the API and
+# Auth0 values are baked into the bundle.
 
 locals {
   web_enabled = var.web_image != ""

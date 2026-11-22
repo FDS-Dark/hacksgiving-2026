@@ -10,6 +10,12 @@ variable "native_callback_urls" {
   default     = ["hacksgiving://auth", "hacksgiving-staging://auth"]
 }
 
+variable "web_origins" {
+  type        = list(string)
+  description = "Origins the production website runs on (terraform/web.tf, apps/mobile/.env.web-production). Each gets <origin>/auth as a callback on Hacksgiving Mobile, and may call Auth0's token endpoint from the browser."
+  default     = ["https://hacksgiving.austinkoske.com"]
+}
+
 variable "dev_callback_urls" {
   type        = list(string)
   description = "Expo Go redirect URIs, exp://<metro host>:8081/--/auth, for Hacksgiving Mobile (dev) only. The sign-in screen shows the exact value in dev."
