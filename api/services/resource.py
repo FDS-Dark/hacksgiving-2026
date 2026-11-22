@@ -5,6 +5,7 @@ from uuid import UUID
 
 from databridge.resource import ResourceDatabridge
 from errors import not_found
+from models.assist import ResourceOutcomes
 from models.case_enums import CaseCategory
 from models.resource import CreateResourceRequest, Resource
 from models.staff import StaffMember
@@ -16,6 +17,9 @@ class ResourceService:
 
     async def search(self, query: str | None, category: CaseCategory | None) -> list[Resource]:
         return await self.resources.search(query, category)
+
+    async def outcome_stats(self) -> dict[UUID, ResourceOutcomes]:
+        return await self.resources.outcome_stats()
 
     async def get(self, resource_id: UUID) -> Resource:
         resource = await self.resources.get(resource_id)

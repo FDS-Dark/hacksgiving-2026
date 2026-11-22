@@ -153,3 +153,4 @@ export type Person = Schemas['Person'];
 export type CaseLanguage = Schemas['CaseLanguage'];
 export type LanguageOption = Schemas['LanguageOption'];
 export type Translation = Schemas['Translation'];
+export type ResourceSuggestion = Schemas['ResourceSuggestion'];

@@ -313,6 +313,29 @@ def test_rule_based_suggestions_fit_the_category_and_skip_what_is_already_referr
     assert [s.resource.name for s in result.suggestions] == ["Bus", "Hub"]
 
 
+def test_suggestions_learn_from_referral_outcomes():
+    """Within the same fit, the resource whose referrals helped more comes
+    first; one lucky referral doesn't beat a solid track record."""
+    from models.assist import ResourceOutcomes
+    from models.resource import Resource
+    from services.case_assist import learned_score
+
+    case = case_row(category="transportation")
+    proven, new, poor = (Resource(**resource_row(name=n, is_sample=False)) for n in ("Proven", "New", "Poor"))
+    outcomes = {
+        proven.id: ResourceOutcomes(referred=10, helped=8, declined=1, success_rate=0.89),
+        poor.id: ResourceOutcomes(referred=6, helped=1, declined=5, success_rate=0.17),
+    }
+
+    result = rule_based_suggestions(detail_with(case, []), [poor, new, proven], outcomes)
+    assert [s.resource.name for s in result.suggestions] == ["Proven", "New", "Poor"]
+    assert "Helped 8 of 9 people" in result.suggestions[0].reason
+
+    one_lucky = ResourceOutcomes(referred=1, helped=1, declined=0, success_rate=1.0)
+    assert learned_score(one_lucky) < learned_score(outcomes[proven.id])
+    assert learned_score(None) == 0.5
+
+
 class FakeResponses:
     def __init__(self, output: Any) -> None:
         self.output = output

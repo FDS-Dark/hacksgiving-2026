@@ -23,9 +23,30 @@ class CaseSummary(ApiModel):
     next_steps: list[str]
 
 
+class ResourceOutcomes(ApiModel):
+    """How referrals to this resource have turned out so far."""
+
+    referred: int
+    helped: int = Field(description="Accepted or completed.")
+    declined: int
+    success_rate: float | None = Field(
+        default=None, description="helped / (helped + declined), once at least one has been decided."
+    )
+
+
+class NearbyStop(ApiModel):
+    """The closest MCTS bus stop to the resource (within about half a mile)."""
+
+    name: str
+    routes: list[str]
+    distance_m: int
+
+
 class ResourceSuggestion(ApiModel):
     resource: Resource
     reason: str
+    outcomes: ResourceOutcomes | None = None
+    nearest_stop: NearbyStop | None = None
 
 
 class ResourceSuggestions(ApiModel):

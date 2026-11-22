@@ -2250,6 +2250,33 @@
         "title": "MyOffer",
         "type": "object"
       },
+      "NearbyStop": {
+        "description": "The closest MCTS bus stop to the resource (within about half a mile).",
+        "properties": {
+          "distance_m": {
+            "title": "Distance M",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "routes",
+          "distance_m"
+        ],
+        "title": "NearbyStop",
+        "type": "object"
+      },
       "NotificationItem": {
         "description": "One row of the inbox, ready to show. `route` is where the app goes\nwhen it's tapped.",
         "properties": {
@@ -4037,8 +4064,66 @@
         "title": "Resource",
         "type": "object"
       },
+      "ResourceOutcomes": {
+        "description": "How referrals to this resource have turned out so far.",
+        "properties": {
+          "declined": {
+            "title": "Declined",
+            "type": "integer"
+          },
+          "helped": {
+            "description": "Accepted or completed.",
+            "title": "Helped",
+            "type": "integer"
+          },
+          "referred": {
+            "title": "Referred",
+            "type": "integer"
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "helped / (helped + declined), once at least one has been decided.",
+            "title": "Success Rate"
+          }
+        },
+        "required": [
+          "referred",
+          "helped",
+          "declined",
+          "success_rate"
+        ],
+        "title": "ResourceOutcomes",
+        "type": "object"
+      },
       "ResourceSuggestion": {
         "properties": {
+          "nearest_stop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NearbyStop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcomes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResourceOutcomes"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "reason": {
             "title": "Reason",
             "type": "string"
@@ -4049,7 +4134,9 @@
         },
         "required": [
           "resource",
-          "reason"
+          "reason",
+          "outcomes",
+          "nearest_stop"
         ],
         "title": "ResourceSuggestion",
         "type": "object"
@@ -6955,7 +7042,7 @@
     },
     "/v1/cases/{case_id}/assist/resources": {
       "post": {
-        "description": "Resources that fit the case, each with a reason, chosen only from the\nresource directory. Without AI (`method: rules`), the resources in the\ncase's category.",
+        "description": "Resources that fit the case, each with a reason, chosen only from the\nresource directory. Without AI (`method: rules`), the resources in the\ncase's category. Both rank by how earlier referrals turned out\n(`outcomes`), and each says its nearest bus stop (`nearest_stop`).",
         "operationId": "suggest_resources_v1_cases__case_id__assist_resources_post",
         "parameters": [
           {

@@ -9,6 +9,7 @@ from dependencies import (
     get_case_assistant,
     get_case_service,
     get_current_worker,
+    get_public_data_service,
     get_resource_service,
     get_task_service,
 )
@@ -43,6 +44,7 @@ from models.task import CreateTaskRequest, Task
 from services import case_assist
 from services.case import CaseService
 from services.case_assist import CaseAssistant
+from services.public_data import PublicDataService
 from services.resource import ResourceService
 from services.task import TaskService
 
@@ -201,11 +203,15 @@ async def suggest_resources(
     service: CaseService = Depends(get_case_service),
     resources: ResourceService = Depends(get_resource_service),
     assistant: CaseAssistant | None = Depends(get_case_assistant),
+    public_data: PublicDataService = Depends(get_public_data_service),
 ) -> ResourceSuggestions:
     """Resources that fit the case, each with a reason, chosen only from the
     resource directory. Without AI (`method: rules`), the resources in the
-    case's category."""
-    return await case_assist.suggest_resources(service, resources, assistant, case_id)
+    case's category. Both rank by how earlier referrals turned out
+    (`outcomes`), and each says its nearest bus stop (`nearest_stop`)."""
+    return await case_assist.suggest_resources(
+        service, resources, assistant, case_id, case_assist.nearest_stop_with(public_data)
+    )
 
 
 @router.get("/{case_id}/language", response_model=CaseLanguage)

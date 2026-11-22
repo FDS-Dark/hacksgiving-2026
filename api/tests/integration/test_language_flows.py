@@ -23,6 +23,7 @@ class FakeResponses:
 
     async def parse(self, **kwargs):
         self.calls.append(kwargs)
+        out: DraftOutput | TranslateOutput
         if kwargs["text_format"] is DraftOutput:
             spanish = "Spanish" in kwargs["instructions"] or self.detected == "es"
             out = DraftOutput(

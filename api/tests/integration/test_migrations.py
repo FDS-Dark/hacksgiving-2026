@@ -102,6 +102,7 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0020_shift_handoffs",
             "0021_person_cases",
             "0022_case_language",
+            "0023_referral_outcomes",
         )
         for name in _revision(revision).FUNCTIONS
     }

@@ -149,7 +149,8 @@ export interface paths {
          * Suggest Resources
          * @description Resources that fit the case, each with a reason, chosen only from the
          *     resource directory. Without AI (`method: rules`), the resources in the
-         *     case's category.
+         *     case's category. Both rank by how earlier referrals turned out
+         *     (`outcomes`), and each says its nearest bus stop (`nearest_stop`).
          */
         post: operations["suggest_resources_v1_cases__case_id__assist_resources_post"];
         delete?: never;
@@ -2717,6 +2718,18 @@ export interface components {
             step: number;
         };
         /**
+         * NearbyStop
+         * @description The closest MCTS bus stop to the resource (within about half a mile).
+         */
+        NearbyStop: {
+            /** Distance M */
+            distance_m: number;
+            /** Name */
+            name: string;
+            /** Routes */
+            routes: string[];
+        };
+        /**
          * NotificationItem
          * @description One row of the inbox, ready to show. `route` is where the app goes
          *     when it's tapped.
@@ -3368,8 +3381,30 @@ export interface components {
             /** Website */
             website: string | null;
         };
+        /**
+         * ResourceOutcomes
+         * @description How referrals to this resource have turned out so far.
+         */
+        ResourceOutcomes: {
+            /** Declined */
+            declined: number;
+            /**
+             * Helped
+             * @description Accepted or completed.
+             */
+            helped: number;
+            /** Referred */
+            referred: number;
+            /**
+             * Success Rate
+             * @description helped / (helped + declined), once at least one has been decided.
+             */
+            success_rate: number | null;
+        };
         /** ResourceSuggestion */
         ResourceSuggestion: {
+            nearest_stop: components["schemas"]["NearbyStop"] | null;
+            outcomes: components["schemas"]["ResourceOutcomes"] | null;
             /** Reason */
             reason: string;
             resource: components["schemas"]["Resource"];

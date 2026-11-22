@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
 from databridge.handoff import HandoffDatabridge
+from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
@@ -40,6 +41,7 @@ from dependencies import (
     get_job_service,
     get_notification_service,
     get_oncall_service,
+    get_public_data_service,
     get_push_service,
     get_record_service,
     get_resource_service,
@@ -53,6 +55,7 @@ from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
 from services.handoff import HandoffService
+from services.public_data import PublicDataService
 from services.opportunity import OpportunityService
 from services.job import JobService
 from services.notification import NotificationService
@@ -188,6 +191,7 @@ async def api(database):
         get_job_service: lambda: JobService(JobDatabridge(executor)),
         get_oncall_service: lambda: oncall,
         get_handoff_service: lambda: handoffs,
+        get_public_data_service: lambda: PublicDataService(PublicDataDatabridge(executor)),
         get_push_service: lambda: PushService(PushDatabridge(executor), notifications, executor),
     })
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

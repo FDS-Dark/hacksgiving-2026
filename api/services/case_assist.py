@@ -20,6 +20,7 @@ picks that aren't on it are dropped, so a suggestion is always a real row.
 import asyncio
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -36,7 +37,9 @@ from models.assist import (
     DraftMessageRequest,
     DraftOutput,
     LanguageSource,
+    NearbyStop,
     RecommendationOutput,
+    ResourceOutcomes,
     ResourceSuggestion,
     ResourceSuggestions,
     SuggestionMethod,
@@ -52,6 +55,7 @@ from models.resource import Resource
 from models.routing import Service
 from models.staff import StaffMember
 from services.case import CaseService, Triage, Triager
+from services.public_data import PublicDataService
 from services.resource import ResourceService
 from services.routing import RoutingService
 
@@ -104,19 +108,52 @@ def case_context(detail: CaseDetail, *, public_only: bool = False) -> str:
     ])
 
 
-def rule_based_suggestions(detail: CaseDetail, resources: list[Resource]) -> ResourceSuggestions:
+def _outcomes_json(outcomes: ResourceOutcomes | None) -> dict[str, int] | None:
+    if outcomes is None:
+        return None
+    return {"referred": outcomes.referred, "helped": outcomes.helped, "declined": outcomes.declined}
+
+
+def learned_score(outcomes: ResourceOutcomes | None) -> float:
+    """How likely a referral here is to help, from past outcomes: helped
+    over decided, smoothed toward 1/2 so one lucky (or unlucky) referral
+    doesn't dominate. A resource never decided on scores 1/2."""
+    if outcomes is None:
+        return 0.5
+    return (outcomes.helped + 1) / (outcomes.helped + outcomes.declined + 2)
+
+
+def outcome_note(outcomes: ResourceOutcomes | None) -> str:
+    if outcomes is None or outcomes.helped + outcomes.declined == 0:
+        return ""
+    return f" Helped {outcomes.helped} of {outcomes.helped + outcomes.declined} people referred so far."
+
+
+def rule_based_suggestions(
+    detail: CaseDetail, resources: list[Resource], outcomes: dict[UUID, ResourceOutcomes] | None = None
+) -> ResourceSuggestions:
     """Active resources in the case's category that aren't on it yet, then
-    general ('other') ones, real before sample."""
+    general ('other') ones; within each, the ones whose referrals have
+    helped most first (referrals that learn), real before sample."""
+    outcomes = outcomes or {}
     taken = {r.resource_id for r in detail.referrals}
     category = detail.case.category
     fits = [r for r in resources if r.id not in taken and r.category == category]
     general = [r for r in resources if r.id not in taken and r.category == CaseCategory.OTHER and r not in fits]
     label = category.value.replace("_", " ")
+    tier = {r.id: 0 for r in fits} | {r.id: 1 for r in general}
     suggestions = [
-        ResourceSuggestion(resource=r, reason=f"Offers {label} help, this case's category.") for r in fits
-    ] + [ResourceSuggestion(resource=r, reason="A general resource that can connect people to other services.")
-         for r in general]
-    suggestions.sort(key=lambda s: s.resource.is_sample)
+        ResourceSuggestion(
+            resource=r, reason=f"Offers {label} help, this case's category." + outcome_note(outcomes.get(r.id))
+        )
+        for r in fits
+    ] + [ResourceSuggestion(
+        resource=r,
+        reason="A general resource that can connect people to other services." + outcome_note(outcomes.get(r.id)),
+    ) for r in general]
+    suggestions.sort(
+        key=lambda s: (tier[s.resource.id], -learned_score(outcomes.get(s.resource.id)), s.resource.is_sample)
+    )
     return ResourceSuggestions(method=SuggestionMethod.RULES, suggestions=suggestions[:MAX_SUGGESTIONS])
 
 
@@ -148,19 +185,25 @@ class CaseAssistant:
         )
         return CaseSummary(summary=out.summary.strip(), next_steps=[s.strip() for s in out.next_steps][:3])
 
-    async def suggest_resources(self, detail: CaseDetail, resources: list[Resource]) -> ResourceSuggestions:
+    async def suggest_resources(
+        self, detail: CaseDetail, resources: list[Resource], outcomes: dict[UUID, ResourceOutcomes] | None = None
+    ) -> ResourceSuggestions:
+        outcomes = outcomes or {}
         taken = {r.resource_id for r in detail.referrals}
         candidates = {str(r.id): r for r in resources if r.id not in taken}
         if not candidates:
             return ResourceSuggestions(method=SuggestionMethod.AI, suggestions=[])
         listing = json.dumps([
             {"id": rid, "name": r.name, "category": r.category.value, "description": r.description,
-             "neighborhood": r.neighborhood, "hours": r.hours}
+             "neighborhood": r.neighborhood, "hours": r.hours,
+             "past_referrals": _outcomes_json(outcomes.get(r.id))}
             for rid, r in candidates.items()
         ])
         out = await self._ask(
             BASE_INSTRUCTIONS + "\n\nPick the resources from the list that would help this person most, and "
-            "say why in one sentence each. Only use ids from the list.",
+            "say why in one sentence each. Only use ids from the list. `past_referrals` says how earlier "
+            "referrals to each resource turned out: when two fit about equally, prefer the one that has helped "
+            "more of the people sent to it, and don't hold a lack of history against a resource.",
             f"{case_context(detail)}\n\nResources (JSON):\n{listing}",
             RecommendationOutput,
         )
@@ -217,15 +260,51 @@ async def summarize(cases: CaseService, assistant: CaseAssistant | None, case_id
     return await assistant.summarize(await cases.detail(case_id))
 
 
+NearestStop = Callable[[float, float], Awaitable[NearbyStop | None]]
+STOP_RADIUS_M = 800
+
+
+def nearest_stop_with(public_data: PublicDataService) -> NearestStop:
+    """The closest MCTS stop within half a mile, from the loader's transit data."""
+
+    async def nearest(latitude: float, longitude: float) -> NearbyStop | None:
+        stops = await public_data.data.stops_near(latitude, longitude, STOP_RADIUS_M, 1)
+        if not stops:
+            return None
+        stop = stops[0]
+        return NearbyStop(name=stop.name, routes=stop.routes, distance_m=round(stop.distance_m))
+
+    return nearest
+
+
 async def suggest_resources(
-    cases: CaseService, resources: ResourceService, assistant: CaseAssistant | None, case_id: UUID
+    cases: CaseService,
+    resources: ResourceService,
+    assistant: CaseAssistant | None,
+    case_id: UUID,
+    nearest_stop: NearestStop | None = None,
 ) -> ResourceSuggestions:
-    """The assistant's picks, or without AI the rule-based ones."""
+    """The assistant's picks, or without AI the rule-based ones; both rank
+    by past referral outcomes. Each comes with its outcomes and the nearest
+    bus stop (when the resource has a location and transit data is loaded)."""
     detail = await cases.detail(case_id)
     directory = await resources.search(None, None)
+    outcomes = await resources.outcome_stats()
     if assistant is None:
-        return rule_based_suggestions(detail, directory)
-    return await assistant.suggest_resources(detail, directory)
+        found = rule_based_suggestions(detail, directory, outcomes)
+    else:
+        found = await assistant.suggest_resources(detail, directory, outcomes)
+    enriched = []
+    for suggestion in found.suggestions:
+        r = suggestion.resource
+        stop = None
+        if nearest_stop is not None and r.latitude is not None and r.longitude is not None:
+            try:
+                stop = await nearest_stop(r.latitude, r.longitude)
+            except Exception:
+                logger.warning("Couldn't look up the nearest stop for resource %s", r.id)
+        enriched.append(suggestion.model_copy(update={"outcomes": outcomes.get(r.id), "nearest_stop": stop}))
+    return found.model_copy(update={"suggestions": enriched})
 
 
 def _language(row: Row | None) -> CaseLanguage:
