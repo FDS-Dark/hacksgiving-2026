@@ -11,7 +11,9 @@ from logging_setup import configure_logging
 from routers.case import router as cases
 from routers.community import router as community
 from routers.health import router as health
+from routers.insights import router as insights
 from routers.opportunity import router as opportunities
+from routers.partner import router as partners
 from routers.job import router as jobs
 from routers.notification import router as notifications
 from routers.oncall import router as oncall
@@ -68,7 +70,7 @@ errors.install(app)
 for router in (
     health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
     # push before notifications: /notifications/test and /stats aren't ids.
-    staff, voice, records, jobs, public_data, oncall, push, notifications, community,
+    staff, voice, records, jobs, public_data, oncall, push, notifications, community, insights, partners,
 ):
     app.include_router(router, prefix="/v1")
 

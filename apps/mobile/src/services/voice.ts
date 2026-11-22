@@ -9,6 +9,7 @@ import type {
   ClaimHandoff,
   VoiceCallReview,
   VoiceCallReviewDetail,
+  VoiceDashboard,
   VoiceFollowUp,
   VoiceReferralDetail,
 } from '@/api/types';
@@ -20,6 +21,7 @@ export const voiceApi = {
   referral: (id: string) => request<VoiceReferralDetail>(`/voice/referrals/${id}`),
   staffCalls: () => request<VoiceCallReview[]>('/voice/staff/calls'),
   staffCall: (id: string) => request<VoiceCallReviewDetail>(`/voice/staff/calls/${id}`),
+  dashboard: () => request<VoiceDashboard>('/voice/dashboard'),
 };
 
 export const voiceKeys = {
@@ -29,6 +31,7 @@ export const voiceKeys = {
   referral: (id: string) => ['voice', 'referrals', id] as const,
   staffCalls: ['voice', 'staff', 'calls'] as const,
   staffCall: (id: string) => ['voice', 'staff', 'calls', id] as const,
+  dashboard: ['voice', 'dashboard'] as const,
 };
 
 export function useVoiceFollowUps() {
@@ -57,4 +60,9 @@ export function useStaffVoiceCalls() {
 
 export function useStaffVoiceCall(id: string) {
   return useQuery({ queryKey: voiceKeys.staffCall(id), queryFn: () => voiceApi.staffCall(id), enabled: !!id });
+}
+
+/** Ava's phone calls in numbers (Insights): calls, 911 redirects, referrals. */
+export function useVoiceDashboard() {
+  return useQuery({ queryKey: voiceKeys.dashboard, queryFn: voiceApi.dashboard, refetchInterval: 60_000 });
 }
