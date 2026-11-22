@@ -17,6 +17,7 @@ from dependencies import (
 )
 from models.case import AnonymousRequestReceipt
 from models.opportunity import Opportunity, OpportunityKind
+from models.case_enums import CaseCategory
 from models.routing import SERVICE_DESCRIPTIONS, Service
 from models.staff import StaffMember
 from models.user import AppUser
@@ -55,16 +56,16 @@ from models.voice import (
 from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.public_data import PublicDataService
-from services.routing import RoutingService
+from services.routing import Router
 from services.voice import VoiceService
 from settings import config
 
 router = APIRouter(prefix="/voice", tags=["voice"])
 logger = logging.getLogger(__name__)
 
-# The internal history note on a case Ava sent in as urgent.
+# The internal history note on a case the phone agent sent in as urgent.
 URGENT_NOTE = (
-    "Ava marked this phone request urgent: it needs someone today, but the "
+    "The phone agent marked this request urgent: it needs someone today, but the "
     "caller reported no danger right now. On call was paged."
 )
 
@@ -107,6 +108,23 @@ async def resources(
 ) -> list[VoiceResource]:
     """Return allowlisted routes; only approved destinations expose a number."""
     return await service.resources(category, language)
+
+
+@router.get(
+    "/directory-resources",
+    response_model=list[VoiceResource],
+    dependencies=[Depends(require_tool_secret)],
+)
+async def directory_resources(
+    category: CaseCategory,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    service: VoiceService = Depends(get_voice_service),
+) -> list[VoiceResource]:
+    """Return named community places for a routed ComForce service.
+
+    Results are directory listings, not guaranteed real-time availability.
+    """
+    return await service.directory_resources(category, q)
 
 
 @router.get(
@@ -188,7 +206,7 @@ async def app_capabilities() -> VoiceAppCapabilities:
 )
 async def route_voice_request(
     body: VoiceRouteRequest,
-    routing: RoutingService = Depends(get_routing_service),
+    routing: Router = Depends(get_routing_service),
     voice: VoiceService = Depends(get_voice_service),
 ) -> VoiceRouteResponse:
     """Use the app's classifier and keep its structured route on the call."""
@@ -219,7 +237,7 @@ async def submit_voice_request(
     voice: VoiceService = Depends(get_voice_service),
 ) -> VoiceCaseReceipt:
     """Create a consented anonymous Get Help case from approved fields only.
-    One Ava marks urgent (needs someone today, not 911) goes in at high
+    A request the phone agent marks urgent (needs someone today, not 911) goes in at high
     priority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`
     is off."""
     urgent = (

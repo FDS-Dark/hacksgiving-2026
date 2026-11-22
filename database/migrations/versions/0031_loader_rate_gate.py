@@ -1,23 +1,28 @@
 """The data loader's rate gate: app.loader_runs marks rate-limited attempts,
 loader_run_record records the mark, and loader_run_gate tells a loader when a
-source last asked its server. The SQL is in 0030_loader_rate_gate.sql.
+source last asked its server. The SQL is in 0031_loader_rate_gate.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0030
-Revises: 0029
+This was first merged to staging as revision 0030, colliding with main's
+0030_voice_directory_referrals. It is now 0031 and idempotent, so a database
+that already ran it as 0030 can run it again; migrations/env.py re-stamps such
+a database to 0029 so main's 0030 is applied first.
+
+Revision ID: 0031
+Revises: 0030
 Create Date: 2026-11-22
 """
 
 from alembic import context, op
 
-revision = "0030"
-down_revision = "0029"
+revision = "0031"
+down_revision = "0030"
 branch_labels = None
 depends_on = None
 
-# Every function 0030_loader_rate_gate.sql creates. loader_run_record is
+# Every function 0031_loader_rate_gate.sql creates. loader_run_record is
 # 0014's, replaced here with a new optional argument; the downgrade puts
 # 0014's definition back. test_migrations.py checks the union of every
 # revision's list against the database.

@@ -1,6 +1,6 @@
 """Text messages to requesters. Two backends, one interface (`SmsSender`):
 
-- `TwilioSms`: Twilio's Messages API (the account Ava's phone number is
+- `TwilioSms`: Twilio's Messages API (the account the phone agent's number is
   on), from `APP__SMS__FROM_NUMBER` or a Messaging Service.
 - `FakeSms`: logs instead of sending, for local development.
 

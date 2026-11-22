@@ -127,6 +127,13 @@ class VoiceService:
             for item in resources
         ]
 
+    async def directory_resources(
+        self, category: CaseCategory, query: str | None
+    ) -> list[VoiceResource]:
+        return await self.voice.directory_resources(
+            category, _short_string(query, 200)
+        )
+
     async def receive_elevenlabs_webhook(
         self,
         raw_body: bytes,

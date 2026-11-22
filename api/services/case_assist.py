@@ -57,7 +57,7 @@ from models.staff import StaffMember
 from services.case import CaseService, Triage, Triager
 from services.public_data import PublicDataService
 from services.resource import ResourceService
-from services.routing import RoutingService
+from services.routing import Router
 
 logger = logging.getLogger(__name__)
 
@@ -377,7 +377,7 @@ _SERVICE_TO_CATEGORY: dict[Service, CaseCategory] = {
 }
 
 
-def triage_with(router: RoutingService) -> Triager:
+def triage_with(router: Router) -> Triager:
     """A Triager (services/case.py) that asks the request router, giving up
     after TRIAGE_TIMEOUT_SECONDS so a submission never waits long."""
 

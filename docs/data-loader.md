@@ -75,7 +75,7 @@ the home network leave from the **same IP**. So:
   same network uses 2 more, so still set `HACKSGIVING_NO_LOADER=1` on
   all but one.
 - **Before asking**, `mpd_calls` reads its last attempts from
-  `app.loader_runs` (`loader_run_gate`, revision 0030). It's skipped when its
+  `app.loader_runs` (`loader_run_gate`, revision 0031). It's skipped when its
   last attempt (successful or failed, counted from when it started, with 30
   seconds' grace for a pod that starts early) is within the interval. So the
   CronJob, a catch-up run and a second loader on the same database all agree.
