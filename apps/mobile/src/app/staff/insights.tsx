@@ -143,7 +143,7 @@ export default function InsightsScreen() {
 
       {isAdmin ? <OncallResponse /> : null}
 
-      <AvaImpact />
+      <PhoneAgentImpact />
 
       <Card style={{ gap: space.md }}>
         <CardTitle title="Where cases stand" right={<Text style={[type.caption, { color: theme.textSecondary }]}>All time</Text>} />
@@ -262,16 +262,16 @@ function PatternsCard({ patterns, days }: { patterns: Pattern[]; days: number })
 }
 
 /**
- * Ava, the phone navigator (GET /v1/voice/dashboard): calls, callers told
+ * The phone agent (GET /v1/voice/dashboard): calls, callers told
  * to call 911, referrals offered and connected. All time; never transcripts.
  */
-function AvaImpact() {
+function PhoneAgentImpact() {
   const theme = useTheme();
   const dashboard = useVoiceDashboard();
   const stats = dashboard.data?.stats;
   return (
     <Card style={{ gap: space.md }}>
-      <CardTitle title="Ava on the phone" icon="call-outline" right={<Text style={[type.caption, { color: theme.textSecondary }]}>All time</Text>} />
+      <CardTitle title="Phone agent" icon="call-outline" right={<Text style={[type.caption, { color: theme.textSecondary }]}>All time</Text>} />
       {stats ? (
         <>
           <View style={styles.tiles}>

@@ -34,7 +34,7 @@ from models.staff import Role, StaffMember
 from models.user import AppUser
 from services.notification import NotificationService
 from services.oncall import OncallService
-from services.case import CaseService, Triage, title_from
+from services.case import CaseService, Triage, first_name, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.resource import ResourceService
 from services.staff import StaffService
@@ -125,19 +125,19 @@ async def test_a_submission_is_triaged_and_an_urgent_one_is_high_priority(sample
 
 
 async def test_an_urgent_note_makes_an_anonymous_request_high_priority_and_pages():
-    """Ava's urgent (not 911) phone requests: high priority, the note in the
+    """The phone agent's urgent (not 911) requests: high priority, the note in the
     history, and the on-call alert opened in the same write."""
     case = case_row(priority="high", requester_id=None)
     db = FakeFunctions(request_create=[case], case_add_update=[update_row(case)],
                        request_get_by_code=[public_row(case)], task_create=[])
     body = SubmitRequest(description="Sleeping outside tonight", category=CaseCategory.HOMELESSNESS)
 
-    receipt = await service(db).submit_anonymous_request(body, None, urgent_note="Ava marked this urgent.")
+    receipt = await service(db).submit_anonymous_request(body, None, urgent_note="Phone agent marked this urgent.")
 
     (created,) = db.called("request_create")
     assert created["priority"] == "high" and created["access_code_hash"] is not None
     (note,) = db.called("case_add_update")
-    assert (note["visibility"], note["content"]) == ("internal", "Ava marked this urgent.")
+    assert (note["visibility"], note["content"]) == ("internal", "Phone agent marked this urgent.")
     assert db.called("oncall_alert_open") == [{"case_id": case["id"]}]
     assert receipt.access_code
 
@@ -199,6 +199,43 @@ async def test_a_requester_never_sees_someone_elses_request(sample_user: AppUser
         await service(db).my_request(sample_user, uuid4())
 
     assert e.value.status_code == 404
+
+
+async def test_a_requester_sees_only_the_workers_first_name_and_their_contact_choice(sample_user: AppUser):
+    case = case_row(assigned_worker_id=uuid4(), assigned_worker_name="Dana Reyes", contact_method="text")
+    db = FakeFunctions(
+        request_get_for_user=[public_row(case)],
+        request_list_updates_for_user=[],
+        request_list_for_user=[public_row(case)],
+        case_get=[case],
+    )
+
+    detail = await service(db).my_request(sample_user, case["id"])
+    (listed,) = await service(db).my_requests(sample_user)
+
+    for request in (detail.request, listed):
+        assert request.worker_first_name == "Dana"
+        assert request.contact_method == "text"
+        dumped = request.model_dump()
+        assert "Reyes" not in str(dumped)
+        assert "contact_phone" not in dumped and "assigned_worker_id" not in dumped
+
+
+async def test_an_unassigned_request_waits_on_nobody_by_name(sample_user: AppUser):
+    case = case_row()
+    db = FakeFunctions(request_get_for_user=[public_row(case)], request_list_updates_for_user=[], case_get=[case])
+
+    detail = await service(db).my_request(sample_user, case["id"])
+
+    assert detail.request.worker_first_name is None
+
+
+def test_a_workers_first_name_never_comes_from_an_email():
+    assert first_name("Dana Reyes") == "Dana"
+    assert first_name("  Sam  ") == "Sam"
+    assert first_name("worker@comforce.org") is None
+    assert first_name(None) is None
+    assert first_name("") is None
 
 
 # --- Worker workflow -----------------------------------------------------------------

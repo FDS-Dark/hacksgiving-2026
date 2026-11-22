@@ -11,7 +11,7 @@ from databridge.job import JobDatabridge
 from databridge.record import RecordDatabridge
 from models.record import Extraction, ExtractedTask
 from services.extraction import ExtractionFailed
-from services.pipeline import ExtractStage, RedactStage, Stage
+from services.pipeline import EXTRACT, REDACT, TRANSCRIBE, ExtractStage, RedactStage, Stage
 from services.redaction import PatternRedactor
 from tests.helpers import auth_header
 from tests.integration.conftest import app_executor
@@ -54,7 +54,7 @@ async def worker_api(api, admin_conn):
 
 
 @pytest.fixture
-async def pipeline(database):
+async def pipeline(database, admin_conn):
     """A runner like the worker process's, with a fake AI. `run()` works the
     queue until nothing is left for these stages."""
     executor = app_executor(database)
@@ -70,6 +70,13 @@ async def pipeline(database):
         stages,
         worker_id=f"test-{uuid4().hex[:6]}",
         lease_seconds=120,
+    )
+    # The jobs table is shared across the suite: start from an empty queue for
+    # the record stages, so a job another test left queued (a delayed retry)
+    # isn't claimed here (see test_voice_records.py's fixture too).
+    await admin_conn.execute(
+        "DELETE FROM app.jobs WHERE kind = ANY($1::text[]) AND status IN ('queued', 'running')",
+        [TRANSCRIBE, REDACT, EXTRACT],
     )
 
     async def run() -> None:

@@ -59,9 +59,32 @@ config.attributes["run_sql_file"] = run_sql_file
 config.attributes["execute_script"] = execute_script
 
 
+def _repair_0030_collision(connection: Connection) -> None:
+    """The data loader's rate gate first reached staging as revision 0030, the
+    same id as main's 0030_voice_directory_referrals; it is now 0031. A
+    database that ran the loader's 0030 says it is at 0030 but lacks main's
+    0030 (its function voice_directory_resource_list). Put such a database
+    back at 0029 so the upgrade applies main's 0030, then re-runs the loader
+    revision, which is idempotent. Does nothing anywhere else."""
+    with connection.connection.cursor() as cursor:
+        cursor.execute("SELECT to_regclass('public.alembic_version') IS NOT NULL")
+        row = cursor.fetchone()
+        if row and row[0]:
+            cursor.execute(
+                "SELECT EXISTS (SELECT 1 FROM public.alembic_version WHERE version_num = '0030')"
+                " AND to_regprocedure('app.loader_run_gate(text)') IS NOT NULL"
+                " AND to_regproc('app.voice_directory_resource_list') IS NULL"
+            )
+            row = cursor.fetchone()
+            if row and row[0]:
+                cursor.execute("UPDATE public.alembic_version SET version_num = '0029'")
+    connection.commit()
+
+
 def run_migrations_online() -> None:
     engine = create_engine(_database_url(), poolclass=pool.NullPool)
     with engine.connect() as connection:
+        _repair_0030_collision(connection)
         # Each revision commits on its own, so a failure names the revision
         # that broke and leaves earlier ones applied.
         context.configure(connection=connection, transaction_per_migration=True)

@@ -1,14 +1,14 @@
 """Team chat (app.chat_messages, app.chat_reads), requests for help sent to
 partners (app.partner_requests), who delivered a referral's help (new
 app.case_referrals columns) and each worker's export of their own records.
-The SQL is in 0031_team_chat_and_delivery.sql; the downgrade in
-0031_team_chat_and_delivery.downgrade.sql.
+The SQL is in 0032_team_chat_and_delivery.sql; the downgrade in
+0032_team_chat_and_delivery.downgrade.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0031
-Revises: 0030
+Revision ID: 0032
+Revises: 0031
 Create Date: 2026-11-22
 """
 
@@ -16,12 +16,12 @@ from pathlib import Path
 
 from alembic import context, op
 
-revision = "0031"
-down_revision = "0030"
+revision = "0032"
+down_revision = "0031"
 branch_labels = None
 depends_on = None
 
-# Every function 0031_team_chat_and_delivery.sql creates (none is
+# Every function 0032_team_chat_and_delivery.sql creates (none is
 # overloaded). referral_update is replaced (it gains the delivered-by
 # parameters) and notification_view gains chat_channel: the downgrade puts
 # 0005's referral functions and 0019's view back. test_migrations.py checks
@@ -52,5 +52,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     drops = "\n".join(f"DROP FUNCTION app.{name};" for name in FUNCTIONS)
-    rest = Path(__file__).with_name("0031_team_chat_and_delivery.downgrade.sql").read_text(encoding="utf-8")
+    rest = Path(__file__).with_name("0032_team_chat_and_delivery.downgrade.sql").read_text(encoding="utf-8")
     context.config.attributes["execute_script"](op.get_bind(), drops + "\n" + rest)

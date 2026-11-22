@@ -1,4 +1,4 @@
-"""Team chat for staff (0031_team_chat_and_delivery.sql): a Team channel,
+"""Team chat for staff (0032_team_chat_and_delivery.sql): a Team channel,
 an On call channel and one channel per case. Never shown to residents."""
 
 from datetime import datetime

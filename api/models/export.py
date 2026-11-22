@@ -1,5 +1,5 @@
 """A worker's export of their own records ("Export my records", staff Me):
-0031_team_chat_and_delivery.sql's export_* functions. Never contact
+0032_team_chat_and_delivery.sql's export_* functions. Never contact
 details, never raw text or audio."""
 
 from datetime import datetime

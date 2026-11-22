@@ -1,11 +1,10 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
-import { Button, ErrorBanner, Field, Group, Notice, Row, success, Toggle } from '@/components/ui';
+import { Button, ErrorBanner, Group, Notice, Row, Toggle } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { ensurePermission, openSettings, usePushPermission } from '@/lib/push';
 import { withKindMuted } from '@/lib/pushRules';
@@ -14,7 +13,7 @@ import { useApiHealth } from '@/services/health';
 import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
-import { useClaimVoiceHandoff, useVoiceFollowUps } from '@/services/voice';
+import { useVoiceFollowUps } from '@/services/voice';
 import { space, useTheme } from '@/theme/tokens';
 
 const COMFORCE_SITE = 'https://comforcemilwaukee.com';
@@ -29,9 +28,7 @@ export default function MeTab() {
   const since = me.data ? new Date(me.data.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : null;
 
   return (
-    <Page refreshing={me.isRefetching} onRefresh={() => me.refetch()} contentStyle={{ maxWidth: 560, gap: space.lg }}>
-      <ResidentHeader title="Me" />
-
+    <Page header={<ResidentHeader title="Me" />} refreshing={me.isRefetching} onRefresh={() => me.refetch()} contentStyle={{ maxWidth: 560, gap: space.lg }}>
       <View style={styles.profile}>
         <Avatar name={me.data?.display_name} size={52} />
         <View style={{ flex: 1, gap: 2 }}>
@@ -45,21 +42,16 @@ export default function MeTab() {
       {health.error ? <Notice icon="cloud-offline-outline">Can’t reach ComForce right now.</Notice> : null}
       {me.error ? <ErrorBanner error={me.error} onRetry={() => me.refetch()} /> : null}
 
-      <Group header="Safety" footer="Quick exit is on every screen. It leaves the app at once and opens a weather site.">
-        <Row title="Quick exit opens" icon="close-circle-outline" detail="A weather site" />
+      <PhoneCalls />
+
+      <Group header="Safety" footer="Quick exit is at the top of every screen. It hides this app and opens weather.">
+        <Row title="Quick exit" icon="close-circle-outline" detail="Opens weather" />
       </Group>
 
       {status === 'signedIn' ? <NotificationSettings /> : null}
 
-      <PhoneCalls />
-
-      <Group header="Your neighborhood">
-        <Row title="Neighborhood awareness" icon="map-outline" accessory="chevron" onPress={() => router.push('/safety')} />
-        <Row title="Safety alerts" icon="notifications-outline" accessory="chevron" onPress={() => router.push('/alerts')} />
-      </Group>
-
       <Group header="ComForce MKE">
-        <Row title="Volunteer and jobs" icon="heart-outline" accessory="chevron" onPress={() => router.push('/opportunities')} />
+        <Row title="Jobs and programs" icon="briefcase-outline" accessory="chevron" onPress={() => router.push('/opportunities')} />
         <Row title="About ComForce" icon="information-circle-outline" accessory="chevron" onPress={() => Linking.openURL(COMFORCE_SITE)} />
       </Group>
 
@@ -115,7 +107,7 @@ function NotificationSettings() {
         />
         <Row
           title="Community alerts"
-          subtitle="Serious weather in Milwaukee, like extreme cold. Off unless you turn it on."
+          subtitle="Milwaukee severe-weather alerts. Off unless you turn it on."
           icon="cloudy-outline"
           right={
             <Toggle
@@ -137,69 +129,22 @@ function NotificationSettings() {
   );
 }
 
-/** Connect a call with the phone assistant to this account, and its follow-ups. */
+/** Me > Phone calls: one row into the call history (/referrals), with how many calls are linked. */
 function PhoneCalls() {
-  const followUps = useVoiceFollowUps();
-  const claim = useClaimVoiceHandoff();
-  const [code, setCode] = useState('');
-  const [callConnected, setCallConnected] = useState(false);
-
-  const connect = () =>
-    claim.mutate(
-      { code: code.trim().toUpperCase() },
-      {
-        onSuccess: () => {
-          setCode('');
-          setCallConnected(true);
-          success();
-        },
-      },
-    );
-
+  const calls = useVoiceFollowUps();
+  const count = calls.data?.length;
   return (
-    <>
-      <Group header="Phone calls" footer="Ask the phone assistant for an app code. It works once, for 15 minutes. No phone number or transcript is saved.">
-        <Row
-          title="Call code"
-          right={
-            <Field
-              value={code}
-              onChangeText={(value) => {
-                setCallConnected(false);
-                setCode(value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 8));
-              }}
-              placeholder="ABCD2345"
-              autoCapitalize="characters"
-              autoCorrect={false}
-              accessibilityLabel="Call handoff code"
-              style={{ minWidth: 110, textAlign: 'center' }}
-            />
-          }
-        />
-        <Row title="Connect call" tone="accent" onPress={connect} disabled={code.length !== 8 || claim.isPending} />
-        <Row
-          title="Past referrals"
-          subtitle="Recommendations and contact details from connected calls"
-          icon="link-outline"
-          accessory="chevron"
-          onPress={() => router.push('/referrals/index')}
-        />
-        {followUps.data?.map((item) => (
-          <Row
-            key={item.id}
-            title={item.need_category?.replaceAll('-', ' ') ?? 'Community support call'}
-            subtitle={item.resources.length ? item.resources.join(', ') : 'No resource selected yet'}
-            detail={item.urgency_tier ?? undefined}
-          />
-        ))}
-      </Group>
-      {callConnected ? (
-        <Notice icon="checkmark-circle-outline">
-          Call connected. Your follow-up appears below and under Safety alerts.
-        </Notice>
-      ) : null}
-      {claim.error ? <ErrorBanner error={claim.error} /> : null}
-    </>
+    <Group>
+      <Row
+        title="Phone calls"
+        subtitle="Places and follow-ups from your calls. Link a call with its phone-call code."
+        icon="call-outline"
+        detail={count ? String(count) : undefined}
+        accessibilityLabel={count ? `Phone calls, ${count} linked` : 'Phone calls'}
+        accessory="chevron"
+        onPress={() => router.push('/referrals')}
+      />
+    </Group>
   );
 }
 

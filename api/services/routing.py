@@ -3,6 +3,7 @@ one of ComForce MKE's services, using an OpenAI model with structured
 outputs so the answer is always a valid `Routing`."""
 
 import logging
+from typing import Protocol
 
 from openai.resources.responses import AsyncResponses
 
@@ -10,6 +11,13 @@ from errors import ApiError
 from models.routing import SERVICE_DESCRIPTIONS, RouteResponse, Routing, Service
 
 logger = logging.getLogger(__name__)
+
+
+class Router(Protocol):
+    """What routes a request: RoutingService (a generative model) or
+    DecisionsRoutingService (services/routing_decisions.py)."""
+
+    async def route(self, message: str) -> RouteResponse: ...
 
 
 def build_instructions() -> str:

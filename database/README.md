@@ -32,8 +32,9 @@ revision runs explicit SQL. Same migrations everywhere:
 | `0003_api_functions` | Every function the API calls, `app.<domain>_<verb>` ([ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)) |
 | `0004_supabase_lockdown` | On Supabase only: no default grants to `anon`/`authenticated` in `public` |
 | `0029_voice_safety_and_follow_up` | Safe callback plans, structured call-resume checkpoints, referral check-ins and voice impact funnel |
-| `0030_loader_rate_gate` | The data loader's rate gate: `loader_runs.rate_limited`, and `loader_run_gate` (when a source last asked its server) |
-| `0031_team_chat_and_delivery` | Staff team chat (Team, On call, per case) and its inbox rows, requests for help sent to partners, who delivered a completed referral's help, and each worker's export of their own records |
+| `0030_voice_directory_referrals` | Makes named, non-sample directory places available to the phone agent with stable referral slugs |
+| `0031_loader_rate_gate` | The data loader's rate gate: `loader_runs.rate_limited`, and `loader_run_gate` (when a source last asked its server) |
+| `0032_team_chat_and_delivery` | Staff team chat (Team, On call, per case) and its inbox rows, requests for help sent to partners, who delivered a completed referral's help, and each worker's export of their own records |
 
 ## The API's functions
 

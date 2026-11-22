@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Team chat, requests to partners, who delivered the help, and each worker's
--- export of their own records (see 0031_team_chat_and_delivery.py).
+-- export of their own records (see 0032_team_chat_and_delivery.py).
 --
 -- app.chat_messages       staff-only messages in three kinds of channel:
 --                         team (all staff), oncall (whoever is on call now,

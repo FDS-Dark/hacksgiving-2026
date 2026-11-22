@@ -1,5 +1,5 @@
 """Team chat, requests for help to partners, who delivered a referral's help,
-and "Export my records" (0031_team_chat_and_delivery.sql) over HTTP against
+and "Export my records" (0032_team_chat_and_delivery.sql) over HTTP against
 real PostgreSQL, as the app role."""
 
 from uuid import UUID, uuid4

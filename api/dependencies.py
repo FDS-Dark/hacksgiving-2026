@@ -63,7 +63,8 @@ from services.public_data import PublicDataService
 from services.community import CommunityService
 from services.request_push import RequestPushService
 from services.resource import ResourceService
-from services.routing import RoutingService
+from services.routing import Router, RoutingService
+from services.routing_decisions import DecisionsRoutingService
 from services.staff import StaffService
 from services.task import TaskService
 from services.text import CaseTextService
@@ -223,10 +224,13 @@ def _openai() -> AsyncOpenAI:
 
 
 @cache
-def get_routing_service() -> RoutingService:
+def get_routing_service() -> Router:
     if not config.openai.api_key:
         raise RuntimeError("APP__OPENAI__API_KEY is not set")
-    return RoutingService(_openai().responses, config.openai.model)
+    responses = RoutingService(_openai().responses, config.openai.model)
+    if config.openai.routing_backend == "responses":
+        return responses
+    return DecisionsRoutingService(config.openai.api_key, config.openai.decisions_model, fallback=responses)
 
 
 # The AI extras are optional: with no APP__OPENAI__API_KEY these give None,

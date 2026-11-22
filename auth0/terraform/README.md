@@ -7,10 +7,19 @@ tenant settings. It owns:
 
 - **Hacksgiving API** (resource server). RS256, offline access, identifier
   `https://api.hacksgiving.app`.
-- **Hacksgiving Mobile** (Native app), for builds. Auth code + PKCE, no client
-  secret, rotating refresh tokens. Callback `hacksgiving://auth` only.
-- **Hacksgiving Mobile (dev)**, the same for Expo Go, whose `exp://` callbacks
-  point at a developer's machine. Kept apart so no build accepts them.
+- The **build client** (`auth0_client.mobile`, Native app), for builds. Auth
+  code + PKCE, no client secret, rotating refresh tokens. Callback
+  `hacksgiving://auth` only.
+- The **dev client** (`auth0_client.mobile_dev`), the same for Expo Go, whose
+  `exp://` callbacks point at a developer's machine. Kept apart so no build
+  accepts them.
+
+Both clients are named **ComForce MKE**, because Universal Login shows the
+client's name to the person signing in; their descriptions tell them apart
+in the dashboard. The tenant's own name (Cooli) also shows on the login page,
+and this root can't change it: tenant settings belong to Cooli's
+`auth0/terraform`, and the Hacksgiving Terraform app has no
+`update:tenant_settings` scope.
 - The `Username-Password-Authentication` connection, enabled for the app.
 - **Hacksgiving E2E**, a machine-to-machine app the post-deploy smoke test signs
   in with (client credentials, Hacksgiving API audience only).

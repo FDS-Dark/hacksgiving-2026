@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toApiError } from '@/api/client';
 import { TabBar, type TabItem } from '@/components/TabBar';
+import { tabReplaceAnimation } from '@/lib/tabDirection';
 import { Button, ErrorBanner, Loading, Notice } from '@/components/ui';
 import { Card } from '@/components/staff/kit';
 import { showCommunityView } from '@/lib/viewMode';
@@ -50,7 +51,13 @@ export default function StaffLayout() {
   else {
     body = (
       <>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
+        <Stack
+          screenOptions={() => ({
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.bg },
+            animationTypeForReplace: tabReplaceAnimation(),
+          })}
+        >
           <Stack.Screen name="index" />
           <Stack.Screen name="cases/index" />
           <Stack.Screen name="cases/new" />

@@ -1,14 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useDeferredValue, useState } from 'react';
-import { StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { OPPORTUNITY_KINDS, type OpportunityKind } from '@/api/types';
 import { AUDIENCE_INFO, KIND_INFO, OpportunityCard } from '@/components/OpportunityCard';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
-import { Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
+import { Button, Chip, Chips, EmptyState, ErrorBanner, Loading } from '@/components/ui';
 import { useOpportunities } from '@/services/opportunities';
 import { radius, space, useTheme } from '@/theme/tokens';
+
+/** USAJOBS, one of the public boards the data loader imports from (api/adapters/usajobs.py), searched near Milwaukee. */
+const PUBLIC_JOB_BOARD = 'https://www.usajobs.gov/Search/Results?l=Milwaukee%2C%20Wisconsin';
 
 /** Residents search jobs, education and volunteer work: ComForce's own
  *  postings first, then listings the data loader imports from job boards. */
@@ -23,24 +26,27 @@ export default function OpportunitiesScreen() {
   const list = useOpportunities({ q: search, kind, audience: secondChance ? 'second_chance' : null });
   const filtered = Boolean(q.trim() || kind || secondChance);
   const columns = width >= 900 ? 2 : 1;
+  const publicBoards = <Button label="Search public job boards" icon="open-outline" variant="plain" onPress={() => Linking.openURL(PUBLIC_JOB_BOARD)} />;
 
   return (
-    <Page refreshing={list.isRefetching} onRefresh={() => list.refetch()} contentStyle={{ gap: space.lg }}>
-      <ResidentHeader kicker="Jobs, education and volunteering" title="Opportunities" />
-      <Text style={{ fontSize: 15, color: theme.textSecondary }}>
-        Postings from ComForce MKE and our partners come first, then free training and jobs from public job boards.
-      </Text>
+    <Page
+      header={<ResidentHeader title="Jobs and programs" back="/me" />}
+      refreshing={list.isRefetching}
+      onRefresh={() => list.refetch()}
+      contentStyle={{ gap: space.lg }}
+    >
+      <Text style={{ fontSize: 15, color: theme.textSecondary }}>Jobs and programs you can apply for. ComForce postings come first.</Text>
 
       <View style={[styles.search, { backgroundColor: theme.fill }]}>
         <Ionicons name="search" size={18} color={theme.textSecondary} />
         <TextInput
           value={q}
           onChangeText={setQ}
-          placeholder="Search by title, organization or neighborhood"
+          placeholder="Search jobs and programs"
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
           style={[styles.searchInput, { color: theme.text }]}
-          accessibilityLabel="Search opportunities"
+          accessibilityLabel="Search jobs and programs"
           autoCorrect={false}
           returnKeyType="search"
         />
@@ -55,23 +61,46 @@ export default function OpportunitiesScreen() {
       </Chips>
 
       {list.isPending ? (
-        <Loading label="Loading opportunities" />
+        <Loading label="Loading jobs and programs" />
       ) : list.isError ? (
         <ErrorBanner error={list.error} onRetry={() => list.refetch()} />
       ) : list.data.length === 0 ? (
         <EmptyState
           icon={kind ? KIND_INFO[kind].icon : 'search-outline'}
-          title="Nothing found"
-          body={filtered ? 'Try a different search or filter.' : 'No opportunities are posted right now. Check back soon.'}
+          title={filtered ? 'Nothing matches' : 'Nothing posted right now'}
+          body={
+            filtered
+              ? 'Try fewer filters or other words. You can also search public job boards.'
+              : 'ComForce adds jobs and programs often. Until then, search public job boards near Milwaukee.'
+          }
+          action={
+            <View style={{ gap: space.sm, alignItems: 'center' }}>
+              {filtered ? (
+                <Button
+                  label="Clear filters"
+                  variant="tinted"
+                  onPress={() => {
+                    setQ('');
+                    setKind(null);
+                    setSecondChance(false);
+                  }}
+                />
+              ) : null}
+              {publicBoards}
+            </View>
+          }
         />
       ) : (
-        <View style={styles.grid}>
-          {list.data.map((o) => (
-            <View key={o.id} style={{ width: `${100 / columns}%`, padding: space.sm }}>
-              <OpportunityCard item={o} />
-            </View>
-          ))}
-        </View>
+        <>
+          <View style={styles.grid}>
+            {list.data.map((o) => (
+              <View key={o.id} style={{ width: `${100 / columns}%`, padding: space.sm }}>
+                <OpportunityCard item={o} />
+              </View>
+            ))}
+          </View>
+          {publicBoards}
+        </>
       )}
     </Page>
   );

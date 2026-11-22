@@ -1,4 +1,4 @@
-"""A worker's own records, for their export (0031_team_chat_and_delivery.sql)."""
+"""A worker's own records, for their export (0032_team_chat_and_delivery.sql)."""
 
 from uuid import UUID
 

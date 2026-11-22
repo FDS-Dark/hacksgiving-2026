@@ -1,5 +1,5 @@
 """Partners, case shares (0021_partners_and_outreach.sql) and requests for
-help sent to partners (0031_team_chat_and_delivery.sql)."""
+help sent to partners (0032_team_chat_and_delivery.sql)."""
 
 from uuid import UUID
 

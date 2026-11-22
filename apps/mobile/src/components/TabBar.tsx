@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { IconName } from '@/components/ui';
+import { setTabReplaceAnimation, tabDirection } from '@/lib/tabDirection';
+import { tabAction } from '@/lib/tabs';
 import { space, useTheme } from '@/theme/tokens';
 
 export interface TabItem {
@@ -27,21 +29,27 @@ export function TabBar({ tabs }: { tabs: TabItem[] }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const activeIndex = tabs.findIndex((t) => t.match(pathname));
   return (
     <View
       accessibilityRole="tablist"
       style={[styles.bar, { backgroundColor: theme.surface, borderTopColor: theme.separator, paddingBottom: Math.max(insets.bottom, space.md) }]}
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, index) => {
         const active = tab.match(pathname);
         const color = active || tab.raised ? theme.accent : theme.textSecondary;
         const go = () => {
-          if (active) return;
-          if (tab.push) return router.push(tab.push);
-          if (!tab.href) return;
-          // Pop anything pushed over the current tab first, so Back never lands on an old tab.
+          const action = tabAction(tab, pathname);
+          if (action.kind === 'push') return router.push(action.href);
+          if (action.kind !== 'root') return;
+          // Pop anything pushed over the current tab first, so Back never lands on an old tab,
+          // and a selected tab tapped on a nested screen returns to its root.
           if (router.canDismiss()) router.dismissAll();
-          router.replace(tab.href);
+          // Slide toward the tab that was pressed: from the right for a tab
+          // to the right, from the left for one to the left. Going back to
+          // the selected tab's own root reads as going back, so it pops.
+          setTabReplaceAnimation(index === activeIndex ? 'pop' : tabDirection(activeIndex, index));
+          router.replace(action.href);
         };
         return (
           <Pressable
@@ -69,7 +77,7 @@ export function TabBar({ tabs }: { tabs: TabItem[] }) {
 
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'flex-end', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 8 },
-  tab: { flex: 1, alignItems: 'center', gap: 4 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 4, minHeight: 44 },
   label: { fontSize: 11 },
   raised: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginTop: -22, borderWidth: 4 },
 });

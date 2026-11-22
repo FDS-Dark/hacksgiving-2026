@@ -1,5 +1,5 @@
--- The downgrade of 0031_team_chat_and_delivery.sql, after its FUNCTIONS are
--- dropped (0031_team_chat_and_delivery.py).
+-- The downgrade of 0032_team_chat_and_delivery.sql, after its FUNCTIONS are
+-- dropped (0032_team_chat_and_delivery.py).
 
 -- Referrals: the view loses its delivery columns, and a view can't drop a
 -- column in place, so the functions returning its row go and come back

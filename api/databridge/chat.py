@@ -1,4 +1,4 @@
-"""Team chat (0031_team_chat_and_delivery.sql)."""
+"""Team chat (0032_team_chat_and_delivery.sql)."""
 
 from datetime import datetime
 from typing import Any

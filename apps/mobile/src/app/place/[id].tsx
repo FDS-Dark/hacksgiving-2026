@@ -96,7 +96,7 @@ function PlaceBody({ place: r }: { place: Resource }) {
           <Text style={[styles.section, { color: theme.text }]}>Getting there by bus</Text>
           <Card style={{ gap: 0, paddingVertical: 0 }}>
             {transit.isPending ? <Fact icon="bus-outline" text="Checking nearby MCTS service…" /> : null}
-            {transit.error ? <Fact icon="alert-circle-outline" text="Live transit information is unavailable right now." /> : null}
+            {transit.error ? <Fact icon="alert-circle-outline" text="Bus times can’t load right now." /> : null}
             {nearestStop ? (
               <>
                 <Fact

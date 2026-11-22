@@ -80,7 +80,7 @@ export type CallWindow = (typeof CALL_WINDOWS)[number]['value'];
 export const CALL_REFRESH_MS = 30_000;
 
 /** MPD's own publishing delay, shown wherever calls appear. */
-export const CALL_DELAY_NOTE = 'MPD publishes calls 30–90 min after dispatch';
+export const CALL_DELAY_NOTE = 'These calls may be 30–90 minutes old';
 
 export type RecentCall = {
   id: string;
