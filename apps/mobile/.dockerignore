@@ -1,0 +1,11 @@
+# web.Dockerfile builds from a clean npm ci; never send local installs,
+# native projects, build output or local env (it may hold a dev token).
+node_modules
+.expo
+dist
+web-build
+ios
+android
+coverage
+.env*.local
+.env.local
