@@ -1038,7 +1038,7 @@ export interface paths {
          * @description Start a voice debrief: a record waiting for its audio, and a one-time
          *     URL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.
          *     The audio is deleted as soon as it's transcribed. 503 when voice isn't
-         *     set up on the server.
+         *     set up on the server. Send `case_id` for a debrief about an existing case.
          */
         post: operations["start_voice_record_v1_records_voice_post"];
         delete?: never;
@@ -1080,8 +1080,10 @@ export interface paths {
         /**
          * Confirm Record
          * @description Open a case from the reviewed record (assigned to the caller), with its
-         *     planned tasks plus the ones sent here. Calling it again returns the same
-         *     case.
+         *     planned tasks plus the ones sent here. A debrief captured for an existing
+         *     case (`case_id` set) is added to that case instead: an internal note, its
+         *     tasks, and a higher priority if it calls for one (`updated_existing`).
+         *     Calling it again returns the same case.
          */
         post: operations["confirm_record_v1_records__record_id__confirm_post"];
         delete?: never;
@@ -2063,6 +2065,12 @@ export interface components {
         ConfirmedRecord: {
             case: components["schemas"]["Case"];
             record: components["schemas"]["Record"];
+            /**
+             * Updated Existing
+             * @description True when the debrief was added to an existing case rather than opening one.
+             * @default false
+             */
+            updated_existing: boolean;
         };
         /**
          * ContactMethod
@@ -2158,6 +2166,11 @@ export interface components {
          * @description A typed debrief. (Voice records upload audio first; see the pipeline.)
          */
         CreateRecordRequest: {
+            /**
+             * Case Id
+             * @description The case this debrief is about (e.g. the urgent case being responded to). Confirming it then updates that case instead of opening a new one.
+             */
+            case_id?: string | null;
             /** Text */
             text: string;
         };
@@ -3143,6 +3156,14 @@ export interface components {
             /** Is Worker */
             is_worker: boolean;
             role: components["schemas"]["Role"];
+        };
+        /** StartVoiceRecordRequest */
+        StartVoiceRecordRequest: {
+            /**
+             * Case Id
+             * @description As for a typed debrief: the case it's about.
+             */
+            case_id?: string | null;
         };
         /** StatusCount */
         StatusCount: {
@@ -5524,7 +5545,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StartVoiceRecordRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -5533,6 +5558,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

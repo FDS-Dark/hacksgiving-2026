@@ -921,11 +921,18 @@
           },
           "record": {
             "$ref": "#/components/schemas/Record"
+          },
+          "updated_existing": {
+            "default": false,
+            "description": "True when the debrief was added to an existing case rather than opening one.",
+            "title": "Updated Existing",
+            "type": "boolean"
           }
         },
         "required": [
           "record",
-          "case"
+          "case",
+          "updated_existing"
         ],
         "title": "ConfirmedRecord",
         "type": "object"
@@ -1228,6 +1235,19 @@
       "CreateRecordRequest": {
         "description": "A typed debrief. (Voice records upload audio first; see the pipeline.)",
         "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The case this debrief is about (e.g. the urgent case being responded to). Confirming it then updates that case instead of opening a new one.",
+            "title": "Case Id"
+          },
           "text": {
             "maxLength": 20000,
             "minLength": 1,
@@ -3874,6 +3894,25 @@
           "is_admin"
         ],
         "title": "StaffStatus",
+        "type": "object"
+      },
+      "StartVoiceRecordRequest": {
+        "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "As for a typed debrief: the case it's about.",
+            "title": "Case Id"
+          }
+        },
+        "title": "StartVoiceRecordRequest",
         "type": "object"
       },
       "StatusCount": {
@@ -8627,8 +8666,25 @@
     },
     "/v1/records/voice": {
       "post": {
-        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server.",
+        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server. Send `case_id` for a debrief about an existing case.",
         "operationId": "start_voice_record_v1_records_voice_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StartVoiceRecordRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -8639,6 +8695,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Start Voice Record",
@@ -8734,7 +8800,7 @@
     },
     "/v1/records/{record_id}/confirm": {
       "post": {
-        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. Calling it again returns the same\ncase.",
+        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. A debrief captured for an existing\ncase (`case_id` set) is added to that case instead: an internal note, its\ntasks, and a higher priority if it calls for one (`updated_existing`).\nCalling it again returns the same case.",
         "operationId": "confirm_record_v1_records__record_id__confirm_post",
         "parameters": [
           {

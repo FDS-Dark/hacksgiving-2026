@@ -54,6 +54,11 @@ class RecordDatabridge(Databridge):
         row = await self._first("record_finish_confirm", record_id=record_id, case_id=case_id)
         return StoredRecord(**row) if row else None
 
+    async def set_case(self, record_id: UUID, case_id: UUID) -> StoredRecord | None:
+        """Ties a record (not yet confirmed) to the case it's about."""
+        row = await self._first("record_set_case", record_id=record_id, case_id=case_id)
+        return StoredRecord(**row) if row else None
+
     async def abort_confirm(self, record_id: UUID) -> None:
         await self._first("record_abort_confirm", record_id=record_id)
 
