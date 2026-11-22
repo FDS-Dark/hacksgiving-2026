@@ -19,7 +19,9 @@ from openai import AsyncOpenAI
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.insights import InsightsDatabridge
 from databridge.opportunity import OpportunityDatabridge
+from databridge.partner import PartnerDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
@@ -31,6 +33,7 @@ from databridge.request_push import RequestPushDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
+from databridge.text import TextDatabridge
 from databridge.user import UserDatabridge
 from databridge.voice import VoiceDatabridge
 from engine.postgres_engine import PostgresDBEngine
@@ -38,6 +41,7 @@ from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
+from services.insights import InsightsService
 from services.job import JobService
 from services.notification import NotificationService
 from services.oncall import OncallService
@@ -45,6 +49,7 @@ from services.push import PushService
 from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
+from services.partner import PartnerService
 from services.public_data import PublicDataService
 from services.community import CommunityService
 from services.request_push import RequestPushService
@@ -52,6 +57,7 @@ from services.resource import ResourceService
 from services.routing import RoutingService
 from services.staff import StaffService
 from services.task import TaskService
+from services.text import CaseTextService
 from services.user import UserService
 from services.voice import VoiceService
 from settings import config
@@ -130,6 +136,22 @@ def get_opportunity_service() -> OpportunityService:
 @cache
 def get_public_data_service() -> PublicDataService:
     return PublicDataService(PublicDataDatabridge(get_executor()))
+
+
+@cache
+def get_case_text_service() -> CaseTextService:
+    return CaseTextService(TextDatabridge(get_executor()))
+
+
+@cache
+def get_partner_service() -> PartnerService:
+    executor = get_executor()
+    return PartnerService(PartnerDatabridge(executor), CaseDatabridge(executor), executor)
+
+
+@cache
+def get_insights_service() -> InsightsService:
+    return InsightsService(InsightsDatabridge(get_executor()), config.oncall.timezone)
 
 
 @cache

@@ -23,11 +23,13 @@ from models.voice import (
     SafeContactPlan,
     VoiceCheckpointRequest,
     VoiceCaseRequest,
+    VoiceCaseUrgency,
     VoiceReferralStatus,
     VoiceRouteRequest,
 )
 from routers.voice import (
     awareness,
+    URGENT_NOTE,
     app_capabilities,
     opportunities,
     route_voice_request,
@@ -37,6 +39,7 @@ from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.routing import RoutingService
 from services.voice import VoiceService, verify_elevenlabs_signature
+from settings import config
 from tests.unit.fakes import FakeFunctions
 
 NOW = datetime.now(timezone.utc)
@@ -208,6 +211,7 @@ async def test_case_submission_event_keeps_only_structured_case_metadata():
             "request_number": 1042,
             "category": "transportation",
             "contact_method": "text",
+            "urgency": "routine",
             "safe_to_contact": True,
             "voicemail_allowed": False,
             "neutral_message_only": False,
@@ -227,7 +231,7 @@ async def test_case_submission_event_keeps_only_structured_case_metadata():
         1042,
         CaseCategory.TRANSPORTATION,
         ContactMethod.TEXT,
-        SafeContactPlan(
+        contact_plan=SafeContactPlan(
             contact_method=ContactMethod.TEXT,
             safe_to_contact=True,
             voicemail_allowed=False,
@@ -413,8 +417,9 @@ async def test_voice_request_creates_anonymous_case_from_approved_fields_only():
     class Cases:
         submitted = None
 
-        async def submit_anonymous_request(self, body, triage):
+        async def submit_anonymous_request(self, body, triage, *, urgent_note=None):
             self.submitted = (body, triage)
+            self.urgent_note = urgent_note
             return receipt
 
     class Voice:
@@ -457,8 +462,93 @@ async def test_voice_request_creates_anonymous_case_from_approved_fields_only():
         CaseCategory.TRANSPORTATION,
         ContactMethod.TEXT,
     )
-    assert voice.recorded[5].safe_to_contact is True
-    assert voice.recorded[5].voicemail_allowed is False
+    assert voice.recorded[5] == VoiceCaseUrgency.ROUTINE
+    assert voice.recorded[6].safe_to_contact is True
+    assert voice.recorded[6].voicemail_allowed is False
+    assert cases.urgent_note is None
+    assert result.urgent is False
+
+
+def _receipt() -> AnonymousRequestReceipt:
+    return AnonymousRequestReceipt(
+        request=PublicRequest(
+            id=uuid4(),
+            number=1043,
+            title="Sleeping outside tonight",
+            description="Caller approved this short summary.",
+            category=CaseCategory.HOMELESSNESS,
+            status=CaseStatus.NEW,
+            location="Near Northwest",
+            created_at=NOW,
+            updated_at=NOW,
+        ),
+        access_code="K7QM-4XPB",
+    )
+
+
+class _UrgentCases:
+    urgent_note: str | None = None
+
+    async def submit_anonymous_request(self, body, triage, *, urgent_note=None):
+        self.urgent_note = urgent_note
+        return _receipt()
+
+
+class _QuietVoice:
+    recorded: tuple[Any, ...] = ()
+
+    async def record_case_submission(self, *args):
+        self.recorded = args
+
+
+def _urgent_body() -> VoiceCaseRequest:
+    return VoiceCaseRequest(
+        conversation_id="conv-urgent",
+        consent=True,
+        approved_summary="Caller approved this short summary.",
+        category=CaseCategory.HOMELESSNESS,
+        urgency=VoiceCaseUrgency.URGENT,
+    )
+
+
+async def test_an_urgent_voice_request_pages_on_call(monkeypatch):
+    monkeypatch.setattr(config.voice, "urgent_pages_on_call", True)
+    cases, voice = _UrgentCases(), _QuietVoice()
+
+    result = await submit_voice_request(
+        _urgent_body(), cast(CaseService, cases), cast(VoiceService, voice)
+    )
+
+    assert cases.urgent_note == URGENT_NOTE
+    assert result.urgent is True
+    assert voice.recorded[5] == VoiceCaseUrgency.URGENT
+
+
+async def test_the_switch_keeps_urgent_voice_requests_from_paging(monkeypatch):
+    monkeypatch.setattr(config.voice, "urgent_pages_on_call", False)
+    cases, voice = _UrgentCases(), _QuietVoice()
+
+    result = await submit_voice_request(
+        _urgent_body(), cast(CaseService, cases), cast(VoiceService, voice)
+    )
+
+    assert cases.urgent_note is None
+    assert result.urgent is False
+    # The call still records what Ava judged.
+    assert voice.recorded[5] == VoiceCaseUrgency.URGENT
+
+
+def test_a_voice_request_cannot_be_an_emergency():
+    with pytest.raises(ValidationError):
+        VoiceCaseRequest.model_validate(
+            {
+                "conversation_id": "conv-case",
+                "consent": True,
+                "approved_summary": "Someone has a gun",
+                "category": "incident_deescalation",
+                "urgency": "emergency",
+            }
+        )
 
 
 async def test_unknown_referral_outcome_is_a_clean_not_found():

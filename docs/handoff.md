@@ -40,7 +40,7 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   backup or next shift, then every admin (5 min per step), with Accept / Pass
   on `/staff/alerts/[id]`, red banners on Today and 3 reminders when nobody
   accepts. Response times show in Insights.
-- **Resident lane** (migration 0019):
+- **Resident lane** (migration 0020):
   - Weather: Home shows the most severe NWS alert in effect (cold or heat
     links to shelter on Nearby); Safety alerts lists them. The worker acts on
     each alert once: cold or heat at Moderate+ gives every open
@@ -58,6 +58,45 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
     number and code (max 3 phones). Generic silent text; payload `r` opens
     the request.
 
+- **Case places and patterns** (branch `feat/ava-pages-oncall`, migration
+  0020): the worker's upkeep places each case (`services/place.py`): its own
+  coordinates, else a street or intersection in its location text through
+  the City of Milwaukee's locator (only the block is sent), else a named
+  neighborhood. `app.case_places` holds the rounded point, police district,
+  tract and neighborhood; `app.cases` is never changed. `GET /v1/insights`
+  filters by period and district and words the patterns.
+- **Ava pages on call** (same branch): `POST /v1/voice/requests` takes
+  `urgency: "urgent"` (needs someone today, nobody in danger now), which
+  makes the case high priority and opens an on-call alert. This reverses
+  D3's "voice never pages" (agreed 2026-11-21; routine requests still never page);
+  `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns it off. The ElevenLabs
+  `submit_comforce_request` tool needs the new `urgency` parameter
+  (`docs/voice/agent-prompt.md`).
+- **Partners, sharing, texts, need vs coverage** (branch `feat/lane-c-rest`,
+  stacked on `feat/ava-pages-oncall`, migration 0021):
+  - Partners (`/staff/partners`, `/v1/partners`, Figma P1): staff add and
+    edit them; `accepts_shares` marks those with a data-sharing agreement.
+  - Sharing a case (Referrals tab, `/v1/cases/{id}/shares`, Figma P2): only
+    with a partner that accepts shares, only once the person agreed (how is
+    recorded), the summary plus only what they agreed to. Logged in
+    `app.case_shares` and the case history; revocable. The API doesn't
+    send anything: it returns the message, and the app opens the worker's
+    email (or the share sheet).
+  - Texts to requesters (`services/text.py`, in the worker's upkeep): for
+    cases where the requester chose text and said it's safe, on the request
+    coming in, a staff message or a status change. Always generic ("there's
+    an update on request #1048"), at most one per 30 minutes per case.
+    Off unless `APP__SMS__PROVIDER=twilio` (with `APP__SMS__TWILIO_*` and
+    `APP__SMS__FROM_NUMBER` in Vault) or `fake` (logs). There's no email:
+    Get help has no "email me" choice yet.
+  - Need vs coverage (`/staff/areas`, `GET /v1/insights/coverage`): CDC
+    PLACES need by tract, ComForce cases of the matching service placed
+    there, and reviewed incidents (under 5 left out); gaps listed.
+  - Resident `/alerts` points to Me > Phone calls for Ava follow-ups
+    instead of listing them a second time.
+  - `database/seeds/local/20_demo_story.sql`: three weekend-night requests
+    at N 27th St & W Center St, for "Pattern spotted" in the demo.
+
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
 
@@ -69,9 +108,10 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0020** (`0015_oncall_shifts`,
+- Database: Alembic revisions through **0022** (`0015_oncall_shifts`,
   `0016_notifications`, `0017_push`, `0018_urgent_alerts`,
-  `0019_resident_lane`, `0020_voice_safety_and_follow_up`).
+  `0019_resident_lane`, `0020_case_places`, `0021_partners_and_outreach`,
+  `0022_voice_safety_and_follow_up`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),

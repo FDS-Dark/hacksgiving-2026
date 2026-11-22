@@ -18,17 +18,22 @@ from zoneinfo import ZoneInfo
 
 from openai import AsyncOpenAI
 
+from adapters.geocoder import MilwaukeeGeocoder
 from adapters.push import PushProvider, make_push_provider
+from adapters.sms import make_sms_sender
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.executor import PostgresExecutor
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
+from databridge.place import PlaceDatabridge
+from databridge.public_data import PublicDataDatabridge
 from databridge.push import PushDatabridge
 from databridge.request_push import RequestPushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
+from databridge.text import TextDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from logging_setup import configure_logging
 from services.extraction import RecordExtractor
@@ -37,10 +42,12 @@ from services.notification_jobs import TaskRemindStage
 from services.oncall import OncallService
 from services.oncall_jobs import EscalateStage, OfferStage, RemindStage
 from services.push_jobs import PushStage
+from services.place import CasePlacer
 from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, TranscribeStage
 from services.redaction import PatternRedactor
 from services.staff import StaffService
 from services.task import TaskService
+from services.text import CaseTexter
 from services.request_push import RequestPushStage
 from services.transcription import Transcriber
 from services.weather_jobs import WeatherWatch
@@ -110,9 +117,12 @@ async def upkeep(
     oncall: OncallService | None = None,
     push: PushDatabridge | None = None,
     weather: WeatherWatch | None = None,
+    placer: CasePlacer | None = None,
+    texter: CaseTexter | None = None,
 ) -> None:
     """Fail records whose job died without telling them, open on-call alerts
-    a code path missed, delete audio that should be gone, and prune old jobs
+    a code path missed, place new cases for Insights, text requesters
+    about updates, delete audio that should be gone, and prune old jobs
     and notifications. Safe on every replica at once (each step is
     idempotent)."""
     last_prune = 0.0
@@ -125,6 +135,10 @@ async def upkeep(
                 await oncall.sweep()
             if weather is not None:
                 await weather.sweep()
+            if placer is not None:
+                await placer.sweep()
+            if texter is not None:
+                await texter.sweep()
             if sweeper is not None:
                 swept = await sweeper.sweep()
                 if swept:
@@ -198,6 +212,15 @@ async def main() -> None:
         except NotImplementedError:  # Windows: Ctrl+C still raises KeyboardInterrupt
             pass
 
+    geocoder = MilwaukeeGeocoder() if config.worker.place_cases and config.worker.geocode_cases else None
+    placer = (
+        CasePlacer(PlaceDatabridge(executor), PublicDataDatabridge(executor), geocoder)
+        if config.worker.place_cases else None
+    )
+
+    sms = make_sms_sender(config.sms)
+    texter = CaseTexter(TextDatabridge(executor), sms, coalesce_minutes=config.sms.coalesce_minutes) if sms else None
+
     health = await serve_health(runner, config.worker.health_port)
     try:
         await asyncio.gather(
@@ -206,10 +229,15 @@ async def main() -> None:
                 records, jobs, NotificationDatabridge(executor), sweeper, stop, build_oncall(executor),
                 PushDatabridge(executor),
                 WeatherWatch(executor, NotificationService(NotificationDatabridge(executor), executor)),
+                placer, texter,
             ),
         )
     finally:
         health.close()
+        if geocoder is not None:
+            await geocoder.close()
+        if sms is not None:
+            await sms.close()
         if push is not None:
             await push.close()
         await executor.dispose()

@@ -45,6 +45,7 @@ from models.voice import (
     VoiceAppService,
     VoiceCaseReceipt,
     VoiceCaseRequest,
+    VoiceCaseUrgency,
     VoiceRouteRequest,
     VoiceRouteResponse,
     VoiceReferral,
@@ -60,6 +61,12 @@ from settings import config
 
 router = APIRouter(prefix="/voice", tags=["voice"])
 logger = logging.getLogger(__name__)
+
+# The internal history note on a case Ava sent in as urgent.
+URGENT_NOTE = (
+    "Ava marked this phone request urgent: it needs someone today, but the "
+    "caller reported no danger right now. On call was paged."
+)
 
 SERVICE_NAMES: dict[Service, str] = {
     Service.HOMELESSNESS: "Housing & Shelter",
@@ -163,6 +170,8 @@ async def app_capabilities() -> VoiceAppCapabilities:
             "request, or read private account data; phone submissions are anonymous.",
             "Only currently open opportunities returned by the opportunities tool may be described.",
             "Call notifications are in-app follow-ups, not operating-system push notifications.",
+            "An urgent phone request alerts the ComForce worker on call. It is not "
+            "a dispatch: never promise that someone will arrive or by when.",
             "Past connected-call referrals appear under Me > Phone calls > Past referrals, "
             "with reviewed details and tappable public phone numbers when available.",
             "Never invent a department, opportunity, resource, or app capability that a tool did not return.",
@@ -209,9 +218,16 @@ async def submit_voice_request(
     cases: CaseService = Depends(get_case_service),
     voice: VoiceService = Depends(get_voice_service),
 ) -> VoiceCaseReceipt:
-    """Create a consented anonymous Get Help case from approved fields only."""
+    """Create a consented anonymous Get Help case from approved fields only.
+    One Ava marks urgent (needs someone today, not 911) goes in at high
+    priority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`
+    is off."""
+    urgent = (
+        body.urgency == VoiceCaseUrgency.URGENT
+        and config.voice.urgent_pages_on_call
+    )
     receipt: AnonymousRequestReceipt = await cases.submit_anonymous_request(
-        body.as_submit_request(), None
+        body.as_submit_request(), None, urgent_note=URGENT_NOTE if urgent else None
     )
     try:
         await voice.record_case_submission(
@@ -220,6 +236,7 @@ async def submit_voice_request(
             receipt.request.number,
             receipt.request.category,
             body.contact_method,
+            body.urgency,
             SafeContactPlan(
                 contact_method=body.contact_method,
                 safe_to_contact=bool(body.safe_to_contact),
@@ -241,6 +258,7 @@ async def submit_voice_request(
         category=receipt.request.category,
         access_code=receipt.access_code,
         status=receipt.request.status.value,
+        urgent=urgent,
     )
 
 

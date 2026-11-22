@@ -143,6 +143,18 @@ class VoiceRouteResponse(ApiModel):
     app_destination: str = "Get Help"
 
 
+class VoiceCaseUrgency(StrEnum):
+    """How soon a phone request needs a person. There is deliberately no
+    emergency level: danger now means the caller hangs up and calls 911, and
+    the request is never submitted (docs/voice/agent-prompt.md)."""
+
+    ROUTINE = "routine"
+    # Needs someone today but nobody is in danger right now: sleeping outside
+    # in the cold, no food tonight, a person missing since this morning. It
+    # pages whoever is on call (docs/design/on-call-and-push.md D3).
+    URGENT = "urgent"
+
+
 class VoiceCaseRequest(ApiModel):
     """A minimal request the caller explicitly approved for ComForce staff."""
 
@@ -150,6 +162,12 @@ class VoiceCaseRequest(ApiModel):
     consent: Literal[True]
     approved_summary: ApprovedCaseSummary
     category: CaseCategory
+    urgency: VoiceCaseUrgency = Field(
+        default=VoiceCaseUrgency.ROUTINE,
+        description="`urgent` (needs someone today, not an emergency) pages "
+        "the ComForce worker on call. Emergencies are never submitted: they "
+        "go to 911.",
+    )
     general_location: GeneralLocation | None = None
     contact_method: ContactMethod = ContactMethod.NONE
     caller_id: CallerId | None = None
@@ -203,6 +221,11 @@ class VoiceCaseReceipt(ApiModel):
     category: CaseCategory
     access_code: str
     status: str
+    urgent: bool = Field(
+        default=False,
+        description="The request went in as urgent and the on-call worker "
+        "was alerted. It is not a dispatch: nobody is promised to arrive.",
+    )
 
 
 class VoiceAppService(ApiModel):

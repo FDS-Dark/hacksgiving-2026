@@ -99,7 +99,9 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0017_push",
             "0018_urgent_alerts",
             "0019_resident_lane",
-            "0020_voice_safety_and_follow_up",
+            "0020_case_places",
+            "0021_partners_and_outreach",
+            "0022_voice_safety_and_follow_up",
         )
         for name in _revision(revision).FUNCTIONS
     }

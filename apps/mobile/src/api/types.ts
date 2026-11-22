@@ -25,6 +25,24 @@ export type CaseDetail = Schemas['CaseDetail'];
 export type CaseUpdate = Schemas['CaseUpdate'];
 export type CaseInsights = Schemas['CaseInsights'];
 export type CaseStats = Schemas['CaseStats'];
+
+// ── Insights with filters, and patterns (/v1/insights) ─────────────────
+export type Insights = Schemas['Insights'];
+export type InsightsDistrict = Schemas['InsightsDistrict'];
+export type Pattern = Schemas['Pattern'];
+export type Coverage = Schemas['Coverage'];
+export type TractCoverage = Schemas['TractCoverage'];
+export type NeedMeasure = Schemas['NeedMeasure'];
+
+// ── Partners and consented sharing (/v1/partners, /v1/cases/{id}/shares) ──
+export type Partner = Schemas['Partner'];
+export type PartnerBody = Schemas['PartnerBody'];
+export type CaseShare = Schemas['CaseShare'];
+export type CreateShare = Schemas['CreateShareRequest'];
+export type SharedCase = Schemas['SharedCase'];
+export type ConsentMethod = Schemas['ConsentMethod'];
+export type CaseText = Schemas['CaseText'];
+
 export type CreateCase = Schemas['CreateCaseRequest'];
 export type UpdateCase = Schemas['UpdateCaseRequest'];
 export type AddCaseUpdate = Schemas['AddCaseUpdateRequest'];
@@ -102,6 +120,8 @@ export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
 export type VoiceImpactSummary = Schemas['ImpactSummary'];
 export type VoiceOutcomeStatus = Schemas['OutcomeStatus'];
 export type RecordVoiceOutcome = Schemas['RecordOutcomeRequest'];
+export type VoiceDashboard = Schemas['VoiceDashboard'];
+export type ImpactSummary = Schemas['ImpactSummary'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

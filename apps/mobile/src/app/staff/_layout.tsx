@@ -23,7 +23,7 @@ const TABS: TabItem[] = [
     icon: 'person-outline',
     iconActive: 'person',
     match: (p) =>
-      p.startsWith('/staff/me') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls'),
+      p.startsWith('/staff/me') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls') || p.startsWith('/staff/partners') || p.startsWith('/staff/areas'),
   },
 ];
 

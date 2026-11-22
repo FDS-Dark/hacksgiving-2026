@@ -26,6 +26,7 @@ from models.voice import (
     VoiceDashboard,
     VoiceCheckpoint,
     VoiceCheckpointRequest,
+    VoiceCaseUrgency,
     VoiceFollowUp,
     ReferralFollowUpDue,
     SafeContactPlan,
@@ -277,6 +278,7 @@ class VoiceService:
         request_number: int,
         category: CaseCategory,
         contact_method: ContactMethod,
+        urgency: VoiceCaseUrgency = VoiceCaseUrgency.ROUTINE,
         contact_plan: SafeContactPlan | None = None,
     ) -> None:
         """Link structured case metadata to a call; never store its summary."""
@@ -288,7 +290,7 @@ class VoiceService:
                 event_timestamp=int(now.timestamp()),
                 language=None,
                 need_category=category.value,
-                urgency_tier="routine",
+                urgency_tier=urgency.value,
                 neighborhood=None,
                 callback_consent=contact_method != ContactMethod.NONE,
                 disposition="case_submitted",
@@ -305,6 +307,7 @@ class VoiceService:
                     "request_number": request_number,
                     "category": category.value,
                     "contact_method": contact_method.value,
+                    "urgency": urgency.value,
                     "safe_to_contact": contact_plan.safe_to_contact if contact_plan else False,
                     "voicemail_allowed": contact_plan.voicemail_allowed if contact_plan else False,
                     "neutral_message_only": contact_plan.neutral_message_only if contact_plan else False,

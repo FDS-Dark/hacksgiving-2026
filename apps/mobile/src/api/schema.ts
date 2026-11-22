@@ -199,6 +199,54 @@ export interface paths {
         patch: operations["update_referral_v1_cases__case_id__referrals__referral_id__patch"];
         trace?: never;
     };
+    "/v1/cases/{case_id}/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Shares
+         * @description Every share of the case, live and revoked, newest first.
+         */
+        get: operations["list_shares_v1_cases__case_id__shares_get"];
+        put?: never;
+        /**
+         * Share Case
+         * @description Share the case with a partner that accepts shares, once the person
+         *     agreed (`consent: true` and how). Returns the message to send them:
+         *     the summary, plus name, phone and location only when included.
+         *     409 `partner_not_accepting` or `already_shared`.
+         */
+        post: operations["share_case_v1_cases__case_id__shares_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/shares/{share_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke Share
+         * @description Stop sharing (the person changed their mind, or it's no longer
+         *     needed). The record stays, marked revoked.
+         */
+        post: operations["revoke_share_v1_cases__case_id__shares__share_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/tasks": {
         parameters: {
             query?: never;
@@ -215,6 +263,27 @@ export interface paths {
          *     case. Noted in the case history.
          */
         post: operations["add_task_v1_cases__case_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/texts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Texts
+         * @description What the requester was texted about this case (sent, skipped and
+         *     why, failed), newest first. Never the text itself: it's generic.
+         */
+        get: operations["list_texts_v1_cases__case_id__texts_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -254,6 +323,49 @@ export interface paths {
          * @description Liveness only: no database round-trip and no deployment metadata.
          */
         get: operations["health_check_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Insights
+         * @description Cases opened in the period (in one police district, when given), by
+         *     need, and the patterns among them. Staff only.
+         */
+        get: operations["insights_v1_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/insights/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage
+         * @description Need versus coverage by census tract: a CDC PLACES need, ComForce
+         *     cases of the matching service placed there in the period, and reviewed
+         *     incidents (under 5 left out). `gaps`: high need, few cases. Staff only.
+         */
+        get: operations["coverage_v1_insights_coverage_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -793,6 +905,49 @@ export interface paths {
          * @description Close (`active: false`) or reopen a posting. Staff only.
          */
         patch: operations["update_opportunity_v1_opportunities__opportunity_id__patch"];
+        trace?: never;
+    };
+    "/v1/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Partners
+         * @description Partners by name. `category`: those taking cases of that service.
+         */
+        get: operations["list_partners_v1_partners_get"];
+        put?: never;
+        /** Create Partner */
+        post: operations["create_partner_v1_partners_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/partners/{partner_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Partner */
+        get: operations["get_partner_v1_partners__partner_id__get"];
+        /**
+         * Update Partner
+         * @description Replaces every field. Set `active: false` to retire a partner; its
+         *     past shares stay on record.
+         */
+        put: operations["update_partner_v1_partners__partner_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/public-data/calls": {
@@ -1785,6 +1940,9 @@ export interface paths {
         /**
          * Submit Voice Request
          * @description Create a consented anonymous Get Help case from approved fields only.
+         *     One Ava marks urgent (needs someone today, not 911) goes in at high
+         *     priority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`
+         *     is off.
          */
         post: operations["submit_voice_request_v1_voice_requests_post"];
         delete?: never;
@@ -2080,6 +2238,54 @@ export interface components {
          * @enum {string}
          */
         CasePriority: "low" | "medium" | "high" | "critical";
+        /** CaseShare */
+        CaseShare: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            consent_method: components["schemas"]["ConsentMethod"];
+            /** Consent Note */
+            consent_note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Include Contact */
+            include_contact: boolean;
+            /** Include Location */
+            include_location: boolean;
+            /** Partner Email */
+            partner_email: string | null;
+            /**
+             * Partner Id
+             * Format: uuid
+             */
+            partner_id: string;
+            /** Partner Name */
+            partner_name: string;
+            /** Partner Phone */
+            partner_phone: string | null;
+            /** Purpose */
+            purpose: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Revoked By */
+            revoked_by: string | null;
+            /** Revoked By Name */
+            revoked_by_name: string | null;
+            /** Shared By */
+            shared_by: string | null;
+            /** Shared By Name */
+            shared_by_name: string | null;
+        };
         /**
          * CaseSource
          * @enum {string}
@@ -2119,6 +2325,34 @@ export interface components {
             next_steps: string[];
             /** Summary */
             summary: string;
+        };
+        /** CaseText */
+        CaseText: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Case Update Id
+             * Format: uuid
+             */
+            case_update_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Provider Id */
+            provider_id: string | null;
+            /** Reason */
+            reason: string | null;
+            status: components["schemas"]["TextStatus"];
         };
         /**
          * CaseUpdate
@@ -2243,6 +2477,11 @@ export interface components {
             record: components["schemas"]["Record"];
         };
         /**
+         * ConsentMethod
+         * @enum {string}
+         */
+        ConsentMethod: "verbal" | "written" | "in_app";
+        /**
          * ContactMethod
          * @description How a resident wants to be reached. `none`: don't reach out at all.
          * @enum {string}
@@ -2253,6 +2492,27 @@ export interface components {
          * @enum {string}
          */
         Cost: "free" | "low_cost" | "paid";
+        /** Coverage */
+        Coverage: {
+            /** @description The ComForce service the need matches; null counts every case. */
+            category: components["schemas"]["CaseCategory"] | null;
+            /** Days */
+            days: number;
+            /**
+             * Gaps
+             * @description The biggest gaps first: highest need, fewest cases.
+             */
+            gaps: components["schemas"]["TractCoverage"][];
+            measure: components["schemas"]["NeedMeasure"];
+            /** Measure Label */
+            measure_label: string;
+            /** Need Year */
+            need_year: number | null;
+            /** Summary */
+            summary: string;
+            /** Tracts */
+            tracts: components["schemas"]["TractCoverage"][];
+        };
         /**
          * CreateCaseRequest
          * @description A case a worker opens (a phone call, a walk-in, an incident).
@@ -2372,6 +2632,36 @@ export interface components {
             phone?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /** CreateShareRequest */
+        CreateShareRequest: {
+            /**
+             * Consent
+             * @description The resident agreed to this share. Must be true.
+             */
+            consent: boolean;
+            consent_method: components["schemas"]["ConsentMethod"];
+            /** Consent Note */
+            consent_note?: string | null;
+            /**
+             * Include Contact
+             * @description Also share the person's name and phone number.
+             * @default false
+             */
+            include_contact?: boolean;
+            /**
+             * Include Location
+             * @description Also share where they are.
+             * @default false
+             */
+            include_location?: boolean;
+            /**
+             * Partner Id
+             * Format: uuid
+             */
+            partner_id: string;
+            /** Purpose */
+            purpose: string;
         };
         /** CreateShiftRequest */
         CreateShiftRequest: {
@@ -2612,6 +2902,61 @@ export interface components {
             /** Weapons */
             weapons: string[];
         };
+        /** Insights */
+        Insights: {
+            /** By Category */
+            by_category: components["schemas"]["CategoryCount"][];
+            /** Days */
+            days: number;
+            /** District */
+            district: string | null;
+            /** Districts */
+            districts: components["schemas"]["InsightsDistrict"][];
+            /** Patterns */
+            patterns: components["schemas"]["Pattern"][];
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            totals: components["schemas"]["InsightsTotals"];
+        };
+        /**
+         * InsightsDistrict
+         * @description A police district, for the filter.
+         */
+        InsightsDistrict: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+        };
+        /** InsightsTotals */
+        InsightsTotals: {
+            /** Avg Resolution Hours */
+            avg_resolution_hours: number | null;
+            /** Opened */
+            opened: number;
+            /**
+             * Placed
+             * @description With a known place; only these count toward a district or a pattern.
+             */
+            placed: number;
+            /** Resolved */
+            resolved: number;
+            /** Still Open */
+            still_open: number;
+            /**
+             * Urgent
+             * @description Opened at high or critical priority.
+             */
+            urgent: number;
+        };
         /**
          * JobStat
          * @description One kind and status in the queue: how many, and the oldest one due.
@@ -2649,6 +2994,13 @@ export interface components {
             /** Step */
             step: number;
         };
+        /**
+         * NeedMeasure
+         * @description CDC PLACES health-related social needs (percent of adults), loaded
+         *     nightly by the cdc_places source.
+         * @enum {string}
+         */
+        NeedMeasure: "HOUSINSECU" | "FOODINSECU" | "LACKTRPT" | "SHUTUTILITY" | "FOODSTAMP" | "EMOTIONSPT" | "LONELINESS";
         /**
          * NotificationItem
          * @description One row of the inbox, ready to show. `route` is where the app goes
@@ -2968,6 +3320,96 @@ export interface components {
          * @enum {string}
          */
         OutcomeStatus: "connected" | "voicemail" | "no_answer" | "declined" | "unavailable" | "follow_up_needed" | "completed";
+        /** Partner */
+        Partner: {
+            /**
+             * Accepts Shares
+             * @description Has agreed to receive shared cases; only these can be shared with.
+             */
+            accepts_shares: boolean;
+            /** Active */
+            active: boolean;
+            /** Address */
+            address: string | null;
+            /** Categories */
+            categories: components["schemas"]["CaseCategory"][];
+            /** Contact Name */
+            contact_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** Email */
+            email: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Languages */
+            languages: string[];
+            /** Name */
+            name: string;
+            /**
+             * Notes
+             * @description Staff only: who to ask for, intake hours, what they need.
+             */
+            notes: string;
+            /** Phone */
+            phone: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Website */
+            website: string | null;
+        };
+        /**
+         * PartnerBody
+         * @description A new partner, or every field of an existing one (PUT).
+         */
+        PartnerBody: {
+            /**
+             * Accepts Shares
+             * @default false
+             */
+            accepts_shares?: boolean;
+            /**
+             * Active
+             * @default true
+             */
+            active?: boolean;
+            /** Address */
+            address?: string | null;
+            /** Categories */
+            categories?: components["schemas"]["CaseCategory"][];
+            /** Contact Name */
+            contact_name?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description?: string;
+            /** Email */
+            email?: string | null;
+            /** Languages */
+            languages?: string[];
+            /** Name */
+            name: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes?: string;
+            /** Phone */
+            phone?: string | null;
+            /** Website */
+            website?: string | null;
+        };
         /**
          * PassReason
          * @enum {string}
@@ -2977,6 +3419,65 @@ export interface components {
         PassRequest: {
             reason?: components["schemas"]["PassReason"] | null;
         };
+        /** Pattern */
+        Pattern: {
+            /**
+             * Case Ids
+             * @description Newest first.
+             */
+            case_ids: string[];
+            /** Case Numbers */
+            case_numbers: number[];
+            /** Detail */
+            detail: string;
+            /**
+             * First At
+             * Format: date-time
+             */
+            first_at: string;
+            /** Headline */
+            headline: string;
+            kind: components["schemas"]["PatternKind"];
+            /**
+             * Label
+             * @description A block, an intersection or a neighborhood; never a house number.
+             */
+            label: string;
+            /**
+             * Last At
+             * Format: date-time
+             */
+            last_at: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /**
+             * Night Total
+             * @description Opened 6 PM to 6 AM, local time.
+             */
+            night_total: number;
+            /** Police District */
+            police_district: string | null;
+            /**
+             * Prior Total
+             * @description Cases there in the period of the same length before.
+             */
+            prior_total: number;
+            top_category: components["schemas"]["CaseCategory"] | null;
+            /** Top Category Total */
+            top_category_total: number;
+            /** Total */
+            total: number;
+            /**
+             * Weekend Night Total
+             * @description Opened on a Friday or Saturday night.
+             */
+            weekend_night_total: number;
+        };
+        /**
+         * PatternKind
+         * @enum {string}
+         */
+        PatternKind: "spot" | "neighborhood";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -3352,6 +3853,18 @@ export interface components {
             role: components["schemas"]["Role"];
         };
         /**
+         * SharedCase
+         * @description A new share, and the message to send the partner: the case's
+         *     summary plus only what the resident agreed to.
+         */
+        SharedCase: {
+            /** Message */
+            message: string;
+            share: components["schemas"]["CaseShare"];
+            /** Subject */
+            subject: string;
+        };
+        /**
          * ShiftRank
          * @enum {integer}
          */
@@ -3517,6 +4030,11 @@ export interface components {
          */
         TaskStatus: "open" | "done";
         /**
+         * TextStatus
+         * @enum {string}
+         */
+        TextStatus: "sent" | "skipped" | "failed";
+        /**
          * ToggleOncallRequest
          * @description Switch yourself on or off. `until` (in the future, within 24 hours)
          *     sets when it ends; without it a new shift ends at the next 07:00, 17:00
@@ -3536,6 +4054,37 @@ export interface components {
             tract_geoid: string;
             /** Tract Name */
             tract_name: string | null;
+        };
+        /** TractCoverage */
+        TractCoverage: {
+            /**
+             * Cases
+             * @description ComForce cases of the matching service opened in the period, placed here.
+             */
+            cases: number;
+            /**
+             * Gap
+             * @description High need (top quarter) and few ComForce cases (bottom quarter).
+             */
+            gap: boolean;
+            /**
+             * Incidents
+             * @description MPD-reviewed incidents in the period; null when under 5 (suppressed).
+             */
+            incidents: number | null;
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Name */
+            name: string;
+            /**
+             * Need
+             * @description Percent of adults with the need (CDC model estimate).
+             */
+            need: number | null;
+            /** Tract Geoid */
+            tract_geoid: string;
         };
         /** TransitAlert */
         TransitAlert: {
@@ -3832,6 +4381,12 @@ export interface components {
             request_number: number;
             /** Status */
             status: string;
+            /**
+             * Urgent
+             * @description The request went in as urgent and the on-call worker was alerted. It is not a dispatch: nobody is promised to arrive.
+             * @default false
+             */
+            urgent: boolean;
         };
         /**
          * VoiceCaseRequest
@@ -3864,11 +4419,24 @@ export interface components {
             /** Safe To Contact */
             safe_to_contact?: boolean | null;
             /**
+             * @description `urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911.
+             * @default routine
+             */
+            urgency?: components["schemas"]["VoiceCaseUrgency"];
+            /**
              * Voicemail Allowed
              * @default false
              */
             voicemail_allowed?: boolean;
         };
+        /**
+         * VoiceCaseUrgency
+         * @description How soon a phone request needs a person. There is deliberately no
+         *     emergency level: danger now means the caller hangs up and calls 911, and
+         *     the request is never submitted (docs/voice/agent-prompt.md).
+         * @enum {string}
+         */
+        VoiceCaseUrgency: "routine" | "urgent";
         /** VoiceCheckpoint */
         VoiceCheckpoint: {
             /** Consent Pending */
@@ -4522,6 +5090,104 @@ export interface operations {
             };
         };
     };
+    list_shares_v1_cases__case_id__shares_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseShare"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    share_case_v1_cases__case_id__shares_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedCase"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_share_v1_cases__case_id__shares__share_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseShare"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_task_v1_cases__case_id__tasks_post: {
         parameters: {
             query?: never;
@@ -4544,6 +5210,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_texts_v1_cases__case_id__texts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseText"][];
                 };
             };
             /** @description Validation Error */
@@ -4610,6 +5307,72 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    insights_v1_insights_get: {
+        parameters: {
+            query?: {
+                /** @description The period: this many days up to now. */
+                days?: number;
+                /** @description A police district key, from `districts`. */
+                district?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    coverage_v1_insights_coverage_get: {
+        parameters: {
+            query?: {
+                measure?: components["schemas"]["NeedMeasure"];
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coverage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5537,6 +6300,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Opportunity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_partners_v1_partners_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                category?: components["schemas"]["CaseCategory"] | null;
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_partner_v1_partners_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_partner_v1_partners__partner_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                partner_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_partner_v1_partners__partner_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                partner_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartnerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
                 };
             };
             /** @description Validation Error */
