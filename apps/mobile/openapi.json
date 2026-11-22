@@ -4106,6 +4106,29 @@
         "title": "SubmitRequest",
         "type": "object"
       },
+      "SubscribeRequestPush": {
+        "description": "POST /v1/public/requests/{number}/devices: this phone hears about one\nrequest sent without an account.",
+        "properties": {
+          "environment": {
+            "$ref": "#/components/schemas/PushEnvironment"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PushPlatform",
+            "default": "ios"
+          },
+          "token": {
+            "pattern": "^[0-9a-fA-F]{32,200}$",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "environment"
+        ],
+        "title": "SubscribeRequestPush",
+        "type": "object"
+      },
       "SuggestionMethod": {
         "enum": [
           "ai",
@@ -8622,6 +8645,128 @@
           }
         },
         "summary": "Get Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}/devices": {
+      "post": {
+        "description": "This phone gets a push (\"You have a new update\", no sound) when\nComForce replies or the status changes. At most 3 phones per request.\n404 for a wrong number or code alike.",
+        "operationId": "subscribe_to_anonymous_request_v1_public_requests__number__devices_post",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeRequestPush"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subscribe To Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}/devices/{token}": {
+      "delete": {
+        "description": "Stop this phone's pushes for the request (forgetting it on the phone).",
+        "operationId": "unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "title": "Token",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsubscribe From Anonymous Request",
         "tags": [
           "requests"
         ]

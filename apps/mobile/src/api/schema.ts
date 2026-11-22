@@ -1001,6 +1001,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/requests/{number}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subscribe To Anonymous Request
+         * @description This phone gets a push ("You have a new update", no sound) when
+         *     ComForce replies or the status changes. At most 3 phones per request.
+         *     404 for a wrong number or code alike.
+         */
+        post: operations["subscribe_to_anonymous_request_v1_public_requests__number__devices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unsubscribe From Anonymous Request
+         * @description Stop this phone's pushes for the request (forgetting it on the phone).
+         */
+        delete: operations["unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/requests/{number}/replies": {
         parameters: {
             query?: never;
@@ -3256,6 +3298,18 @@ export interface components {
             safe_to_contact?: boolean | null;
             /** Title */
             title?: string | null;
+        };
+        /**
+         * SubscribeRequestPush
+         * @description POST /v1/public/requests/{number}/devices: this phone hears about one
+         *     request sent without an account.
+         */
+        SubscribeRequestPush: {
+            environment: components["schemas"]["PushEnvironment"];
+            /** @default ios */
+            platform?: components["schemas"]["PushPlatform"];
+            /** Token */
+            token: string;
         };
         /**
          * SuggestionMethod
@@ -5540,6 +5594,77 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PublicRequestDetail"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    subscribe_to_anonymous_request_v1_public_requests__number__devices_post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscribeRequestPush"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
