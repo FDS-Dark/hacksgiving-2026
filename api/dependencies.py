@@ -16,10 +16,13 @@ from fastapi import Depends, Header, HTTPException, Request, status
 
 from openai import AsyncOpenAI
 
+from adapters.sms import sms_configured
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.attachment import AttachmentDatabridge
 from databridge.case import CaseDatabridge
+from databridge.chat import ChatDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.export import ExportDatabridge
 from databridge.handoff import HandoffDatabridge
 from databridge.insights import InsightsDatabridge
 from databridge.opportunity import OpportunityDatabridge
@@ -44,6 +47,8 @@ from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.attachment import AttachmentService
 from services.case import CaseService, Triager
+from services.chat import ChatService
+from services.export import ExportService
 from services.handoff import HandoffService
 from services.insights import InsightsService
 from services.job import JobService
@@ -149,9 +154,22 @@ def get_case_text_service() -> CaseTextService:
 
 
 @cache
+def get_chat_service() -> ChatService:
+    executor = get_executor()
+    return ChatService(ChatDatabridge(executor), get_notification_service(), executor)
+
+
+@cache
 def get_partner_service() -> PartnerService:
     executor = get_executor()
-    return PartnerService(PartnerDatabridge(executor), CaseDatabridge(executor), executor)
+    return PartnerService(
+        PartnerDatabridge(executor), CaseDatabridge(executor), executor, sms_enabled=sms_configured(config.sms)
+    )
+
+
+@cache
+def get_export_service() -> ExportService:
+    return ExportService(ExportDatabridge(get_executor()))
 
 
 @cache

@@ -7,7 +7,7 @@ FastAPI backend for hacksgiving.
 Layered, one direction of dependency, and the same domains in every layer
 (see [ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)):
 `user`, `staff`, `case`, `task`, `resource`, `routing`, `voice`, `record`, `job`, `oncall`,
-`notification` and `push`.
+`notification`, `push`, `chat` and `export`.
 
 ```
 routers/<domain>.py     HTTP: request/response models, status codes, auth dependencies
@@ -100,6 +100,9 @@ stored.
 | `/v1/oncall/alerts/...` (urgent alerts: list, detail, accept, pass, arrived), `GET /v1/oncall/stats` (admins) | `OncallService` |
 | `/v1/notifications/...`, `/v1/me/notification-preferences` (the inbox: list, unread count, mark read; push settings) | `NotificationService` |
 | `PUT`/`DELETE /v1/me/devices` (push tokens), `POST /v1/notifications/test`, `GET /v1/notifications/stats` (admins) | `PushService` |
+| `/v1/chat/channels/...` (staff team chat: Team, On call, one per case; messages, read state, rapid response) | `ChatService` |
+| `/v1/cases/{id}/partner-requests` (ask a partner for help with a case) | `PartnerService` |
+| `GET /v1/me/export` (a worker's own records as one CSV) | `ExportService` |
 
 ## Background work (Phantom)
 
@@ -135,6 +138,14 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
   sends. `APP__PUSH__PROVIDER` is `off` by default (inbox only), `fake`, or
   `apns` with the team's .p8 key. Upkeep deletes devices unseen for 60 days
   and deliveries after 30.
+- Team chat (`services/chat.py`): an ordinary message gives each other
+  member of the channel one `chat_message` inbox row per unread streak and
+  never pushes; a rapid-response one gives each a `chat_rapid` row and a
+  push that names only the channel ("New message in Team chat"), under the
+  usual mutes and quiet hours. Reading the channel clears its rows.
+- Requests for help to partners: with texts set up and a textable partner
+  number, the upkeep's `PartnerTexter` (`services/partner.py`) texts the
+  pending ones; otherwise the app opens the worker's own email or Messages.
 - Urgent escalation: a case that pages on call (open, unassigned, `high`
   or `critical`: `pages_on_call` in `models/case_enums.py`) gets an alert in
   the same transaction as the case write (`OncallService.open_for_case`,

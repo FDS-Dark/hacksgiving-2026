@@ -111,6 +111,7 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0029_voice_safety_and_follow_up",
             "0030_voice_directory_referrals",
             "0031_loader_rate_gate",
+            "0032_team_chat_and_delivery",
         )
         for name in _revision(revision).FUNCTIONS
     }

@@ -15,6 +15,7 @@ import { untilLabel } from '@/lib/oncall';
 import { ROLE_LABEL } from '@/lib/staff';
 import { showCommunityView } from '@/lib/viewMode';
 import { useInsights } from '@/services/cases';
+import { useExportMyRecords } from '@/services/export';
 import { useNotificationPreferences, useSendTestNotification, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useStaffStatus, useWorkers } from '@/services/staff';
 import { useStaffVoiceCalls } from '@/services/voice';
@@ -118,12 +119,42 @@ export default function StaffMeScreen() {
         />
       </Group>
 
+      <ExportRecords />
+
       <Group>
         <Row title="Switch to community view" icon="swap-horizontal-outline" accessory="chevron" onPress={showCommunityView} />
       </Group>
 
       <Button label="Sign out" variant="plain" onPress={signOut} />
     </Page>
+  );
+}
+
+/** "Export my records": the worker's own debriefs, cases, tasks and confirmed outcomes as one CSV. */
+function ExportRecords() {
+  const exporting = useExportMyRecords();
+  const done = exporting.data;
+  return (
+    <>
+      <Group
+        header="My records"
+        footer={
+          done
+            ? `${done.how === 'downloaded' ? 'Downloaded' : 'Ready'}: ${done.summary.debriefs} debriefs, ${done.summary.cases} cases, ${done.summary.tasks_completed} tasks, ${done.summary.outcomes_confirmed} outcomes. ${done.summary.people_helped} people helped.`
+            : 'One CSV of what you recorded, own and confirmed. Never residents’ phone numbers or emails, never recordings.'
+        }
+      >
+        <Row
+          title={exporting.isPending ? 'Preparing your records…' : 'Export my records'}
+          icon="download-outline"
+          accessory="chevron"
+          disabled={exporting.isPending}
+          accessibilityHint="Creates a CSV of your records to save or share"
+          onPress={() => exporting.mutate()}
+        />
+      </Group>
+      {exporting.error ? <ErrorBanner error={exporting.error} onRetry={() => exporting.mutate()} /> : null}
+    </>
   );
 }
 

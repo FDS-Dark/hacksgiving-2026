@@ -96,3 +96,66 @@ class SharedCase(ApiModel):
     share: CaseShare
     subject: str
     message: str
+
+
+# --- Asking a partner for help with a case ------------------------------------------
+
+RequestNote = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class PartnerRequestDelivery(StrEnum):
+    """sms: texted to the partner's phone by the worker's upkeep. compose:
+    the app opens the worker's own email or phone with the message."""
+
+    SMS = "sms"
+    COMPOSE = "compose"
+
+
+class PartnerRequestStatus(StrEnum):
+    PENDING = "pending"
+    SENT = "sent"
+    FAILED = "failed"
+    COMPOSED = "composed"
+
+
+class CreatePartnerRequest(ApiModel):
+    partner_id: UUID
+    need: CaseCategory = Field(description="The service the help is for.")
+    note: RequestNote = Field(description="What you're asking for, in your words. Leave out names and numbers.")
+
+
+class PartnerRequest(ApiModel):
+    id: UUID
+    case_id: UUID
+    partner_id: UUID
+    partner_name: str
+    partner_email: str | None = None
+    partner_phone: str | None = None
+    requested_by: UUID | None = None
+    requested_by_name: str | None = None
+    need: CaseCategory
+    note: str
+    message: str = Field(description="Everything the partner was sent.")
+    delivery: PartnerRequestDelivery
+    status: PartnerRequestStatus
+    reason: str | None = None
+    included_contact: bool = Field(description="The person's name and phone went too (a live consented share).")
+    included_location: bool
+    created_at: datetime
+    sent_at: datetime | None = None
+
+
+class SentPartnerRequest(ApiModel):
+    """A new request, and (for `compose`) the message to send from the
+    worker's own email or phone."""
+
+    request: PartnerRequest
+    subject: str
+    message: str
+
+
+class PendingPartnerText(ApiModel):
+    id: UUID
+    case_id: UUID
+    partner_phone: str | None = None
+    message: str

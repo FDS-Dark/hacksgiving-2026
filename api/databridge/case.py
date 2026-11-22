@@ -11,6 +11,7 @@ from models.case import (
     CaseUpdate,
     CategoryCount,
     ContactMethod,
+    DeliveredBy,
     PublicRequest,
     PublicRequestUpdate,
     Referral,
@@ -157,10 +158,14 @@ class CaseDatabridge(Databridge):
         return Referral(**row) if row else None
 
     async def update_referral(
-        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID
+        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID,
+        delivered_by: DeliveredBy | None = None, delivered_by_worker_id: UUID | None = None,
     ) -> Referral | None:
+        """Completing it records who delivered the help and the actor as the
+        one who confirmed it (0031)."""
         row = await self._first("referral_update", case_id=case_id, referral_id=referral_id, status=status,
-                                outcome=outcome, actor_id=actor_id)
+                                outcome=outcome, actor_id=actor_id, delivered_by=delivered_by,
+                                delivered_by_worker_id=delivered_by_worker_id)
         return Referral(**row) if row else None
 
     # --- The requester's view ----------------------------------------------------

@@ -20,6 +20,8 @@ const KIND_ICON: Record<string, IconName> = {
   task_due: 'time-outline',
   referral_update: 'checkmark',
   request_update: 'chatbubble-ellipses-outline',
+  chat_message: 'chatbubbles-outline',
+  chat_rapid: 'flash-outline',
 };
 
 /** Urgent kinds (a pending offer, nobody accepted) get a red warning icon. */

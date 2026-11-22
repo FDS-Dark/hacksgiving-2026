@@ -15,7 +15,8 @@ src/lib/         sign-in, labels and formatting, small helpers
 
 Each API domain has one service module, named after its router in
 `api/routers/`: `user`, `staff`, `cases`, `requests` (a resident's view of
-a case), `resources`, `tasks`, `oncall`, `notifications`, `voice` and
+a case), `resources`, `tasks`, `oncall`, `notifications`, `voice`, `chat`
+(staff team chat), `partners`, `export` (Me → Export my records) and
 `health`. A module holds its
 `<domain>Api` calls, its `<domain>Keys` query keys and its hooks.
 `publicSafety`, `recentCalls` and `deviceLocation` read public data or

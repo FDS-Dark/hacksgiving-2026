@@ -129,6 +129,7 @@ class InsightsService:
             totals=await self.insights.totals(start, end, district),
             by_category=await self.insights.by_category(start, end, district),
             patterns=[word_pattern(row, days) for row in rows],
+            delivered_by=await self.insights.delivered_by(start, end, district),
         )
 
     async def coverage(self, measure: NeedMeasure, days: int, now: datetime | None = None) -> Coverage:

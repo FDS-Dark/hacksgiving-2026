@@ -69,8 +69,17 @@ class ReferralStatus(StrEnum):
     SUGGESTED = "suggested"
     SHARED = "shared"
     ACCEPTED = "accepted"
+    # The person got the help: who delivered it is recorded.
     COMPLETED = "completed"
     DECLINED = "declined"
+
+
+class DeliveredBy(StrEnum):
+    """Who delivered a completed referral's help: the referral's own
+    resource (the provider), or ComForce MKE itself (a named worker)."""
+
+    PROVIDER = "provider"
+    COMFORCE = "comforce"
 
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=160)]
@@ -149,6 +158,12 @@ class Referral(ApiModel):
     created_by: UUID | None = None
     created_at: datetime
     updated_at: datetime
+    delivered_by: DeliveredBy | None = Field(default=None, description="Set once the referral is completed.")
+    delivered_by_worker_id: UUID | None = None
+    delivered_by_worker_name: str | None = None
+    confirmed_by: UUID | None = None
+    confirmed_by_name: str | None = None
+    confirmed_at: datetime | None = None
 
 
 class CaseDetail(ApiModel):
@@ -293,11 +308,23 @@ class AddReferralRequest(ApiModel):
 class UpdateReferralRequest(ApiModel):
     status: ReferralStatus | None = None
     outcome: Outcome | None = None
+    delivered_by: DeliveredBy | None = Field(
+        default=None,
+        description="With status completed (or on a completed referral): who delivered the help. "
+        "Defaults to the provider. You are recorded as the one who confirmed it.",
+    )
+    delivered_by_worker_id: UUID | None = Field(
+        default=None, description="With delivered_by comforce: which worker (default: you)."
+    )
 
     @model_validator(mode="after")
     def _something(self) -> "UpdateReferralRequest":
-        if self.status is None and self.outcome is None:
-            raise ValueError("Send a status, an outcome, or both")
+        if self.status is None and self.outcome is None and self.delivered_by is None:
+            raise ValueError("Send a status, an outcome, who delivered the help, or several")
+        if self.delivered_by_worker_id is not None and self.delivered_by != DeliveredBy.COMFORCE:
+            raise ValueError("delivered_by_worker_id goes with delivered_by comforce")
+        if self.delivered_by is not None and self.status not in (None, ReferralStatus.COMPLETED):
+            raise ValueError("Who delivered the help is recorded only on a completed referral")
         return self
 
 
