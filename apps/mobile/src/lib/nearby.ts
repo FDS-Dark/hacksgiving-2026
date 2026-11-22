@@ -106,10 +106,10 @@ export interface RankedPlace {
 const OPEN_ORDER: Record<OpenToday, number> = { yes: 0, unknown: 1, no: 2 };
 
 /**
- * Every place, best first. Sample listings always come after real ones.
- * With the person's location, the closest come first (places without a
- * location after them); open today breaks ties. Without it, open today
- * comes first, then by name.
+ * Every place, best first. Sample listings always come after real ones,
+ * and places closed today after the rest. Then, with the person's
+ * location, the closest first (places without a location after them);
+ * without it, open today before "call to check", then by name.
  */
 export function rankPlaces(
   places: Resource[],
@@ -125,6 +125,7 @@ export function rankPlaces(
   }));
   return ranked.sort((a, b) => {
     if (a.place.is_sample !== b.place.is_sample) return a.place.is_sample ? 1 : -1;
+    if ((a.open === 'no') !== (b.open === 'no')) return a.open === 'no' ? 1 : -1;
     if (from) {
       if ((a.miles === null) !== (b.miles === null)) return a.miles === null ? 1 : -1;
       if (a.miles !== null && b.miles !== null && a.miles !== b.miles) return a.miles - b.miles;

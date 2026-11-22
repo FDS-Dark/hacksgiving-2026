@@ -13,6 +13,8 @@ export interface CallHistory {
   /** When the call was linked to this account (or its first place, if the call itself isn't listed). */
   at: string;
   places: VoiceReferralDetail[];
+  /** Place names the call itself lists, for when its places have no detail yet. */
+  names: string[];
 }
 
 /** "mental-health-crisis" reads "Mental health crisis". */
@@ -24,12 +26,12 @@ export function readable(slug: string | null | undefined): string | null {
 export function callHistory(calls: VoiceFollowUp[], places: VoiceReferralDetail[]): CallHistory[] {
   const byCall = new Map<string, CallHistory>();
   for (const call of calls) {
-    byCall.set(call.call_id, { callId: call.call_id, need: readable(call.need_category) ?? 'Phone call', at: call.linked_at, places: [] });
+    byCall.set(call.call_id, { callId: call.call_id, need: readable(call.need_category) ?? 'Phone call', at: call.linked_at, places: [], names: call.resources });
   }
   for (const place of places) {
     let entry = byCall.get(place.call_id);
     if (!entry) {
-      entry = { callId: place.call_id, need: readable(place.need_category) ?? 'Phone call', at: place.created_at, places: [] };
+      entry = { callId: place.call_id, need: readable(place.need_category) ?? 'Phone call', at: place.created_at, places: [], names: [] };
       byCall.set(place.call_id, entry);
     }
     entry.places.push(place);

@@ -33,6 +33,8 @@ describe('userMessage', () => {
   it('keeps a domain message written for people', () => {
     const e = new ApiError(409, 'shift_overlap', 'That person already has a shift at that time.');
     expect(userMessage(e, 'staff')).toBe('That person already has a shift at that time.');
+    const down = new ApiError(503, 'voice_unavailable', "Voice debriefs aren't set up on this server; type it instead");
+    expect(userMessage(down, 'staff')).toBe("Voice debriefs aren't set up on this server; type it instead");
   });
 
   it('hides a domain message that leaks a UUID or address', () => {

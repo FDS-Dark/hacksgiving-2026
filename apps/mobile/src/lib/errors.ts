@@ -77,7 +77,6 @@ export function userMessage(error: unknown, audience: Audience = 'resident'): st
   const known = KNOWN[e.code];
   if (known) return pick(known, audience);
   if (e.code === 'network_error' || (e.status === 0 && e.code !== 'unknown')) return OFFLINE[audience];
-  if (e.status >= 500) return FALLBACK_MESSAGE[audience];
   if (GENERIC_CODES.has(e.code) || e.code.endsWith('_not_found')) {
     // Thrown by the app itself with a sentence for people ("Files can be up to 10 MB.").
     if (e.code === 'unknown' && readsAsSentence(e.message) && !looksTechnical(e.message)) return e.message;

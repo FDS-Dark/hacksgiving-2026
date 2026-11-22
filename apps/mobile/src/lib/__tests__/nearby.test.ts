@@ -81,8 +81,15 @@ describe('rankPlaces', () => {
   const sample = place({ name: 'Sample', latitude: 43.04, longitude: -87.91, hours: 'Daily', is_sample: true });
 
   it('puts the closest first when the location is known, and samples last', () => {
-    const names = rankPlaces([sample, nowhere, far, near], { from: here, now: MON }).map((r) => r.place.name);
+    // Saturday: Near is open, so distance decides.
+    const names = rankPlaces([sample, nowhere, far, near], { from: here, now: SAT }).map((r) => r.place.name);
     expect(names).toEqual(['Near', 'Far', 'Nowhere', 'Sample']);
+  });
+
+  it('puts a place closed today after open ones, however close', () => {
+    // Monday: Near is closed, so it drops behind the farther open places.
+    const names = rankPlaces([sample, nowhere, far, near], { from: here, now: MON }).map((r) => r.place.name);
+    expect(names).toEqual(['Far', 'Nowhere', 'Near', 'Sample']);
   });
 
   it('puts open-today first without a location', () => {
@@ -91,7 +98,7 @@ describe('rankPlaces', () => {
   });
 
   it('measures distance only when both ends are known', () => {
-    const [first, ...rest] = rankPlaces([near, nowhere], { from: here, now: MON });
+    const [first, ...rest] = rankPlaces([near, nowhere], { from: here, now: SAT });
     expect(first.miles).toBeLessThan(0.2);
     expect(rest[0].miles).toBeNull();
   });

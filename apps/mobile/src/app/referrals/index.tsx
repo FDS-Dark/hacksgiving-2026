@@ -56,6 +56,8 @@ export default function PhoneCallsScreen() {
                     onPress={() => router.push({ pathname: '/referrals/[id]', params: { id: item.id } })}
                   />
                 ))
+              ) : call.names.length ? (
+                call.names.map((name) => <Row key={name} title={name} subtitle="Place ComForce recommended" />)
               ) : (
                 <Row title="No places recommended on this call" subtitle="ComForce may still follow up with you." />
               )}
