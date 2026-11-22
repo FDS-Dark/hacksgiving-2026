@@ -1,0 +1,58 @@
+[project]
+name = "dataloader"
+version = "0.1.0"
+description = "Hacksgiving data loader: imports opportunities, resources and public data"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic-settings>=2.10.1",
+    "python-dotenv>=1.0.1",
+    "sqlalchemy[asyncio]>=2.0.41",
+    "asyncpg>=0.30.0",
+    "httpx>=0.25.0",
+    "openpyxl>=3.1.5",
+    "gtfs-realtime-bindings>=3.0.0",
+    "tzdata>=2026.6",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "flake8>=7.3.0",
+    "mypy>=1.17.1",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "types-openpyxl>=3.1.5.20261017",
+    # The integration tests migrate a throwaway database with database/'s
+    # Alembic revisions, as api/tests does.
+    "alembic>=1.20.1",
+    "psycopg[binary]>=3.3.8",
+]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+exclude = ['^\.venv']
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+# Tests may leave fixtures and helpers unannotated; their bodies are still checked.
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["google.transit", "google.transit.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["asyncpg", "asyncpg.*"]
+ignore_missing_imports = true

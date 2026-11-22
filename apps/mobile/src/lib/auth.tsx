@@ -7,7 +7,9 @@
  * Until the EXPO_PUBLIC_AUTH0_* values are set, a local dev token
  * (EXPO_PUBLIC_DEV_ACCESS_TOKEN) can stand in so the app stays usable.
  */
+import { isRunningInExpoGo } from 'expo';
 import * as AuthSession from 'expo-auth-session';
+import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -17,6 +19,7 @@ import { ApiError, setAccessTokenProvider, setUnauthorizedHandler } from '@/api/
 import { appScheme } from '@/lib/appScheme';
 import { refreshFailure } from '@/lib/authRefresh';
 import { debug } from '@/lib/debug';
+import { expoGoRedirectUri } from '@/lib/redirect';
 import { forgetDevice, unregisterDevice } from '@/lib/push';
 import { queryClient } from '@/services/queryClient';
 import { userApi } from '@/services/user';
@@ -34,7 +37,9 @@ export const devSignInAvailable = Boolean(DEV_TOKEN);
 /** Register this in the Auth0 application's Allowed Callback URLs. In Expo
  * Go it's exp://<host>:8081/--/auth; in a build it's hacksgiving://auth (or
  * hacksgiving-staging://auth in the staging app). */
-export const redirectUri = AuthSession.makeRedirectUri({ scheme: appScheme, path: 'auth' });
+export const redirectUri =
+  expoGoRedirectUri(isRunningInExpoGo(), Constants.expoConfig?.hostUri) ??
+  AuthSession.makeRedirectUri({ scheme: appScheme, path: 'auth' });
 
 const SESSION_KEY = 'hacksgiving.session';
 const ISSUER = `https://${AUTH0_DOMAIN}`;

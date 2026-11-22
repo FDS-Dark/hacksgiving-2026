@@ -1,5 +1,5 @@
 """Volunteer, job and education opportunities. Staff post some by hand
-(source "manual"); the data loader (api/loader) imports the rest from public
+(source "manual"); the data loader (dataloader/) imports the rest from public
 sources such as USAJOBS (docs/data-loader.md)."""
 
 from datetime import datetime

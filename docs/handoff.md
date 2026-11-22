@@ -108,11 +108,14 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0029** (`0015_oncall_shifts`,
+- Data loader: its own app and image (`dataloader/`, docs/data-loader.md),
+  run as CronJobs; a rate gate in `app.loader_runs` keeps every environment
+  under MPD's 10 requests per 30 minutes.
+- Database: Alembic revisions through **0030** (`0015_oncall_shifts`,
   `0016_notifications`, `0017_push`, `0018_urgent_alerts`,
   `0019_resident_lane`, `0020_case_places`, `0021_partners_and_outreach`,
   `0022_case_debriefs` through `0028_training_progress`, and
-  `0029_voice_safety_and_follow_up`).
+  `0029_voice_safety_and_follow_up`, `0030_loader_rate_gate`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
