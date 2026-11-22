@@ -160,3 +160,6 @@ export type Attachment = Schemas['Attachment'];
 export type AttachmentUpload = Schemas['AttachmentUpload'];
 export type AttachmentLink = Schemas['AttachmentLink'];
 export type KnowledgeHit = Schemas['KnowledgeHit'];
+
+// ── Training ─────────────────────────────────────────────────────────────
+export type TrainingProgress = Schemas['TrainingProgress'];

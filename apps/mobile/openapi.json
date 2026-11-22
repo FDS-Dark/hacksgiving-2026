@@ -981,6 +981,25 @@
         "title": "CommunityMeasure",
         "type": "object"
       },
+      "CompletedModule": {
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "completed_at"
+        ],
+        "title": "CompletedModule",
+        "type": "object"
+      },
       "ConfirmRecordRequest": {
         "description": "The author's reviewed version of the extraction: this becomes the case.",
         "properties": {
@@ -4465,6 +4484,19 @@
         "title": "SetCaseLanguageRequest",
         "type": "object"
       },
+      "SetModuleRequest": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "done"
+        ],
+        "title": "SetModuleRequest",
+        "type": "object"
+      },
       "SetRoleRequest": {
         "properties": {
           "role": {
@@ -5062,6 +5094,55 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "TeamMemberTraining": {
+        "properties": {
+          "completed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Completed",
+            "type": "array"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "required_left": {
+            "title": "Required Left",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "role",
+          "completed",
+          "required_left",
+          "ready"
+        ],
+        "title": "TeamMemberTraining",
+        "type": "object"
+      },
       "ToggleOncallRequest": {
         "description": "Switch yourself on or off. `until` (in the future, within 24 hours)\nsets when it ends; without it a new shift ends at the next 07:00, 17:00\nor 23:00 org time, and a running one keeps its end.",
         "properties": {
@@ -5116,6 +5197,32 @@
           "incidents"
         ],
         "title": "TractCount",
+        "type": "object"
+      },
+      "TrainingProgress": {
+        "properties": {
+          "completed": {
+            "items": {
+              "$ref": "#/components/schemas/CompletedModule"
+            },
+            "title": "Completed",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "required_left": {
+            "title": "Required Left",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "completed",
+          "required_left",
+          "ready"
+        ],
+        "title": "TrainingProgress",
         "type": "object"
       },
       "TransitAlert": {
@@ -11140,6 +11247,108 @@
         "summary": "Update Task",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/v1/training/progress": {
+      "get": {
+        "description": "The modules you've finished, and whether every required one is done.",
+        "operationId": "my_progress_v1_training_progress_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Progress",
+        "tags": [
+          "training"
+        ]
+      }
+    },
+    "/v1/training/progress/{module_id}": {
+      "put": {
+        "description": "Mark a module done (`done: true`) or not done.",
+        "operationId": "set_module_v1_training_progress__module_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "maxLength": 60,
+              "title": "Module Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetModuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Module",
+        "tags": [
+          "training"
+        ]
+      }
+    },
+    "/v1/training/team": {
+      "get": {
+        "description": "Every staff member's progress, for admins.",
+        "operationId": "team_progress_v1_training_team_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberTraining"
+                  },
+                  "title": "Response Team Progress V1 Training Team Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Team Progress",
+        "tags": [
+          "training"
         ]
       }
     },

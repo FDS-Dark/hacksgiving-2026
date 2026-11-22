@@ -1660,6 +1660,66 @@ export interface paths {
         patch: operations["update_task_v1_tasks__task_id__patch"];
         trace?: never;
     };
+    "/v1/training/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Progress
+         * @description The modules you've finished, and whether every required one is done.
+         */
+        get: operations["my_progress_v1_training_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/training/progress/{module_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Module
+         * @description Mark a module done (`done: true`) or not done.
+         */
+        put: operations["set_module_v1_training_progress__module_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/training/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team Progress
+         * @description Every staff member's progress, for admins.
+         */
+        get: operations["team_progress_v1_training_team_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/app-capabilities": {
         parameters: {
             query?: never;
@@ -2345,6 +2405,16 @@ export interface components {
             value: number | null;
             /** Year */
             year: number;
+        };
+        /** CompletedModule */
+        CompletedModule: {
+            /**
+             * Completed At
+             * Format: date-time
+             */
+            completed_at: string;
+            /** Module Id */
+            module_id: string;
         };
         /**
          * ConfirmRecordRequest
@@ -3641,6 +3711,11 @@ export interface components {
              */
             language: string | null;
         };
+        /** SetModuleRequest */
+        SetModuleRequest: {
+            /** Done */
+            done: boolean;
+        };
         /** SetRoleRequest */
         SetRoleRequest: {
             role: components["schemas"]["Role"];
@@ -3860,6 +3935,24 @@ export interface components {
          * @enum {string}
          */
         TaskStatus: "open" | "done";
+        /** TeamMemberTraining */
+        TeamMemberTraining: {
+            /** Completed */
+            completed: string[];
+            /** Display Name */
+            display_name: string | null;
+            /** Ready */
+            ready: boolean;
+            /** Required Left */
+            required_left: number;
+            /** Role */
+            role: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * ToggleOncallRequest
          * @description Switch yourself on or off. `until` (in the future, within 24 hours)
@@ -3880,6 +3973,15 @@ export interface components {
             tract_geoid: string;
             /** Tract Name */
             tract_name: string | null;
+        };
+        /** TrainingProgress */
+        TrainingProgress: {
+            /** Completed */
+            completed: components["schemas"]["CompletedModule"][];
+            /** Ready */
+            ready: boolean;
+            /** Required Left */
+            required_left: number;
         };
         /** TransitAlert */
         TransitAlert: {
@@ -7210,6 +7312,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_progress_v1_training_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgress"];
+                };
+            };
+        };
+    };
+    set_module_v1_training_progress__module_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetModuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    team_progress_v1_training_team_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMemberTraining"][];
                 };
             };
         };

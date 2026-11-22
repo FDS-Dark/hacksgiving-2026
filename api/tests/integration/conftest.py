@@ -55,6 +55,7 @@ from dependencies import (
 from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
+from routers.training import TrainingDatabridge, get_training
 from services.case import CaseService
 from services.attachment import AttachmentService
 from services.handoff import HandoffService
@@ -196,6 +197,7 @@ async def api(database):
         get_oncall_service: lambda: oncall,
         get_handoff_service: lambda: handoffs,
         get_attachment_service: lambda: attachments,
+        get_training: lambda: TrainingDatabridge(executor),
         get_public_data_service: lambda: PublicDataService(PublicDataDatabridge(executor)),
         get_push_service: lambda: PushService(PushDatabridge(executor), notifications, executor),
     })

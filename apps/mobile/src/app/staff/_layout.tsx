@@ -23,7 +23,7 @@ const TABS: TabItem[] = [
     icon: 'person-outline',
     iconActive: 'person',
     match: (p) =>
-      p.startsWith('/staff/me') || p.startsWith('/staff/knowledge') || p.startsWith('/staff/notification-settings') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls'),
+      p.startsWith('/staff/me') || p.startsWith('/staff/training') || p.startsWith('/staff/knowledge') || p.startsWith('/staff/notification-settings') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls'),
   },
 ];
 
@@ -67,6 +67,8 @@ export default function StaffLayout() {
           <Stack.Screen name="alerts/[id]" />
           <Stack.Screen name="tasks" />
           <Stack.Screen name="knowledge" />
+          <Stack.Screen name="training/index" />
+          <Stack.Screen name="training/[id]" />
           <Stack.Screen name="notification-settings" />
           <Stack.Screen name="handoffs/index" />
           <Stack.Screen name="handoffs/[id]" />
