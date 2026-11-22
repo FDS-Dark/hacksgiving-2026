@@ -1886,6 +1886,137 @@
         "title": "IncidentPoint",
         "type": "object"
       },
+      "Insights": {
+        "properties": {
+          "by_category": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "By Category",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "districts": {
+            "items": {
+              "$ref": "#/components/schemas/InsightsDistrict"
+            },
+            "title": "Districts",
+            "type": "array"
+          },
+          "patterns": {
+            "items": {
+              "$ref": "#/components/schemas/Pattern"
+            },
+            "title": "Patterns",
+            "type": "array"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/InsightsTotals"
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "days",
+          "district",
+          "districts",
+          "totals",
+          "by_category",
+          "patterns"
+        ],
+        "title": "Insights",
+        "type": "object"
+      },
+      "InsightsDistrict": {
+        "description": "A police district, for the filter.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name"
+        ],
+        "title": "InsightsDistrict",
+        "type": "object"
+      },
+      "InsightsTotals": {
+        "properties": {
+          "avg_resolution_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Resolution Hours"
+          },
+          "opened": {
+            "title": "Opened",
+            "type": "integer"
+          },
+          "placed": {
+            "description": "With a known place; only these count toward a district or a pattern.",
+            "title": "Placed",
+            "type": "integer"
+          },
+          "resolved": {
+            "title": "Resolved",
+            "type": "integer"
+          },
+          "still_open": {
+            "title": "Still Open",
+            "type": "integer"
+          },
+          "urgent": {
+            "description": "Opened at high or critical priority.",
+            "title": "Urgent",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "opened",
+          "still_open",
+          "resolved",
+          "urgent",
+          "placed",
+          "avg_resolution_hours"
+        ],
+        "title": "InsightsTotals",
+        "type": "object"
+      },
       "JobStat": {
         "description": "One kind and status in the queue: how many, and the oldest one due.",
         "properties": {
@@ -2935,6 +3066,135 @@
         },
         "title": "PassRequest",
         "type": "object"
+      },
+      "Pattern": {
+        "properties": {
+          "case_ids": {
+            "description": "Newest first.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Case Ids",
+            "type": "array"
+          },
+          "case_numbers": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Case Numbers",
+            "type": "array"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "first_at": {
+            "format": "date-time",
+            "title": "First At",
+            "type": "string"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PatternKind"
+          },
+          "label": {
+            "description": "A block, an intersection or a neighborhood; never a house number.",
+            "title": "Label",
+            "type": "string"
+          },
+          "last_at": {
+            "format": "date-time",
+            "title": "Last At",
+            "type": "string"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "night_total": {
+            "description": "Opened 6 PM to 6 AM, local time.",
+            "title": "Night Total",
+            "type": "integer"
+          },
+          "police_district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Police District"
+          },
+          "prior_total": {
+            "description": "Cases there in the period of the same length before.",
+            "title": "Prior Total",
+            "type": "integer"
+          },
+          "top_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "top_category_total": {
+            "title": "Top Category Total",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "weekend_night_total": {
+            "description": "Opened on a Friday or Saturday night.",
+            "title": "Weekend Night Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "label",
+          "neighborhood",
+          "police_district",
+          "total",
+          "prior_total",
+          "top_category",
+          "top_category_total",
+          "night_total",
+          "weekend_night_total",
+          "first_at",
+          "last_at",
+          "case_ids",
+          "case_numbers",
+          "headline",
+          "detail"
+        ],
+        "title": "Pattern",
+        "type": "object"
+      },
+      "PatternKind": {
+        "enum": [
+          "spot",
+          "neighborhood"
+        ],
+        "title": "PatternKind",
+        "type": "string"
       },
       "PublicRequest": {
         "properties": {
@@ -5220,6 +5480,12 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "urgent": {
+            "default": false,
+            "description": "The request went in as urgent and the on-call worker was alerted. It is not a dispatch: nobody is promised to arrive.",
+            "title": "Urgent",
+            "type": "boolean"
           }
         },
         "required": [
@@ -5227,7 +5493,8 @@
           "request_number",
           "category",
           "access_code",
-          "status"
+          "status",
+          "urgent"
         ],
         "title": "VoiceCaseReceipt",
         "type": "object"
@@ -5296,6 +5563,11 @@
               }
             ],
             "title": "Safe To Contact"
+          },
+          "urgency": {
+            "$ref": "#/components/schemas/VoiceCaseUrgency",
+            "default": "routine",
+            "description": "`urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911."
           }
         },
         "required": [
@@ -5306,6 +5578,15 @@
         ],
         "title": "VoiceCaseRequest",
         "type": "object"
+      },
+      "VoiceCaseUrgency": {
+        "description": "How soon a phone request needs a person. There is deliberately no\nemergency level: danger now means the caller hangs up and calls 911, and\nthe request is never submitted (docs/voice/agent-prompt.md).",
+        "enum": [
+          "routine",
+          "urgent"
+        ],
+        "title": "VoiceCaseUrgency",
+        "type": "string"
       },
       "VoiceDashboard": {
         "properties": {
@@ -6729,6 +7010,73 @@
         "summary": "Health Check",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/v1/insights": {
+      "get": {
+        "description": "Cases opened in the period (in one police district, when given), by\nneed, and the patterns among them. Staff only.",
+        "operationId": "insights_v1_insights_get",
+        "parameters": [
+          {
+            "description": "The period: this many days up to now.",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "The period: this many days up to now.",
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "A police district key, from `districts`.",
+            "in": "query",
+            "name": "district",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A police district key, from `districts`.",
+              "title": "District"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insights"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Insights",
+        "tags": [
+          "insights"
         ]
       }
     },
@@ -10416,7 +10764,7 @@
     },
     "/v1/voice/requests": {
       "post": {
-        "description": "Create a consented anonymous Get Help case from approved fields only.",
+        "description": "Create a consented anonymous Get Help case from approved fields only.\nOne Ava marks urgent (needs someone today, not 911) goes in at high\npriority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`\nis off.",
         "operationId": "submit_voice_request_v1_voice_requests_post",
         "parameters": [
           {

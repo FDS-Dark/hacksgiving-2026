@@ -36,7 +36,12 @@ dial 911 without continuing intake.
      structured category, general location, and optional callback preference.
      It returns the case number and private access code, which is shown only in
      that response. Audio and transcripts are never submitted or stored by
-     this tool.
+     this tool. Its `urgency` (`routine`, the default, or `urgent`: needs
+     someone today, nobody in danger now) decides whether the case goes in
+     at high priority and pages whoever is on call; `urgent: true` in the
+     response says it did. There is no emergency level: the schema rejects
+     one. `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns paging off while
+     still recording Ava's judgement on the call.
    - `GET /v1/voice/opportunities` for the same active job and volunteer
      postings residents can search under Me > Volunteer and jobs.
    - `GET /v1/voice/resources`

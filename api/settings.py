@@ -143,6 +143,11 @@ class WorkerConfig(BaseModel):
     # this, are deleted.
     keep_push_devices_days: int = Field(default=60, ge=1)
     keep_push_deliveries_days: int = Field(default=30, ge=1)
+    # Place cases for Insights (services/place.py). The geocoder sends only
+    # a block or intersection to the City of Milwaukee's locator; off, cases
+    # are placed from their coordinates and neighborhood names alone.
+    place_cases: bool = Field(default=True)
+    geocode_cases: bool = Field(default=True)
 
 
 class VoiceConfig(BaseModel):
@@ -150,6 +155,10 @@ class VoiceConfig(BaseModel):
 
     elevenlabs_webhook_secret: str = Field(default="")
     tool_secret: str = Field(default="")
+    # A phone request Ava marks urgent goes in at high priority, which pages
+    # on call (D3). False keeps every phone request at medium: the urgency is
+    # still recorded on the call, but nobody is paged.
+    urgent_pages_on_call: bool = Field(default=True)
 
 
 class LoaderConfig(BaseModel):

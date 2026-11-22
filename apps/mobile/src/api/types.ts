@@ -25,6 +25,12 @@ export type CaseDetail = Schemas['CaseDetail'];
 export type CaseUpdate = Schemas['CaseUpdate'];
 export type CaseInsights = Schemas['CaseInsights'];
 export type CaseStats = Schemas['CaseStats'];
+
+// ── Insights with filters, and patterns (/v1/insights) ─────────────────
+export type Insights = Schemas['Insights'];
+export type InsightsDistrict = Schemas['InsightsDistrict'];
+export type Pattern = Schemas['Pattern'];
+
 export type CreateCase = Schemas['CreateCaseRequest'];
 export type UpdateCase = Schemas['UpdateCaseRequest'];
 export type AddCaseUpdate = Schemas['AddCaseUpdateRequest'];
@@ -97,6 +103,8 @@ export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
 export type VoiceCallReview = Schemas['VoiceCallReview'];
 export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
+export type VoiceDashboard = Schemas['VoiceDashboard'];
+export type ImpactSummary = Schemas['ImpactSummary'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

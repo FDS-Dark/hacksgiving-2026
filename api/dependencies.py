@@ -19,6 +19,7 @@ from openai import AsyncOpenAI
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.insights import InsightsDatabridge
 from databridge.opportunity import OpportunityDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
@@ -38,6 +39,7 @@ from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
+from services.insights import InsightsService
 from services.job import JobService
 from services.notification import NotificationService
 from services.oncall import OncallService
@@ -130,6 +132,11 @@ def get_opportunity_service() -> OpportunityService:
 @cache
 def get_public_data_service() -> PublicDataService:
     return PublicDataService(PublicDataDatabridge(get_executor()))
+
+
+@cache
+def get_insights_service() -> InsightsService:
+    return InsightsService(InsightsDatabridge(get_executor()), config.oncall.timezone)
 
 
 @cache

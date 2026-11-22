@@ -24,6 +24,7 @@ from models.voice import (
     VoiceCallReview,
     VoiceCallReviewDetail,
     VoiceDashboard,
+    VoiceCaseUrgency,
     VoiceFollowUp,
     WebhookAccepted,
 )
@@ -235,6 +236,7 @@ class VoiceService:
         request_number: int,
         category: CaseCategory,
         contact_method: ContactMethod,
+        urgency: VoiceCaseUrgency = VoiceCaseUrgency.ROUTINE,
     ) -> None:
         """Link structured case metadata to a call; never store its summary."""
         now = datetime.now(timezone.utc)
@@ -245,7 +247,7 @@ class VoiceService:
                 event_timestamp=int(now.timestamp()),
                 language=None,
                 need_category=category.value,
-                urgency_tier="routine",
+                urgency_tier=urgency.value,
                 neighborhood=None,
                 callback_consent=contact_method != ContactMethod.NONE,
                 disposition="case_submitted",
@@ -262,6 +264,7 @@ class VoiceService:
                     "request_number": request_number,
                     "category": category.value,
                     "contact_method": contact_method.value,
+                    "urgency": urgency.value,
                 },
                 occurred_at=now,
             )

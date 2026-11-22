@@ -262,6 +262,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Insights
+         * @description Cases opened in the period (in one police district, when given), by
+         *     need, and the patterns among them. Staff only.
+         */
+        get: operations["insights_v1_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/jobs/stats": {
         parameters: {
             query?: never;
@@ -1708,6 +1729,9 @@ export interface paths {
         /**
          * Submit Voice Request
          * @description Create a consented anonymous Get Help case from approved fields only.
+         *     One Ava marks urgent (needs someone today, not 911) goes in at high
+         *     priority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`
+         *     is off.
          */
         post: operations["submit_voice_request_v1_voice_requests_post"];
         delete?: never;
@@ -2500,6 +2524,61 @@ export interface components {
             /** Weapons */
             weapons: string[];
         };
+        /** Insights */
+        Insights: {
+            /** By Category */
+            by_category: components["schemas"]["CategoryCount"][];
+            /** Days */
+            days: number;
+            /** District */
+            district: string | null;
+            /** Districts */
+            districts: components["schemas"]["InsightsDistrict"][];
+            /** Patterns */
+            patterns: components["schemas"]["Pattern"][];
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            totals: components["schemas"]["InsightsTotals"];
+        };
+        /**
+         * InsightsDistrict
+         * @description A police district, for the filter.
+         */
+        InsightsDistrict: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+        };
+        /** InsightsTotals */
+        InsightsTotals: {
+            /** Avg Resolution Hours */
+            avg_resolution_hours: number | null;
+            /** Opened */
+            opened: number;
+            /**
+             * Placed
+             * @description With a known place; only these count toward a district or a pattern.
+             */
+            placed: number;
+            /** Resolved */
+            resolved: number;
+            /** Still Open */
+            still_open: number;
+            /**
+             * Urgent
+             * @description Opened at high or critical priority.
+             */
+            urgent: number;
+        };
         /**
          * JobStat
          * @description One kind and status in the queue: how many, and the oldest one due.
@@ -2865,6 +2944,65 @@ export interface components {
         PassRequest: {
             reason?: components["schemas"]["PassReason"] | null;
         };
+        /** Pattern */
+        Pattern: {
+            /**
+             * Case Ids
+             * @description Newest first.
+             */
+            case_ids: string[];
+            /** Case Numbers */
+            case_numbers: number[];
+            /** Detail */
+            detail: string;
+            /**
+             * First At
+             * Format: date-time
+             */
+            first_at: string;
+            /** Headline */
+            headline: string;
+            kind: components["schemas"]["PatternKind"];
+            /**
+             * Label
+             * @description A block, an intersection or a neighborhood; never a house number.
+             */
+            label: string;
+            /**
+             * Last At
+             * Format: date-time
+             */
+            last_at: string;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /**
+             * Night Total
+             * @description Opened 6 PM to 6 AM, local time.
+             */
+            night_total: number;
+            /** Police District */
+            police_district: string | null;
+            /**
+             * Prior Total
+             * @description Cases there in the period of the same length before.
+             */
+            prior_total: number;
+            top_category: components["schemas"]["CaseCategory"] | null;
+            /** Top Category Total */
+            top_category_total: number;
+            /** Total */
+            total: number;
+            /**
+             * Weekend Night Total
+             * @description Opened on a Friday or Saturday night.
+             */
+            weekend_night_total: number;
+        };
+        /**
+         * PatternKind
+         * @enum {string}
+         */
+        PatternKind: "spot" | "neighborhood";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -3657,6 +3795,12 @@ export interface components {
             request_number: number;
             /** Status */
             status: string;
+            /**
+             * Urgent
+             * @description The request went in as urgent and the on-call worker was alerted. It is not a dispatch: nobody is promised to arrive.
+             * @default false
+             */
+            urgent: boolean;
         };
         /**
          * VoiceCaseRequest
@@ -3681,7 +3825,20 @@ export interface components {
             general_location?: string | null;
             /** Safe To Contact */
             safe_to_contact?: boolean | null;
+            /**
+             * @description `urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911.
+             * @default routine
+             */
+            urgency?: components["schemas"]["VoiceCaseUrgency"];
         };
+        /**
+         * VoiceCaseUrgency
+         * @description How soon a phone request needs a person. There is deliberately no
+         *     emergency level: danger now means the caller hangs up and calls 911, and
+         *     the request is never submitted (docs/voice/agent-prompt.md).
+         * @enum {string}
+         */
+        VoiceCaseUrgency: "routine" | "urgent";
         /** VoiceDashboard */
         VoiceDashboard: {
             /** Active Referrals */
@@ -4363,6 +4520,40 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    insights_v1_insights_get: {
+        parameters: {
+            query?: {
+                /** @description The period: this many days up to now. */
+                days?: number;
+                /** @description A police district key, from `districts`. */
+                district?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -36,7 +36,7 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   backup or next shift, then every admin (5 min per step), with Accept / Pass
   on `/staff/alerts/[id]`, red banners on Today and 3 reminders when nobody
   accepts. Response times show in Insights.
-- **Resident lane** (migration 0019):
+- **Resident lane** (migration 0020):
   - Weather: Home shows the most severe NWS alert in effect (cold or heat
     links to shelter on Nearby); Safety alerts lists them. The worker acts on
     each alert once: cold or heat at Moderate+ gives every open
@@ -54,6 +54,21 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
     number and code (max 3 phones). Generic silent text; payload `r` opens
     the request.
 
+- **Case places and patterns** (branch `feat/ava-pages-oncall`, migration
+  0019): the worker's upkeep places each case (`services/place.py`): its own
+  coordinates, else a street or intersection in its location text through
+  the City of Milwaukee's locator (only the block is sent), else a named
+  neighborhood. `app.case_places` holds the rounded point, police district,
+  tract and neighborhood; `app.cases` is never changed. `GET /v1/insights`
+  filters by period and district and words the patterns.
+- **Ava pages on call** (same branch): `POST /v1/voice/requests` takes
+  `urgency: "urgent"` (needs someone today, nobody in danger now), which
+  makes the case high priority and opens an on-call alert. This reverses
+  D3's "voice never pages" and needs the team's OK;
+  `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns it off. The ElevenLabs
+  `submit_comforce_request` tool needs the new `urgency` parameter
+  (`docs/voice/agent-prompt.md`).
+
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
 
@@ -65,8 +80,9 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0019** (`0015_oncall_shifts`,
-  `0016_notifications`, `0017_push`, `0018_urgent_alerts`, `0019_resident_lane`).
+- Database: Alembic revisions through **0020** (`0015_oncall_shifts`,
+  `0016_notifications`, `0017_push`, `0018_urgent_alerts`, `0019_resident_lane`,
+  `0020_case_places`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
