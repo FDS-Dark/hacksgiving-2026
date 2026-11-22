@@ -18,6 +18,7 @@ import type {
 } from '@/api/types';
 import { useAuth } from '@/lib/auth';
 import { isOffline, loadPending, queueRequest, removePending } from '@/lib/pendingRequests';
+import { unsubscribeFromRequest } from '@/lib/push';
 import { forgetRequest, loadSavedRequests, saveRequest, type SavedRequest } from '@/lib/savedRequests';
 
 const codeHeader = (code: string) => ({ 'X-Access-Code': code });
@@ -192,7 +193,12 @@ export function useFindRequest() {
 export function useForgetRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: forgetRequest,
+    mutationFn: async (id: string) => {
+      // Its pushes stop too; best effort (offline, it simply stays subscribed).
+      const entry = (await loadSavedRequests()).find((r) => r.id === id);
+      if (entry) await unsubscribeFromRequest(entry.number, entry.code);
+      return forgetRequest(id);
+    },
     onSuccess: (saved, id) => {
       qc.setQueryData(requestKeys.saved, saved);
       qc.removeQueries({ queryKey: requestKeys.detail(id) });

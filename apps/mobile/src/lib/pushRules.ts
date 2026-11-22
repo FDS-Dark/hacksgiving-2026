@@ -28,6 +28,9 @@ export interface PushData {
   id: string | null;
   /** `u` = 1: an urgent kind, the only kind that shows while the app is open. */
   urgent: boolean;
+  /** `r`: a request sent without an account. There is no inbox row; the
+   *  app opens the request itself (the code is saved on this phone). */
+  request: string | null;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -44,7 +47,8 @@ export function pushData(notification: NotificationLike): PushData {
   const payload = trigger.type === 'push' ? record(trigger.payload) : {};
   const data = { ...record(notification.request.content.data), ...payload };
   const id = typeof data.n === 'string' && data.n ? data.n : null;
-  return { id, urgent: data.u === 1 || data.u === '1' };
+  const request = typeof data.r === 'string' && data.r ? data.r : null;
+  return { id, urgent: data.u === 1 || data.u === '1', request };
 }
 
 /** How a push that arrives while the app is open is shown: urgent ones as a

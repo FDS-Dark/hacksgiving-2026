@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BigButton, Card, ResidentScreen } from '@/components/resident';
+import { Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { callPhone } from '@/lib/phone';
-import { shouldAskResident } from '@/lib/push';
+import { openSettings, pushSupported, shouldAskResident, subscribeToRequest } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
 
@@ -99,6 +100,8 @@ function SentScreen() {
         </Card>
       ) : null}
 
+      {saved && pushSupported() ? <NotifyMe number={saved.number} code={saved.code} /> : null}
+
       <Card style={[styles.full, { gap: 14 }]}>
         <Text style={[styles.cardTitle, { color: theme.text }]}>What happens next</Text>
         <Step done title="Received" detail="Just now" />
@@ -106,6 +109,36 @@ function SentScreen() {
         <Step title="Connected with help" detail="Shelter, food, rides and more" />
       </Card>
     </ResidentScreen>
+  );
+}
+
+/**
+ * Sent without an account: this phone can still hear when ComForce replies
+ * (a push saying only "You have a new update", no sound). Asks iOS first.
+ */
+function NotifyMe({ number, code }: { number: number; code: string }) {
+  const theme = useTheme();
+  const [state, setState] = useState<'idle' | 'asking' | 'on' | 'off'>('idle');
+  const ask = async () => {
+    setState('asking');
+    setState((await subscribeToRequest(number, code)) ? 'on' : 'off');
+  };
+  return (
+    <Card style={[styles.full, { gap: 8 }]}>
+      <Text style={[styles.cardTitle, { color: theme.text }]}>Get notified on this phone</Text>
+      <Text style={{ fontSize: 13, color: theme.textSecondary }}>
+        {state === 'on'
+          ? 'You’ll get a notification when ComForce replies. It never shows your message on the lock screen.'
+          : state === 'off'
+            ? 'Notifications are off for ComForce. You can turn them on in Settings, or check back here.'
+            : 'We’ll let you know when ComForce replies. The notification only says “You have a new update”.'}
+      </Text>
+      {state === 'on' ? null : state === 'off' ? (
+        <Button label="Open Settings" variant="tinted" onPress={openSettings} />
+      ) : (
+        <Button label="Notify me" icon="notifications-outline" variant="tinted" loading={state === 'asking'} onPress={ask} />
+      )}
+    </Card>
   );
 }
 
