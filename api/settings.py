@@ -81,6 +81,11 @@ class OpenAIConfig(BaseModel):
     timeout: float = Field(default=20.0)
     # Speech to text for voice debriefs (services/transcription.py).
     transcription_model: str = Field(default="gpt-4o-transcribe")
+    # How requests are routed (services/routing_decisions.py): "decisions"
+    # asks OpenAI's Decisions API (typed answers, input tokens only, about
+    # 95% cheaper) and falls back to "responses" (`model`, above) if it fails.
+    routing_backend: Literal["decisions", "responses"] = Field(default="decisions")
+    decisions_model: str = Field(default="gpt-6-luna")
 
 
 class StorageConfig(BaseModel):

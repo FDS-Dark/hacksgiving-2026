@@ -55,7 +55,7 @@ from models.voice import (
 from services.case import CaseService
 from services.opportunity import OpportunityService
 from services.public_data import PublicDataService
-from services.routing import RoutingService
+from services.routing import Router
 from services.voice import VoiceService
 from settings import config
 
@@ -188,7 +188,7 @@ async def app_capabilities() -> VoiceAppCapabilities:
 )
 async def route_voice_request(
     body: VoiceRouteRequest,
-    routing: RoutingService = Depends(get_routing_service),
+    routing: Router = Depends(get_routing_service),
     voice: VoiceService = Depends(get_voice_service),
 ) -> VoiceRouteResponse:
     """Use the app's classifier and keep its structured route on the call."""
