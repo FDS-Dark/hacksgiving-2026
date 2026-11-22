@@ -54,12 +54,18 @@ function TaskRow({ task: t, first, now }: { task: Task; first: boolean; now: num
       disabled={update.isPending}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done, disabled: update.isPending }}
-      accessibilityLabel={t.title}
+      accessibilityLabel={t.detail && !done ? `${t.title}. ${t.detail}` : t.title}
       style={({ pressed }) => [styles.row, !first && { borderTopColor: theme.separator, borderTopWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.7 }]}
     >
       <Ionicons name={done ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={done ? theme.accent : theme.textTertiary} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[type.subhead, { color: done ? theme.textSecondary : theme.text, textDecorationLine: done ? 'line-through' : 'none' }]}>{t.title}</Text>
+        {/* How to do it: the number to call, whether a voicemail is safe. */}
+        {t.detail && !done ? (
+          <Text style={[type.footnote, { color: theme.textSecondary }]} numberOfLines={3} selectable>
+            {t.detail}
+          </Text>
+        ) : null}
         {meta ? <Text style={[type.caption, { color: overdue ? theme.danger : theme.textSecondary }]}>{meta}</Text> : null}
       </View>
     </Pressable>
