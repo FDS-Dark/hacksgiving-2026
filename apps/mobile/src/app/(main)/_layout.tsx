@@ -10,7 +10,7 @@ const TABS: TabItem[] = [
   { label: 'Home', href: '/', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/' },
   { label: 'Get help', push: '/help', icon: 'help-buoy-outline', iconActive: 'help-buoy', match: () => false },
   { label: 'Requests', href: '/requests', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/requests') },
-  { label: 'Nearby', href: '/nearby', icon: 'location-outline', iconActive: 'location', match: (p) => p === '/nearby' || p === '/safety' },
+  { label: 'Awareness', href: '/safety', icon: 'shield-outline', iconActive: 'shield', match: (p) => p === '/safety' || p === '/alerts' },
   { label: 'Me', href: '/me', icon: 'person-outline', iconActive: 'person', match: (p) => p === '/me' || p === '/alerts' || p === '/opportunities' },
 ];
 

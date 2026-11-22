@@ -2566,6 +2566,12 @@
             "title": "Categories",
             "type": "array"
           },
+          "connection_attempts": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Connection Attempts",
+            "type": "integer"
+          },
           "emergency_redirects": {
             "minimum": 0.0,
             "title": "Emergency Redirects",
@@ -2576,9 +2582,45 @@
             "title": "Follow Ups Completed",
             "type": "integer"
           },
+          "follow_ups_due": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Follow Ups Due",
+            "type": "integer"
+          },
+          "incomplete_calls": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Incomplete Calls",
+            "type": "integer"
+          },
+          "referrals_accepted": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Referrals Accepted",
+            "type": "integer"
+          },
           "referrals_offered": {
             "minimum": 0.0,
             "title": "Referrals Offered",
+            "type": "integer"
+          },
+          "residents_helped": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Residents Helped",
+            "type": "integer"
+          },
+          "routed_calls": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Routed Calls",
+            "type": "integer"
+          },
+          "tool_failures": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Tool Failures",
             "type": "integer"
           },
           "total_calls": {
@@ -2598,6 +2640,13 @@
           "referrals_offered",
           "transfers_connected",
           "follow_ups_completed",
+          "routed_calls",
+          "referrals_accepted",
+          "connection_attempts",
+          "residents_helped",
+          "follow_ups_due",
+          "incomplete_calls",
+          "tool_failures",
           "categories"
         ],
         "title": "ImpactSummary",
@@ -4935,6 +4984,73 @@
         "title": "Referral",
         "type": "object"
       },
+      "ReferralFollowUpDue": {
+        "properties": {
+          "call_id": {
+            "format": "uuid",
+            "title": "Call Id",
+            "type": "string"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "need_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Category"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "referral_id": {
+            "format": "uuid",
+            "title": "Referral Id",
+            "type": "string"
+          },
+          "resource_name": {
+            "title": "Resource Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "referral_id",
+          "call_id",
+          "resource_name",
+          "due_at",
+          "need_category",
+          "language",
+          "neighborhood"
+        ],
+        "title": "ReferralFollowUpDue",
+        "type": "object"
+      },
       "ReferralOutcome": {
         "properties": {
           "id": {
@@ -5363,6 +5479,45 @@
           "follow_up_question"
         ],
         "title": "RouteResponse",
+        "type": "object"
+      },
+      "SafeContactPlan": {
+        "properties": {
+          "contact_method": {
+            "$ref": "#/components/schemas/ContactMethod"
+          },
+          "neutral_message_only": {
+            "title": "Neutral Message Only",
+            "type": "boolean"
+          },
+          "safe_contact_window": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Contact Window"
+          },
+          "safe_to_contact": {
+            "title": "Safe To Contact",
+            "type": "boolean"
+          },
+          "voicemail_allowed": {
+            "title": "Voicemail Allowed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contact_method",
+          "safe_to_contact",
+          "voicemail_allowed",
+          "neutral_message_only",
+          "safe_contact_window"
+        ],
+        "title": "SafeContactPlan",
         "type": "object"
       },
       "Service": {
@@ -7064,6 +7219,74 @@
         "title": "VoiceAppService",
         "type": "object"
       },
+      "VoiceAwarenessCategory": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category",
+          "count"
+        ],
+        "title": "VoiceAwarenessCategory",
+        "type": "object"
+      },
+      "VoiceAwarenessSummary": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/VoiceAwarenessCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "district": {
+            "title": "District",
+            "type": "string"
+          },
+          "fire_ems_calls": {
+            "minimum": 0.0,
+            "title": "Fire Ems Calls",
+            "type": "integer"
+          },
+          "police_dispatch_calls": {
+            "minimum": 0.0,
+            "title": "Police Dispatch Calls",
+            "type": "integer"
+          },
+          "reviewed_incidents": {
+            "minimum": 0.0,
+            "title": "Reviewed Incidents",
+            "type": "integer"
+          },
+          "source_note": {
+            "title": "Source Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "district",
+          "days",
+          "reviewed_incidents",
+          "police_dispatch_calls",
+          "fire_ems_calls",
+          "categories",
+          "source_note"
+        ],
+        "title": "VoiceAwarenessSummary",
+        "type": "object"
+      },
       "VoiceCallReview": {
         "properties": {
           "callback_consent": {
@@ -7194,6 +7417,16 @@
           "call": {
             "$ref": "#/components/schemas/VoiceCallReview"
           },
+          "contact_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafeContactPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "referrals": {
             "items": {
               "$ref": "#/components/schemas/VoiceReferralDetail"
@@ -7204,7 +7437,8 @@
         },
         "required": [
           "call",
-          "referrals"
+          "referrals",
+          "contact_plan"
         ],
         "title": "VoiceCallReviewDetail",
         "type": "object"
@@ -7303,6 +7537,23 @@
             ],
             "title": "General Location"
           },
+          "neutral_message_only": {
+            "default": false,
+            "title": "Neutral Message Only",
+            "type": "boolean"
+          },
+          "safe_contact_window": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Contact Window"
+          },
           "safe_to_contact": {
             "anyOf": [
               {
@@ -7318,6 +7569,11 @@
             "$ref": "#/components/schemas/VoiceCaseUrgency",
             "default": "routine",
             "description": "`urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911."
+          },
+          "voicemail_allowed": {
+            "default": false,
+            "title": "Voicemail Allowed",
+            "type": "boolean"
           }
         },
         "required": [
@@ -7337,6 +7593,151 @@
         ],
         "title": "VoiceCaseUrgency",
         "type": "string"
+      },
+      "VoiceCheckpoint": {
+        "properties": {
+          "consent_pending": {
+            "title": "Consent Pending",
+            "type": "boolean"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "referral_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Slug"
+          },
+          "saved_at": {
+            "format": "date-time",
+            "title": "Saved At",
+            "type": "string"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service"
+          }
+        },
+        "required": [
+          "service",
+          "neighborhood",
+          "language",
+          "referral_slug",
+          "consent_pending",
+          "saved_at"
+        ],
+        "title": "VoiceCheckpoint",
+        "type": "object"
+      },
+      "VoiceCheckpointRequest": {
+        "properties": {
+          "caller_id": {
+            "maxLength": 16,
+            "minLength": 8,
+            "pattern": "^\\+[1-9][0-9]{7,14}$",
+            "title": "Caller Id",
+            "type": "string"
+          },
+          "consent_pending": {
+            "default": false,
+            "title": "Consent Pending",
+            "type": "boolean"
+          },
+          "conversation_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "maxLength": 12,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "neighborhood": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neighborhood"
+          },
+          "referral_slug": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referral Slug"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "caller_id"
+        ],
+        "title": "VoiceCheckpointRequest",
+        "type": "object"
       },
       "VoiceDashboard": {
         "properties": {
@@ -7483,6 +7884,23 @@
             "title": "Created At",
             "type": "string"
           },
+          "follow_up_due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Due At"
+          },
+          "follow_up_status": {
+            "default": "not_scheduled",
+            "title": "Follow Up Status",
+            "type": "string"
+          },
           "hours_label": {
             "anyOf": [
               {
@@ -7588,7 +8006,9 @@
           "status",
           "outcome_status",
           "outcome_reason_code",
-          "created_at"
+          "created_at",
+          "follow_up_due_at",
+          "follow_up_status"
         ],
         "title": "VoiceReferralDetail",
         "type": "object"
@@ -7673,6 +8093,15 @@
           "transfer_approved": {
             "title": "Transfer Approved",
             "type": "boolean"
+          },
+          "verification_status": {
+            "default": "current",
+            "enum": [
+              "current",
+              "review_due"
+            ],
+            "title": "Verification Status",
+            "type": "string"
           }
         },
         "required": [
@@ -7687,9 +8116,45 @@
           "hours_label",
           "transfer_approved",
           "is_emergency",
-          "last_verified_at"
+          "last_verified_at",
+          "verification_status"
         ],
         "title": "VoiceResource",
+        "type": "object"
+      },
+      "VoiceResumeRequest": {
+        "properties": {
+          "caller_id": {
+            "maxLength": 16,
+            "minLength": 8,
+            "pattern": "^\\+[1-9][0-9]{7,14}$",
+            "title": "Caller Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "caller_id"
+        ],
+        "title": "VoiceResumeRequest",
+        "type": "object"
+      },
+      "VoiceResumeResponse": {
+        "properties": {
+          "checkpoint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VoiceCheckpoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "checkpoint"
+        ],
+        "title": "VoiceResumeResponse",
         "type": "object"
       },
       "VoiceRouteRequest": {
@@ -13261,6 +13726,197 @@
         ]
       }
     },
+    "/v1/voice/awareness": {
+      "get": {
+        "description": "Generalized historical activity by MPD district; never a safety score.",
+        "operationId": "awareness_v1_voice_awareness_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "district",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-7]$",
+              "title": "District",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceAwarenessSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Awareness",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/checkpoints": {
+      "post": {
+        "description": "Save allowlisted routing state so a dropped call can resume without a transcript.",
+        "operationId": "save_checkpoint_v1_voice_checkpoints_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceCheckpointRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCheckpoint"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Checkpoint",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/checkpoints/resume": {
+      "post": {
+        "operationId": "resume_checkpoint_v1_voice_checkpoints_resume_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceResumeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceResumeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume Checkpoint",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/dashboard": {
       "get": {
         "operationId": "dashboard_v1_voice_dashboard_get",
@@ -13302,6 +13958,60 @@
           }
         },
         "summary": "Follow Ups",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
+    "/v1/voice/follow-ups/due": {
+      "get": {
+        "description": "Due structured check-ins for an approved scheduler; contains no phone numbers.",
+        "operationId": "due_follow_ups_v1_voice_follow_ups_due_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReferralFollowUpDue"
+                  },
+                  "title": "Response Due Follow Ups V1 Voice Follow Ups Due Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Due Follow Ups",
         "tags": [
           "voice"
         ]

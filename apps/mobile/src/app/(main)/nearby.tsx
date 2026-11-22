@@ -63,13 +63,13 @@ export default function NearbyTab() {
       <Pressable
         onPress={() => router.push('/safety')}
         accessibilityRole="button"
-        accessibilityLabel="Safety map"
+        accessibilityLabel="Neighborhood awareness"
         style={({ pressed }) => pressed && { opacity: 0.8 }}
       >
         <Card style={styles.row}>
           <Ionicons name="map-outline" size={22} color={theme.accent} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.name, { color: theme.text }]}>Safety map</Text>
+            <Text style={[styles.name, { color: theme.text }]}>Neighborhood awareness</Text>
             <Text style={[styles.meta, { color: theme.textSecondary }]}>Public incident and dispatch activity near you</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />

@@ -21,6 +21,10 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   tasks). The worker reviews and confirms it into a real case.
 - **Voice agent "Ava"** (teammates' work, `api/routers/voice.py`,
   `docs/voice/`): phone calls via ElevenLabs, handed off to the app with a code.
+  Branch `extra-implement-ava` adds safe callback plans, 24-hour structured
+  dropped-call recovery, district-level Awareness summaries, referral check-in
+  scheduling, source-verification labels and a connection funnel. It still
+  stores no recording, transcript, raw caller number or exact address.
 - **Opportunities** (teammates' work, migration 0010): volunteer and job
   listings for residents and staff.
 - **On call + inbox** (phase 1 of `docs/design/on-call-and-push.md`,
@@ -104,10 +108,11 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0019** (`0015_oncall_shifts`,
-  `0016_notifications`, `0017_push`, `0018_urgent_alerts`, `0019_resident_lane`) on
-  `main`; `0020_case_places` and `0021_partners_and_outreach` on the lane C
-  branches.
+- Database: Alembic revisions through **0029** (`0015_oncall_shifts`,
+  `0016_notifications`, `0017_push`, `0018_urgent_alerts`,
+  `0019_resident_lane`, `0020_case_places`, `0021_partners_and_outreach`,
+  `0022_case_debriefs` through `0028_training_progress`, and
+  `0029_voice_safety_and_follow_up`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
@@ -154,6 +159,13 @@ CI runners sometimes drop connections (a `tf-apply` once failed fetching
 `curl`/`jq` from Alpine's mirror); retry the job.
 
 ## Not verified yet
+
+- Migration 0015 on a real Postgres instance. This branch's environment had
+  no Docker/Postgres command, so API unit tests cover its service contracts but
+  `test_migrations.py` was skipped. Run the full integration suite before merge.
+- The existing ElevenLabs agent has redacted DTMF enabled for keypad follow-up.
+  The new Awareness/checkpoint tools must remain unattached until migration
+  0015 and this branch's API endpoints are deployed.
 
 - A real `.m4a` from an iPhone through the whole voice path, locally or in
   production (each part is tested separately; transcription of real speech

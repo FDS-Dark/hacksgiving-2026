@@ -72,7 +72,7 @@ function PartnerForm({ partner }: { partner?: Partner }) {
 
   return (
     <Page contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label={id ? 'Partner' : 'Partners'} fallback="/staff/partners" />
+      <BackLink label={id ? 'Partner' : 'Partners'} fallback="/staff/partners/index" />
       <PageTitle title={id ? 'Edit partner' : 'Add a partner'} />
       <Field label="Name *" value={form.name} onChangeText={set('name')} placeholder="Harbor House" maxLength={160} />
       <Field label="What they do" value={form.description ?? ''} onChangeText={set('description')} multiline maxLength={4000} placeholder="Family shelter with 24-hour intake" />

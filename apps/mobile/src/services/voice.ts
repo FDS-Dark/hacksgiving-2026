@@ -12,6 +12,8 @@ import type {
   VoiceDashboard,
   VoiceFollowUp,
   VoiceReferralDetail,
+  VoiceImpactSummary,
+  RecordVoiceOutcome,
 } from '@/api/types';
 
 export const voiceApi = {
@@ -21,6 +23,8 @@ export const voiceApi = {
   referral: (id: string) => request<VoiceReferralDetail>(`/voice/referrals/${id}`),
   staffCalls: () => request<VoiceCallReview[]>('/voice/staff/calls'),
   staffCall: (id: string) => request<VoiceCallReviewDetail>(`/voice/staff/calls/${id}`),
+  impact: () => request<VoiceImpactSummary>('/voice/impact'),
+  recordOutcome: (id: string, body: RecordVoiceOutcome) => request(`/voice/referrals/${id}/responder-outcome`, { method: 'POST', body }),
   dashboard: () => request<VoiceDashboard>('/voice/dashboard'),
 };
 
@@ -31,6 +35,7 @@ export const voiceKeys = {
   referral: (id: string) => ['voice', 'referrals', id] as const,
   staffCalls: ['voice', 'staff', 'calls'] as const,
   staffCall: (id: string) => ['voice', 'staff', 'calls', id] as const,
+  impact: ['voice', 'impact'] as const,
   dashboard: ['voice', 'dashboard'] as const,
 };
 
@@ -52,6 +57,18 @@ export function useVoiceReferrals() {
 
 export function useVoiceReferral(id: string) {
   return useQuery({ queryKey: voiceKeys.referral(id), queryFn: () => voiceApi.referral(id), enabled: !!id });
+}
+
+export function useRecordVoiceOutcome(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: RecordVoiceOutcome) => voiceApi.recordOutcome(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: voiceKeys.all }),
+  });
+}
+
+export function useVoiceImpact() {
+  return useQuery({ queryKey: voiceKeys.impact, queryFn: voiceApi.impact, refetchInterval: 30_000 });
 }
 
 export function useStaffVoiceCalls() {
