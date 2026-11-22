@@ -7,6 +7,7 @@ import { BigButton, Card, ResidentScreen, SampleTag } from '@/components/residen
 import { Button, ErrorBanner, Loading, type IconName } from '@/components/ui';
 import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/cases';
 import { useResource } from '@/services/resources';
+import { sourceLabel, useTransitNearby } from '@/services/publicData';
 import { space, useTheme } from '@/theme/tokens';
 import { callPhone } from '@/lib/phone';
 
@@ -42,6 +43,9 @@ export default function PlaceScreen() {
 
 function PlaceBody({ place: r }: { place: Resource }) {
   const theme = useTheme();
+  const transit = useTransitNearby(r.latitude, r.longitude);
+  const nearestStop = transit.data?.stops[0];
+  const nextArrival = nearestStop?.arrivals[0];
   return (
     <View style={{ gap: space.lg }}>
       <View style={styles.head}>
@@ -79,12 +83,45 @@ function PlaceBody({ place: r }: { place: Resource }) {
         {r.website ? <Fact icon="globe-outline" text={r.website} onPress={() => Linking.openURL(r.website!)} /> : null}
       </Card>
 
+      {r.latitude != null && r.longitude != null ? (
+        <View style={{ gap: 6 }}>
+          <Text style={[styles.section, { color: theme.text }]}>Getting there by bus</Text>
+          <Card style={{ gap: 0, paddingVertical: 0 }}>
+            {transit.isPending ? <Fact icon="bus-outline" text="Checking nearby MCTS service…" /> : null}
+            {transit.error ? <Fact icon="alert-circle-outline" text="Live transit information is unavailable right now." /> : null}
+            {nearestStop ? (
+              <>
+                <Fact
+                  icon="bus-outline"
+                  text={`${nearestStop.name} · ${nearestStop.distance_m < 1000 ? `${Math.round(nearestStop.distance_m)} m away` : `${(nearestStop.distance_m / 1609).toFixed(1)} mi away`}`}
+                />
+                {nearestStop.routes.length ? <Fact icon="git-branch-outline" text={`Routes ${nearestStop.routes.join(', ')}`} /> : null}
+                <Fact
+                  icon="time-outline"
+                  text={nextArrival
+                    ? `${nextArrival.route_name ?? nextArrival.route_id} arrives in ${Math.max(0, nextArrival.minutes)} min${transit.data?.arrivals_live ? ' · live' : ' · scheduled'}`
+                    : 'No upcoming arrival is listed.'}
+                />
+                {transit.data?.alerts.length ? (
+                  <Fact icon="warning-outline" text={`${transit.data.alerts.length} active service alert${transit.data.alerts.length === 1 ? '' : 's'}`} />
+                ) : null}
+              </>
+            ) : transit.data ? <Fact icon="walk-outline" text="No MCTS stop was found within about half a mile." /> : null}
+          </Card>
+          {transit.data ? <Text style={[styles.provenance, { color: theme.textSecondary }]}>{transit.data.attribution}</Text> : null}
+        </View>
+      ) : null}
+
       {r.description ? (
         <View style={{ gap: 6 }}>
           <Text style={[styles.section, { color: theme.text }]}>What to know</Text>
           <Text style={[styles.body, { color: theme.textSecondary }]}>{r.description}</Text>
         </View>
       ) : null}
+
+      <Text style={[styles.provenance, { color: theme.textSecondary }]}>
+        Resource source: {r.source === 'manual' ? 'ComForce staff' : sourceLabel(r.source)}{r.is_sample ? ' · sample listing' : ''}
+      </Text>
     </View>
   );
 }
@@ -115,4 +152,5 @@ const styles = StyleSheet.create({
   fact: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   section: { fontSize: 15, fontWeight: '800' },
   body: { fontSize: 15, lineHeight: 21 },
+  provenance: { fontSize: 12, lineHeight: 17 },
 });

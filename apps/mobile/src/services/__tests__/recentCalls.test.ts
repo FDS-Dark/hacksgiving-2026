@@ -21,8 +21,13 @@ describe('recent calls', () => {
   it('keeps the crime-related calls the API serves, with their generalized location', () => {
     const calls = toRecentCalls([call({}), call({ call_number: 'P2611200761', category: '911' })]);
     expect(calls).toEqual([
-      expect.objectContaining({ id: 'P2611200764', nature: 'Shooting', district: '5', latitude: 43.069, longitude: -87.939 }),
+      expect.objectContaining({ id: 'P2611200764', nature: 'Shooting', district: '5', latitude: 43.069, longitude: -87.939, source: 'mpd_calls' }),
     ]);
+  });
+
+  it('keeps fire and EMS calls without applying the police crime filter', () => {
+    const calls = toRecentCalls([call({ source: 'mfd_calls', call_number: 'F-1', category: 'MED 1' })]);
+    expect(calls).toEqual([expect.objectContaining({ id: 'F-1', nature: 'MED 1', source: 'mfd_calls' })]);
   });
 
   it('keeps a call without coordinates (the city row had none)', () => {

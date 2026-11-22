@@ -86,6 +86,13 @@ export default function StaffCallDetailScreen() {
           <Detail label="Referrals">{String(call.referral_count)}</Detail>
           {call.request_number ? <Detail label="Linked request">#{call.request_number}</Detail> : null}
         </View>
+        {review.data.contact_plan ? (
+          <Notice icon="shield-checkmark-outline">
+            Safe contact: {review.data.contact_plan.contact_method}. Voicemail {review.data.contact_plan.voicemail_allowed ? 'allowed' : 'not allowed'}
+            {review.data.contact_plan.neutral_message_only ? ' · use a neutral message without naming ComForce' : ''}
+            {review.data.contact_plan.safe_contact_window ? ` · ${review.data.contact_plan.safe_contact_window}` : ''}.
+          </Notice>
+        ) : null}
         {call.request_id ? (
           <Button
             label={call.request_number ? `Open request #${call.request_number}` : 'Open linked request'}

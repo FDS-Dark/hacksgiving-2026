@@ -1013,6 +1013,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/voice/awareness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Awareness
+         * @description Generalized historical activity by MPD district; never a safety score.
+         */
+        get: operations["awareness_v1_voice_awareness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/checkpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Checkpoint
+         * @description Save allowlisted routing state so a dropped call can resume without a transcript.
+         */
+        post: operations["save_checkpoint_v1_voice_checkpoints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/checkpoints/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Checkpoint */
+        post: operations["resume_checkpoint_v1_voice_checkpoints_resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voice/dashboard": {
         parameters: {
             query?: never;
@@ -1039,6 +1096,26 @@ export interface paths {
         };
         /** Follow Ups */
         get: operations["follow_ups_v1_voice_follow_ups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voice/follow-ups/due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Due Follow Ups
+         * @description Due structured check-ins for an approved scheduler; contains no phone numbers.
+         */
+        get: operations["due_follow_ups_v1_voice_follow_ups_due_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1917,12 +1994,47 @@ export interface components {
         ImpactSummary: {
             /** Categories */
             categories: components["schemas"]["ImpactCategory"][];
+            /**
+             * Connection Attempts
+             * @default 0
+             */
+            connection_attempts: number;
             /** Emergency Redirects */
             emergency_redirects: number;
             /** Follow Ups Completed */
             follow_ups_completed: number;
+            /**
+             * Follow Ups Due
+             * @default 0
+             */
+            follow_ups_due: number;
+            /**
+             * Incomplete Calls
+             * @default 0
+             */
+            incomplete_calls: number;
+            /**
+             * Referrals Accepted
+             * @default 0
+             */
+            referrals_accepted: number;
             /** Referrals Offered */
             referrals_offered: number;
+            /**
+             * Residents Helped
+             * @default 0
+             */
+            residents_helped: number;
+            /**
+             * Routed Calls
+             * @default 0
+             */
+            routed_calls: number;
+            /**
+             * Tool Failures
+             * @default 0
+             */
+            tool_failures: number;
             /** Total Calls */
             total_calls: number;
             /** Transfers Connected */
@@ -2197,6 +2309,32 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ReferralFollowUpDue */
+        ReferralFollowUpDue: {
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Language */
+            language: string | null;
+            /** Need Category */
+            need_category: string | null;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /**
+             * Referral Id
+             * Format: uuid
+             */
+            referral_id: string;
+            /** Resource Name */
+            resource_name: string;
+        };
         /** ReferralOutcome */
         ReferralOutcome: {
             /**
@@ -2310,6 +2448,18 @@ export interface components {
             service: components["schemas"]["Service"];
             /** Urgent */
             urgent: boolean;
+        };
+        /** SafeContactPlan */
+        SafeContactPlan: {
+            contact_method: components["schemas"]["ContactMethod"];
+            /** Neutral Message Only */
+            neutral_message_only: boolean;
+            /** Safe Contact Window */
+            safe_contact_window: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean;
+            /** Voicemail Allowed */
+            voicemail_allowed: boolean;
         };
         /**
          * Service
@@ -2656,6 +2806,30 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** VoiceAwarenessCategory */
+        VoiceAwarenessCategory: {
+            /** Category */
+            category: string;
+            /** Count */
+            count: number;
+        };
+        /** VoiceAwarenessSummary */
+        VoiceAwarenessSummary: {
+            /** Categories */
+            categories: components["schemas"]["VoiceAwarenessCategory"][];
+            /** Days */
+            days: number;
+            /** District */
+            district: string;
+            /** Fire Ems Calls */
+            fire_ems_calls: number;
+            /** Police Dispatch Calls */
+            police_dispatch_calls: number;
+            /** Reviewed Incidents */
+            reviewed_incidents: number;
+            /** Source Note */
+            source_note: string;
+        };
         /** VoiceCallReview */
         VoiceCallReview: {
             /** Callback Consent */
@@ -2691,6 +2865,7 @@ export interface components {
         /** VoiceCallReviewDetail */
         VoiceCallReviewDetail: {
             call: components["schemas"]["VoiceCallReview"];
+            contact_plan: components["schemas"]["SafeContactPlan"] | null;
             /** Referrals */
             referrals: components["schemas"]["VoiceReferralDetail"][];
         };
@@ -2730,8 +2905,58 @@ export interface components {
             conversation_id: string;
             /** General Location */
             general_location?: string | null;
+            /**
+             * Neutral Message Only
+             * @default false
+             */
+            neutral_message_only?: boolean;
+            /** Safe Contact Window */
+            safe_contact_window?: string | null;
             /** Safe To Contact */
             safe_to_contact?: boolean | null;
+            /**
+             * Voicemail Allowed
+             * @default false
+             */
+            voicemail_allowed?: boolean;
+        };
+        /** VoiceCheckpoint */
+        VoiceCheckpoint: {
+            /** Consent Pending */
+            consent_pending: boolean;
+            /** Language */
+            language: string | null;
+            /** Neighborhood */
+            neighborhood: string | null;
+            /** Referral Slug */
+            referral_slug: string | null;
+            /**
+             * Saved At
+             * Format: date-time
+             */
+            saved_at: string;
+            /** Service */
+            service: string | null;
+        };
+        /** VoiceCheckpointRequest */
+        VoiceCheckpointRequest: {
+            /** Caller Id */
+            caller_id: string;
+            /**
+             * Consent Pending
+             * @default false
+             */
+            consent_pending?: boolean;
+            /** Conversation Id */
+            conversation_id: string;
+            /** Language */
+            language?: string | null;
+            /** Neighborhood */
+            neighborhood?: string | null;
+            /** Referral Slug */
+            referral_slug?: string | null;
+            /** Service */
+            service?: string | null;
         };
         /** VoiceDashboard */
         VoiceDashboard: {
@@ -2802,6 +3027,13 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Follow Up Due At */
+            follow_up_due_at: string | null;
+            /**
+             * Follow Up Status
+             * @default not_scheduled
+             */
+            follow_up_status: string;
             /** Hours Label */
             hours_label: string | null;
             /**
@@ -2867,6 +3099,21 @@ export interface components {
             slug: string;
             /** Transfer Approved */
             transfer_approved: boolean;
+            /**
+             * Verification Status
+             * @default current
+             * @enum {string}
+             */
+            verification_status: "current" | "review_due";
+        };
+        /** VoiceResumeRequest */
+        VoiceResumeRequest: {
+            /** Caller Id */
+            caller_id: string;
+        };
+        /** VoiceResumeResponse */
+        VoiceResumeResponse: {
+            checkpoint: components["schemas"]["VoiceCheckpoint"] | null;
         };
         /** VoiceRouteRequest */
         VoiceRouteRequest: {
@@ -4666,6 +4913,110 @@ export interface operations {
             };
         };
     };
+    awareness_v1_voice_awareness_get: {
+        parameters: {
+            query: {
+                district: string;
+                days?: number;
+            };
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceAwarenessSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_checkpoint_v1_voice_checkpoints_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceCheckpointRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCheckpoint"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_checkpoint_v1_voice_checkpoints_resume_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceResumeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceResumeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dashboard_v1_voice_dashboard_get: {
         parameters: {
             query?: never;
@@ -4702,6 +5053,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceFollowUp"][];
+                };
+            };
+        };
+    };
+    due_follow_ups_v1_voice_follow_ups_due_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Voice-Tool-Secret"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferralFollowUpDue"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

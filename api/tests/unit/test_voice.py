@@ -20,11 +20,14 @@ from models.case_enums import CaseCategory
 from models.routing import RouteResponse, Service
 from models.voice import (
     OutcomeStatus,
+    SafeContactPlan,
+    VoiceCheckpointRequest,
     VoiceCaseRequest,
     VoiceReferralStatus,
     VoiceRouteRequest,
 )
 from routers.voice import (
+    awareness,
     app_capabilities,
     opportunities,
     route_voice_request,
@@ -205,12 +208,17 @@ async def test_case_submission_event_keeps_only_structured_case_metadata():
             "request_number": 1042,
             "category": "transportation",
             "contact_method": "text",
+            "safe_to_contact": True,
+            "voicemail_allowed": False,
+            "neutral_message_only": False,
+            "safe_contact_window": "Weekdays after 5 PM",
         },
         "occurred_at": NOW,
     }
     db = FakeFunctions(
         voice_call_ingest=[call],
         voice_call_event_append=[event],
+        voice_case_contact_plan_add=[],
     )
 
     await VoiceService(VoiceDatabridge(db), db).record_case_submission(
@@ -219,6 +227,13 @@ async def test_case_submission_event_keeps_only_structured_case_metadata():
         1042,
         CaseCategory.TRANSPORTATION,
         ContactMethod.TEXT,
+        SafeContactPlan(
+            contact_method=ContactMethod.TEXT,
+            safe_to_contact=True,
+            voicemail_allowed=False,
+            neutral_message_only=False,
+            safe_contact_window="Weekdays after 5 PM",
+        ),
     )
 
     persisted = repr(db.calls)
@@ -227,16 +242,25 @@ async def test_case_submission_event_keeps_only_structured_case_metadata():
     assert db.called("voice_call_ingest")[0]["callback_consent"] is True
     details = json.loads(db.called("voice_call_event_append")[0]["details"])
     assert details == event["details"]
+    assert db.called("voice_case_contact_plan_add")[0]["case_id"] == request_id
 
 
 async def test_resident_referral_list_is_scoped_by_verified_user_id():
     user_id = uuid4()
     referral = _referral_detail_row()
-    db = FakeFunctions(voice_referral_list_for_user=[referral])
+    db = FakeFunctions(
+        voice_referral_list_for_user=[referral],
+        voice_referral_follow_up_list=[{
+            "referral_id": referral["id"],
+            "due_at": NOW,
+            "status": "pending",
+        }],
+    )
 
     result = await VoiceService(VoiceDatabridge(db), db).referrals_for_user(user_id)
 
     assert [item.id for item in result] == [referral["id"]]
+    assert result[0].follow_up_status == "pending"
     assert db.called("voice_referral_list_for_user") == [{"user_id": user_id}]
 
 
@@ -244,7 +268,10 @@ async def test_resident_referral_detail_is_scoped_and_missing_is_404():
     user_id, referral_id = uuid4(), uuid4()
     referral = _referral_detail_row() | {"id": referral_id}
     rows = iter([[referral], []])
-    db = FakeFunctions(voice_referral_get_for_user=lambda _: next(rows))
+    db = FakeFunctions(
+        voice_referral_get_for_user=lambda _: next(rows),
+        voice_referral_follow_up_list=[],
+    )
     service = VoiceService(VoiceDatabridge(db), db)
 
     found = await service.referral_for_user(user_id, referral_id)
@@ -278,6 +305,8 @@ async def test_staff_call_review_detail_combines_call_and_referrals_or_404():
     db = FakeFunctions(
         voice_call_review_get=lambda _: next(reviews),
         voice_referral_list_for_call=[referral],
+        voice_referral_follow_up_list=[],
+        voice_contact_plan_get=[],
     )
     service = VoiceService(VoiceDatabridge(db), db)
 
@@ -420,13 +449,16 @@ async def test_voice_request_creates_anonymous_case_from_approved_fields_only():
     assert submitted.contact_phone == "+14145550123"
     assert result.request_number == 1042
     assert result.access_code == "K7QM-4XPA"
-    assert voice.recorded == (
+    assert voice.recorded is not None
+    assert voice.recorded[:5] == (
         "conv-case",
         request_id,
         1042,
         CaseCategory.TRANSPORTATION,
         ContactMethod.TEXT,
     )
+    assert voice.recorded[5].safe_to_contact is True
+    assert voice.recorded[5].voicemail_allowed is False
 
 
 async def test_unknown_referral_outcome_is_a_clean_not_found():
@@ -436,6 +468,30 @@ async def test_unknown_referral_outcome_is_a_clean_not_found():
             uuid4(), OutcomeStatus.connected, None
         )
     assert error.value.status_code == 404
+
+
+async def test_resident_outcome_is_scoped_to_the_linked_account():
+    user_id, referral_id = uuid4(), uuid4()
+    row = {
+        "id": uuid4(),
+        "referral_id": referral_id,
+        "status": "completed",
+        "reason_code": None,
+        "recorded_at": NOW,
+    }
+    db = FakeFunctions(voice_referral_outcome_record_for_user=[row])
+
+    result = await VoiceService(VoiceDatabridge(db), db).record_outcome_for_user(
+        user_id, referral_id, OutcomeStatus.completed, None
+    )
+
+    assert result.status == OutcomeStatus.completed
+    assert db.called("voice_referral_outcome_record_for_user") == [{
+        "user_id": user_id,
+        "referral_id": referral_id,
+        "status": OutcomeStatus.completed,
+        "reason_code": None,
+    }]
 
 
 async def test_handoff_code_links_a_call_without_a_phone_number(monkeypatch):
@@ -477,3 +533,69 @@ async def test_handoff_rejects_an_expired_or_reused_code():
             uuid4(), "ABCDEFGH", "tool-secret"
         )
     assert error.value.status_code == 404
+
+
+async def test_structured_checkpoint_can_resume_without_storing_caller_or_speech():
+    call = _call_row("conv-resume")
+    event = {
+        "id": uuid4(),
+        "call_id": call["id"],
+        "event_key": "checkpoint:conv-resume:1",
+        "event_type": "structured_checkpoint",
+        "details": {
+            "service": "transportation",
+            "neighborhood": "North Side",
+            "language": "en",
+            "referral_slug": None,
+            "consent_pending": True,
+        },
+        "occurred_at": NOW,
+    }
+    resumed = {**event["details"], "saved_at": NOW}
+    db = FakeFunctions(
+        voice_call_ingest=[call],
+        voice_call_event_append=[event],
+        voice_checkpoint_resume=[resumed],
+    )
+    service = VoiceService(VoiceDatabridge(db), db)
+    body = VoiceCheckpointRequest(
+        conversation_id="conv-resume",
+        caller_id="+14145550123",
+        service="transportation",
+        neighborhood="North Side",
+        language="en",
+        consent_pending=True,
+    )
+
+    saved = await service.save_checkpoint(body, "tool-secret")
+    restored = await service.resume_checkpoint("+14145550123", "tool-secret")
+
+    assert saved.service == "transportation"
+    assert restored and restored.consent_pending
+    persisted = repr(db.calls)
+    assert "+14145550123" not in persisted
+    assert "caller said" not in persisted
+
+
+async def test_awareness_keeps_reviewed_incidents_separate_from_dispatch_calls():
+    class PublicData:
+        async def incidents(self, days, limit):
+            assert (days, limit) == (7, 10000)
+            return [
+                type("Point", (), {"district": "5", "category": "assault"})(),
+                type("Point", (), {"district": "2", "category": "theft"})(),
+            ]
+
+        async def calls(self, source, hours, limit):
+            assert (source, hours, limit) == (None, 168, 2000)
+            return [
+                type("Call", (), {"district": "5", "source": "mpd_calls"})(),
+                type("Call", (), {"district": "5", "source": "mfd_calls"})(),
+            ]
+
+    result = await awareness("5", 7, cast(Any, PublicData()))
+    assert result.reviewed_incidents == 1
+    assert result.police_dispatch_calls == 1
+    assert result.fire_ems_calls == 1
+    assert result.categories[0].category == "assault"
+    assert "cannot say" in result.source_note

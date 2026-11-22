@@ -33,7 +33,10 @@ export type RecentCall = {
   district: string;
   nature: string;
   status: string;
+  source: 'mpd_calls' | 'mfd_calls';
 };
+
+export type DispatchSource = RecentCall['source'] | 'all';
 
 // Delayed MPD dispatch calls come from the API: the loader polls the city's
 // page every 5 minutes (it allows 10 requests per 30 minutes per address),
@@ -46,25 +49,27 @@ function shownAt(iso: string) {
 /** The crime-related calls, in the shape the map and alerts use. */
 export function toRecentCalls(calls: DispatchCall[]): RecentCall[] {
   return calls
-    .filter((call) => ALERT_TERMS.some((term) => call.category.toLowerCase().includes(term)))
+    .filter((call) => call.source === 'mfd_calls' || ALERT_TERMS.some((term) => call.category.toLowerCase().includes(term)))
     .map((call) => ({
       id: call.call_number,
       occurredAt: shownAt(call.occurred_at),
       district: call.district ?? '',
       nature: call.category,
       status: call.status ?? '',
+      source: call.source === 'mfd_calls' ? 'mfd_calls' as const : 'mpd_calls' as const,
       ...(call.latitude != null && call.longitude != null ? { latitude: call.latitude, longitude: call.longitude } : {}),
     }));
 }
 
-async function fetchRecentCalls() {
-  return toRecentCalls(await request<DispatchCall[]>('/public-data/calls?source=mpd_calls&hours=6&limit=500', { auth: false }));
+async function fetchRecentCalls(source: DispatchSource) {
+  const sourceParam = source === 'all' ? '' : `source=${source}&`;
+  return toRecentCalls(await request<DispatchCall[]>(`/public-data/calls?${sourceParam}hours=6&limit=500`, { auth: false }));
 }
 
-export function useRecentCalls() {
+export function useRecentCalls(source: DispatchSource = 'mpd_calls') {
   return useQuery({
-    queryKey: ['mpd-recent-calls'],
-    queryFn: fetchRecentCalls,
+    queryKey: ['recent-calls', source],
+    queryFn: () => fetchRecentCalls(source),
     refetchInterval: 1000 * 60 * 5,
     staleTime: 1000 * 60 * 4,
     refetchOnMount: 'always',

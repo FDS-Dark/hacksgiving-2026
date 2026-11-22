@@ -61,6 +61,8 @@ export type IncidentPoint = Schemas['IncidentPoint'];
 export type DispatchCall = Schemas['DispatchCall'];
 export type TransitNearby = Schemas['TransitNearby'];
 export type WeatherAlert = Schemas['WeatherAlert'];
+export type CrimeTrendPoint = Schemas['CrimeTrendPoint'];
+export type SourceHealth = Schemas['SourceHealth'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];
@@ -96,6 +98,9 @@ export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
 export type VoiceCallReview = Schemas['VoiceCallReview'];
 export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
+export type VoiceImpactSummary = Schemas['ImpactSummary'];
+export type VoiceOutcomeStatus = Schemas['OutcomeStatus'];
+export type RecordVoiceOutcome = Schemas['RecordOutcomeRequest'];
 
 // The values the UI iterates, in display order. `satisfies` keeps them in
 // step with the API's enums: a value the API drops fails the typecheck.

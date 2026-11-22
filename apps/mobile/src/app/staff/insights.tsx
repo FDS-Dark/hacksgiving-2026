@@ -9,6 +9,7 @@ import { BarList, Card, CardTitle, PageTitle, StatTile, statusColor } from '@/co
 import { CATEGORY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { dateTime, hours } from '@/lib/format';
 import { useInsights } from '@/services/cases';
+import { sourceLabel, useCrimeTrends, useSourceHealth, yearOverYear } from '@/services/publicData';
 import { space, type, useTheme } from '@/theme/tokens';
 
 /**
@@ -19,6 +20,8 @@ import { space, type, useTheme } from '@/theme/tokens';
 export default function InsightsScreen() {
   const theme = useTheme();
   const insights = useInsights();
+  const trends = useCrimeTrends();
+  const sources = useSourceHealth();
 
   if (insights.isPending) return <Loading label="Loading insights" />;
   if (insights.error) {
@@ -29,6 +32,7 @@ export default function InsightsScreen() {
     );
   }
   const { stats, by_category, by_status, recent_activity } = insights.data;
+  const comparison = yearOverYear(trends.data ?? []);
 
   const byNeed = [...by_category]
     .filter((c) => c.total > 0)
@@ -39,7 +43,11 @@ export default function InsightsScreen() {
   const byStatus = CASE_STATUSES.map((s) => ({ key: s, label: STATUS_LABEL[s], value: statusCounts.get(s) ?? 0, color: statusColor(theme, s) })).filter((s) => s.value > 0);
 
   return (
-    <Page refreshing={insights.isRefetching} onRefresh={() => insights.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
+    <Page
+      refreshing={insights.isRefetching || trends.isRefetching || sources.isRefetching}
+      onRefresh={() => { insights.refetch(); trends.refetch(); sources.refetch(); }}
+      contentStyle={{ maxWidth: 720, gap: space.md }}
+    >
       <BackLink label="Me" fallback="/staff/me" />
       <PageTitle title="Insights" subtitle={`All time · ${stats.total} case${stats.total === 1 ? '' : 's'}`} />
 
@@ -62,6 +70,47 @@ export default function InsightsScreen() {
       <Card style={{ gap: space.md }}>
         <CardTitle title="Where cases stand" />
         <BarList items={byStatus} empty="No cases yet." />
+      </Card>
+
+      <Card style={{ gap: space.sm }}>
+        <CardTitle title="Milwaukee violent-crime trend" icon="trending-up-outline" />
+        {comparison ? (
+          <>
+            <View style={styles.trendRow}>
+              <Text style={[styles.trendValue, { color: comparison.percentChange != null && comparison.percentChange <= 0 ? theme.accent : theme.danger }]}>
+                {comparison.percentChange == null ? '—' : `${comparison.percentChange > 0 ? '+' : ''}${comparison.percentChange.toFixed(1)}%`}
+              </Text>
+              <Text style={[type.subhead, { color: theme.textSecondary, flex: 1 }]}>latest 12 months vs. the preceding 12 months</Text>
+            </View>
+            <Text style={[type.footnote, { color: theme.textSecondary }]}>
+              {comparison.current.toLocaleString()} reported offenses vs. {comparison.previous.toLocaleString()} previously · through {new Date(`${comparison.latestMonth}T12:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+            </Text>
+          </>
+        ) : (
+          <Text style={[type.subhead, { color: theme.textSecondary }]}>Two complete years of FBI Crime Data Explorer results are needed before a fair comparison is shown.</Text>
+        )}
+        <Text style={[type.caption, { color: theme.textSecondary }]}>Reported offenses can be revised and do not predict future safety. Source: FBI Crime Data Explorer.</Text>
+      </Card>
+
+      <Card style={{ gap: space.sm }}>
+        <CardTitle title="Data freshness" icon="cloud-done-outline" />
+        {sources.data?.length ? sources.data.map((source) => {
+          const isCurrent = source.status === 'ok';
+          const successfulAt = source.last_success_at ?? (isCurrent ? source.finished_at : null);
+          return (
+            <View key={`${source.source}-${source.target}`} style={[styles.sourceRow, { borderTopColor: theme.separator }]}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[type.subhead, { color: theme.text, fontWeight: '700' }]}>{sourceLabel(source.source)}</Text>
+                <Text style={[type.caption, { color: theme.textSecondary }]}>{successfulAt ? `Last successful update ${dateTime(successfulAt)}` : 'No successful update recorded yet'}</Text>
+              </View>
+              <Text style={[type.caption, { color: isCurrent ? theme.accent : theme.soon, fontWeight: '700' }]}>
+                {isCurrent ? 'Current' : source.status.replaceAll('_', ' ')}
+              </Text>
+            </View>
+          );
+        }) : (
+          <Text style={[type.subhead, { color: theme.textSecondary }]}>Source status is unavailable right now.</Text>
+        )}
       </Card>
 
       {recent_activity.length ? (
@@ -91,4 +140,7 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 10 },
   activity: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
+  trendRow: { flexDirection: 'row', gap: space.md, alignItems: 'baseline' },
+  trendValue: { fontSize: 30, lineHeight: 36, fontWeight: '800' },
+  sourceRow: { flexDirection: 'row', gap: space.md, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
 });

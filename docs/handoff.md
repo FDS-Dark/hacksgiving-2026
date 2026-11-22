@@ -21,6 +21,10 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   tasks). The worker reviews and confirms it into a real case.
 - **Voice agent "Ava"** (teammates' work, `api/routers/voice.py`,
   `docs/voice/`): phone calls via ElevenLabs, handed off to the app with a code.
+  Branch `extra-implement-ava` adds safe callback plans, 24-hour structured
+  dropped-call recovery, district-level Awareness summaries, referral check-in
+  scheduling, source-verification labels and a connection funnel. It still
+  stores no recording, transcript, raw caller number or exact address.
 - **Opportunities** (teammates' work, migration 0010): volunteer and job
   listings for residents and staff.
 
@@ -64,6 +68,10 @@ CI runners sometimes drop connections (a `tf-apply` once failed fetching
 `curl`/`jq` from Alpine's mirror); retry the job.
 
 ## Not verified yet
+
+- Migration 0015 on a real Postgres instance. This branch's environment had
+  no Docker/Postgres command, so API unit tests cover its service contracts but
+  `test_migrations.py` was skipped. Run the full integration suite before merge.
 
 - A real `.m4a` from an iPhone through the whole voice path, locally or in
   production (each part is tested separately; transcription of real speech

@@ -8,7 +8,7 @@ import { Page } from '@/components/Page';
 import { EmptyState, ErrorBanner, Loading, Notice } from '@/components/ui';
 import { Badge, Card, PageTitle, StatTile } from '@/components/staff/kit';
 import { dateTime, timeAgo } from '@/lib/format';
-import { useStaffVoiceCalls } from '@/services/voice';
+import { useStaffVoiceCalls, useVoiceImpact } from '@/services/voice';
 import { radius, space, type, useTheme } from '@/theme/tokens';
 
 function label(value: string | null | undefined, fallback: string) {
@@ -67,9 +67,9 @@ function CallCard({ call }: { call: VoiceCallReview }) {
 export default function StaffCallsScreen() {
   const theme = useTheme();
   const calls = useStaffVoiceCalls();
+  const impact = useVoiceImpact();
   const items = calls.data ?? [];
   const referred = items.filter((call) => call.referral_count > 0).length;
-  const urgent = items.filter((call) => call.urgency_tier === 'urgent' || call.urgency_tier === 'emergency').length;
 
   return (
     <Page refreshing={calls.isRefetching} onRefresh={() => calls.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
@@ -87,10 +87,17 @@ export default function StaffCallsScreen() {
       ) : (
         <>
           <View style={styles.stats}>
-            <StatTile label="Calls" value={items.length} color={theme.accent} />
-            <StatTile label="With referrals" value={referred} color={theme.brand} />
-            <StatTile label="Urgent" value={urgent} color={urgent ? theme.danger : theme.textSecondary} />
+            <StatTile label="Calls" value={impact.data?.total_calls ?? items.length} color={theme.accent} />
+            <StatTile label="Routed" value={impact.data?.routed_calls ?? referred} color={theme.brand} />
+            <StatTile label="Help confirmed" value={impact.data?.residents_helped ?? 0} color={theme.accent} />
           </View>
+          <Card style={{ gap: space.sm }}>
+            <Text style={[type.headline, { color: theme.text }]}>Connection funnel</Text>
+            <Text style={[type.subhead, { color: theme.textSecondary }]}>Referrals accepted: {impact.data?.referrals_accepted ?? 0} · attempts: {impact.data?.connection_attempts ?? 0} · follow-ups due: {impact.data?.follow_ups_due ?? 0}</Text>
+            {(impact.data?.incomplete_calls ?? 0) > 0 || (impact.data?.tool_failures ?? 0) > 0 ? (
+              <Text style={[type.footnote, { color: theme.soon }]}>Needs review: {impact.data?.incomplete_calls ?? 0} incomplete calls · {impact.data?.tool_failures ?? 0} provider/tool failures</Text>
+            ) : null}
+          </Card>
 
           {items.length ? (
             <View style={{ gap: space.sm }}>

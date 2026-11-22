@@ -24,7 +24,11 @@ from models.voice import (
     VoiceCallReview,
     VoiceCallReviewDetail,
     VoiceDashboard,
+    VoiceCheckpoint,
+    VoiceCheckpointRequest,
     VoiceFollowUp,
+    ReferralFollowUpDue,
+    SafeContactPlan,
     WebhookAccepted,
 )
 from models.case import ContactMethod
@@ -107,9 +111,20 @@ class VoiceService:
     async def resources(
         self, category: str | None, language: str | None
     ) -> list[VoiceResource]:
-        return await self.voice.resources(
+        resources = await self.voice.resources(
             _short_string(category, 64), _short_string(language, 12)
         )
+        review_before = datetime.now(timezone.utc) - timedelta(days=90)
+        return [
+            item.model_copy(
+                update={
+                    "verification_status": (
+                        "current" if item.last_verified_at >= review_before else "review_due"
+                    )
+                }
+            )
+            for item in resources
+        ]
 
     async def receive_elevenlabs_webhook(
         self,
@@ -129,6 +144,33 @@ class VoiceService:
             raise ApiError(400, "invalid_webhook", "Invalid webhook body")
 
         event_type = _short_string(event.get("type"), 64)
+        if event_type == "call_initiation_failure":
+            data = _object(event.get("data"))
+            conversation_id = _short_string(data.get("conversation_id"), 64)
+            if not conversation_id:
+                raise ApiError(400, "invalid_webhook", "Webhook is missing its conversation identity")
+            now = datetime.now(timezone.utc)
+            call = await self.voice.ingest_call(
+                conversation_id=conversation_id,
+                event_timestamp=int(now.timestamp()),
+                language=None,
+                need_category=None,
+                urgency_tier=None,
+                neighborhood=None,
+                callback_consent=False,
+                disposition="call_failed",
+                caller_hash=None,
+                started_at=None,
+                ended_at=now,
+            )
+            stored = await self.voice.append_event(
+                call_id=call.id,
+                event_key=f"call_failed:{conversation_id}:{event.get('event_timestamp', 0)}",
+                event_type="call_failed",
+                details={"reason": _short_string(data.get("failure_reason"), 64)},
+                occurred_at=now,
+            )
+            return WebhookAccepted(duplicate=stored is None)
         if event_type != "post_call_transcription":
             return WebhookAccepted()
         data = _object(event.get("data"))
@@ -235,6 +277,7 @@ class VoiceService:
         request_number: int,
         category: CaseCategory,
         contact_method: ContactMethod,
+        contact_plan: SafeContactPlan | None = None,
     ) -> None:
         """Link structured case metadata to a call; never store its summary."""
         now = datetime.now(timezone.utc)
@@ -262,9 +305,15 @@ class VoiceService:
                     "request_number": request_number,
                     "category": category.value,
                     "contact_method": contact_method.value,
+                    "safe_to_contact": contact_plan.safe_to_contact if contact_plan else False,
+                    "voicemail_allowed": contact_plan.voicemail_allowed if contact_plan else False,
+                    "neutral_message_only": contact_plan.neutral_message_only if contact_plan else False,
+                    "safe_contact_window": contact_plan.safe_contact_window if contact_plan else None,
                 },
                 occurred_at=now,
             )
+            if contact_plan:
+                await voice.add_case_contact_plan(request_id, contact_plan)
 
     @staticmethod
     def _handoff_hash(code: str, secret: str) -> str:
@@ -329,7 +378,9 @@ class VoiceService:
         return await self.voice.follow_ups(user_id)
 
     async def referrals_for_user(self, user_id: UUID) -> list[VoiceReferralDetail]:
-        return await self.voice.referrals_for_user(user_id)
+        referrals = await self.voice.referrals_for_user(user_id)
+        follow_ups = {item.referral_id: item for item in await self.voice.referral_follow_ups(user_id=user_id)}
+        return [self._with_follow_up(item, follow_ups.get(item.id)) for item in referrals]
 
     async def referral_for_user(
         self, user_id: UUID, referral_id: UUID
@@ -337,7 +388,11 @@ class VoiceService:
         referral = await self.voice.referral_for_user(user_id, referral_id)
         if not referral:
             raise not_found("referral")
-        return referral
+        follow_ups = await self.voice.referral_follow_ups(user_id=user_id)
+        matched = next(
+            (item for item in follow_ups if item.referral_id == referral_id), None
+        )
+        return self._with_follow_up(referral, matched)
 
     async def call_reviews(self) -> list[VoiceCallReview]:
         return await self.voice.call_reviews()
@@ -346,15 +401,83 @@ class VoiceService:
         call = await self.voice.call_review(call_id)
         if not call:
             raise not_found("call")
+        referrals = await self.voice.referrals_for_call(call_id)
+        follow_ups = {item.referral_id: item for item in await self.voice.referral_follow_ups(call_id=call_id)}
         return VoiceCallReviewDetail(
             call=call,
-            referrals=await self.voice.referrals_for_call(call_id),
+            referrals=[self._with_follow_up(item, follow_ups.get(item.id)) for item in referrals],
+            contact_plan=await self.voice.contact_plan(call_id),
         )
+
+    @staticmethod
+    def _with_follow_up(referral: VoiceReferralDetail, follow_up: Any) -> VoiceReferralDetail:
+        if not follow_up:
+            return referral
+        return referral.model_copy(update={
+            "follow_up_due_at": follow_up.due_at,
+            "follow_up_status": follow_up.status,
+        })
+
+    async def save_checkpoint(self, body: VoiceCheckpointRequest, secret: str) -> VoiceCheckpoint:
+        caller_hash = self._caller_hash(body.caller_id, secret)
+        if not caller_hash:
+            raise ApiError(400, "invalid_caller", "Caller identity is unavailable")
+        now = datetime.now(timezone.utc)
+        call = await self.voice.ingest_call(
+            conversation_id=body.conversation_id,
+            event_timestamp=int(now.timestamp()),
+            language=body.language,
+            need_category=body.service,
+            urgency_tier=None,
+            neighborhood=body.neighborhood,
+            callback_consent=False,
+            disposition=None,
+            caller_hash=caller_hash,
+            started_at=None,
+            ended_at=None,
+        )
+        checkpoint = VoiceCheckpoint(
+            service=body.service,
+            neighborhood=body.neighborhood,
+            language=body.language,
+            referral_slug=body.referral_slug,
+            consent_pending=body.consent_pending,
+            saved_at=now,
+        )
+        await self.voice.append_event(
+            call_id=call.id,
+            event_key=f"checkpoint:{body.conversation_id}:{time.time_ns()}",
+            event_type="structured_checkpoint",
+            details=checkpoint.model_dump(mode="json", exclude={"saved_at"}),
+            occurred_at=now,
+        )
+        return checkpoint
+
+    async def resume_checkpoint(self, caller_id: str, secret: str) -> VoiceCheckpoint | None:
+        caller_hash = self._caller_hash(caller_id, secret)
+        return await self.voice.checkpoint_resume(caller_hash) if caller_hash else None
+
+    async def due_follow_ups(self) -> list[ReferralFollowUpDue]:
+        return await self.voice.due_follow_ups()
 
     async def record_outcome(
         self, referral_id: UUID, status: OutcomeStatus, reason_code: str | None
     ) -> ReferralOutcome:
         outcome = await self.voice.record_outcome(referral_id, status, reason_code)
+        if not outcome:
+            raise not_found("referral")
+        return outcome
+
+    async def record_outcome_for_user(
+        self,
+        user_id: UUID,
+        referral_id: UUID,
+        status: OutcomeStatus,
+        reason_code: str | None,
+    ) -> ReferralOutcome:
+        outcome = await self.voice.record_outcome_for_user(
+            user_id, referral_id, status, reason_code
+        )
         if not outcome:
             raise not_found("referral")
         return outcome

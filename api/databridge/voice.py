@@ -5,6 +5,10 @@ from uuid import UUID
 from databridge.base import Databridge
 from models.voice import (
     ActiveReferral,
+    ReferralFollowUp,
+    ReferralFollowUpDue,
+    SafeContactPlan,
+    VoiceCheckpoint,
     ImpactCategory,
     ImpactSummary,
     VoiceReferral,
@@ -28,6 +32,43 @@ class VoiceDatabridge(Databridge):
             "voice_resource_list", category=category, language=language
         )
         return [VoiceResource(**row) for row in rows]
+
+    async def checkpoint_resume(self, caller_hash: str) -> VoiceCheckpoint | None:
+        row = await self._first("voice_checkpoint_resume", caller_hash=caller_hash)
+        return VoiceCheckpoint(**row) if row else None
+
+    async def contact_plan(self, call_id: UUID) -> SafeContactPlan | None:
+        row = await self._first("voice_contact_plan_get", call_id=call_id)
+        return SafeContactPlan(**row) if row else None
+
+    async def add_case_contact_plan(
+        self, case_id: UUID, plan: SafeContactPlan
+    ) -> None:
+        await self._rows(
+            "voice_case_contact_plan_add",
+            case_id=case_id,
+            contact_method=plan.contact_method,
+            safe_to_contact=plan.safe_to_contact,
+            voicemail_allowed=plan.voicemail_allowed,
+            neutral_message_only=plan.neutral_message_only,
+            safe_contact_window=plan.safe_contact_window,
+        )
+
+    async def referral_follow_ups(
+        self, *, user_id: UUID | None = None, call_id: UUID | None = None
+    ) -> list[ReferralFollowUp]:
+        return [
+            ReferralFollowUp(**row)
+            for row in await self._rows(
+                "voice_referral_follow_up_list", user_id=user_id, call_id=call_id
+            )
+        ]
+
+    async def due_follow_ups(self) -> list[ReferralFollowUpDue]:
+        return [
+            ReferralFollowUpDue(**row)
+            for row in await self._rows("voice_referral_follow_up_due")
+        ]
 
     async def ingest_call(
         self,
@@ -176,11 +217,24 @@ class VoiceDatabridge(Databridge):
         )
         return ReferralOutcome(**row) if row else None
 
+    async def record_outcome_for_user(
+        self, user_id: UUID, referral_id: UUID, status: str, reason_code: str | None
+    ) -> ReferralOutcome | None:
+        row = await self._first(
+            "voice_referral_outcome_record_for_user",
+            user_id=user_id,
+            referral_id=referral_id,
+            status=status,
+            reason_code=reason_code,
+        )
+        return ReferralOutcome(**row) if row else None
+
     async def impact(self) -> ImpactSummary:
         summary = await self._one("voice_impact_summary")
+        funnel = await self._one("voice_impact_funnel")
         rows = await self._rows("voice_impact_categories")
         return ImpactSummary(
-            **summary, categories=[ImpactCategory(**row) for row in rows]
+            **summary, **funnel, categories=[ImpactCategory(**row) for row in rows]
         )
 
     async def dashboard(self) -> VoiceDashboard:

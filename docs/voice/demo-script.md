@@ -17,3 +17,14 @@ connected—without storing the recording or a full transcript.”
 
 Record a 30–45 second backup of this exact synthetic flow before finals. Never
 switch the demo transfer to a public agency as a workaround.
+
+## Optional standout beats
+
+- Ask for the past seven days in MPD District 5. Ava must separate reviewed
+  incidents from delayed calls and say the counts are not a safety score.
+- Simulate a dropped call, call back, and confirm that Ava resumes only the
+  service and general area—not the caller's words.
+- Submit a synthetic callback request with "no voicemail; weekdays after 5."
+  Show the structured contact plan in staff review and the linked case note.
+- Open the referral in the resident app and tap **I still need help**. Show the
+  connection funnel update without playing or displaying a recording or transcript.

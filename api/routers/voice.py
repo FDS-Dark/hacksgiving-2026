@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from typing import Annotated
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from dependencies import (
     get_current_user,
     get_current_worker,
     get_opportunity_service,
+    get_public_data_service,
     get_routing_service,
     get_voice_service,
     require_tool_secret,
@@ -25,9 +27,17 @@ from models.voice import (
     HandoffCode,
     ImpactSummary,
     RecordOutcomeRequest,
+    ReferralFollowUpDue,
     ReferralOutcome,
     VoiceCallReview,
     VoiceCallReviewDetail,
+    VoiceCheckpoint,
+    VoiceCheckpointRequest,
+    VoiceResumeRequest,
+    VoiceResumeResponse,
+    VoiceAwarenessCategory,
+    VoiceAwarenessSummary,
+    SafeContactPlan,
     VoiceResource,
     VoiceDashboard,
     VoiceFollowUp,
@@ -43,6 +53,7 @@ from models.voice import (
 )
 from services.case import CaseService
 from services.opportunity import OpportunityService
+from services.public_data import PublicDataService
 from services.routing import RoutingService
 from services.voice import VoiceService
 from settings import config
@@ -132,6 +143,9 @@ async def app_capabilities() -> VoiceAppCapabilities:
             "Me > Safety alerts shows private connected-call follow-ups plus public updates while the app is open.",
             "Me > Phone calls connects a call with a one-time eight-character handoff code.",
             "Me > Volunteer and jobs opens searchable jobs and volunteer postings from ComForce and partners.",
+            "Neighborhood Awareness can summarize generalized reviewed incidents "
+            "and delayed dispatch calls by MPD district.",
+            "Accepted referrals can schedule a privacy-safe check-in asking whether the resident reached help.",
         ],
         handoff_steps=[
             "The navigator asks whether the caller is already signed in to the app.",
@@ -152,6 +166,8 @@ async def app_capabilities() -> VoiceAppCapabilities:
             "Past connected-call referrals appear under Me > Phone calls > Past referrals, "
             "with reviewed details and tappable public phone numbers when available.",
             "Never invent a department, opportunity, resource, or app capability that a tool did not return.",
+            "Dropped-call recovery stores only structured routing fields for 24 hours, "
+            "never caller speech or a transcript.",
         ],
     )
 
@@ -204,6 +220,13 @@ async def submit_voice_request(
             receipt.request.number,
             receipt.request.category,
             body.contact_method,
+            SafeContactPlan(
+                contact_method=body.contact_method,
+                safe_to_contact=bool(body.safe_to_contact),
+                voicemail_allowed=body.voicemail_allowed,
+                neutral_message_only=body.neutral_message_only,
+                safe_contact_window=body.safe_contact_window,
+            ) if body.contact_method.value != "none" else None,
         )
     except Exception:
         # The ComForce case is the primary outcome. Do not make ElevenLabs retry
@@ -219,6 +242,77 @@ async def submit_voice_request(
         access_code=receipt.access_code,
         status=receipt.request.status.value,
     )
+
+
+@router.get(
+    "/awareness",
+    response_model=VoiceAwarenessSummary,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def awareness(
+    district: Annotated[str, Query(pattern=r"^[1-7]$")],
+    days: Annotated[int, Query(ge=1, le=30)] = 7,
+    public: PublicDataService = Depends(get_public_data_service),
+) -> VoiceAwarenessSummary:
+    """Generalized historical activity by MPD district; never a safety score."""
+    incidents = [item for item in await public.incidents(days, 10000) if item.district == district]
+    calls = [item for item in await public.calls(None, days * 24, 2000) if item.district == district]
+    categories = Counter(item.category for item in incidents if item.category)
+    return VoiceAwarenessSummary(
+        district=district,
+        days=days,
+        reviewed_incidents=len(incidents),
+        police_dispatch_calls=sum(item.source == "mpd_calls" for item in calls),
+        fire_ems_calls=sum(item.source == "mfd_calls" for item in calls),
+        categories=[
+            VoiceAwarenessCategory(category=category, count=count)
+            for category, count in categories.most_common()
+        ],
+        source_note=(
+            "Reviewed incidents are historical and may lag. Dispatch calls are delayed, "
+            "unconfirmed, and excluded from incident totals. Generalized data cannot say "
+            "whether a neighborhood is safe or predict future harm."
+        ),
+    )
+
+
+@router.post(
+    "/checkpoints",
+    response_model=VoiceCheckpoint,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def save_checkpoint(
+    body: VoiceCheckpointRequest,
+    service: VoiceService = Depends(get_voice_service),
+) -> VoiceCheckpoint:
+    """Save allowlisted routing state so a dropped call can resume without a transcript."""
+    return await service.save_checkpoint(body, config.voice.tool_secret)
+
+
+@router.post(
+    "/checkpoints/resume",
+    response_model=VoiceResumeResponse,
+    dependencies=[Depends(require_tool_secret)],
+)
+async def resume_checkpoint(
+    body: VoiceResumeRequest,
+    service: VoiceService = Depends(get_voice_service),
+) -> VoiceResumeResponse:
+    return VoiceResumeResponse(
+        checkpoint=await service.resume_checkpoint(body.caller_id, config.voice.tool_secret)
+    )
+
+
+@router.get(
+    "/follow-ups/due",
+    response_model=list[ReferralFollowUpDue],
+    dependencies=[Depends(require_tool_secret)],
+)
+async def due_follow_ups(
+    service: VoiceService = Depends(get_voice_service),
+) -> list[ReferralFollowUpDue]:
+    """Due structured check-ins for an approved scheduler; contains no phone numbers."""
+    return await service.due_follow_ups()
 
 
 @router.post(
@@ -323,10 +417,12 @@ async def record_outcome(
 async def record_responder_outcome(
     referral_id: UUID,
     body: RecordOutcomeRequest,
-    _user: AppUser = Depends(get_current_user),
+    user: AppUser = Depends(get_current_user),
     service: VoiceService = Depends(get_voice_service),
 ) -> ReferralOutcome:
-    return await service.record_outcome(referral_id, body.status, body.reason_code)
+    return await service.record_outcome_for_user(
+        user.id, referral_id, body.status, body.reason_code
+    )
 
 
 @router.get("/impact", response_model=ImpactSummary)

@@ -31,7 +31,8 @@ function heatCells(points: SafetyPoint[]) {
   return [...cells.values()];
 }
 
-function callColor(nature: string) {
+function callColor(nature: string, source: RecentCall['source']) {
+  if (source === 'mfd_calls') return '#B93815';
   const lower = nature.toLowerCase();
   if (lower.includes('shoot') || lower.includes('weapon') || lower.includes('stabbing')) return '#B42318';
   if (lower.includes('assault') || lower.includes('battery') || lower.includes('fight')) return '#D76B18';
@@ -65,9 +66,9 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
       lat: call.latitude,
       lng: call.longitude,
       label: call.nature,
-      color: callColor(call.nature),
+      color: callColor(call.nature, call.source),
       time: call.occurredAt,
-      detail: `Dispatch call · District ${call.district} · ${call.status}`,
+      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : 'MPD'} dispatch · ${call.district ? `District ${call.district} · ` : ''}${call.status}`,
     }));
 
   return `<!doctype html>
@@ -97,10 +98,12 @@ map.on('click',e=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'ar
 export function SafetyMap({
   points,
   recentCalls = [],
+  windowDays = 30,
   onSelectArea,
 }: {
   points: SafetyPoint[];
   recentCalls?: RecentCall[];
+  windowDays?: number;
   onSelectArea?: (selection: AreaSelection) => void;
 }) {
   const theme = useTheme();
@@ -137,7 +140,7 @@ export function SafetyMap({
       />
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
         <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
-          {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · 30 DAYS
+          {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · {windowDays === 365 ? '1 YEAR' : `${windowDays} DAYS`}
         </Txt>
         <View style={styles.legendRow}>
           <View style={[styles.gradient, { backgroundColor: '#2A75BB' }]} />
