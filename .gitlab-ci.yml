@@ -164,6 +164,15 @@ mobile-test:
     - npx tsc --noEmit
     - npx eslint . --max-warnings=0
     - npx jest --ci
+  # npm already retries individual registry requests above. Restart the whole
+  # deterministic job when the runner loses its registry connection anyway.
+  retry:
+    max: 2
+    when:
+      - script_failure
+      - server_timeout_running
+      - runner_system_failure
+      - runner_interrupted
   rules: *on_every_change
 
 .vault_id_tokens: &vault_id_tokens
