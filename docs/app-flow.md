@@ -181,7 +181,8 @@ flowchart LR
 | Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
 | Case (tasks, history, referrals, guide), Update sheet, Message resident | staff | 1 | **built** to Figma S3–S5 (`/staff/cases/[id]`, `/staff/cases/[id]/messages`) |
 | New case | staff | 1 | **built** to Figma S6 (`/staff/cases/new`), with suggested service and urgency from `/v1/route` |
-| On-call toggle / schedule | worker, admin | 2 | new |
+| On-call toggle / schedule | worker, admin | 2 | **built** (Today card, Me → Shift, `/staff/oncall`) |
+| Notifications inbox (S7) | staff | 2 | **built** (`/staff/notifications`, in-app; push in phase 2) |
 | Push → accept / hand off | on-call | 2 | new |
 | Insights | admin | 3 | **built** from case stats (`/staff/insights`); patterns wait on step 3 |
 | Team + roles | admin | 1 | **built** (`/staff/team`) |
@@ -198,7 +199,8 @@ flowchart LR
 | `resources`, `case_referrals` | partner directory, referrals | have |
 | `tasks` | generated work items per case | have (API, and the case's Tasks tab; workers can add tasks) |
 | `records` | captured text / transcript + extraction (no audio kept) | have (0011), with `jobs`, the background queue |
-| `on_call_shifts`, `push_tokens` | who's on call, where to notify | new |
+| `oncall_shifts`, `notifications`, `notification_preferences` | who's on call, the in-app inbox | have (0015, 0016) |
+| `push_devices`, `notification_deliveries` | where to push, what was sent | new (phase 2) |
 | `shares` | what was shared with whom, when | new |
 | `training_*` | modules, completion | new |
 

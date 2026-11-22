@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from databridge.case import CaseDatabridge
+from databridge.executor import FunctionCaller, Transactions
 from errors import ApiError, not_found
 from models.case import (
     AddCaseUpdateRequest,
@@ -33,9 +34,11 @@ from models.case import (
     Visibility,
 )
 from models.case_enums import CaseCategory, CasePriority
+from models.notification import NotificationKind
 from models.staff import StaffMember
 from models.user import AppUser
 from services import access_code
+from services.notification import NotificationService
 from services.resource import ResourceService
 from services.staff import StaffService
 from services.task import TaskService
@@ -74,13 +77,27 @@ def title_from(description: str) -> str:
 
 
 class CaseService:
+    """Changes that notify someone (an assignment, a reply, a message or
+    status change for the requester, a referral's status) write the change
+    and its notification in one transaction: `self.cases.within(tx)` and
+    `notifications.notify(tx, ...)` share it. Nobody is notified of their
+    own action."""
+
     def __init__(
-        self, cases: CaseDatabridge, resources: ResourceService, staff: StaffService, tasks: TaskService
+        self,
+        cases: CaseDatabridge,
+        resources: ResourceService,
+        staff: StaffService,
+        tasks: TaskService,
+        notifications: NotificationService,
+        transactions: Transactions,
     ) -> None:
         self.cases = cases
         self.resources = resources
         self.staff = staff
         self.tasks = tasks
+        self.notifications = notifications
+        self.transactions = transactions
 
     # --- Public: the person asking for help ------------------------------------
 
@@ -180,9 +197,18 @@ class CaseService:
         return request
 
     async def _add_reply(self, case_id: UUID, author_id: UUID | None, body: ReplyRequest) -> PublicRequestUpdate:
-        reply = await self.cases.add_reply(case_id, author_id, body.content)
-        if reply is None:
-            raise not_found("request")
+        """The reply, and a notification for whoever holds the case (none
+        when nobody does)."""
+        async with self.transactions.transaction() as tx:
+            cases = self.cases.within(tx)
+            reply = await cases.add_reply(case_id, author_id, body.content)
+            if reply is None:
+                raise not_found("request")
+            case = await cases.get(case_id)
+            await self.notifications.notify(
+                tx, user_id=case.assigned_worker_id if case else None, kind=NotificationKind.REPLY,
+                dedupe_key=f"reply:{reply.id}", actor_id=author_id, case_id=case_id, case_update_id=reply.id,
+            )
         return reply
 
     # --- Workers ---------------------------------------------------------------
@@ -236,16 +262,46 @@ class CaseService:
         if not changes.model_fields_set:
             raise ApiError(422, "no_changes", "Send at least one field to change")
         await self._check_assignee(changes.assigned_worker_id)
-        case = await self.cases.update(case_id, worker.id, changes)
-        if case is None:
-            raise not_found("case")
+        async with self.transactions.transaction() as tx:
+            case = await self.cases.within(tx).update(case_id, worker.id, changes)
+            if case is None:
+                raise not_found("case")
+            if changes.model_fields_set & {"assigned_worker_id", "status"}:
+                await self._notify_changes(tx, worker.id, case)
         return case
 
+    async def _notify_changes(self, tx: FunctionCaller, actor_id: UUID, case: Case) -> None:
+        """case_update writes a history entry for each real change (none for
+        re-assigning the same person): the new assignee hears of an
+        assignment, the requester of a status change."""
+        for entry in await self.cases.within(tx).updates_this_transaction(case.id, actor_id):
+            if entry.update_type == UpdateType.ASSIGNMENT:
+                await self.tasks.remind_new_case_owner(tx, case.id)
+                user_id, kind, key = case.assigned_worker_id, NotificationKind.ASSIGNMENT, f"assignment:{entry.id}"
+            elif entry.update_type == UpdateType.STATUS_CHANGE:
+                user_id, kind, key = case.requester_id, NotificationKind.REQUEST_UPDATE, f"update:{entry.id}"
+            else:
+                continue
+            await self.notifications.notify(
+                tx, user_id=user_id, kind=kind, dedupe_key=key, actor_id=actor_id, case_id=case.id,
+                case_update_id=entry.id,
+            )
+
     async def add_update(self, worker: StaffMember, case_id: UUID, body: AddCaseUpdateRequest) -> CaseUpdate:
+        """A note, or a message the requester sees (and is notified of, if
+        they have an account)."""
         update_type = UpdateType.MESSAGE if body.visibility == Visibility.PUBLIC else UpdateType.NOTE
-        update = await self.cases.add_update(case_id, worker.id, update_type, body.visibility, body.content)
-        if update is None:
-            raise not_found("case")
+        async with self.transactions.transaction() as tx:
+            cases = self.cases.within(tx)
+            update = await cases.add_update(case_id, worker.id, update_type, body.visibility, body.content)
+            if update is None:
+                raise not_found("case")
+            if body.visibility == Visibility.PUBLIC:
+                case = await cases.get(case_id)
+                await self.notifications.notify(
+                    tx, user_id=case.requester_id if case else None, kind=NotificationKind.REQUEST_UPDATE,
+                    dedupe_key=f"update:{update.id}", actor_id=worker.id, case_id=case_id, case_update_id=update.id,
+                )
         return update
 
     async def insights(self, activity_limit: int = 15) -> CaseInsights:
@@ -272,7 +328,33 @@ class CaseService:
     async def update_referral(
         self, worker: StaffMember, case_id: UUID, referral_id: UUID, body: UpdateReferralRequest
     ) -> Referral:
-        referral = await self.cases.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
-        if referral is None:
-            raise not_found("referral")
+        async with self.transactions.transaction() as tx:
+            cases = self.cases.within(tx)
+            before = None
+            if body.status is not None:
+                before = next((r.status for r in await cases.list_referrals(case_id) if r.id == referral_id), None)
+            referral = await cases.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
+            if referral is None:
+                raise not_found("referral")
+            if before is not None and referral.status != before:
+                await self._notify_referral(tx, worker.id, referral)
         return referral
+
+    async def _notify_referral(self, tx: FunctionCaller, actor_id: UUID, referral: Referral) -> None:
+        """The case's assignee hears of the referral's new status. The key is
+        the status change's history entry (referral_update writes it first).
+        No entry means this request didn't change the status (a concurrent
+        one did, and notified), so nothing is sent."""
+        cases = self.cases.within(tx)
+        entries = [
+            e for e in await cases.updates_this_transaction(referral.case_id, actor_id)
+            if e.update_type == UpdateType.REFERRAL
+        ]
+        if not entries:
+            return
+        case = await cases.get(referral.case_id)
+        await self.notifications.notify(
+            tx, user_id=case.assigned_worker_id if case else None, kind=NotificationKind.REFERRAL_UPDATE,
+            dedupe_key=f"referral:{entries[0].id}", actor_id=actor_id, case_id=referral.case_id,
+            case_update_id=entries[0].id, referral_id=referral.id,
+        )

@@ -1367,6 +1367,36 @@
         "title": "CreateResourceRequest",
         "type": "object"
       },
+      "CreateShiftRequest": {
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "rank": {
+            "$ref": "#/components/schemas/ShiftRank",
+            "default": 1
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "CreateShiftRequest",
+        "type": "object"
+      },
       "CreateTaskRequest": {
         "description": "A task a worker adds to a case. Without `assigned_worker_id` it\nfollows the case (whoever holds it).",
         "properties": {
@@ -1855,6 +1885,275 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "NotificationItem": {
+        "description": "One row of the inbox, ready to show. `route` is where the app goes\nwhen it's tapped.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "case_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "body",
+          "case_id",
+          "case_number",
+          "task_id",
+          "route",
+          "created_at",
+          "read_at"
+        ],
+        "title": "NotificationItem",
+        "type": "object"
+      },
+      "NotificationKind": {
+        "enum": [
+          "assignment",
+          "reply",
+          "request_update",
+          "task_due",
+          "referral_update"
+        ],
+        "title": "NotificationKind",
+        "type": "string"
+      },
+      "NotificationPreferences": {
+        "description": "Push settings (push arrives in phase 2). The inbox ignores them: it\nalways gets the row.",
+        "properties": {
+          "muted_kinds": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationKind"
+            },
+            "title": "Muted Kinds",
+            "type": "array"
+          },
+          "push_enabled": {
+            "default": true,
+            "title": "Push Enabled",
+            "type": "boolean"
+          },
+          "quiet_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet End"
+          },
+          "quiet_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Start"
+          },
+          "urgent_when_off_call": {
+            "default": false,
+            "title": "Urgent When Off Call",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "push_enabled",
+          "muted_kinds",
+          "quiet_start",
+          "quiet_end",
+          "urgent_when_off_call"
+        ],
+        "title": "NotificationPreferences",
+        "type": "object"
+      },
+      "OncallMe": {
+        "properties": {
+          "on_call": {
+            "title": "On Call",
+            "type": "boolean"
+          },
+          "shift": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OncallShift"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "on_call",
+          "shift"
+        ],
+        "title": "OncallMe",
+        "type": "object"
+      },
+      "OncallNow": {
+        "properties": {
+          "me": {
+            "$ref": "#/components/schemas/OncallMe"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OncallShift"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "on_call": {
+            "items": {
+              "$ref": "#/components/schemas/OncallShift"
+            },
+            "title": "On Call",
+            "type": "array"
+          }
+        },
+        "required": [
+          "on_call",
+          "next",
+          "me"
+        ],
+        "title": "OncallNow",
+        "type": "object"
+      },
+      "OncallShift": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rank": {
+            "$ref": "#/components/schemas/ShiftRank"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ShiftSource"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "display_name",
+          "starts_at",
+          "ends_at",
+          "rank",
+          "source"
+        ],
+        "title": "OncallShift",
+        "type": "object"
+      },
       "Opportunity": {
         "properties": {
           "active": {
@@ -2183,6 +2482,38 @@
           "created_at"
         ],
         "title": "PublicRequestUpdate",
+        "type": "object"
+      },
+      "ReadAllRequest": {
+        "description": "Without `case_id`, everything; with it, only that case's rows (the\napp sends it when a case or request screen opens).",
+        "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          }
+        },
+        "title": "ReadAllRequest",
+        "type": "object"
+      },
+      "ReadAllResult": {
+        "properties": {
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated"
+        ],
+        "title": "ReadAllResult",
         "type": "object"
       },
       "Record": {
@@ -2788,6 +3119,22 @@
         "title": "SetRoleRequest",
         "type": "object"
       },
+      "ShiftRank": {
+        "enum": [
+          1,
+          2
+        ],
+        "title": "ShiftRank",
+        "type": "integer"
+      },
+      "ShiftSource": {
+        "enum": [
+          "schedule",
+          "toggle"
+        ],
+        "title": "ShiftSource",
+        "type": "string"
+      },
       "SourceHealth": {
         "properties": {
           "detail": {
@@ -3218,6 +3565,32 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "ToggleOncallRequest": {
+        "description": "Switch yourself on or off. `until` (in the future, within 24 hours)\nsets when it ends; without it a new shift ends at the next 07:00, 17:00\nor 23:00 org time, and a running one keeps its end.",
+        "properties": {
+          "on": {
+            "title": "On",
+            "type": "boolean"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "on"
+        ],
+        "title": "ToggleOncallRequest",
+        "type": "object"
+      },
       "TractCount": {
         "properties": {
           "incidents": {
@@ -3457,6 +3830,19 @@
         "title": "TransitStop",
         "type": "object"
       },
+      "UnreadCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "UnreadCount",
+        "type": "object"
+      },
       "UpdateCaseRequest": {
         "description": "Only the fields sent change. Send `assigned_worker_id: null` to\nunassign.",
         "properties": {
@@ -3583,6 +3969,74 @@
         "title": "UpdateMeRequest",
         "type": "object"
       },
+      "UpdateNotificationPreferences": {
+        "description": "Only the fields sent change; `quiet_start: null` clears it.",
+        "properties": {
+          "muted_kinds": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/NotificationKind"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muted Kinds"
+          },
+          "push_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Enabled"
+          },
+          "quiet_end": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet End"
+          },
+          "quiet_start": {
+            "anyOf": [
+              {
+                "format": "time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Start"
+          },
+          "urgent_when_off_call": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Urgent When Off Call"
+          }
+        },
+        "title": "UpdateNotificationPreferences",
+        "type": "object"
+      },
       "UpdateOpportunityRequest": {
         "properties": {
           "active": {
@@ -3624,6 +4078,59 @@
           }
         },
         "title": "UpdateReferralRequest",
+        "type": "object"
+      },
+      "UpdateShiftRequest": {
+        "description": "Only the fields sent change.",
+        "properties": {
+          "ends_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShiftRank"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "title": "UpdateShiftRequest",
         "type": "object"
       },
       "UpdateTaskRequest": {
@@ -5593,6 +6100,530 @@
         "summary": "Update Me",
         "tags": [
           "user"
+        ]
+      }
+    },
+    "/v1/me/notification-preferences": {
+      "get": {
+        "operationId": "get_preferences_v1_me_notification_preferences_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Preferences",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "patch": {
+        "description": "Only the fields sent change; `quiet_start: null` clears it.",
+        "operationId": "update_preferences_v1_me_notification_preferences_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Preferences",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications": {
+      "get": {
+        "description": "The caller's notifications, newest first.",
+        "operationId": "list_notifications_v1_notifications_get",
+        "parameters": [
+          {
+            "description": "Only items created before this (the next page)",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only items created before this (the next page)",
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationItem"
+                  },
+                  "title": "Response List Notifications V1 Notifications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Notifications",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications/read-all": {
+      "post": {
+        "description": "Marks the caller's unread notifications read: all of them, or only\none case's (`case_id`, sent when a case or request screen opens).",
+        "operationId": "read_all_v1_notifications_read_all_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadAllRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadAllResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read All",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "unread_count_v1_notifications_unread_count_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Unread Count",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications/{notification_id}": {
+      "get": {
+        "description": "One notification; opening it marks it read. 404 if it isn't the caller's.",
+        "operationId": "get_notification_v1_notifications__notification_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications/{notification_id}/read": {
+      "post": {
+        "operationId": "read_notification_v1_notifications__notification_id__read_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Notification",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/oncall/me": {
+      "post": {
+        "description": "Switch yourself on call (until `until`, or the next 07:00, 17:00 or\n23:00 org time) or off (your shift ends now).",
+        "operationId": "toggle_oncall_v1_oncall_me_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleOncallRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallNow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Toggle Oncall",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/now": {
+      "get": {
+        "description": "Who is on call now (primary first), who is next within 12 hours, and\nwhether the caller is on.",
+        "operationId": "oncall_now_v1_oncall_now_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallNow"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Oncall Now",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/shifts": {
+      "get": {
+        "description": "Shifts overlapping [from, to), by start then rank. At most 31 days.",
+        "operationId": "list_shifts_v1_oncall_shifts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OncallShift"
+                  },
+                  "title": "Response List Shifts V1 Oncall Shifts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Shifts",
+        "tags": [
+          "oncall"
+        ]
+      },
+      "post": {
+        "description": "Put someone on the rota (admins).",
+        "operationId": "create_shift_v1_oncall_shifts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShiftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallShift"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Shift",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/shifts/{shift_id}": {
+      "delete": {
+        "description": "Remove a shift (admins).",
+        "operationId": "delete_shift_v1_oncall_shifts__shift_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Shift",
+        "tags": [
+          "oncall"
+        ]
+      },
+      "patch": {
+        "description": "Change a shift's person, times or rank (admins). Only fields sent change.",
+        "operationId": "update_shift_v1_oncall_shifts__shift_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Shift Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateShiftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallShift"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Shift",
+        "tags": [
+          "oncall"
         ]
       }
     },

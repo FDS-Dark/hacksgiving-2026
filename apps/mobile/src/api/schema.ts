@@ -309,6 +309,212 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences_v1_me_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Preferences
+         * @description Only the fields sent change; `quiet_start: null` clears it.
+         */
+        patch: operations["update_preferences_v1_me_notification_preferences_patch"];
+        trace?: never;
+    };
+    "/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notifications
+         * @description The caller's notifications, newest first.
+         */
+        get: operations["list_notifications_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read All
+         * @description Marks the caller's unread notifications read: all of them, or only
+         *     one case's (`case_id`, sent when a case or request screen opens).
+         */
+        post: operations["read_all_v1_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Unread Count */
+        get: operations["unread_count_v1_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/{notification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Notification
+         * @description One notification; opening it marks it read. 404 if it isn't the caller's.
+         */
+        get: operations["get_notification_v1_notifications__notification_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read Notification */
+        post: operations["read_notification_v1_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Toggle Oncall
+         * @description Switch yourself on call (until `until`, or the next 07:00, 17:00 or
+         *     23:00 org time) or off (your shift ends now).
+         */
+        post: operations["toggle_oncall_v1_oncall_me_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oncall Now
+         * @description Who is on call now (primary first), who is next within 12 hours, and
+         *     whether the caller is on.
+         */
+        get: operations["oncall_now_v1_oncall_now_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Shifts
+         * @description Shifts overlapping [from, to), by start then rank. At most 31 days.
+         */
+        get: operations["list_shifts_v1_oncall_shifts_get"];
+        put?: never;
+        /**
+         * Create Shift
+         * @description Put someone on the rota (admins).
+         */
+        post: operations["create_shift_v1_oncall_shifts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/shifts/{shift_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Shift
+         * @description Remove a shift (admins).
+         */
+        delete: operations["delete_shift_v1_oncall_shifts__shift_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Shift
+         * @description Change a shift's person, times or rank (admins). Only fields sent change.
+         */
+        patch: operations["update_shift_v1_oncall_shifts__shift_id__patch"];
+        trace?: never;
+    };
     "/v1/opportunities": {
         parameters: {
             query?: never;
@@ -1775,6 +1981,26 @@ export interface components {
             /** Website */
             website?: string | null;
         };
+        /** CreateShiftRequest */
+        CreateShiftRequest: {
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** @default 1 */
+            rank?: components["schemas"]["ShiftRank"];
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * CreateTaskRequest
          * @description A task a worker adds to a case. Without `assigned_worker_id` it
@@ -1972,6 +2198,106 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "running" | "done" | "dead";
+        /**
+         * NotificationItem
+         * @description One row of the inbox, ready to show. `route` is where the app goes
+         *     when it's tapped.
+         */
+        NotificationItem: {
+            /** Body */
+            body: string;
+            /** Case Id */
+            case_id: string | null;
+            /** Case Number */
+            case_number: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["NotificationKind"];
+            /** Read At */
+            read_at: string | null;
+            /** Route */
+            route: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /** Title */
+            title: string;
+        };
+        /**
+         * NotificationKind
+         * @enum {string}
+         */
+        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update";
+        /**
+         * NotificationPreferences
+         * @description Push settings (push arrives in phase 2). The inbox ignores them: it
+         *     always gets the row.
+         */
+        NotificationPreferences: {
+            /** Muted Kinds */
+            muted_kinds: components["schemas"]["NotificationKind"][];
+            /**
+             * Push Enabled
+             * @default true
+             */
+            push_enabled: boolean;
+            /** Quiet End */
+            quiet_end: string | null;
+            /** Quiet Start */
+            quiet_start: string | null;
+            /**
+             * Urgent When Off Call
+             * @default false
+             */
+            urgent_when_off_call: boolean;
+        };
+        /** OncallMe */
+        OncallMe: {
+            /** On Call */
+            on_call: boolean;
+            shift: components["schemas"]["OncallShift"] | null;
+        };
+        /** OncallNow */
+        OncallNow: {
+            me: components["schemas"]["OncallMe"];
+            next: components["schemas"]["OncallShift"] | null;
+            /** On Call */
+            on_call: components["schemas"]["OncallShift"][];
+        };
+        /** OncallShift */
+        OncallShift: {
+            /** Display Name */
+            display_name: string | null;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            rank: components["schemas"]["ShiftRank"];
+            source: components["schemas"]["ShiftSource"];
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** Opportunity */
         Opportunity: {
             /** Active */
@@ -2097,6 +2423,20 @@ export interface components {
              */
             id: string;
             update_type: components["schemas"]["UpdateType"];
+        };
+        /**
+         * ReadAllRequest
+         * @description Without `case_id`, everything; with it, only that case's rows (the
+         *     app sends it when a case or request screen opens).
+         */
+        ReadAllRequest: {
+            /** Case Id */
+            case_id?: string | null;
+        };
+        /** ReadAllResult */
+        ReadAllResult: {
+            /** Updated */
+            updated: number;
         };
         /** Record */
         Record: {
@@ -2320,6 +2660,16 @@ export interface components {
         SetRoleRequest: {
             role: components["schemas"]["Role"];
         };
+        /**
+         * ShiftRank
+         * @enum {integer}
+         */
+        ShiftRank: 1 | 2;
+        /**
+         * ShiftSource
+         * @enum {string}
+         */
+        ShiftSource: "schedule" | "toggle";
         /** SourceHealth */
         SourceHealth: {
             /** Detail */
@@ -2463,6 +2813,18 @@ export interface components {
          * @enum {string}
          */
         TaskStatus: "open" | "done";
+        /**
+         * ToggleOncallRequest
+         * @description Switch yourself on or off. `until` (in the future, within 24 hours)
+         *     sets when it ends; without it a new shift ends at the next 07:00, 17:00
+         *     or 23:00 org time, and a running one keeps its end.
+         */
+        ToggleOncallRequest: {
+            /** On */
+            on: boolean;
+            /** Until */
+            until?: string | null;
+        };
         /** TractCount */
         TractCount: {
             /** Incidents */
@@ -2541,6 +2903,11 @@ export interface components {
             /** Stop Id */
             stop_id: string;
         };
+        /** UnreadCount */
+        UnreadCount: {
+            /** Count */
+            count: number;
+        };
         /**
          * UpdateCaseRequest
          * @description Only the fields sent change. Send `assigned_worker_id: null` to
@@ -2567,6 +2934,22 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /**
+         * UpdateNotificationPreferences
+         * @description Only the fields sent change; `quiet_start: null` clears it.
+         */
+        UpdateNotificationPreferences: {
+            /** Muted Kinds */
+            muted_kinds?: components["schemas"]["NotificationKind"][] | null;
+            /** Push Enabled */
+            push_enabled?: boolean | null;
+            /** Quiet End */
+            quiet_end?: string | null;
+            /** Quiet Start */
+            quiet_start?: string | null;
+            /** Urgent When Off Call */
+            urgent_when_off_call?: boolean | null;
+        };
         /** UpdateOpportunityRequest */
         UpdateOpportunityRequest: {
             /**
@@ -2580,6 +2963,19 @@ export interface components {
             /** Outcome */
             outcome?: string | null;
             status?: components["schemas"]["ReferralStatus"] | null;
+        };
+        /**
+         * UpdateShiftRequest
+         * @description Only the fields sent change.
+         */
+        UpdateShiftRequest: {
+            /** Ends At */
+            ends_at?: string | null;
+            rank?: components["schemas"]["ShiftRank"] | null;
+            /** Starts At */
+            starts_at?: string | null;
+            /** User Id */
+            user_id?: string | null;
         };
         /**
          * UpdateTaskRequest
@@ -3478,6 +3874,387 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppUser"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_v1_me_notification_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+        };
+    };
+    update_preferences_v1_me_notification_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_v1_notifications_get: {
+        parameters: {
+            query?: {
+                /** @description Only items created before this (the next page) */
+                before?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_all_v1_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadAllRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadAllResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unread_count_v1_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCount"];
+                };
+            };
+        };
+    };
+    get_notification_v1_notifications__notification_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_notification_v1_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_oncall_v1_oncall_me_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleOncallRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallNow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oncall_now_v1_oncall_now_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallNow"];
+                };
+            };
+        };
+    };
+    list_shifts_v1_oncall_shifts_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallShift"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_shift_v1_oncall_shifts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShiftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallShift"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_shift_v1_oncall_shifts__shift_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shift_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_shift_v1_oncall_shifts__shift_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shift_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateShiftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallShift"];
                 };
             };
             /** @description Validation Error */

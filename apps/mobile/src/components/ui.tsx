@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -449,6 +450,23 @@ export function Field({ label, icon, style, ...rest }: TextInputProps & { label?
         />
       </View>
     </View>
+  );
+}
+
+/** An on/off switch, green when on (for a Row's `right`). */
+export function Toggle({ value, onChange, label, disabled }: { value: boolean; onChange: (next: boolean) => void; label: string; disabled?: boolean }) {
+  const theme = useTheme();
+  return (
+    <Switch
+      value={value}
+      onValueChange={(next) => {
+        tap();
+        onChange(next);
+      }}
+      disabled={disabled}
+      trackColor={{ true: theme.accent }}
+      accessibilityLabel={label}
+    />
   );
 }
 

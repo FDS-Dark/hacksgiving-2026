@@ -113,3 +113,19 @@ export const CASE_CATEGORIES = [
 export const CASE_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const satisfies readonly CasePriority[];
 export const CASE_STATUSES = ['new', 'in_progress', 'awaiting_resources', 'resolved', 'closed'] as const satisfies readonly CaseStatus[];
 export const REFERRAL_STATUSES = ['suggested', 'shared', 'accepted', 'completed', 'declined'] as const satisfies readonly ReferralStatus[];
+
+// ── On call (/v1/oncall) ──────────────────────────────────────────────────
+export type OncallSource = Schemas['ShiftSource'];
+export type OncallShift = Schemas['OncallShift'];
+export type OncallNow = Schemas['OncallNow'];
+export type ToggleOncall = Schemas['ToggleOncallRequest'];
+export type CreateShift = Schemas['CreateShiftRequest'];
+export type UpdateShift = Schemas['UpdateShiftRequest'];
+
+// ── Inbox (/v1/notifications) ─────────────────────────────────────────────
+export type NotificationKind = Schemas['NotificationKind'];
+export type NotificationItem = Schemas['NotificationItem'];
+export type UnreadCount = Schemas['UnreadCount'];
+export type ReadAllResult = Schemas['ReadAllResult'];
+export type NotificationPreferences = Schemas['NotificationPreferences'];
+export type UpdateNotificationPreferences = Schemas['UpdateNotificationPreferences'];

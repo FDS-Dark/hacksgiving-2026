@@ -11,6 +11,9 @@ import type { PublicRequest } from '@/api/types';
 import { BigButton, Card, Input, RequestProgress, StatusChip, isOpenStatus, requestHeading, updatedAgo } from '@/components/resident';
 import { CaseListSkeleton } from '@/components/Skeleton';
 import { Button, Chip, Chips, EmptyState, ErrorBanner } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { unreadCaseIds } from '@/lib/notifications';
+import { useNotifications } from '@/services/notifications';
 import { useFindRequest, useForgetRequest, useResidentRequests } from '@/services/requests';
 import { space, useTheme } from '@/theme/tokens';
 
@@ -18,6 +21,10 @@ export function RequestList() {
   const list = useResidentRequests();
   const forget = useForgetRequest();
   const [show, setShow] = useState<'open' | 'closed'>('open');
+  // Signed in only: a dot on requests with unread notifications.
+  const signedIn = useAuth().status === 'signedIn';
+  const notifications = useNotifications(signedIn);
+  const unread = signedIn ? unreadCaseIds(notifications.data ?? []) : new Set<string>();
 
   if (list.isPending) return <CaseListSkeleton rows={3} />;
 
@@ -36,7 +43,7 @@ export function RequestList() {
             <Chip label={`Closed (${closed.length})`} active={show === 'closed'} onPress={() => setShow('closed')} />
           </Chips>
           {shown.length ? (
-            shown.map((r) => <RequestCard key={r.id} request={r} />)
+            shown.map((r) => <RequestCard key={r.id} request={r} unread={unread.has(r.id)} />)
           ) : (
             <QuietText>{show === 'open' ? 'Nothing open right now.' : 'No closed requests yet.'}</QuietText>
           )}
@@ -60,18 +67,19 @@ export function RequestList() {
 }
 
 /** A request in a list (Figma R1): number, status, title, progress, last change. */
-export function RequestCard({ request, label }: { request: PublicRequest; label?: string }) {
+export function RequestCard({ request, label, unread = false }: { request: PublicRequest; label?: string; unread?: boolean }) {
   const theme = useTheme();
   const open = isOpenStatus(request.status);
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/help/request/[id]', params: { id: request.id } })}
       accessibilityRole="button"
-      accessibilityLabel={`${label ? `${label}: ` : ''}${requestHeading(request)}`}
+      accessibilityLabel={`${unread ? 'New update. ' : ''}${label ? `${label}: ` : ''}${requestHeading(request)}`}
       style={({ pressed }) => pressed && { opacity: 0.7 }}
     >
       <Card style={{ gap: 10 }}>
         <View style={styles.row}>
+          {unread ? <View style={[styles.dot, { backgroundColor: theme.accent }]} /> : null}
           <Text style={[styles.small, { color: theme.textSecondary, flex: 1 }]}>{label ?? `#${request.number}`}</Text>
           <StatusChip status={request.status} />
         </View>
@@ -141,5 +149,6 @@ function QuietText({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   small: { fontSize: 13 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
   title: { fontSize: 17, fontWeight: '700' },
 });

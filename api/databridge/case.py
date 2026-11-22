@@ -112,6 +112,13 @@ class CaseDatabridge(Databridge):
     async def list_updates(self, case_id: UUID) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_list_updates", case_id=case_id)]
 
+    async def updates_this_transaction(self, case_id: UUID, author_id: UUID | None) -> list[CaseUpdate]:
+        """The history entries this transaction wrote on the case by `author_id`
+        (case_update and referral_update write their own), oldest first.
+        Only meaningful inside a shared transaction (`within`)."""
+        rows = await self._rows("case_list_updates_this_transaction", case_id=case_id, author_id=author_id)
+        return [CaseUpdate(**row) for row in rows]
+
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_recent_activity", limit=limit)]
 

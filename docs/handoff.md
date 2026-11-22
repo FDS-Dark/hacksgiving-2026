@@ -1,6 +1,6 @@
 # Handoff: where things stand
 
-Last updated 2026-11-22 (after the production deploy). Update this file when you finish a piece of work or
+Last updated 2026-11-22 (on-call + inbox, phase 1). Update this file when you finish a piece of work or
 change what's deployed, so the next person (or agent) starts from the truth.
 
 ## What the app is
@@ -23,6 +23,12 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   `docs/voice/`): phone calls via ElevenLabs, handed off to the app with a code.
 - **Opportunities** (teammates' work, migration 0010): volunteer and job
   listings for residents and staff.
+- **On call + inbox** (phase 1 of `docs/design/on-call-and-push.md`,
+  migrations 0015-0016): shifts and an "On call" switch (Today card, Me,
+  schedule at `/staff/oncall`, admins edit), and an in-app notifications inbox
+  (`/staff/notifications`, the bell on Today; unread dots on a resident's
+  Requests). Assignments, replies, messages, referral changes and tasks due in
+  30 min (job `task.remind`) create inbox rows. No push yet.
 
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
@@ -35,8 +41,10 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0011** (`0010_opportunities`,
-  `0011_jobs_and_records`).
+- Database: Alembic revisions through **0016** (`0015_oncall_shifts`,
+  `0016_notifications`; check `database/migrations/versions` for the rest).
+- The worker starts without the OpenAI key: task reminders always run,
+  Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
   Supabase Storage's API in production; audio is deleted once transcribed.
 
@@ -44,6 +52,21 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 
 `AGENTS.md`, section "Run it locally": `scripts/dev-setup.sh`, then
 `scripts/dev.sh`. Main's CI is green (tests, lint, audits, secret scan).
+
+The app includes `expo-dev-client` and `expo-notifications` (for push, which
+Expo Go can't receive), so `scripts/dev.sh` and `npm start` pass `--go` to
+keep Expo Go as the target. Push testing needs a development build signed
+for team D36AR26A38 on the Mac mini (`apps/mobile/README.md`).
+
+## iOS push setup (done 2026-11-21)
+
+- APNs auth key `F4DVTY4Q2B` (team D36AR26A38, sandbox + production,
+  team-scoped) is in Vault as `apns_key_p8`, `apns_key_id`, `apns_team_id`
+  in `secret/deployments/hacksgiving/app` and `.../staging/app`. Nothing reads
+  it until phase 2.
+- Xcode on the Mac mini is signed in to the team; automatic signing created a
+  push + time-sensitive profile for `com.austinkoske.hacksgiving`. Signing
+  works in Terminal and in the CI runner (the login session), not over SSH.
 
 ## Production
 
@@ -78,16 +101,16 @@ CI runners sometimes drop connections (a `tf-apply` once failed fetching
 ## Next work
 
 Easier:
-- Staff Notifications screen (Figma S7) and the resident notification ask (R6),
-  once push exists.
 - Offline: queue a resident's request while offline (Figma E3).
 - Restyle Get help's form to the latest Figma (Peter owns the resident flow;
   check with him).
 
 Needs focus:
-- **On-call and push notifications** (step 2 of `docs/app-flow.md`): on-call
-  shifts or a toggle, push tokens, routing urgent cases to whoever is on call
-  with Accept / Pass.
+- **Push and urgent escalation** (phases 2-3 of
+  `docs/design/on-call-and-push.md`): APNs sending (direct, no Expo push
+  service), device tokens and the resident notification ask (R6), then urgent
+  cases offered to whoever is on call with Accept / Pass. Phase 3 needs the
+  team's answers to the design doc's questions 1-3 and 5.
 - **Insights from debriefs** (step 3): patterns across records (repeat
   addresses, neighborhoods, times).
 - **Training and sharing with partners** (step 4).

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -136,6 +137,8 @@ class WorkerConfig(BaseModel):
     stalled_record_seconds: int = Field(default=600, ge=60)
     # Finished jobs are kept this many days (dead ones 4x longer).
     keep_jobs_days: int = Field(default=7, ge=1)
+    # Inbox notifications are kept this many days.
+    keep_notifications_days: int = Field(default=90, ge=1)
 
 
 class VoiceConfig(BaseModel):
@@ -191,6 +194,23 @@ class LoaderConfig(BaseModel):
     live_every_seconds: int = Field(default=300, ge=60)
 
 
+class OncallConfig(BaseModel):
+    """On call (services/oncall.py)."""
+
+    # The org's time zone: the "On call" switch ends by default at the next
+    # 07:00, 17:00 or 23:00 here.
+    timezone: str = Field(default="America/Chicago")
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(f"Unknown time zone: {value!r}")
+        return value
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP__", env_nested_delimiter="__", extra="ignore"
@@ -208,6 +228,7 @@ class AppConfig(BaseSettings):
     worker: WorkerConfig = Field(default_factory=WorkerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     loader: LoaderConfig = Field(default_factory=LoaderConfig)
+    oncall: OncallConfig = Field(default_factory=OncallConfig)
     # Browser origins allowed to call the API. The native app doesn't need
     # CORS; this is for Expo web / local tooling.
     cors_origins: list[str] = Field(
