@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import type { TractCoverage } from '@/api/types';
+import { MapFrame } from '@/components/MapFrame';
 import { shadeOf } from '@/lib/coverage';
 import { ESCAPE_HTML_JS, LEAFLET_CSS, LEAFLET_JS, MILWAUKEE, OSM_TILES, safeJson } from '@/lib/leaflet';
 import { radius, useTheme } from '@/theme/tokens';
@@ -52,9 +52,9 @@ export function CoverageMap({ tracts, layer, onSelect }: { tracts: TractCoverage
     return mapHtml(points);
   }, [tracts, layer]);
 
-  const handleMessage = (event: WebViewMessageEvent) => {
+  const handleMessage = (data: string) => {
     try {
-      const message = JSON.parse(event.nativeEvent.data) as { type?: string; id?: string };
+      const message = JSON.parse(data) as { type?: string; id?: string };
       if (message.type === 'tract' && typeof message.id === 'string') onSelect(message.id);
     } catch {
       // Ignore malformed messages from web content.
@@ -63,7 +63,7 @@ export function CoverageMap({ tracts, layer, onSelect }: { tracts: TractCoverage
 
   return (
     <View style={[styles.frame, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
-      <WebView source={{ html }} originWhitelist={['*']} onMessage={handleMessage} javaScriptEnabled setSupportMultipleWindows={false} style={styles.webview} />
+      <MapFrame html={html} onMessage={handleMessage} accessibilityLabel="Coverage map of census tracts" style={styles.webview} />
     </View>
   );
 }

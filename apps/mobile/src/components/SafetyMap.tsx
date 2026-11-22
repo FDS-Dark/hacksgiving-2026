@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { MapFrame } from '@/components/MapFrame';
 import { Txt } from '@/components/ui';
 import { ESCAPE_HTML_JS, LEAFLET_CSS, LEAFLET_JS, MILWAUKEE, safeJson } from '@/lib/leaflet';
 import { INCIDENT_CATEGORIES, type SafetyPoint } from '@/services/publicSafety';
@@ -107,9 +107,9 @@ export function SafetyMap({
   const theme = useTheme();
   const html = useMemo(() => mapHtml(points, recentCalls), [points, recentCalls]);
 
-  const handleMessage = (event: WebViewMessageEvent) => {
+  const handleMessage = (data: string) => {
     try {
-      const message = JSON.parse(event.nativeEvent.data) as { type?: string; latitude?: number; longitude?: number };
+      const message = JSON.parse(data) as { type?: string; latitude?: number; longitude?: number };
       if (message.type !== 'area' || typeof message.latitude !== 'number' || typeof message.longitude !== 'number') return;
       const center = { latitude: message.latitude, longitude: message.longitude };
       const incidents = points
@@ -126,16 +126,7 @@ export function SafetyMap({
 
   return (
     <View style={[styles.frame, { backgroundColor: theme.surface }]}>
-      <WebView
-        source={{ html }}
-        originWhitelist={['*']}
-        onMessage={handleMessage}
-        javaScriptEnabled
-        domStorageEnabled
-        setSupportMultipleWindows={false}
-        allowsInlineMediaPlayback={false}
-        style={styles.webview}
-      />
+      <MapFrame html={html} onMessage={handleMessage} domStorageEnabled accessibilityLabel="Public safety map" style={styles.webview} />
       {callsOnly ? (
         <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
           <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
