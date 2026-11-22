@@ -246,11 +246,11 @@
     <div class="box ext" data-build="3" style="left:1620px;top:350px;width:260px;height:120px"><b>OpenAI</b><span>drafts</span></div>
     <div class="box ext store" data-build="3" style="left:1620px;top:530px;width:260px;height:190px"><b>Storage</b><span>debrief audio</span></div>
     <div class="box ext" data-build="3" style="left:1620px;top:750px;width:260px;height:110px"><b>Partners</b><span>like Sojourner</span></div>
-    <div class="host" data-build="4"><i data-icon="server"></i>Deployed to production<span class="dot">·</span>open source<span class="dot">·</span>≈&nbsp;$70 / month to run, then ~39¢ per call answered</div>
+    <div class="host" data-build="4"><i data-icon="server"></i>Deployed to production<span class="dot">·</span>open source<span class="dot">·</span>≈&nbsp;$70 / month to run, then ~20¢ per call answered</div>
     <div class="trust t1" data-build="5">Names removed<br>before AI</div>
     <div class="trust t2" data-build="5"><i data-icon="trash"></i>Audio deleted</div>
     <div class="trust t3" data-build="5"><i data-icon="shield"></i>Consent before sharing</div>
-    <aside class="notes">Here's how it's built. <span class="cue">[click]</span> The Expo app runs on iPhone, Android and the web, and the Navigator, an ElevenLabs voice agent, answers the phone. <span class="cue">[click]</span> Auth0 signs people in to a FastAPI API on Postgres. <span class="cue">[click]</span> A worker runs debriefs, push alerts and escalation, and a rate-gated loader pulls the public data. <span class="cue">[click]</span> It's deployed to production, open source, and about $70 a month to run; past that, it costs about 39 cents for each call it answers. <span class="cue">[click]</span> And trust is built in: names removed before the AI, audio deleted, consent before sharing.</aside>
+    <aside class="notes">Here's how it's built. <span class="cue">[click]</span> The Expo app runs on iPhone, Android and the web, and the Navigator, an ElevenLabs voice agent, answers the phone. <span class="cue">[click]</span> Auth0 signs people in to a FastAPI API on Postgres. <span class="cue">[click]</span> A worker runs debriefs, push alerts and escalation, and a rate-gated loader pulls the public data. <span class="cue">[click]</span> It's deployed to production, open source, and about $70 a month to run; past that, it costs about 20 cents for each call it answers. <span class="cue">[click]</span> And trust is built in: names removed before the AI, audio deleted, consent before sharing.</aside>
   </section>
 
   <!-- 12 · Close -->
@@ -279,8 +279,8 @@
     <h1 class="ax-title">What it costs to run.</h1>
     <div class="ax-kpi glass">
       <div class="ax-kpi-big">≈&nbsp;$70<span class="ax-kpi-unit">/ month to run</span></div>
-      <div class="ax-kpi-sub">then ~39¢ per call answered</div>
-      <div class="ax-kpi-cap">≈&nbsp;$560 / month all-in at 1,000 residents a day</div>
+      <div class="ax-kpi-sub">then ~20¢ per call answered</div>
+      <div class="ax-kpi-cap">≈&nbsp;$390 / month all-in at 1,000 residents a day</div>
     </div>
     <div class="ax-cost-grid">
       <div class="ax-card glass ax-usage">
@@ -288,12 +288,12 @@
         <table class="ax-table">
           <thead><tr><th>Item</th><th class="num">Per unit</th><th class="num">Per day</th></tr></thead>
           <tbody>
-            <tr><td><b>Navigator calls</b><span class="ax-d">ElevenLabs voice + model + Twilio · ~4 min · 30 a day</span></td><td class="num">~39¢ / call</td><td class="num">$11.70</td></tr>
+            <tr><td><b>Navigator calls</b><span class="ax-d">ElevenLabs voice + model + Twilio · ~2 min · 30 a day</span></td><td class="num">~20¢ / call</td><td class="num">$6.00</td></tr>
             <tr><td><b>Staff AI</b><span class="ax-d">debrief transcription and reading, assists, handoffs · 20 workers</span></td><td class="num">~17¢ / worker</td><td class="num">$3.40</td></tr>
             <tr><td><b>App help requests</b><span class="ax-d">2 texts at ~1.2¢ each, plus routing · 50 a day</span></td><td class="num">~2.4¢ / request</td><td class="num">$1.20</td></tr>
             <tr><td><b>Routing decisions</b><span class="ax-d">app + Navigator + triage · ~100 a day</span></td><td class="num">~0.0065¢</td><td class="num">$0.01</td></tr>
           </tbody>
-          <tfoot><tr><td><b>Usage total</b></td><td class="num" colspan="2"><b>~$16.30 / day</b> <span class="ax-m">(~$490 / month)</span></td></tr></tfoot>
+          <tfoot><tr><td><b>Usage total</b></td><td class="num" colspan="2"><b>~$10.60 / day</b> <span class="ax-m">(~$320 / month)</span></td></tr></tfoot>
         </table>
       </div>
       <div class="ax-card glass ax-hosting">
@@ -314,7 +314,7 @@
       </div>
     </div>
     <div class="ax-foot">Usage measured from our models' pricing; hosting is an estimate on AWS list prices (us-east-2), public subnets, no NAT gateway. Push notifications (APNs) are free.</div>
-    <aside class="notes">If asked what it costs: about $70 a month to keep it running, whatever the volume. Everything else is per use, mostly about 39 cents per Navigator call answered. At a thousand residents a day that comes to about $560 a month all-in, under 2 cents per resident per day. Usage is measured from our models' pricing; hosting is an estimate on AWS list prices. Routing moved to a smaller model and got about 12 times cheaper. Navigator calls dominate the spend, so the next saving is shorter calls.</aside>
+    <aside class="notes">If asked what it costs: about $70 a month to keep it running, whatever the volume. Everything else is per use, mostly about 20 cents per Navigator call answered, assuming a two-minute call. At a thousand residents a day that comes to about $390 a month all-in, about 1.3 cents per resident per day. Usage is measured from our models' pricing; hosting is an estimate on AWS list prices. Routing moved to a smaller model and got about 12 times cheaper. Navigator calls are still the biggest share, a little over half of usage.</aside>
   </section>
 
   <!-- A2 · How fast help moves -->

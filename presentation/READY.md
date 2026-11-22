@@ -36,7 +36,7 @@
 | 8 | A week later, a pattern | –2:33 | 2 clicks |
 | 9 | And everything around it | –2:51 | montage: Get help, Jobs & programs, Community view, My tasks, Queue, 911 call map |
 | 10 | The whole team gets better | –3:05 | 1 click |
-| 11 | How it's built | –3:33 | 5 clicks; trust markers on the last one. The 4th click's bar now carries the cost line: "Deployed to production · open source · ≈ $70 / month to run, then ~39¢ per call answered" (one short clause in the notes) |
+| 11 | How it's built | –3:33 | 5 clicks; trust markers on the last one. The 4th click's bar now carries the cost line: "Deployed to production · open source · ≈ $70 / month to run, then ~20¢ per call answered" (one short clause in the notes) |
 | 12 | Close | –3:56 | 1 click |
 
 **Backup:** `ComForce Keynote.pdf` in this folder: every slide at its final build, with videos as still frames (the appendix pages included).
@@ -46,7 +46,7 @@ After the close, → keeps going into five static appendix slides (no clicks). T
 
 | # | Slide | What's on it |
 |---|---|---|
-| 13 · A1 | What it costs to run | usage per day and hosting per month (hosting is an AWS list-price estimate), **≈ $70 / month to run, then ~39¢ per call answered**; at 1,000 residents a day that's ≈ $560 / month all-in, under 2¢ per resident per day |
+| 13 · A1 | What it costs to run | usage per day and hosting per month (hosting is an AWS list-price estimate), **≈ $70 / month to run, then ~20¢ per call answered** (assuming ~2-minute calls); at 1,000 residents a day that's ≈ $390 / month all-in, about 1.3¢ per resident per day |
 | 14 · A2 | How fast help moves | real timings: ~30 s call to page, push in seconds, 5 min per escalation step, ~10 s debrief draft, data every 5 min, MPD's 30–90 min delay |
 | 15 · A3 | 16 public data sources | 4 live (every 5 min), 12 daily, plus the MPD rate gate (10 requests per 30 min per IP) |
 | 16 · A4 | Privacy and safety, by design | the ten privacy and safety rules |
