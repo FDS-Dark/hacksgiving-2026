@@ -12,7 +12,7 @@ output "api_identifier" {
 }
 
 output "mobile_dev_client_id" {
-  description = "Public client id of Hacksgiving Mobile (dev), for Expo Go (not a secret)."
+  description = "Public client id of the dev client (auth0_client.mobile_dev), for Expo Go (not a secret)."
   value       = auth0_client.mobile_dev.client_id
 }
 

@@ -4533,6 +4533,17 @@
           "category": {
             "$ref": "#/components/schemas/CaseCategory"
           },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the requester asked to be reached; null when the form didn't ask."
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -4585,6 +4596,18 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
+          },
+          "worker_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First name of the ComForce worker the request is assigned to; null until someone is. Nothing else about staff reaches the requester.",
+            "title": "Worker First Name"
           }
         },
         "required": [
@@ -4597,7 +4620,9 @@
           "location",
           "created_at",
           "updated_at",
-          "resolved_at"
+          "resolved_at",
+          "contact_method",
+          "worker_first_name"
         ],
         "title": "PublicRequest",
         "type": "object"

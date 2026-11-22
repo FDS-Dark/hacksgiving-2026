@@ -63,8 +63,8 @@ access token for `EXPO_PUBLIC_AUTH0_AUDIENCE` plus a refresh token
 refreshed a minute before they expire. The API sees only the access token;
 the ID token is used only to show the user's name.
 
-The Auth0 tenant (the API, the **Hacksgiving Mobile** app for builds, the
-**Hacksgiving Mobile (dev)** app for Expo Go, refresh-token rotation, the
+The Auth0 tenant (the API, the build client for builds and the dev client
+for Expo Go, both shown as **ComForce MKE** on the login page, refresh-token rotation, the
 name-claim Action) is managed in
 [`auth0/terraform`](../../auth0/terraform/README.md). After it's applied:
 
@@ -182,7 +182,7 @@ them install TestFlight and accept.
 own bundle id (`com.austinkoske.hacksgiving.staging`) and URL scheme
 (`hacksgiving-staging`), and talks to the staging API
 (`https://hacksgiving-api-staging.austinkoske.com/v1`) and the staging database.
-Both apps sign in through the same Auth0 tenant and Hacksgiving Mobile client.
+Both apps sign in through the same Auth0 tenant and build client (auth0_client.mobile).
 `app.config.ts` picks the variant from `APP_VARIANT`; `scripts/variant.sh`
 sets it, along with the values from `.env.<variant>`.
 

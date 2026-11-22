@@ -8,11 +8,11 @@ import { useTheme } from '@/theme/tokens';
 
 /** Figma "App shell v2" resident tabs. Get help pushes the request flow (/help) over them. */
 const TABS: TabItem[] = [
-  { label: 'Home', href: '/', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/' },
+  { label: 'Home', href: '/', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/' || p === '/nearby' },
   { label: 'Get help', push: '/help', icon: 'help-buoy-outline', iconActive: 'help-buoy', match: () => false },
   { label: 'Requests', href: '/requests', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/requests') },
   { label: 'Awareness', href: '/safety', icon: 'shield-outline', iconActive: 'shield', match: (p) => p === '/safety' || p === '/alerts' },
-  { label: 'Me', href: '/me', icon: 'person-outline', iconActive: 'person', match: (p) => p === '/me' || p === '/alerts' || p === '/opportunities' },
+  { label: 'Me', href: '/me', icon: 'person-outline', iconActive: 'person', match: (p) => p === '/me' || p === '/opportunities' },
 ];
 
 /**

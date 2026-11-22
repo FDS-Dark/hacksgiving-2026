@@ -106,7 +106,8 @@ export async function request<T>(path: string, { method = 'GET', body, auth = tr
     throw new ApiError(
       0,
       'network_error',
-      `Can't reach the Hacksgiving API at ${BASE_URL} (${timedOut ? 'no answer' : errorMessage(e)})`,
+      // The address goes in ErrorBanner's technical details (lib/errors.ts), never the main line.
+      `Can't reach the server (${timedOut ? 'no answer' : errorMessage(e)})`,
     );
   } finally {
     clearTimeout(timeout);
