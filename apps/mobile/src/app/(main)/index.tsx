@@ -7,7 +7,7 @@ import { Page } from '@/components/Page';
 import { Card, RequestProgress, StatusChip, ResidentHeader, isOpenStatus } from '@/components/resident';
 import type { IconName } from '@/components/ui';
 import { prefersCommunityView } from '@/lib/viewMode';
-import { useResidentRequest, useResidentRequests } from '@/services/requests';
+import { usePendingRequests, useResidentRequest, useResidentRequests } from '@/services/requests';
 import { useResources } from '@/services/resources';
 import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
@@ -36,6 +36,7 @@ function HomeScreen() {
   const me = useMe();
   const list = useResidentRequests();
   const resources = useResources();
+  const pending = usePendingRequests();
   const open = list.requests.find((r) => isOpenStatus(r.status));
   const first = me.data?.display_name?.trim().split(/\s+/)[0];
 
@@ -79,6 +80,19 @@ function HomeScreen() {
       </Pressable>
 
       <WeatherBanner />
+
+      {pending.data?.length ? (
+        <Card style={{ gap: 4 }}>
+          <View style={styles.row}>
+            <Ionicons name="cloud-offline-outline" size={18} color={theme.soon} />
+            <Text style={[styles.weatherTitle, { color: theme.soon }]}>Queued to send</Text>
+          </View>
+          <Text style={[styles.small, { color: theme.textSecondary }]}>
+            {pending.data.length === 1 ? 'Your request is' : `${pending.data.length} requests are`} saved on this phone and will send as soon as you have
+            signal.
+          </Text>
+        </Card>
+      ) : null}
 
       {open ? <OpenRequest request={open} /> : null}
 

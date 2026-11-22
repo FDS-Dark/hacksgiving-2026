@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BigButton, Card, ResidentScreen } from '@/components/resident';
 import { useAuth } from '@/lib/auth';
+import { callPhone } from '@/lib/phone';
 import { shouldAskResident } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
@@ -17,6 +18,41 @@ const REACH: Record<string, string> = {
 
 /** Request received (Figma A3): the reference number and what happens next. */
 export default function ReceivedScreen() {
+  const { queued } = useLocalSearchParams<{ queued?: string }>();
+  return queued ? <QueuedScreen /> : <SentScreen />;
+}
+
+/** Figma E3: written with no connection, kept on the phone, sent on reconnect. */
+function QueuedScreen() {
+  const theme = useTheme();
+  return (
+    <ResidentScreen
+      back={false}
+      contentStyle={{ alignItems: 'center', paddingTop: 40 }}
+      footer={<BigButton label="Back to home" variant="outline" onPress={() => router.replace('/')} />}
+    >
+      <View style={[styles.check, { backgroundColor: theme.warningSoft }]}>
+        <Ionicons name="cloud-offline-outline" size={44} color={theme.soon} />
+      </View>
+      <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
+        Saved on your phone
+      </Text>
+      <Text style={[styles.lede, { color: theme.textSecondary }]}>
+        You’re offline. Your request will send as soon as you have signal, even if you close this screen.
+      </Text>
+      <Pressable onPress={() => callPhone('911')} accessibilityRole="button" accessibilityLabel="In danger? Call 911" style={styles.full}>
+        <Card tone="danger" style={{ paddingVertical: 12 }}>
+          <Text style={{ fontSize: 14, color: theme.text }}>
+            <Text style={{ fontWeight: '700', color: theme.red }}>In danger? Call 911. </Text>
+            It works without data.
+          </Text>
+        </Card>
+      </Pressable>
+    </ResidentScreen>
+  );
+}
+
+function SentScreen() {
   const theme = useTheme();
   const { id, number, method } = useLocalSearchParams<{ id: string; number: string; method?: string }>();
   // Sent without an account: the code is on this device, never in the URL.
