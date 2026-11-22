@@ -1,8 +1,7 @@
 # The app as a website: `expo export --platform web` (a static single-page
 # app), served by unprivileged nginx. EXPO_PUBLIC_* values are inlined into
 # the bundle at build time, so each environment builds its own image
-# (.gitlab-ci.yml build-web-staging passes .env.staging's values plus the
-# Auth0 client that allows browser sign-in).
+# (.gitlab-ci.yml build-web-staging passes apps/mobile/.env.web-staging).
 
 FROM node:22.23.4-bookworm-slim AS build
 WORKDIR /app

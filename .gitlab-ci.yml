@@ -227,22 +227,18 @@ build-api:
   rules: *on_every_change
 
 # The website for staging (apps/mobile/web.Dockerfile, terraform/web.tf).
-# EXPO_PUBLIC_* values are baked into the bundle: .env.staging's API and
-# tenant, but the Hacksgiving Mobile (dev) client, the one that allows
-# browser sign-in from https://hacksgiving-staging.austinkoske.com
-# (auth0/terraform dev_web_origins). Public identifiers, not secrets.
+# EXPO_PUBLIC_* values are baked into the bundle, from
+# apps/mobile/.env.web-staging (public identifiers, not secrets).
 build-web-staging:
   stage: a-build
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
     entrypoint: [""]
-  variables:
-    WEB_AUTH0_CLIENT_ID: "U218lvdCzEBESk0teqWgIIBqiTXL9Exo"
   script:
-    - set -a; . "${CI_PROJECT_DIR}/apps/mobile/.env.staging"; set +a
+    - set -a; . "${CI_PROJECT_DIR}/apps/mobile/.env.web-staging"; set +a
     - mkdir -p /kaniko/.docker
     - printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}' "$CI_REGISTRY" "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" > /kaniko/.docker/config.json
-    - /kaniko/executor --context "${CI_PROJECT_DIR}/apps/mobile" --dockerfile "${CI_PROJECT_DIR}/apps/mobile/web.Dockerfile" --destination "$WEB_STAGING_IMAGE" --build-arg APP_VARIANT=staging --build-arg "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" --build-arg "EXPO_PUBLIC_AUTH0_DOMAIN=$EXPO_PUBLIC_AUTH0_DOMAIN" --build-arg "EXPO_PUBLIC_AUTH0_AUDIENCE=$EXPO_PUBLIC_AUTH0_AUDIENCE" --build-arg "EXPO_PUBLIC_AUTH0_CLIENT_ID=$WEB_AUTH0_CLIENT_ID" --cache=true --cache-repo "${CI_REGISTRY_IMAGE}/cache/web" --cache-ttl=336h --snapshot-mode=redo --compressed-caching=false
+    - /kaniko/executor --context "${CI_PROJECT_DIR}/apps/mobile" --dockerfile "${CI_PROJECT_DIR}/apps/mobile/web.Dockerfile" --destination "$WEB_STAGING_IMAGE" --build-arg APP_VARIANT=staging --build-arg "EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL" --build-arg "EXPO_PUBLIC_AUTH0_DOMAIN=$EXPO_PUBLIC_AUTH0_DOMAIN" --build-arg "EXPO_PUBLIC_AUTH0_AUDIENCE=$EXPO_PUBLIC_AUTH0_AUDIENCE" --build-arg "EXPO_PUBLIC_AUTH0_CLIENT_ID=$EXPO_PUBLIC_AUTH0_CLIENT_ID" --cache=true --cache-repo "${CI_REGISTRY_IMAGE}/cache/web" --cache-ttl=336h --snapshot-mode=redo --compressed-caching=false
   retry:
     max: 2
     when:
