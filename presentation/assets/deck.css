@@ -576,3 +576,6 @@ i[data-icon] svg { width: 100%; height: 100%; fill: none; stroke: currentColor; 
 .s-close .statement { left: 140px; right: auto; width: 860px; top: 330px; text-align: left; }
 .s-close .statement .l1 { font-size: 104px; line-height: 1.02; text-shadow: 0 2px 40px rgba(0,0,0,.8); }
 .s-close .statement .l2 { font-size: 76px; margin-top: 44px; text-shadow: 0 0 60px rgba(43,212,125,.3), 0 2px 40px rgba(0,0,0,.8); }
+
+/* A1's cost box sits in the top-right corner: keep the QR tile there, drop its text label on that slide. */
+#stage:has(.ax-cost.active) #qr .qr-label { opacity: 0; }
