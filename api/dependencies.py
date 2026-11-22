@@ -17,8 +17,10 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from openai import AsyncOpenAI
 
 from adapters.storage import AudioStorage, make_audio_storage
+from databridge.attachment import AttachmentDatabridge
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.handoff import HandoffDatabridge
 from databridge.insights import InsightsDatabridge
 from databridge.opportunity import OpportunityDatabridge
 from databridge.partner import PartnerDatabridge
@@ -40,7 +42,9 @@ from engine.postgres_engine import PostgresDBEngine
 from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
+from services.attachment import AttachmentService
 from services.case import CaseService, Triager
+from services.handoff import HandoffService
 from services.insights import InsightsService
 from services.job import JobService
 from services.notification import NotificationService
@@ -214,6 +218,20 @@ def get_routing_service() -> RoutingService:
 @cache
 def get_case_assistant() -> CaseAssistant | None:
     return CaseAssistant(_openai().responses, config.openai.model) if config.openai.api_key else None
+
+
+@cache
+def get_attachment_service() -> AttachmentService:
+    return AttachmentService(AttachmentDatabridge(get_executor()), get_case_service(), get_audio_storage())
+
+
+@cache
+def get_handoff_service() -> HandoffService:
+    executor = get_executor()
+    return HandoffService(
+        HandoffDatabridge(executor), OncallDatabridge(executor), get_case_service(), get_task_service(),
+        get_case_assistant(),
+    )
 
 
 @cache

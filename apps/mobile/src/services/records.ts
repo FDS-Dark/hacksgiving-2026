@@ -11,7 +11,8 @@ import { caseKeys } from '@/services/cases';
 
 export const recordsApi = {
   create: (body: CreateRecord) => request<DebriefRecord>('/records', { method: 'POST', body }),
-  startVoice: () => request<VoiceUpload>('/records/voice', { method: 'POST' }),
+  startVoice: (caseId?: string) =>
+    request<VoiceUpload>('/records/voice', { method: 'POST', body: caseId ? { case_id: caseId } : undefined }),
   uploaded: (id: string) => request<DebriefRecord>(`/records/${id}/uploaded`, { method: 'POST' }),
   mine: () => request<DebriefRecord[]>('/records'),
   get: (id: string) => request<DebriefRecord>(`/records/${id}`),
@@ -69,12 +70,13 @@ async function uploadAudio(upload: VoiceUpload, fileUri: string) {
 }
 
 /** A voice debrief, start to queued: a record and a signed URL, the upload,
- *  then telling the API it arrived. The local file is the caller's to delete. */
+ *  then telling the API it arrived. The local file is the caller's to delete.
+ *  `caseId`: a debrief about an existing case (from the Responding screen). */
 export function useSubmitVoice() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: async (fileUri: string) => {
-      const upload = await recordsApi.startVoice();
+    mutationFn: async ({ fileUri, caseId }: { fileUri: string; caseId?: string }) => {
+      const upload = await recordsApi.startVoice(caseId);
       await uploadAudio(upload, fileUri);
       return recordsApi.uploaded(upload.record.id);
     },

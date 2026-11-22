@@ -162,3 +162,25 @@ export type OncallStats = Schemas['OncallStats'];
 
 // ── Push devices (/v1/me/devices) ─────────────────────────────────────────
 export type RegisterDevice = Schemas['RegisterDeviceRequest'];
+
+// ── Shift handoffs ───────────────────────────────────────────────────────
+export type ShiftHandoff = Schemas['ShiftHandoff'];
+export type HandoffBrief = Schemas['HandoffBrief'];
+
+// ── The person behind a case ─────────────────────────────────────────────
+export type Person = Schemas['Person'];
+
+// ── Reply languages ──────────────────────────────────────────────────────
+export type CaseLanguage = Schemas['CaseLanguage'];
+export type LanguageOption = Schemas['LanguageOption'];
+export type Translation = Schemas['Translation'];
+export type ResourceSuggestion = Schemas['ResourceSuggestion'];
+
+// ── Attachments and knowledge search ─────────────────────────────────────
+export type Attachment = Schemas['Attachment'];
+export type AttachmentUpload = Schemas['AttachmentUpload'];
+export type AttachmentLink = Schemas['AttachmentLink'];
+export type KnowledgeHit = Schemas['KnowledgeHit'];
+
+// ── Training ─────────────────────────────────────────────────────────────
+export type TrainingProgress = Schemas['TrainingProgress'];

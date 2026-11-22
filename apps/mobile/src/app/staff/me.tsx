@@ -76,6 +76,10 @@ export default function StaffMeScreen() {
       <PushSettings />
 
       <Group header="Manage">
+        <Row title="My tasks" icon="checkbox-outline" accessory="chevron" onPress={() => router.push('/staff/tasks')} />
+        <Row title="Shift handoffs" icon="swap-horizontal-outline" accessory="chevron" onPress={() => router.push('/staff/handoffs')} />
+        <Row title="Knowledge search" icon="search-outline" accessory="chevron" onPress={() => router.push('/staff/knowledge')} />
+        <Row title="Training" icon="school-outline" accessory="chevron" onPress={() => router.push('/staff/training')} />
         <Row
           title="Team & roles"
           icon="people-outline"
@@ -148,6 +152,12 @@ function PushSettings() {
           detail={state ? PERMISSION_LABEL[state] : undefined}
           accessory={onPress ? 'chevron' : undefined}
           onPress={onPress}
+        />
+        <Row
+          title="Quiet hours & muting"
+          icon="moon-outline"
+          accessory="chevron"
+          onPress={() => router.push('/staff/notification-settings')}
         />
         <Row
           title="Send a test notification"

@@ -7,7 +7,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from dependencies import get_current_worker, get_record_service
-from models.record import ConfirmedRecord, ConfirmRecordRequest, CreateRecordRequest, Record, VoiceUpload
+from models.record import (
+    ConfirmedRecord,
+    ConfirmRecordRequest,
+    CreateRecordRequest,
+    Record,
+    StartVoiceRecordRequest,
+    VoiceUpload,
+)
 from models.staff import StaffMember
 from services.record import RecordService
 
@@ -27,14 +34,15 @@ async def create_record(
 
 @router.post("/voice", response_model=VoiceUpload, status_code=status.HTTP_201_CREATED)
 async def start_voice_record(
+    body: StartVoiceRecordRequest | None = None,
     worker: StaffMember = Depends(get_current_worker),
     service: RecordService = Depends(get_record_service),
 ) -> VoiceUpload:
     """Start a voice debrief: a record waiting for its audio, and a one-time
     URL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.
     The audio is deleted as soon as it's transcribed. 503 when voice isn't
-    set up on the server."""
-    return await service.start_voice(worker)
+    set up on the server. Send `case_id` for a debrief about an existing case."""
+    return await service.start_voice(worker, body.case_id if body else None)
 
 
 @router.post("/{record_id}/uploaded", response_model=Record, status_code=status.HTTP_202_ACCEPTED)
@@ -84,8 +92,10 @@ async def confirm_record(
     service: RecordService = Depends(get_record_service),
 ) -> ConfirmedRecord:
     """Open a case from the reviewed record (assigned to the caller), with its
-    planned tasks plus the ones sent here. Calling it again returns the same
-    case."""
+    planned tasks plus the ones sent here. A debrief captured for an existing
+    case (`case_id` set) is added to that case instead: an internal note, its
+    tasks, and a higher priority if it calls for one (`updated_existing`).
+    Calling it again returns the same case."""
     return await service.confirm(worker, record_id, body)
 
 
