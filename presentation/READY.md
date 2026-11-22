@@ -31,7 +31,7 @@
 | 3 | The case builds itself | –1:10 | 2 clicks: team chat, then Sojourner beds and bus |
 | 4 | She's not left wondering | –1:26 | 1 click |
 | 5 | Shared only with her consent | –1:40 | 1 click |
-| 6 | Just talk. We'll write it down. | –2:00 | **Audio.** Devon's spoken debrief plays (~11 s). Stop talking while he speaks. |
+| 6 | Just talk. We'll write it down. | –2:00 | **Audio, 1 click.** The clip waits on its first frame; click to start Devon's spoken debrief (~11 s). Stop talking while Devon speaks. |
 | 7 | Help arrived | –2:13 | |
 | 8 | A week later, a pattern | –2:33 | 2 clicks |
 | 9 | And everything around it | –2:51 | montage: Get help, Jobs & programs, Community view, My tasks, Queue, 911 call map |

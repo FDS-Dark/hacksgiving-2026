@@ -59,7 +59,7 @@ window.DECK_ASSETS = {
 
   // Beat 6 · a real spoken debrief, WITH SOUND (the only clip with audio).
   // Plays from 2.6 s (Debrief opens) to 21.5 s (Check before saving), then holds.
-  phantomVoice: { video: 'assets/video/phantom-voice.mp4', poster: 'assets/shots/phantom-voice-final.png', sound: true, start: 2.6, stop: 21.5, label: 'Spoken debrief' },
+  phantomVoice: { video: 'assets/video/phantom-voice.mp4', poster: 'assets/shots/phantom-voice-final.png', sound: true, start: 2.6, stop: 21.5, playOn: 1, label: 'Spoken debrief' },
 
   // Beat 7 · "Help arrived."
   delivered:  { video: 'assets/video/delivered-handoff.mp4', poster: 'assets/shots/delivered-handoff-final.png' },

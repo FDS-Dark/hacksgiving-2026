@@ -107,6 +107,7 @@
     if (a.sound) { v.muted = false; v.removeAttribute('muted'); v.loop = false; v.setAttribute('data-sound', ''); }
     if (a.start != null) v.setAttribute('data-start', a.start);
     if (a.stop != null) { v.setAttribute('data-stop', a.stop); v.loop = false; }
+    if (a.playOn != null) v.setAttribute('data-play-step', a.playOn); // waits on its first frame until this click
     v.src = src; return v;
   }
   function watchFor(scr, a, src) { // keep checking for a missing clip; swap it in when it appears
@@ -193,6 +194,10 @@
         if (v.hasAttribute('data-manual')) return; // driven by a hook
         if (k === cur) {
           clearTimeout(v._t);
+          if (+(v.getAttribute('data-play-step') || 0) > step) { // not its click yet: hold the first frame (also when stepping back)
+            v.pause(); v._held = false; try { v.currentTime = +(v.getAttribute('data-start') || 0); } catch (e) {}
+            return;
+          }
           if (!changed && (v.ended || !v.paused)) return; // a build step must not restart a clip that played once
           if (changed) { v._held = false; try { v.currentTime = +(v.getAttribute('data-start') || 0); } catch (e) {} }
           if (v._held) return; // reached its stop point: hold the frame
