@@ -89,6 +89,71 @@ def test_mpd_calls_drop_addresses_round_coordinates_and_hide_sensitive_types():
     assert domestic.public is False and domestic.latitude is None
 
 
+@pytest.mark.parametrize(("location", "block"), [
+    ("2816 S GREELEY ST MKE", "2800 S GREELEY ST"),
+    ("646 W COLLEGE AVE OC", "600 W COLLEGE AVE"),
+    ("4603 N 29TH ST MKE: @UNIT 6", "4600 N 29TH ST"),
+    ("2819 W RICHARDSON PL MKE: @NEIGHBORHOOD HOUSE OF MILWAUKEE", "2800 W RICHARDSON PL"),
+    ("N 76TH ST/W GOOD HOPE RD MKE", "N 76TH ST/W GOOD HOPE RD"),
+    ("46 E MAIN ST", "1 E MAIN ST"),
+    ("INT 43 S", "INT 43 S"),
+    ("", None),
+])
+def test_mpd_calls_are_geocoded_by_block_never_by_house(location, block):
+    assert milwaukee.mpd_block(location) == block
+
+
+async def test_mpd_calls_without_an_estimate_get_their_blocks_point(monkeypatch):
+    monkeypatch.setattr(milwaukee, "_block_points", {})
+    page = _page(
+        milwaukee.MPD_COLUMNS,
+        ["P2611211010", "11/21/2026 03:19 PM", "LL(-87:55:28.2217,43:02:39.8038): EST 1012 W HIGHLAND AVE MKE", "1",
+         "Shots Fired", "Service in Progress"],
+        ["P2611211011", "11/21/2026 03:19 PM", "2816 S GREELEY ST MKE", "6", "Theft", "Assigned"],
+        ["P2611211013", "11/21/2026 03:20 PM", "N 76TH ST/W GOOD HOPE RD MKE", "4", "Traffic Stop", "Advised"],
+        ["P2611211012", "11/21/2026 03:20 PM", "2709 N TEUTONIA AVE MKE: @UNIT 309", "5", "Domestic Violence",
+         "Assigned"],
+    )
+    asked: list[str] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "itmdapps.milwaukee.gov":
+            return httpx.Response(200, text=page)
+        single = request.url.params["SingleLine"]
+        asked.append(single)
+        if single == "2800 S GREELEY ST":
+            return httpx.Response(200, json={"candidates": [
+                {"score": 100, "location": {"x": -87.909248, "y": 42.99369}}]})
+        return httpx.Response(200, json={"candidates": []})
+
+    async with milwaukee.client(5, httpx.MockTransport(answer)) as http:
+        shots, theft, stop, domestic = await milwaukee.fetch_mpd_calls(http, ttl=TTL)
+        again = await milwaukee.fetch_mpd_calls(http, ttl=TTL)
+
+    # Only blocks and intersections are asked about, each once; the estimate and the sensitive call aren't.
+    assert sorted(asked) == ["2800 S GREELEY ST", "N 76TH ST/W GOOD HOPE RD"]
+    assert (shots.latitude, shots.longitude) == (43.044, -87.925)
+    assert (theft.latitude, theft.longitude) == (42.994, -87.909)
+    assert stop.latitude is None  # no answer: unplaced, not guessed
+    assert domestic.latitude is None and domestic.public is False
+    assert (again[1].latitude, again[1].longitude) == (42.994, -87.909)
+    assert "GREELEY" not in theft.model_dump_json()
+
+
+async def test_a_geocoder_outage_leaves_calls_unplaced_without_failing(monkeypatch):
+    monkeypatch.setattr(milwaukee, "_block_points", {})
+    page = _page(milwaukee.MPD_COLUMNS, ["P2611211011", "11/21/2026 03:19 PM", "2816 S GREELEY ST MKE", "6", "Theft",
+                                         "Assigned"])
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=page) if request.url.host == "itmdapps.milwaukee.gov" else httpx.Response(503)
+
+    async with milwaukee.client(5, httpx.MockTransport(answer)) as http:
+        [theft] = await milwaukee.fetch_mpd_calls(http, ttl=TTL)
+    assert theft.latitude is None
+    assert "2800 S GREELEY ST" not in milwaukee._block_points  # retried next run, not cached as a miss
+
+
 def test_mpd_rate_limiting_and_a_changed_page_fail_loudly():
     limited = _page(milwaukee.MPD_COLUMNS, ["17952987", "11/21/2026 04:05 PM", "", "-1",
                                             "Unreasonable amount of requests", ""])

@@ -19,14 +19,14 @@ The map is our own Leaflet visualization over OpenStreetMap tiles; it does not c
 
 ## Recent calls and nearby alerts
 
-The Alerts tab reads the official MPD dispatched calls page at `https://itmdapps.milwaukee.gov/MPDCallData/`.
+The safety map, the staff Map tab and the Alerts tab show the official MPD dispatched calls page (`https://itmdapps.milwaukee.gov/MPDCallData/`). The data loader ingests it server-side, and the app reads `GET /public-data/calls?source=mpd_calls` (see `docs/data-loader.md`). The app never scrapes the city page itself.
 
-- MPD says the page refreshes every five minutes and shows calls 30–90 minutes after dispatch.
-- Calls for service are not confirmed crimes. The app keeps them visually and statistically separate from the 30-day incident heatmap.
-- Calls without embedded coordinates can appear in the citywide Alerts list, but only coordinate-bearing calls can be plotted or compared with the phone's location.
-- Crime-related dispatch categories include shootings, weapons, assault, sexual assault, robbery, burglary, theft, stolen vehicles, arson, criminal damage, drug dealing, and reckless driving. Generic 911 calls and administrative calls are omitted.
-- Coordinates from the calls page are rounded before display. The phone's foreground location is used only in memory to calculate distance and is not uploaded or saved.
-- The client-side HTML parser is appropriate for a weekend prototype, but a production service should ingest the feed server-side with permission from MPD, monitor schema changes, deduplicate calls, and publish a stable sanitized API.
+- MPD says the page refreshes every five minutes and shows calls 30–90 minutes after dispatch. The loader polls every five minutes (the page allows 10 requests per 30 minutes per IP address), and the app asks our API every 30 seconds. Every screen that shows calls says so: "Delayed dispatch calls · not confirmed incidents. MPD publishes calls 30–90 min after dispatch."
+- Calls for service are not confirmed crimes. The app keeps them visually and statistically separate from the incident heatmap.
+- **Placing calls.** About one row in five carries MPD's own `LL(...)` estimate. For the rest, the loader asks MPD's CAD geocoder (`MPDTritech/TriTechLocator`, which also resolves intersections) about the start of the block ("2800 S GREELEY ST"), never the house number. It keeps only the rounded point (~110 m), cached per block in the loader process. Sensitive calls are never placed, and highway segments (`INT 43 S`) stay unplotted.
+- **Safety map.** Call pins are colored by a fixed category (weapons, violence, property, traffic, disorder, assistance, other). Below the map, a 911 calls section has a 2 / 6 / 24 hour window, totals, calls per hour, counts by category and district (tapping a category filters the map), the most common call types and the latest calls. The app computes these counts from the calls the API returns.
+- **Alerts tab.** Only crime-related dispatch categories: shootings, weapons, assault, robbery, burglary, theft, stolen vehicles, arson, criminal damage, drug dealing and reckless driving.
+- **Privacy.** No address leaves the server, and sensitive call types are never listed (`docs/real-data-sources.md`). The phone's foreground location is used only in memory to calculate distance and is not uploaded or saved.
 
 ## Production follow-up
 

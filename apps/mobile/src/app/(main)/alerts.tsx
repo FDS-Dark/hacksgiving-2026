@@ -133,13 +133,13 @@ export default function AlertsScreen() {
       ) : calls.data?.length ? (
         <Group
           header={`Live dispatch feed · ${calls.data.length}`}
-          footer="Updated every five minutes while the app is open. Exact addresses are intentionally not displayed."
+          footer="Safety-related calls from the last six hours. Not live: MPD publishes calls 30–90 min after dispatch; the app checks every 30 seconds. Locations are approximate."
         >
           {calls.data.slice(0, 8).map((call) => (
             <Row
               key={call.id}
               title={call.nature}
-              subtitle={`Police call · District ${call.district} · ${call.occurredAt}`}
+              subtitle={`${call.occurredAt} · District ${call.district}`}
               detail={call.status === 'Service in Progress' ? 'Active' : 'Updated'}
               detailTint="rgba(215,107,24,0.12)"
               detailColor="#9A5800"
@@ -151,7 +151,7 @@ export default function AlertsScreen() {
         <EmptyState
           icon="checkmark-circle-outline"
           title="No matching live calls"
-          body="The city feed currently has no coordinate-safe calls in the selected safety categories. Pull down to check again."
+          body="No weapon, violence or property calls in the last two hours. Pull down to check again."
           action={<Button label="Refresh" variant="tinted" onPress={refresh} />}
         />
       )}
