@@ -120,13 +120,15 @@ resource "kubernetes_cron_job_v1" "hacksgiving_loader" {
                   optional = true
                 }
               }
-              env {
-                name  = "APP__ENVIRONMENT__NAME"
-                value = var.environment
-              }
-              env {
-                name  = "APP__LOGGING__FORMAT"
-                value = "json"
+              # The API's plain settings, Auth0's JWT ones included: the
+              # loader never checks a token, but AppConfig refuses to load in
+              # production without them (api/settings.py).
+              dynamic "env" {
+                for_each = local.api_env
+                content {
+                  name  = env.key
+                  value = env.value
+                }
               }
               resources {
                 requests = { cpu = "100m", memory = "256Mi" }
