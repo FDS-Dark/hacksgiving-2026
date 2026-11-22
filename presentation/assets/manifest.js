@@ -1,5 +1,5 @@
 /*
- * ComForce MKE keynote: asset manifest.
+ * ComForce Mobile keynote: asset manifest.
  *
  * Swapping a capture is a one-line change: drop the new file into
  * assets/shots or assets/video and point the matching line here at it

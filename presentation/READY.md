@@ -18,8 +18,9 @@
 1. Open `index.html` in Chrome. It needs no internet and no server.
 2. Press **P** for the presenter view. Drag it to your laptop screen; it shows the notes, the next slide and the timer.
 3. Click the deck window and press **F** for full screen. **That keypress also unlocks sound** for the call and the debrief.
-4. The **title slide** stays up while people sit down. Press → to go to the call (black stage, 3:01 AM), then **click to start the call**. The presenter timer starts with the call.
-5. Use the clicker or arrows to advance. B blanks the screen, N shows notes on the deck, Home jumps to the title and End to the close (the appendix comes after it; see below).
+4. **Sound check:** press **S** (in either window, or the 🔊 Test button in the presenter view). The deck window plays the Navigator's first line (about 5 seconds) through the speakers; press S again to stop it. It doesn't move the slides or start the timer, so do it as often as you like before the talk.
+5. The **title slide** stays up while people sit down. Press → to go to the call (black stage, 3:01 AM), then **click to start the call**. The presenter timer starts with the call.
+6. Use the clicker or arrows to advance. B blanks the screen, S plays the sound check, N shows notes on the deck, Home jumps to the title and End to the close (the appendix comes after it; see below).
 
 ## Slides and target times
 | # | Slide | Target | Notes |
@@ -49,7 +50,7 @@ After the close, → keeps going into five static appendix slides (no clicks). T
 | 14 · A2 | How fast help moves | real timings: ~30 s call to page, push in seconds, 5 min per escalation step, ~10 s debrief draft, data every 5 min, MPD's 30–90 min delay |
 | 15 · A3 | 16 public data sources | 4 live (every 5 min), 12 daily, plus the MPD rate gate (10 requests per 30 min per IP) |
 | 16 · A4 | Privacy and safety, by design | the ten privacy and safety rules |
-| 17 · A5 | What's next | Android push, partner portal, Spanish across the resident app, more Insights, shorter Navigator calls |
+| 17 · A5 | What's next | Android push, partner portal, more Insights, shorter Navigator calls |
 
 (Slide numbers here count the title as 0, like the table above; in the deck's own numbering, used by number + Enter, they're 14–18.)
 

@@ -1,4 +1,4 @@
-/* ComForce MKE keynote engine. Vanilla JS, classic script, works from file://.
+/* ComForce Mobile keynote engine. Vanilla JS, classic script, works from file://.
  *
  * Modes (query string):
  *   (none)       the show
@@ -450,7 +450,7 @@
     push.failed = true;
     var s = el('div', 'synth');
     s.innerHTML = '<div class="wall"></div><div class="date">' + (f.lockDate || '') + '</div><div class="time">' + (f.lockTime || '4:09') + '</div>' +
-      '<div class="notif"><span class="ic"><i data-icon="shield"></i></span><span class="app">ComForce MKE</span><span class="when">now</span>' +
+      '<div class="notif"><span class="ic"><i data-icon="shield"></i></span><span class="app">ComForce Mobile</span><span class="when">now</span>' +
       '<span class="ttl">Urgent request</span><span class="bd">Someone needs help today. Open the app to respond.</span></div><div class="bar"></div>' +
       '<div class="app-layer"></div>';
     icons(s);
@@ -492,6 +492,8 @@
     function apply(t) {
       var c = REDUCED ? [t, 1, .5, .5, 0] : camAt(t), W = ph.offsetWidth, H = ph.offsetHeight;
       var s = c[1], dx = -s * (c[2] - .5) * W + (c[4] || 0), dy = -s * (c[3] - .5) * H;
+      // The headline arrives only once the phone has moved right (the last camera keyframe).
+      slide.classList.toggle('head-on', t >= kf[kf.length - 1][0]);
       ph.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + s.toFixed(4) + ')';
       if (tap && cfg.tap) {
         var on = t >= cfg.tap.t && t < cfg.tap.t + 1;
@@ -573,6 +575,7 @@
       go(msg.i, msg.step, { silent: true });
     }
     else if (msg.type === 'black') setBlack(msg.on, true);
+    else if (msg.type === 'soundcheck' && MODE === 'show') soundCheck();
     else if (msg.type === 'hello' && MODE === 'show') {
       send({ type: 'state', i: cur, step: step });
       if (isBlack) send({ type: 'black', on: true });
@@ -587,6 +590,24 @@
   function openPresenter() {
     if (MODE !== 'show') return;
     presenterWin = window.open(BASE + '?presenter#' + (cur + 1) + '.' + step, 'comforce-presenter', 'popup,width=1400,height=860');
+  }
+
+  /* ---------- Sound check (S) ----------
+     Plays the Navigator's first line through the deck window, so the room's
+     speakers can be checked before the talk. It doesn't move the deck or start
+     the timer, and the keypress also unlocks sound for the call. Pressed in the
+     presenter view, it plays in the deck window. Press S again to stop. */
+  var sc = null, scEl = null;
+  function soundCheck() {
+    if (MODE !== 'show') { send({ type: 'soundcheck' }); return; }
+    if (!scEl) { scEl = document.createElement('div'); scEl.id = 'soundcheck'; document.body.appendChild(scEl); }
+    if (sc && !sc.paused) { sc.pause(); sc.currentTime = 0; scEl.classList.remove('on'); return; }
+    sc = sc || new Audio('assets/audio/call/seg-agent-1-intro-short.mp3');
+    sc.currentTime = 0; sc.volume = 1;
+    sc.onended = function () { scEl.textContent = 'Sound check done'; setTimeout(function () { scEl.classList.remove('on'); }, 1500); };
+    scEl.textContent = 'Sound check: playing (S to stop)'; scEl.classList.add('on');
+    var pr = sc.play();
+    if (pr && pr.catch) pr.catch(function () { scEl.textContent = 'Sound blocked: click the deck window, then press S'; setTimeout(function () { scEl.classList.remove('on'); }, 3000); });
   }
 
   /* ---------- Keys and clicks ---------- */
@@ -621,6 +642,7 @@
         case 'b': case '.': case 'w': setBlack(!isBlack); break;
         case 'n': toggleNotes(); break;
         case 'p': openPresenter(); break;
+        case 's': soundCheck(); break;
         case 'h': setHairline(root.classList.contains('no-hairline')); break;
         case 'r': if (MODE === 'presenter') { t0 = Date.now(); tAppx = 0; timerStarted = true; } break;
         default: return;
@@ -722,7 +744,7 @@
     var pe = $('#presenter');
     pe.innerHTML =
       '<div class="bar"><div class="count"></div><div class="timer" title="Click (or R) to reset">00:00</div><div class="pace"></div><div class="clock"></div>' +
-      '<div class="grow"></div><div class="sync"></div><button data-a="prev">◀ Prev</button><button data-a="next">Next ▶</button><button data-a="black">B</button></div>' +
+      '<div class="grow"></div><div class="sync"></div><button data-a="prev">◀ Prev</button><button data-a="next">Next ▶</button><button data-a="black">B</button><button data-a="sound" title="Sound check (S)">🔊 Test</button></div>' +
       '<div class="main"><div class="top"><div class="col"><div class="lbl">Now</div><div class="frame"><iframe class="cur" title="Current slide"></iframe></div></div>' +
       '<div class="col"><div class="lbl">Up next</div><div class="frame"><iframe class="next" title="Next slide"></iframe></div><div class="next-title"></div></div>' +
       '<div class="side"><div class="lbl">Media</div><div class="media"></div>' +
@@ -736,7 +758,7 @@
     pv.timer.addEventListener('click', function () { t0 = Date.now(); tAppx = 0; timerStarted = true; tick(); });
     pe.addEventListener('click', function (e) {
       var a = e.target.getAttribute && e.target.getAttribute('data-a');
-      if (a === 'prev') prev(); else if (a === 'next') next(); else if (a === 'black') setBlack(!isBlack);
+      if (a === 'prev') prev(); else if (a === 'next') next(); else if (a === 'black') setBlack(!isBlack); else if (a === 'sound') soundCheck();
     });
     setInterval(tick, 500);
     probeMedia();
