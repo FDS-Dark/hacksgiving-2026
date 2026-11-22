@@ -23,7 +23,7 @@ const TABS: TabItem[] = [
     icon: 'person-outline',
     iconActive: 'person',
     match: (p) =>
-      p.startsWith('/staff/me') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls'),
+      p.startsWith('/staff/me') || p.startsWith('/staff/notification-settings') || p.startsWith('/staff/oncall') || p.startsWith('/staff/team') || p.startsWith('/staff/insights') || p.startsWith('/staff/opportunities') || p.startsWith('/staff/calls'),
   },
 ];
 
@@ -65,6 +65,7 @@ export default function StaffLayout() {
           <Stack.Screen name="notifications" />
           <Stack.Screen name="alerts/[id]" />
           <Stack.Screen name="tasks" />
+          <Stack.Screen name="notification-settings" />
         </Stack>
         {fullScreen ? null : <TabBar tabs={TABS} />}
       </>

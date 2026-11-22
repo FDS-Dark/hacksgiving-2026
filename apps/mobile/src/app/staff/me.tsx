@@ -149,6 +149,12 @@ function PushSettings() {
           onPress={onPress}
         />
         <Row
+          title="Quiet hours & muting"
+          icon="moon-outline"
+          accessory="chevron"
+          onPress={() => router.push('/staff/notification-settings')}
+        />
+        <Row
           title="Send a test notification"
           icon="paper-plane-outline"
           tone="accent"
