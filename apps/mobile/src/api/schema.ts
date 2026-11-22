@@ -309,6 +309,47 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/me/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Register Device
+         * @description The app sends its APNs token on every launch and when it rotates. A
+         *     token another account had moves to this one.
+         */
+        put: operations["register_device_v1_me_devices_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Device
+         * @description Sign-out, before the session is cleared. 204 even if it wasn't there.
+         */
+        delete: operations["remove_device_v1_me_devices__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/notification-preferences": {
         parameters: {
             query?: never;
@@ -371,6 +412,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notifications/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stats
+         * @description Push deliveries in the last 24 hours by status, devices, and the most
+         *     common APNs failure reasons.
+         */
+        get: operations["stats_v1_notifications_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Test
+         * @description A `test` notification for the caller, pushed to each of their
+         *     devices. 3 per 10 minutes.
+         */
+        post: operations["send_test_v1_notifications_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/notifications/unread-count": {
         parameters: {
             query?: never;
@@ -419,6 +502,110 @@ export interface paths {
         put?: never;
         /** Read Notification */
         post: operations["read_notification_v1_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Alerts
+         * @description Urgent alerts, newest first: by default only open ones (offering or
+         *     unanswered). `my_offer` is the caller's own offer, if any.
+         */
+        get: operations["list_alerts_v1_oncall_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Alert
+         * @description One alert with what a responder needs (never contact details).
+         */
+        get: operations["get_alert_v1_oncall_alerts__alert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/alerts/{alert_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Alert
+         * @description Take the case: it's assigned to the caller and in progress. Any staff
+         *     member may while the alert is open; 409 `already_accepted` if someone
+         *     was first.
+         */
+        post: operations["accept_alert_v1_oncall_alerts__alert_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/alerts/{alert_id}/arrived": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alert Arrived
+         * @description Mark "I've arrived" (only whoever accepted); written to the case history.
+         */
+        post: operations["alert_arrived_v1_oncall_alerts__alert_id__arrived_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/alerts/{alert_id}/pass": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pass Alert
+         * @description Pass on your offer, optionally saying why. When everyone offered in
+         *     the step has passed, it moves to the next person at once.
+         */
+        post: operations["pass_alert_v1_oncall_alerts__alert_id__pass_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -513,6 +700,28 @@ export interface paths {
          * @description Change a shift's person, times or rank (admins). Only fields sent change.
          */
         patch: operations["update_shift_v1_oncall_shifts__shift_id__patch"];
+        trace?: never;
+    };
+    "/v1/oncall/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oncall Stats
+         * @description Alerts opened in [from, to): how many were accepted or went
+         *     unanswered, average time to accept and to arrive, passes by reason
+         *     (admins).
+         */
+        get: operations["oncall_stats_v1_oncall_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/opportunities": {
@@ -1566,6 +1775,11 @@ export interface components {
             status?: components["schemas"]["ReferralStatus"];
         };
         /**
+         * AlertStatus
+         * @enum {string}
+         */
+        AlertStatus: "offering" | "unanswered" | "accepted" | "resolved" | "cancelled";
+        /**
          * AnonymousRequestReceipt
          * @description A request sent without an account. The access code is shown once:
          *     with the request's number it is the only way back to the request.
@@ -2031,6 +2245,11 @@ export interface components {
             value: number | null;
         };
         /**
+         * DeliveryStatus
+         * @enum {string}
+         */
+        DeliveryStatus: "pending" | "sending" | "sent" | "failed" | "skipped";
+        /**
          * DispatchCall
          * @description A delayed dispatch call: not a confirmed incident.
          */
@@ -2199,11 +2418,32 @@ export interface components {
          */
         JobStatus: "queued" | "running" | "done" | "dead";
         /**
+         * MyOffer
+         * @description The caller's latest offer on an alert.
+         */
+        MyOffer: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            outcome: components["schemas"]["OfferOutcome"];
+            /** Step */
+            step: number;
+        };
+        /**
          * NotificationItem
          * @description One row of the inbox, ready to show. `route` is where the app goes
          *     when it's tapped.
          */
         NotificationItem: {
+            /** Alert Id */
+            alert_id: string | null;
             /** Body */
             body: string;
             /** Case Id */
@@ -2234,7 +2474,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update";
+        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered";
         /**
          * NotificationPreferences
          * @description Push settings (push arrives in phase 2). The inbox ignores them: it
@@ -2257,6 +2497,128 @@ export interface components {
              * @default false
              */
             urgent_when_off_call: boolean;
+        };
+        /**
+         * NotificationStats
+         * @description GET /v1/notifications/stats (admins): push deliveries since `since`
+         *     by status, devices, and the most common APNs failure reasons.
+         */
+        NotificationStats: {
+            /** Active Devices */
+            active_devices: number;
+            /** Deliveries */
+            deliveries: {
+                [key: string]: number;
+            };
+            /** Disabled Devices */
+            disabled_devices: number;
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            /** Top Reasons */
+            top_reasons: components["schemas"]["ReasonCount"][];
+        };
+        /**
+         * OfferOutcome
+         * @enum {string}
+         */
+        OfferOutcome: "pending" | "accepted" | "passed" | "timed_out" | "superseded";
+        /** OncallAlert */
+        OncallAlert: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Accepted By */
+            accepted_by: string | null;
+            /** Accepted By Name */
+            accepted_by_name: string | null;
+            /** Arrived At */
+            arrived_at: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            my_offer: components["schemas"]["MyOffer"] | null;
+            /** Next Name */
+            next_name: string | null;
+            priority: components["schemas"]["CasePriority"];
+            status: components["schemas"]["AlertStatus"];
+            /** Step */
+            step: number;
+            /** Step Expires At */
+            step_expires_at: string | null;
+        };
+        /**
+         * OncallAlertDetail
+         * @description The alert with what a responder needs to decide and go. Never the
+         *     requester's contact details: those stay on the case.
+         */
+        OncallAlertDetail: {
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Accepted By */
+            accepted_by: string | null;
+            /** Accepted By Name */
+            accepted_by_name: string | null;
+            /** Arrived At */
+            arrived_at: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            category: components["schemas"]["CaseCategory"];
+            contact_method: components["schemas"]["ContactMethod"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Location */
+            location: string | null;
+            /** Longitude */
+            longitude: number | null;
+            my_offer: components["schemas"]["MyOffer"] | null;
+            /** Next Name */
+            next_name: string | null;
+            priority: components["schemas"]["CasePriority"];
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
+            status: components["schemas"]["AlertStatus"];
+            /** Step */
+            step: number;
+            /** Step Expires At */
+            step_expires_at: string | null;
         };
         /** OncallMe */
         OncallMe: {
@@ -2297,6 +2659,27 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /**
+         * OncallStats
+         * @description Alerts opened in [from, to). Times are seconds from the alert opening
+         *     to its accept, and from the accept to "I've arrived".
+         */
+        OncallStats: {
+            /** Accepted */
+            accepted: number;
+            /** Alerts */
+            alerts: number;
+            /** Avg Seconds To Accept */
+            avg_seconds_to_accept: number | null;
+            /** Avg Seconds To Arrive */
+            avg_seconds_to_arrive: number | null;
+            /** Passes By Reason */
+            passes_by_reason: {
+                [key: string]: number;
+            };
+            /** Unanswered */
+            unanswered: number;
         };
         /** Opportunity */
         Opportunity: {
@@ -2372,6 +2755,15 @@ export interface components {
          * @enum {string}
          */
         OutcomeStatus: "connected" | "voicemail" | "no_answer" | "declined" | "unavailable" | "follow_up_needed" | "completed";
+        /**
+         * PassReason
+         * @enum {string}
+         */
+        PassReason: "busy" | "too_far" | "not_safe_alone";
+        /** PassRequest */
+        PassRequest: {
+            reason?: components["schemas"]["PassReason"] | null;
+        };
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -2425,6 +2817,18 @@ export interface components {
             update_type: components["schemas"]["UpdateType"];
         };
         /**
+         * PushEnvironment
+         * @description The APNs host a token belongs to: sandbox for dev builds,
+         *     production for TestFlight and the App Store.
+         * @enum {string}
+         */
+        PushEnvironment: "sandbox" | "production";
+        /**
+         * PushPlatform
+         * @enum {string}
+         */
+        PushPlatform: "ios";
+        /**
          * ReadAllRequest
          * @description Without `case_id`, everything; with it, only that case's rows (the
          *     app sends it when a case or request screen opens).
@@ -2437,6 +2841,13 @@ export interface components {
         ReadAllResult: {
             /** Updated */
             updated: number;
+        };
+        /** ReasonCount */
+        ReasonCount: {
+            /** Count */
+            count: number;
+            /** Reason */
+            reason: string;
         };
         /** Record */
         Record: {
@@ -2563,6 +2974,20 @@ export interface components {
          * @enum {string}
          */
         ReferralStatus: "suggested" | "shared" | "accepted" | "completed" | "declined";
+        /**
+         * RegisterDeviceRequest
+         * @description PUT /v1/me/devices, on every launch and when the token rotates. The
+         *     token is the raw APNs device token, in hex.
+         */
+        RegisterDeviceRequest: {
+            /** App Version */
+            app_version?: string | null;
+            environment: components["schemas"]["PushEnvironment"];
+            /** @default ios */
+            platform?: components["schemas"]["PushPlatform"];
+            /** Token */
+            token: string;
+        };
         /**
          * ReplyRequest
          * @description The requester's answer on their own request. Staff see it in the case
@@ -2991,7 +3416,7 @@ export interface components {
          * UpdateType
          * @enum {string}
          */
-        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral" | "reply";
+        UpdateType: "created" | "note" | "message" | "status_change" | "priority_change" | "category_change" | "assignment" | "referral" | "reply" | "alert";
         /**
          * UrgencyTier
          * @enum {string}
@@ -3887,6 +4312,66 @@ export interface operations {
             };
         };
     };
+    register_device_v1_me_devices_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_device_v1_me_devices__token__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_preferences_v1_me_notification_preferences_get: {
         parameters: {
             query?: never;
@@ -4006,6 +4491,46 @@ export interface operations {
             };
         };
     };
+    stats_v1_notifications_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationStats"];
+                };
+            };
+        };
+    };
+    send_test_v1_notifications_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     unread_count_v1_notifications_unread_count_get: {
         parameters: {
             query?: never;
@@ -4074,6 +4599,165 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_alerts_v1_oncall_alerts_get: {
+        parameters: {
+            query?: {
+                open_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallAlert"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_alert_v1_oncall_alerts__alert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallAlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_alert_v1_oncall_alerts__alert_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallAlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    alert_arrived_v1_oncall_alerts__alert_id__arrived_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallAlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pass_alert_v1_oncall_alerts__alert_id__pass_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PassRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallAlertDetail"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4255,6 +4939,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OncallShift"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oncall_stats_v1_oncall_stats_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OncallStats"];
                 };
             };
             /** @description Validation Error */

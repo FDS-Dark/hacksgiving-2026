@@ -1,8 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BigButton, Card, ResidentScreen } from '@/components/resident';
+import { useAuth } from '@/lib/auth';
+import { shouldAskResident } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
 
@@ -18,6 +21,19 @@ export default function ReceivedScreen() {
   const { id, number, method } = useLocalSearchParams<{ id: string; number: string; method?: string }>();
   // Sent without an account: the code is on this device, never in the URL.
   const saved = useSavedRequests().data?.find((r) => r.id === id);
+  const signedIn = useAuth().status === 'signedIn';
+
+  // R6, once per device: the first request sent while signed in is when
+  // asking for notifications makes sense.
+  useEffect(() => {
+    let live = true;
+    shouldAskResident(signedIn).then((ask) => {
+      if (ask && live) router.push('/help/notifications');
+    });
+    return () => {
+      live = false;
+    };
+  }, [signedIn]);
 
   return (
     <ResidentScreen

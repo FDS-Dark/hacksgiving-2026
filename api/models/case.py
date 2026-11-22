@@ -47,6 +47,8 @@ class UpdateType(StrEnum):
     REFERRAL = "referral"
     # The requester answering on their own request.
     REPLY = "reply"
+    # On-call escalation (accepted, on scene); always internal.
+    ALERT = "alert"
 
 
 class Visibility(StrEnum):

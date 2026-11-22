@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Page } from '@/components/Page';
@@ -12,10 +13,12 @@ import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
 import { NotificationBell } from '@/components/staff/NotificationBell';
 import { OncallCard } from '@/components/staff/OncallCard';
+import { UrgentBanners } from '@/components/staff/Urgent';
 import { needsAttention } from '@/lib/attention';
 import { CATEGORY_LABEL } from '@/lib/cases';
 import { timeAgo } from '@/lib/format';
 import { useCases, useInsights } from '@/services/cases';
+import { useOpenAlerts } from '@/services/oncall';
 import { useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
@@ -25,10 +28,20 @@ export default function TodayScreen() {
   const me = useStaffStatus();
   const insights = useInsights();
   const open = useCases({ open_only: true, limit: 100 });
+  // Open urgent alerts refresh every 15 s, but only while Today is on screen.
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+  const alerts = useOpenAlerts(focused);
 
   const refresh = () => {
     insights.refetch();
     open.refetch();
+    alerts.refetch();
   };
 
   const now = new Date();
@@ -38,7 +51,7 @@ export default function TodayScreen() {
   const mine = (open.data ?? []).filter((c) => c.assigned_worker_id === me.data?.id);
 
   return (
-    <Page refreshing={insights.isRefetching || open.isRefetching} onRefresh={refresh} contentStyle={{ maxWidth: 720, gap: space.lg }}>
+    <Page refreshing={insights.isRefetching || open.isRefetching || alerts.isRefetching} onRefresh={refresh} contentStyle={{ maxWidth: 720, gap: space.lg }}>
       <View style={styles.header}>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[styles.kicker, { color: theme.accent }]}>COMFORCE STAFF · {date}</Text>
@@ -52,6 +65,7 @@ export default function TodayScreen() {
         </Pressable>
       </View>
 
+      <UrgentBanners alerts={alerts.data ?? []} />
       <OncallCard />
 
       {insights.error && !insights.data ? <ErrorBanner error={insights.error} onRetry={refresh} /> : null}

@@ -18,6 +18,12 @@ class NotificationKind(StrEnum):
     REQUEST_UPDATE = "request_update"
     TASK_DUE = "task_due"
     REFERRAL_UPDATE = "referral_update"
+    # A push the person sent themselves (POST /v1/notifications/test).
+    TEST = "test"
+    # An urgent case offered to you on call (services/oncall_jobs.py).
+    URGENT_OFFER = "urgent_offer"
+    # Nobody accepted an urgent case (admins, at most 3 times).
+    URGENT_UNANSWERED = "urgent_unanswered"
 
 
 class StoredNotification(ApiModel):
@@ -30,10 +36,14 @@ class StoredNotification(ApiModel):
     case_update_id: UUID | None = None
     task_id: UUID | None = None
     referral_id: UUID | None = None
+    # urgent_* rows: which on-call alert.
+    alert_id: UUID | None = None
     actor_id: UUID | None = None
     dedupe_key: str
     created_at: datetime
     read_at: datetime | None = None
+    # An urgent offer's end (the push's apns-expiration).
+    expires_at: datetime | None = None
 
 
 class NotificationFacts(ApiModel):
@@ -56,6 +66,7 @@ class NotificationFacts(ApiModel):
     contact_name: str | None = None
     referral_status: ReferralStatus | None = None
     resource_name: str | None = None
+    alert_id: UUID | None = None
     created_at: datetime
     read_at: datetime | None = None
 
@@ -71,6 +82,8 @@ class NotificationItem(ApiModel):
     case_id: UUID | None = None
     case_number: int | None = None
     task_id: UUID | None = None
+    # urgent_offer and urgent_unanswered: the alert to accept or pass.
+    alert_id: UUID | None = None
     route: str | None = None
     created_at: datetime
     read_at: datetime | None = None

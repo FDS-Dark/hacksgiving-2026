@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -13,6 +14,7 @@ from pydantic import ValidationError
 from databridge.case import CaseDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -31,6 +33,7 @@ from models.case_enums import CaseCategory
 from models.staff import Role, StaffMember
 from models.user import AppUser
 from services.notification import NotificationService
+from services.oncall import OncallService
 from services.case import CaseService, Triage, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.resource import ResourceService
@@ -85,7 +88,16 @@ def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
     tasks = TaskService(TaskDatabridge(db), staff, JobDatabridge(db), db)
     notifications = NotificationService(NotificationDatabridge(db), db)
-    return CaseService(CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db)
+    # No alert to open or close unless a test says otherwise.
+    db.handlers.setdefault("oncall_alert_open", [])
+    db.handlers.setdefault("oncall_resolve_for_case", [])
+    oncall = OncallService(
+        OncallDatabridge(db), db, ZoneInfo("America/Chicago"), jobs=JobDatabridge(db), notifications=notifications,
+        tasks=tasks,
+    )
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db, oncall
+    )
 
 
 def worker(user_id: UUID | None = None) -> StaffMember:

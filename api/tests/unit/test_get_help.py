@@ -3,6 +3,7 @@
 
 from typing import Any
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -11,6 +12,7 @@ from pydantic import ValidationError
 from databridge.case import CaseDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -24,6 +26,7 @@ from models.task import CreateTaskRequest, UpdateTaskRequest
 from models.user import AppUser
 from services import access_code
 from services.notification import NotificationService
+from services.oncall import OncallService
 from services.case import CaseService
 from services.rate_limit import RateLimit, anonymous_submissions, code_lookups
 from services.resource import ResourceService
@@ -37,7 +40,16 @@ def service(db: FakeFunctions) -> CaseService:
     staff = StaffService(StaffDatabridge(db))
     tasks = TaskService(TaskDatabridge(db), staff, JobDatabridge(db), db)
     notifications = NotificationService(NotificationDatabridge(db), db)
-    return CaseService(CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db)
+    # No alert to open or close unless a test says otherwise.
+    db.handlers.setdefault("oncall_alert_open", [])
+    db.handlers.setdefault("oncall_resolve_for_case", [])
+    oncall = OncallService(
+        OncallDatabridge(db), db, ZoneInfo("America/Chicago"), jobs=JobDatabridge(db), notifications=notifications,
+        tasks=tasks,
+    )
+    return CaseService(
+        CaseDatabridge(db), ResourceService(ResourceDatabridge(db)), staff, tasks, notifications, db, oncall
+    )
 
 
 def task_row(case: dict[str, Any], **overrides: Any) -> dict[str, Any]:

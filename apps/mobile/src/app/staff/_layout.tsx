@@ -13,7 +13,7 @@ import { space, type, useTheme } from '@/theme/tokens';
 
 /** Figma "App shell v2" staff tabs. Record (a Phantom debrief) sits raised in the middle; Team and Insights live under Me. */
 const TABS: TabItem[] = [
-  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') },
+  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') || p.startsWith('/staff/alerts') },
   { label: 'Queue', href: '/staff/cases', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/staff/cases') },
   { label: 'Record', push: '/staff/records/new', icon: 'mic-outline', iconActive: 'mic', raised: true, match: (p) => p.startsWith('/staff/records') },
   { label: 'Map', href: '/staff/map', icon: 'location-outline', iconActive: 'location', match: (p) => p.startsWith('/staff/map') },
@@ -63,6 +63,7 @@ export default function StaffLayout() {
           <Stack.Screen name="opportunities" />
           <Stack.Screen name="oncall" />
           <Stack.Screen name="notifications" />
+          <Stack.Screen name="alerts/[id]" />
         </Stack>
         {fullScreen ? null : <TabBar tabs={TABS} />}
       </>

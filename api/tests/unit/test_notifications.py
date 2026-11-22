@@ -94,7 +94,7 @@ def test_a_residents_item_never_shows_staff_names_or_contact_details():
 
 
 async def test_notify_skips_the_actor_and_nobody():
-    db = FakeFunctions(notification_create=created)
+    db = FakeFunctions(notification_create=created, job_enqueue=queued_job)
     notifications = NotificationService(NotificationDatabridge(db), db)
     me = uuid4()
 
@@ -105,6 +105,9 @@ async def test_notify_skips_the_actor_and_nobody():
     assert await notifications.notify(db, user_id=uuid4(), kind=NotificationKind.REPLY, dedupe_key="k",
                                       actor_id=None)
     assert len(db.called("notification_create")) == 1
+    # Its push job, in the same transaction.
+    (job,) = db.called("job_enqueue")
+    assert job["kind"] == "notification.push" and job["dedupe_key"].startswith("notification:")
 
 
 # --- The hooks in CaseService ----------------------------------------------------------
@@ -115,7 +118,8 @@ async def test_an_assignment_by_someone_else_notifies_the_new_assignee():
     case = case_row(assigned_worker_id=assignee)
     entry = update_row(case, update_type="assignment", author_id=actor.id)
     db = FakeFunctions(staff_get=[{"id": assignee, "display_name": "Ana", "role": "worker"}], case_update=[case],
-                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[])
+                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[],
+                       job_enqueue=queued_job)
 
     await service(db).update(actor, case["id"], UpdateCaseRequest(assigned_worker_id=assignee))
 
@@ -130,7 +134,8 @@ async def test_assigning_yourself_notifies_nobody():
     case = case_row(assigned_worker_id=me.id, requester_id=None)
     entry = update_row(case, update_type="assignment", author_id=me.id)
     db = FakeFunctions(staff_get=[{"id": me.id, "display_name": "Wes", "role": "worker"}], case_update=[case],
-                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[])
+                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[],
+                       job_enqueue=queued_job)
 
     await service(db).update(me, case["id"], UpdateCaseRequest(assigned_worker_id=me.id))
 
@@ -140,7 +145,8 @@ async def test_assigning_yourself_notifies_nobody():
 async def test_a_status_change_notifies_the_requester_and_other_fields_look_for_nothing():
     case = case_row()
     entry = update_row(case, update_type="status_change", visibility="public")
-    db = FakeFunctions(case_update=[case], case_list_updates_this_transaction=[entry], notification_create=created)
+    db = FakeFunctions(case_update=[case], case_list_updates_this_transaction=[entry], notification_create=created,
+                       job_enqueue=queued_job)
     cases = service(db)
 
     await cases.update(worker(), case["id"], UpdateCaseRequest(status="in_progress"))
@@ -155,7 +161,7 @@ async def test_a_status_change_notifies_the_requester_and_other_fields_look_for_
 async def test_a_public_message_notifies_the_requester_and_a_note_does_not():
     case = case_row()
     db = FakeFunctions(case_add_update=lambda p: [update_row(case, visibility=p["visibility"])], case_get=[case],
-                       notification_create=created)
+                       notification_create=created, job_enqueue=queued_job)
     cases = service(db)
 
     public = AddCaseUpdateRequest(content="Bed found", visibility="public")
@@ -171,7 +177,7 @@ async def test_a_reply_notifies_the_assignee(sample_user: AppUser):
     case = case_row(requester_id=sample_user.id, assigned_worker_id=assignee)
     reply = {"id": uuid4(), "update_type": "reply", "content": "Yes", "created_at": NOW}
     db = FakeFunctions(request_get_for_user=[public_row(case)], request_add_reply=[reply], case_get=[case],
-                       notification_create=created)
+                       notification_create=created, job_enqueue=queued_job)
 
     await service(db).reply(sample_user, case["id"], ReplyRequest(content="Yes"))
 
@@ -195,7 +201,8 @@ async def test_a_referral_status_change_notifies_the_assignee_once_per_change():
     entry = update_row(case, update_type="referral")
     db = FakeFunctions(referral_list=[referral_row(case, referral_id, "shared")],
                        referral_update=[referral_row(case, referral_id, "accepted")], case_get=[case],
-                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[])
+                       case_list_updates_this_transaction=[entry], notification_create=created, task_list=[],
+                       job_enqueue=queued_job)
     cases = service(db)
 
     await cases.update_referral(worker(), case["id"], referral_id, UpdateReferralRequest(status="accepted"))
@@ -247,7 +254,7 @@ def remind_stage(db: FakeFunctions) -> TaskRemindStage:
 ])
 async def test_a_reminder_does_nothing_for_a_done_moved_or_ownerless_task(overrides: dict[str, Any]):
     t = task(**overrides)
-    db = FakeFunctions(task_get=[t.model_dump()], notification_create=created)
+    db = FakeFunctions(task_get=[t.model_dump()], notification_create=created, job_enqueue=queued_job)
 
     finish = await remind_stage(db).run(remind_job(t, due_at=NOW))
     await finish(db)
@@ -264,7 +271,7 @@ async def test_a_reminder_for_a_missing_task_does_nothing():
 async def test_a_reminder_notifies_the_tasks_owner_in_finish():
     owner = uuid4()
     t = task(assigned_worker_id=owner, due_at=datetime(2026, 11, 21, 14, 0, tzinfo=timezone.utc))
-    db = FakeFunctions(task_get=[t.model_dump()], notification_create=created)
+    db = FakeFunctions(task_get=[t.model_dump()], notification_create=created, job_enqueue=queued_job)
     # The payload's offset differs; it is the same instant.
     other_zone = timezone(timedelta(hours=-6))
 
@@ -313,7 +320,10 @@ def test_the_worker_runs_task_reminders_without_an_openai_key():
 
     stages, sweeper = build_stages(FakeFunctions(), None, None)  # type: ignore[arg-type]
 
-    assert [s.kind for s in stages] == [TASK_REMIND] and sweeper is None
+    kinds = [s.kind for s in stages]
+    # Push runs without a provider too (its jobs finish without sending).
+    assert {TASK_REMIND, "notification.push"} <= set(kinds) and sweeper is None
+    assert not [k for k in kinds if k.startswith("record.")]
 
 
 def test_with_a_key_the_worker_also_runs_phantoms_stages():
@@ -321,4 +331,6 @@ def test_with_a_key_the_worker_also_runs_phantoms_stages():
 
     stages, _ = build_stages(FakeFunctions(), "sk-test", None)  # type: ignore[arg-type]
 
-    assert [s.kind for s in stages] == [TASK_REMIND, "record.redact", "record.extract"]
+    kinds = [s.kind for s in stages]
+    assert {TASK_REMIND, "notification.push", "record.redact", "record.extract"} <= set(kinds)
+    assert "record.transcribe" not in kinds  # no object storage

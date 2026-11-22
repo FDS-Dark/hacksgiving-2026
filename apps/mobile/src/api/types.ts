@@ -129,3 +129,15 @@ export type UnreadCount = Schemas['UnreadCount'];
 export type ReadAllResult = Schemas['ReadAllResult'];
 export type NotificationPreferences = Schemas['NotificationPreferences'];
 export type UpdateNotificationPreferences = Schemas['UpdateNotificationPreferences'];
+
+// ── Urgent alerts (/v1/oncall/alerts) ─────────────────────────────────────
+export type AlertStatus = Schemas['AlertStatus'];
+export type OfferOutcome = Schemas['OfferOutcome'];
+export type PassReason = Schemas['PassReason'];
+export type OncallOffer = Schemas['MyOffer'];
+export type OncallAlert = Schemas['OncallAlert'];
+export type OncallAlertDetail = Schemas['OncallAlertDetail'];
+export type OncallStats = Schemas['OncallStats'];
+
+// ── Push devices (/v1/me/devices) ─────────────────────────────────────────
+export type RegisterDevice = Schemas['RegisterDeviceRequest'];

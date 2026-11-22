@@ -24,6 +24,7 @@ from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
+from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
@@ -38,6 +39,7 @@ from services.case import CaseService, Triager
 from services.job import JobService
 from services.notification import NotificationService
 from services.oncall import OncallService
+from services.push import PushService
 from services.record import RecordService
 from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
@@ -87,6 +89,12 @@ def get_notification_service() -> NotificationService:
 
 
 @cache
+def get_push_service() -> PushService:
+    executor = get_executor()
+    return PushService(PushDatabridge(executor), get_notification_service(), executor)
+
+
+@cache
 def get_resource_service() -> ResourceService:
     return ResourceService(ResourceDatabridge(get_executor()))
 
@@ -96,7 +104,7 @@ def get_case_service() -> CaseService:
     executor = get_executor()
     return CaseService(
         CaseDatabridge(executor), get_resource_service(), get_staff_service(), get_task_service(),
-        get_notification_service(), executor,
+        get_notification_service(), executor, get_oncall_service(),
     )
 
 
@@ -139,7 +147,10 @@ def get_job_service() -> JobService:
 @cache
 def get_oncall_service() -> OncallService:
     executor = get_executor()
-    return OncallService(OncallDatabridge(executor), executor, ZoneInfo(config.oncall.timezone))
+    return OncallService(
+        OncallDatabridge(executor), executor, ZoneInfo(config.oncall.timezone),
+        jobs=JobDatabridge(executor), notifications=get_notification_service(), tasks=get_task_service(),
+    )
 
 
 @cache

@@ -103,6 +103,17 @@
         "title": "AddReferralRequest",
         "type": "object"
       },
+      "AlertStatus": {
+        "enum": [
+          "offering",
+          "unanswered",
+          "accepted",
+          "resolved",
+          "cancelled"
+        ],
+        "title": "AlertStatus",
+        "type": "string"
+      },
       "AnonymousRequestReceipt": {
         "description": "A request sent without an account. The access code is shown once:\nwith the request's number it is the only way back to the request.",
         "properties": {
@@ -1478,6 +1489,17 @@
         "title": "CrimeTrendPoint",
         "type": "object"
       },
+      "DeliveryStatus": {
+        "enum": [
+          "pending",
+          "sending",
+          "sent",
+          "failed",
+          "skipped"
+        ],
+        "title": "DeliveryStatus",
+        "type": "string"
+      },
       "DispatchCall": {
         "description": "A delayed dispatch call: not a confirmed incident.",
         "properties": {
@@ -1885,9 +1907,51 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "MyOffer": {
+        "description": "The caller's latest offer on an alert.",
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/OfferOutcome"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "step",
+          "expires_at",
+          "outcome"
+        ],
+        "title": "MyOffer",
+        "type": "object"
+      },
       "NotificationItem": {
         "description": "One row of the inbox, ready to show. `route` is where the app goes\nwhen it's tapped.",
         "properties": {
+          "alert_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Id"
+          },
           "body": {
             "title": "Body",
             "type": "string"
@@ -1976,6 +2040,7 @@
           "case_id",
           "case_number",
           "task_id",
+          "alert_id",
           "route",
           "created_at",
           "read_at"
@@ -1989,7 +2054,10 @@
           "reply",
           "request_update",
           "task_due",
-          "referral_update"
+          "referral_update",
+          "test",
+          "urgent_offer",
+          "urgent_unanswered"
         ],
         "title": "NotificationKind",
         "type": "string"
@@ -2045,6 +2113,406 @@
           "urgent_when_off_call"
         ],
         "title": "NotificationPreferences",
+        "type": "object"
+      },
+      "NotificationStats": {
+        "description": "GET /v1/notifications/stats (admins): push deliveries since `since`\nby status, devices, and the most common APNs failure reasons.",
+        "properties": {
+          "active_devices": {
+            "title": "Active Devices",
+            "type": "integer"
+          },
+          "deliveries": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/DeliveryStatus"
+            },
+            "title": "Deliveries",
+            "type": "object"
+          },
+          "disabled_devices": {
+            "title": "Disabled Devices",
+            "type": "integer"
+          },
+          "since": {
+            "format": "date-time",
+            "title": "Since",
+            "type": "string"
+          },
+          "top_reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReasonCount"
+            },
+            "title": "Top Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "since",
+          "deliveries",
+          "active_devices",
+          "disabled_devices",
+          "top_reasons"
+        ],
+        "title": "NotificationStats",
+        "type": "object"
+      },
+      "OfferOutcome": {
+        "enum": [
+          "pending",
+          "accepted",
+          "passed",
+          "timed_out",
+          "superseded"
+        ],
+        "title": "OfferOutcome",
+        "type": "string"
+      },
+      "OncallAlert": {
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "accepted_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By"
+          },
+          "accepted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By Name"
+          },
+          "arrived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrived At"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "my_offer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyOffer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Name"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          },
+          "step_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Expires At"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "category",
+          "priority",
+          "status",
+          "step",
+          "step_expires_at",
+          "created_at",
+          "accepted_by",
+          "accepted_by_name",
+          "accepted_at",
+          "arrived_at",
+          "my_offer",
+          "next_name"
+        ],
+        "title": "OncallAlert",
+        "type": "object"
+      },
+      "OncallAlertDetail": {
+        "description": "The alert with what a responder needs to decide and go. Never the\nrequester's contact details: those stay on the case.",
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "accepted_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By"
+          },
+          "accepted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By Name"
+          },
+          "arrived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrived At"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "my_offer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MyOffer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Name"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          },
+          "step_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Expires At"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "category",
+          "priority",
+          "status",
+          "step",
+          "step_expires_at",
+          "created_at",
+          "accepted_by",
+          "accepted_by_name",
+          "accepted_at",
+          "arrived_at",
+          "my_offer",
+          "next_name",
+          "description",
+          "location",
+          "latitude",
+          "longitude",
+          "contact_method",
+          "safe_to_contact"
+        ],
+        "title": "OncallAlertDetail",
         "type": "object"
       },
       "OncallMe": {
@@ -2152,6 +2620,62 @@
           "source"
         ],
         "title": "OncallShift",
+        "type": "object"
+      },
+      "OncallStats": {
+        "description": "Alerts opened in [from, to). Times are seconds from the alert opening\nto its accept, and from the accept to \"I've arrived\".",
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "alerts": {
+            "title": "Alerts",
+            "type": "integer"
+          },
+          "avg_seconds_to_accept": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Seconds To Accept"
+          },
+          "avg_seconds_to_arrive": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Seconds To Arrive"
+          },
+          "passes_by_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Passes By Reason",
+            "type": "object"
+          },
+          "unanswered": {
+            "title": "Unanswered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alerts",
+          "accepted",
+          "unanswered",
+          "avg_seconds_to_accept",
+          "avg_seconds_to_arrive",
+          "passes_by_reason"
+        ],
+        "title": "OncallStats",
         "type": "object"
       },
       "Opportunity": {
@@ -2361,6 +2885,31 @@
         "title": "OutcomeStatus",
         "type": "string"
       },
+      "PassReason": {
+        "enum": [
+          "busy",
+          "too_far",
+          "not_safe_alone"
+        ],
+        "title": "PassReason",
+        "type": "string"
+      },
+      "PassRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PassReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "PassRequest",
+        "type": "object"
+      },
       "PublicRequest": {
         "properties": {
           "category": {
@@ -2484,6 +3033,22 @@
         "title": "PublicRequestUpdate",
         "type": "object"
       },
+      "PushEnvironment": {
+        "description": "The APNs host a token belongs to: sandbox for dev builds,\nproduction for TestFlight and the App Store.",
+        "enum": [
+          "sandbox",
+          "production"
+        ],
+        "title": "PushEnvironment",
+        "type": "string"
+      },
+      "PushPlatform": {
+        "enum": [
+          "ios"
+        ],
+        "title": "PushPlatform",
+        "type": "string"
+      },
       "ReadAllRequest": {
         "description": "Without `case_id`, everything; with it, only that case's rows (the\napp sends it when a case or request screen opens).",
         "properties": {
@@ -2514,6 +3079,24 @@
           "updated"
         ],
         "title": "ReadAllResult",
+        "type": "object"
+      },
+      "ReasonCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "count"
+        ],
+        "title": "ReasonCount",
         "type": "object"
       },
       "Record": {
@@ -2835,6 +3418,41 @@
         ],
         "title": "ReferralStatus",
         "type": "string"
+      },
+      "RegisterDeviceRequest": {
+        "description": "PUT /v1/me/devices, on every launch and when the token rotates. The\ntoken is the raw APNs device token, in hex.",
+        "properties": {
+          "app_version": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/PushEnvironment"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PushPlatform",
+            "default": "ios"
+          },
+          "token": {
+            "pattern": "^[0-9a-fA-F]{32,200}$",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "environment"
+        ],
+        "title": "RegisterDeviceRequest",
+        "type": "object"
       },
       "ReplyRequest": {
         "additionalProperties": false,
@@ -4172,7 +4790,8 @@
           "category_change",
           "assignment",
           "referral",
-          "reply"
+          "reply",
+          "alert"
         ],
         "title": "UpdateType",
         "type": "string"
@@ -6103,6 +6722,78 @@
         ]
       }
     },
+    "/v1/me/devices": {
+      "put": {
+        "description": "The app sends its APNs token on every launch and when it rotates. A\ntoken another account had moves to this one.",
+        "operationId": "register_device_v1_me_devices_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Device",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/me/devices/{token}": {
+      "delete": {
+        "description": "Sign-out, before the session is cleared. 204 even if it wasn't there.",
+        "operationId": "remove_device_v1_me_devices__token__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "pattern": "^[0-9a-fA-F]{32,200}$",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Device",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/v1/me/notification-preferences": {
       "get": {
         "operationId": "get_preferences_v1_me_notification_preferences_get",
@@ -6275,6 +6966,48 @@
         ]
       }
     },
+    "/v1/notifications/stats": {
+      "get": {
+        "description": "Push deliveries in the last 24 hours by status, devices, and the most\ncommon APNs failure reasons.",
+        "operationId": "stats_v1_notifications_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Stats",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/v1/notifications/test": {
+      "post": {
+        "description": "A `test` notification for the caller, pushed to each of their\ndevices. 3 per 10 minutes.",
+        "operationId": "send_test_v1_notifications_test_post",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Send Test",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
     "/v1/notifications/unread-count": {
       "get": {
         "operationId": "unread_count_v1_notifications_unread_count_get",
@@ -6373,6 +7106,247 @@
         "summary": "Read Notification",
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/v1/oncall/alerts": {
+      "get": {
+        "description": "Urgent alerts, newest first: by default only open ones (offering or\nunanswered). `my_offer` is the caller's own offer, if any.",
+        "operationId": "list_alerts_v1_oncall_alerts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "open_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Open Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OncallAlert"
+                  },
+                  "title": "Response List Alerts V1 Oncall Alerts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Alerts",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/alerts/{alert_id}": {
+      "get": {
+        "description": "One alert with what a responder needs (never contact details).",
+        "operationId": "get_alert_v1_oncall_alerts__alert_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallAlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Alert",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/alerts/{alert_id}/accept": {
+      "post": {
+        "description": "Take the case: it's assigned to the caller and in progress. Any staff\nmember may while the alert is open; 409 `already_accepted` if someone\nwas first.",
+        "operationId": "accept_alert_v1_oncall_alerts__alert_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallAlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Alert",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/alerts/{alert_id}/arrived": {
+      "post": {
+        "description": "Mark \"I've arrived\" (only whoever accepted); written to the case history.",
+        "operationId": "alert_arrived_v1_oncall_alerts__alert_id__arrived_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallAlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Alert Arrived",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/alerts/{alert_id}/pass": {
+      "post": {
+        "description": "Pass on your offer, optionally saying why. When everyone offered in\nthe step has passed, it moves to the next person at once.",
+        "operationId": "pass_alert_v1_oncall_alerts__alert_id__pass_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PassRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallAlertDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pass Alert",
+        "tags": [
+          "oncall"
         ]
       }
     },
@@ -6622,6 +7596,60 @@
           }
         },
         "summary": "Update Shift",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/stats": {
+      "get": {
+        "description": "Alerts opened in [from, to): how many were accepted or went\nunanswered, average time to accept and to arrive, passes by reason\n(admins).",
+        "operationId": "oncall_stats_v1_oncall_stats_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OncallStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Oncall Stats",
         "tags": [
           "oncall"
         ]

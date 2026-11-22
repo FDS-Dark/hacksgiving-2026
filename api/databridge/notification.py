@@ -17,12 +17,15 @@ class NotificationDatabridge(Databridge):
         task_id: UUID | None = None,
         referral_id: UUID | None = None,
         actor_id: UUID | None = None,
+        alert_id: UUID | None = None,
+        expires_at: datetime | None = None,
     ) -> StoredNotification | None:
         """None when the row already exists (same user and dedupe key)."""
         row = await self._first(
             "notification_create",
             user_id=user_id, kind=kind, dedupe_key=dedupe_key, case_id=case_id, case_update_id=case_update_id,
-            task_id=task_id, referral_id=referral_id, actor_id=actor_id,
+            task_id=task_id, referral_id=referral_id, actor_id=actor_id, alert_id=alert_id,
+            expires_at=expires_at,
         )
         return StoredNotification(**row) if row else None
 
