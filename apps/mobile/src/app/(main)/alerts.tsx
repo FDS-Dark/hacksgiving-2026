@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Linking } from 'react-native';
 
 import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
@@ -8,6 +9,8 @@ import { useDeviceLocation } from '@/services/deviceLocation';
 import { INCIDENT_CATEGORIES, type SafetyPoint, usePublicSafetyPoints } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
 import { useVoiceFollowUps } from '@/services/voice';
+import { useWeatherAlerts } from '@/services/weather';
+import { dateTime } from '@/lib/format';
 
 function categoryLabel(point: SafetyPoint) {
   if (point.category === 'community-report') return 'Community report';
@@ -30,6 +33,7 @@ export default function AlertsScreen() {
   const safety = usePublicSafetyPoints();
   const device = useDeviceLocation();
   const followUps = useVoiceFollowUps();
+  const weather = useWeatherAlerts();
 
   const recentIncidents = useMemo(
     () => safety.points
@@ -53,6 +57,7 @@ export default function AlertsScreen() {
     calls.refetch();
     safety.refetch();
     followUps.refetch();
+    weather.refetch();
   };
 
   return (
@@ -63,6 +68,23 @@ export default function AlertsScreen() {
       <Notice icon="information-circle-outline">
         Dispatch calls are delayed 30–90 minutes and are not confirmed crimes. Incident locations and distances are approximate.
       </Notice>
+
+      {weather.active.length ? (
+        <Group header="Weather" footer="From the National Weather Service for Milwaukee County.">
+          {weather.active.map((alert) => (
+            <Row
+              key={alert.id}
+              title={alert.event}
+              subtitle={alert.instruction ?? alert.headline ?? alert.description}
+              detail={alert.expires_at ? `Until ${dateTime(alert.expires_at)}` : undefined}
+              detailTint="rgba(154,88,0,0.10)"
+              detailColor="#9A5800"
+              tile={{ icon: 'weather-cloudy-alert', color: '#9A5800' }}
+              onPress={alert.url ? () => Linking.openURL(alert.url!) : undefined}
+            />
+          ))}
+        </Group>
+      ) : null}
 
       <Group
         header="Your ComForce notifications"

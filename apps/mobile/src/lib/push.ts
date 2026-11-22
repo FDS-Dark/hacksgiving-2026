@@ -22,6 +22,7 @@ import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
 
+import { request as apiRequest } from '@/api/client';
 import { debug } from '@/lib/debug';
 import { deviceEnvironment, foregroundBehavior, permissionState, pushData, tapRoute, type PushPermission } from '@/lib/pushRules';
 import { notificationKeys, notificationsApi } from '@/services/notifications';
@@ -216,7 +217,12 @@ async function openFromPush(N: Notifications, response: NotificationsModule.Noti
   handled.add(key);
   N.clearLastNotificationResponseAsync().catch(() => {});
 
-  const { id } = pushData(response.notification);
+  const { id, request } = pushData(response.notification);
+  if (request) {
+    // A request sent without an account: no inbox row to look up.
+    router.push({ pathname: '/help/request/[id]', params: { id: request } });
+    return;
+  }
   let route: string | null = null;
   if (id) {
     try {
@@ -263,13 +269,25 @@ export function usePush(signedIn: boolean) {
     const N = notifications();
     if (!N || !signedIn) return;
     void registerDevice();
+    let sub: { remove: () => void } | null = null;
+    try {
+      sub = N.addPushTokenListener((token) => {
+        // Only subscribed while signed in (the cleanup removes it).
+        if (typeof token.data === 'string') void registerDevice(token.data);
+      });
+    } catch (e) {
+      debug('push · token listener setup failed:', errorText(e));
+    }
+    return () => sub?.remove();
+  }, [signedIn]);
+
+  // Taps, signed in or not: a request sent without an account can push too.
+  useEffect(() => {
+    const N = notifications();
+    if (!N) return;
     const subs: { remove: () => void }[] = [];
     try {
       subs.push(
-        N.addPushTokenListener((token) => {
-          // Only subscribed while signed in (the cleanup removes it).
-          if (typeof token.data === 'string') void registerDevice(token.data);
-        }),
         N.addNotificationResponseReceivedListener((response) => {
           openFromPush(N, response).catch((e) => debug('push · open failed:', errorText(e)));
         }),
@@ -282,6 +300,58 @@ export function usePush(signedIn: boolean) {
     }
     return () => subs.forEach((sub) => sub.remove());
   }, [signedIn]);
+}
+
+/** This phone's APNs token and environment, asking for permission first
+ *  (R6's wording applies: nothing personal on the lock screen). Null when
+ *  push can't work here (Expo Go, the simulator, or the person said no). */
+async function phoneToken(): Promise<{ token: string; environment: 'sandbox' | 'production' } | null> {
+  const N = notifications();
+  if (!N) return null;
+  if ((await ensurePermission('resident')) !== 'on') return null;
+  const environment = deviceEnvironment(await Application.getIosPushNotificationServiceEnvironmentAsync());
+  if (!environment) return null;
+  const token = (await withTimeout(N.getDevicePushTokenAsync(), 15_000)).data;
+  return typeof token === 'string' && token ? { token, environment } : null;
+}
+
+/**
+ * Signed out: this phone gets a push when ComForce replies to request
+ * #`number` (POST /public/requests/{number}/devices with its code). False
+ * when push can't work here or the person declined.
+ */
+export async function subscribeToRequest(number: number, code: string): Promise<boolean> {
+  try {
+    const phone = await phoneToken();
+    if (!phone) return false;
+    await apiRequest<void>(`/public/requests/${number}/devices`, {
+      method: 'POST',
+      auth: false,
+      headers: { 'X-Access-Code': code },
+      body: { token: phone.token, platform: 'ios', environment: phone.environment },
+    });
+    return true;
+  } catch (e) {
+    debug('push · request subscribe failed:', errorText(e));
+    return false;
+  }
+}
+
+/** Forgetting a request on this phone: stop its pushes too. Best effort. */
+export async function unsubscribeFromRequest(number: number, code: string): Promise<void> {
+  const N = notifications();
+  if (!N) return;
+  try {
+    const token = (await withTimeout(N.getDevicePushTokenAsync(), 3_000)).data;
+    if (typeof token !== 'string' || !token) return;
+    await apiRequest<void>(`/public/requests/${number}/devices/${encodeURIComponent(token)}`, {
+      method: 'DELETE',
+      auth: false,
+      headers: { 'X-Access-Code': code },
+    });
+  } catch (e) {
+    debug('push · request unsubscribe failed:', errorText(e));
+  }
 }
 
 // ── R6: the resident ask ──────────────────────────────────────────────────

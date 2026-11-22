@@ -90,7 +90,10 @@ cat >"$work/ExportOptions.plist" <<PLIST
 PLIST
 
 echo "Uploading to App Store Connect..."
-quietly xcodebuild -exportArchive -archivePath "$archive" \
+# System tools first: Xcode packages the .ipa with rsync and expects macOS's
+# own (openrsync); Homebrew's rsync 3.x, first on the runner's PATH, rejects
+# its options and the export fails with "Copy failed".
+PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" quietly xcodebuild -exportArchive -archivePath "$archive" \
   -exportOptionsPlist "$work/ExportOptions.plist" -exportPath "$work/export" "${auth[@]}"
 
 echo "Uploaded $bundle_id build $IOS_BUILD_NUMBER. Apple processes it (usually 10-30 min);"

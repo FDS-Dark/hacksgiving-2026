@@ -96,6 +96,12 @@ def message_for(facts: PushFacts, now: datetime) -> PushMessage:
             notification_id=facts.id, title="Test notification", body="Push works on this phone.", urgent=False,
             priority=10, expiration=expiration, thread_id="updates", interruption_level="active", sound=True,
         )
+    if facts.kind == "community_alert":
+        # Public information, nothing about the person; still silent (D5).
+        return PushMessage(
+            notification_id=facts.id, title="Weather alert", body="Open the app for details.", urgent=False,
+            priority=5, expiration=expiration, thread_id="updates", interruption_level="active", sound=False,
+        )
     if facts.kind == "request_update" or not facts.reader_is_staff:
         # A resident: no title, no sound, no badge.
         return PushMessage(

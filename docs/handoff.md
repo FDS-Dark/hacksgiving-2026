@@ -1,6 +1,6 @@
 # Handoff: where things stand
 
-Last updated 2026-11-22 (push + urgent escalation, phases 2-3). Update this file when you finish a piece of work or
+Last updated 2026-11-21 (resident lane: weather, offline, beds, community alerts, signed-out push). Update this file when you finish a piece of work or
 change what's deployed, so the next person (or agent) starts from the truth.
 
 ## What the app is
@@ -40,6 +40,23 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   backup or next shift, then every admin (5 min per step), with Accept / Pass
   on `/staff/alerts/[id]`, red banners on Today and 3 reminders when nobody
   accepts. Response times show in Insights.
+- **Resident lane** (migration 0019):
+  - Weather: Home shows the most severe NWS alert in effect (cold or heat
+    links to shelter on Nearby); Safety alerts lists them. The worker acts on
+    each alert once: cold or heat at Moderate+ gives every open
+    homelessness case a "Check in" task due in 3 h (`services/weather_jobs.py`).
+  - Community alerts (Figma R5): opt-in, off by default (resident Me,
+    `/v1/me/community-alerts`); a serious alert pushes "Weather alert ·
+    Open the app for details", silent, respecting quiet hours.
+  - Offline queue (Figma E3): a request that can't reach the API is kept in
+    SecureStore and resent on launch, foreground and every 30 s.
+  - Bed counts (Figma R3): staff set tonight's open beds on a place's page;
+    residents see them for 24 h. Home's Shelter tile shows the total, Jobs
+    shows postings new this week.
+  - Push for requests sent without an account (design question 7, decided
+    yes): "Notify me on this phone" on Request received subscribes with the
+    number and code (max 3 phones). Generic silent text; payload `r` opens
+    the request.
 
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
@@ -52,9 +69,9 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0019** (`0015_oncall_shifts`,
+- Database: Alembic revisions through **0020** (`0015_oncall_shifts`,
   `0016_notifications`, `0017_push`, `0018_urgent_alerts`,
-  `0019_voice_safety_and_follow_up`).
+  `0019_resident_lane`, `0020_voice_safety_and_follow_up`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
@@ -116,15 +133,17 @@ CI runners sometimes drop connections (a `tf-apply` once failed fetching
 - The Supabase Storage adapter against a real project (unit tests pin its
   requests; it sends the secret key as both `apikey` and `Authorization:
   Bearer`, like supabase-js).
+- The resident lane on a real phone: community alert and signed-out
+  request pushes need the signed build; the weather sweep needs an active
+  NWS alert (seed one in `app.weather_alerts` to demo).
 - Name removal is rules-based and misses bare names with no cue; the app's
   wording says "names we can spot".
 
 ## Next work
 
 Easier:
-- Offline: queue a resident's request while offline (Figma E3).
-- Restyle Get help's form to the latest Figma (Peter owns the resident flow;
-  check with him).
+- Get help's form already matches Figma A2 (checked 2026-11-21); nothing to
+  restyle unless the design changes.
 
 Needs focus:
 - **Verify push on a real phone**: deploy, install a signed build

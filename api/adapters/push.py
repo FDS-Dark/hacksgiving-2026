@@ -68,6 +68,9 @@ class PushMessage:
     interruption_level: str  # "time-sensitive" or "active"
     sound: bool
     badge: int | None = None
+    # A request sent without an account (services/request_push.py): the
+    # app opens it from this, since there is no inbox row to look up.
+    request_id: UUID | None = None
 
     @property
     def collapse_id(self) -> str:
@@ -104,7 +107,10 @@ def apns_payload(message: PushMessage) -> dict[str, Any]:
         aps["sound"] = "default"
     if message.badge is not None:
         aps["badge"] = message.badge
-    return {"aps": aps, "n": str(message.notification_id), "u": 1 if message.urgent else 0}
+    payload: dict[str, Any] = {"aps": aps, "n": str(message.notification_id), "u": 1 if message.urgent else 0}
+    if message.request_id is not None:
+        payload["r"] = str(message.request_id)
+    return payload
 
 
 def apns_headers(message: PushMessage, topic: str, bearer: str) -> dict[str, str]:

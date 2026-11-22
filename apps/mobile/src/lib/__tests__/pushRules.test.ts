@@ -20,19 +20,22 @@ describe('deviceEnvironment', () => {
 
 describe('pushData', () => {
   it('reads n and u next to aps in the raw APNs payload', () => {
-    expect(pushData(remote({ aps: { alert: {} }, n: 'abc', u: 1 }))).toEqual({ id: 'abc', urgent: true });
+    expect(pushData(remote({ aps: { alert: {} }, n: 'abc', u: 1 }))).toEqual({ id: 'abc', urgent: true, request: null });
   });
   it('treats a missing u as not urgent', () => {
-    expect(pushData(remote({ aps: {}, n: 'abc' }))).toEqual({ id: 'abc', urgent: false });
+    expect(pushData(remote({ aps: {}, n: 'abc' }))).toEqual({ id: 'abc', urgent: false, request: null });
   });
   it('accepts u as a string', () => {
     expect(pushData(remote({ n: 'abc', u: '1' })).urgent).toBe(true);
   });
   it('falls back to content.data', () => {
-    expect(pushData({ request: { content: { data: { n: 'x', u: 1 } }, trigger: null } })).toEqual({ id: 'x', urgent: true });
+    expect(pushData({ request: { content: { data: { n: 'x', u: 1 } }, trigger: null } })).toEqual({ id: 'x', urgent: true, request: null });
   });
   it('has no id when there is none', () => {
-    expect(pushData({ request: { content: {}, trigger: { type: 'push' } } })).toEqual({ id: null, urgent: false });
+    expect(pushData({ request: { content: {}, trigger: { type: 'push' } } })).toEqual({ id: null, urgent: false, request: null });
+  });
+  it('reads the request a signed-out push is about', () => {
+    expect(pushData(remote({ aps: {}, n: 'u1', u: 0, r: 'case-1' })).request).toBe('case-1');
   });
 });
 

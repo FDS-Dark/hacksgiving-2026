@@ -63,6 +63,7 @@ export type TransitNearby = Schemas['TransitNearby'];
 export type WeatherAlert = Schemas['WeatherAlert'];
 export type CrimeTrendPoint = Schemas['CrimeTrendPoint'];
 export type SourceHealth = Schemas['SourceHealth'];
+export type CommunityAlerts = Schemas['CommunityAlerts-Output'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
 export type StaffMember = Schemas['StaffMember'];
