@@ -32,6 +32,7 @@ revision runs explicit SQL. Same migrations everywhere:
 | `0003_api_functions` | Every function the API calls, `app.<domain>_<verb>` ([ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)) |
 | `0004_supabase_lockdown` | On Supabase only: no default grants to `anon`/`authenticated` in `public` |
 | `0029_voice_safety_and_follow_up` | Safe callback plans, structured call-resume checkpoints, referral check-ins and voice impact funnel |
+| `0033_recently_worked` | `app.case_recently_worked`: the cases one worker touched most recently (Queue → Recently worked), and an index on `case_updates (author_id, created_at)` |
 
 ## The API's functions
 

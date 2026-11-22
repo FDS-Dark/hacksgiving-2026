@@ -175,7 +175,7 @@ flowchart LR
 | My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
 | Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me; weather alerts, and a Home banner |
 | Notifications ask, notification settings | resident | 2 | **built** (`/help/notifications` (R6), Me → Notifications, Community alerts opt-in) |
-| New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`, the Record tab) |
+| New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`; the Record tab opens a New case / Debrief chooser, and typed drafts autosave) |
 | Review extraction | worker | 3 | **built** (`/staff/records/[id]`), with "Your debriefs" on Today |
 | My tasks | worker | 1 | new |
 | Staff tabs: Today, Queue, Record, Map, Me | staff | 1 | **built** (`/staff`, `/staff/cases`, `/staff/map`, `/staff/me`); Record opens New case for now |
