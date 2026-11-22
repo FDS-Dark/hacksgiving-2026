@@ -30,7 +30,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    sql = Path(__file__).with_name("0019_voice_safety_and_follow_up.downgrade.sql").read_text(encoding="utf-8")
+    sql = (
+        Path(__file__)
+        .with_name("0019_voice_safety_and_follow_up.downgrade.sql")
+        .read_text(encoding="utf-8")
+    )
     context.config.attributes["execute_script"](op.get_bind(), sql)
-
-
