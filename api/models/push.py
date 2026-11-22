@@ -107,3 +107,20 @@ class NotificationStats(ApiModel):
     active_devices: int
     disabled_devices: int
     top_reasons: list[ReasonCount]
+
+
+class SubscribeRequestPush(ApiModel):
+    """POST /v1/public/requests/{number}/devices: this phone hears about one
+    request sent without an account."""
+
+    token: str = Field(pattern=r"^[0-9a-fA-F]{32,200}$")
+    platform: PushPlatform = PushPlatform.IOS
+    environment: PushEnvironment
+
+
+class RequestPushTarget(ApiModel):
+    """A phone subscribed to a request (app.request_push_subscriptions)."""
+
+    id: UUID
+    token: str
+    environment: str

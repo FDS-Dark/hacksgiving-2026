@@ -917,6 +917,31 @@
         "title": "ClaimHandoffRequest",
         "type": "object"
       },
+      "CommunityAlerts-Input": {
+        "properties": {
+          "subscribed": {
+            "default": false,
+            "title": "Subscribed",
+            "type": "boolean"
+          }
+        },
+        "title": "CommunityAlerts",
+        "type": "object"
+      },
+      "CommunityAlerts-Output": {
+        "properties": {
+          "subscribed": {
+            "default": false,
+            "title": "Subscribed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "subscribed"
+        ],
+        "title": "CommunityAlerts",
+        "type": "object"
+      },
       "CommunityMeasure": {
         "properties": {
           "high": {
@@ -2616,7 +2641,8 @@
           "referral_update",
           "test",
           "urgent_offer",
-          "urgent_unanswered"
+          "urgent_unanswered",
+          "community_alert"
         ],
         "title": "NotificationKind",
         "type": "string"
@@ -3470,7 +3496,7 @@
         "type": "object"
       },
       "Person": {
-        "description": "The resident behind a case, as staff see them: their contact details\n(from their newest case that has them) and every case that looks like\nthe same person. There's no separate person record; see 0021.",
+        "description": "The resident behind a case, as staff see them: their contact details\n(from their newest case that has them) and every case that looks like\nthe same person. There's no separate person record; see 0022.",
         "properties": {
           "cases": {
             "description": "Newest first; includes the case asked about.",
@@ -4165,6 +4191,30 @@
             ],
             "title": "Address"
           },
+          "beds_available": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Open beds tonight, as staff last entered them. Null when unknown or older than 24 hours.",
+            "title": "Beds Available"
+          },
+          "beds_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beds Updated At"
+          },
           "category": {
             "$ref": "#/components/schemas/CaseCategory"
           },
@@ -4278,7 +4328,9 @@
           "source",
           "is_sample",
           "active",
-          "created_at"
+          "created_at",
+          "beds_available",
+          "beds_updated_at"
         ],
         "title": "Resource",
         "type": "object"
@@ -4461,6 +4513,29 @@
         ],
         "title": "Service",
         "type": "string"
+      },
+      "SetBedsRequest": {
+        "properties": {
+          "beds_available": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Open beds tonight; null when unknown.",
+            "title": "Beds Available"
+          }
+        },
+        "required": [
+          "beds_available"
+        ],
+        "title": "SetBedsRequest",
+        "type": "object"
       },
       "SetCaseLanguageRequest": {
         "properties": {
@@ -4932,6 +5007,29 @@
           "description"
         ],
         "title": "SubmitRequest",
+        "type": "object"
+      },
+      "SubscribeRequestPush": {
+        "description": "POST /v1/public/requests/{number}/devices: this phone hears about one\nrequest sent without an account.",
+        "properties": {
+          "environment": {
+            "$ref": "#/components/schemas/PushEnvironment"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/PushPlatform",
+            "default": "ios"
+          },
+          "token": {
+            "pattern": "^[0-9a-fA-F]{32,200}$",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "environment"
+        ],
+        "title": "SubscribeRequestPush",
         "type": "object"
       },
       "SuggestionMethod": {
@@ -8307,6 +8405,67 @@
         ]
       }
     },
+    "/v1/me/community-alerts": {
+      "get": {
+        "operationId": "get_community_alerts_v1_me_community_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityAlerts-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Community Alerts",
+        "tags": [
+          "community alerts"
+        ]
+      },
+      "put": {
+        "description": "Turn community alerts on or off. Pushes still follow the person's\npush switch and quiet hours.",
+        "operationId": "set_community_alerts_v1_me_community_alerts_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityAlerts-Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityAlerts-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Community Alerts",
+        "tags": [
+          "community alerts"
+        ]
+      }
+    },
     "/v1/me/devices": {
       "put": {
         "description": "The app sends its APNs token on every launch and when it rotates. A\ntoken another account had moves to this one.",
@@ -10189,6 +10348,128 @@
         ]
       }
     },
+    "/v1/public/requests/{number}/devices": {
+      "post": {
+        "description": "This phone gets a push (\"You have a new update\", no sound) when\nComForce replies or the status changes. At most 3 phones per request.\n404 for a wrong number or code alike.",
+        "operationId": "subscribe_to_anonymous_request_v1_public_requests__number__devices_post",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeRequestPush"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Subscribe To Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/v1/public/requests/{number}/devices/{token}": {
+      "delete": {
+        "description": "Stop this phone's pushes for the request (forgetting it on the phone).",
+        "operationId": "unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete",
+        "parameters": [
+          {
+            "description": "The request's reference number, like 1042.",
+            "in": "path",
+            "name": "number",
+            "required": true,
+            "schema": {
+              "description": "The request's reference number, like 1042.",
+              "minimum": 1,
+              "title": "Number",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "title": "Token",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The code from the receipt.",
+            "in": "header",
+            "name": "X-Access-Code",
+            "required": true,
+            "schema": {
+              "description": "The code from the receipt.",
+              "maxLength": 32,
+              "title": "X-Access-Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unsubscribe From Anonymous Request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
     "/v1/public/requests/{number}/replies": {
       "post": {
         "description": "Answer on a request sent without an account.",
@@ -10912,6 +11193,60 @@
           }
         },
         "summary": "Get Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/resources/{resource_id}/beds": {
+      "put": {
+        "description": "Set tonight's open beds (null: unknown). Staff only. Residents see the\ncount on Nearby for 24 hours after it was set.",
+        "operationId": "set_beds_v1_resources__resource_id__beds_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBedsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Beds",
         "tags": [
           "resources"
         ]

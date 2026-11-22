@@ -25,6 +25,10 @@ class ResourceDatabridge(Databridge):
             hours=body.hours or None, latitude=body.latitude, longitude=body.longitude, created_by=created_by,
         ))
 
+    async def set_beds(self, resource_id: UUID, beds: int | None, updated_by: UUID) -> Resource | None:
+        row = await self._first("resource_beds_set", resource_id=resource_id, beds=beds, updated_by=updated_by)
+        return Resource(**row) if row else None
+
     # --- The data loader (api/loader) ------------------------------------------
 
     async def sync_upsert(self, item: ImportedResource, seen_at: datetime) -> SyncResult:
@@ -43,7 +47,7 @@ class ResourceDatabridge(Databridge):
         return int(row["retired"])
 
     async def outcome_stats(self) -> dict[UUID, ResourceOutcomes]:
-        """Referral outcomes per resource (0023); resources never referred are absent."""
+        """Referral outcomes per resource (0024); resources never referred are absent."""
         stats: dict[UUID, ResourceOutcomes] = {}
         for row in await self._rows("resource_outcome_stats"):
             decided = row["helped"] + row["declined"]

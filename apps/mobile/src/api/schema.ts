@@ -500,6 +500,28 @@ export interface paths {
         patch: operations["update_me_v1_me_patch"];
         trace?: never;
     };
+    "/v1/me/community-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Community Alerts */
+        get: operations["get_community_alerts_v1_me_community_alerts_get"];
+        /**
+         * Set Community Alerts
+         * @description Turn community alerts on or off. Pushes still follow the person's
+         *     push switch and quiet hours.
+         */
+        put: operations["set_community_alerts_v1_me_community_alerts_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/devices": {
         parameters: {
             query?: never;
@@ -1229,6 +1251,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/requests/{number}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Subscribe To Anonymous Request
+         * @description This phone gets a push ("You have a new update", no sound) when
+         *     ComForce replies or the status changes. At most 3 phones per request.
+         *     404 for a wrong number or code alike.
+         */
+        post: operations["subscribe_to_anonymous_request_v1_public_requests__number__devices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/requests/{number}/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unsubscribe From Anonymous Request
+         * @description Stop this phone's pushes for the request (forgetting it on the phone).
+         */
+        delete: operations["unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/requests/{number}/replies": {
         parameters: {
             query?: never;
@@ -1487,6 +1551,27 @@ export interface paths {
         /** Get Resource */
         get: operations["get_resource_v1_resources__resource_id__get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/resources/{resource_id}/beds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Beds
+         * @description Set tonight's open beds (null: unknown). Staff only. Residents see the
+         *     count on Nearby for 24 hours after it was set.
+         */
+        put: operations["set_beds_v1_resources__resource_id__beds_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2389,6 +2474,22 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** CommunityAlerts */
+        "CommunityAlerts-Input": {
+            /**
+             * Subscribed
+             * @default false
+             */
+            subscribed?: boolean;
+        };
+        /** CommunityAlerts */
+        "CommunityAlerts-Output": {
+            /**
+             * Subscribed
+             * @default false
+             */
+            subscribed: boolean;
+        };
         /** CommunityMeasure */
         CommunityMeasure: {
             /** High */
@@ -3025,7 +3126,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered";
+        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered" | "community_alert";
         /**
          * NotificationPreferences
          * @description Push settings (push arrives in phase 2). The inbox ignores them: it
@@ -3319,7 +3420,7 @@ export interface components {
          * Person
          * @description The resident behind a case, as staff see them: their contact details
          *     (from their newest case that has them) and every case that looks like
-         *     the same person. There's no separate person record; see 0021.
+         *     the same person. There's no separate person record; see 0022.
          */
         Person: {
             /**
@@ -3603,6 +3704,13 @@ export interface components {
             active: boolean;
             /** Address */
             address: string | null;
+            /**
+             * Beds Available
+             * @description Open beds tonight, as staff last entered them. Null when unknown or older than 24 hours.
+             */
+            beds_available: number | null;
+            /** Beds Updated At */
+            beds_updated_at: string | null;
             category: components["schemas"]["CaseCategory"];
             /**
              * Created At
@@ -3703,6 +3811,14 @@ export interface components {
          * @enum {string}
          */
         Service: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "unclear";
+        /** SetBedsRequest */
+        SetBedsRequest: {
+            /**
+             * Beds Available
+             * @description Open beds tonight; null when unknown.
+             */
+            beds_available: number | null;
+        };
         /** SetCaseLanguageRequest */
         SetCaseLanguageRequest: {
             /**
@@ -3874,6 +3990,18 @@ export interface components {
             safe_to_contact?: boolean | null;
             /** Title */
             title?: string | null;
+        };
+        /**
+         * SubscribeRequestPush
+         * @description POST /v1/public/requests/{number}/devices: this phone hears about one
+         *     request sent without an account.
+         */
+        SubscribeRequestPush: {
+            environment: components["schemas"]["PushEnvironment"];
+            /** @default ios */
+            platform?: components["schemas"]["PushPlatform"];
+            /** Token */
+            token: string;
         };
         /**
          * SuggestionMethod
@@ -5405,6 +5533,59 @@ export interface operations {
             };
         };
     };
+    get_community_alerts_v1_me_community_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityAlerts-Output"];
+                };
+            };
+        };
+    };
+    set_community_alerts_v1_me_community_alerts_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityAlerts-Input"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityAlerts-Output"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     register_device_v1_me_devices_put: {
         parameters: {
             query?: never;
@@ -6600,6 +6781,77 @@ export interface operations {
             };
         };
     };
+    subscribe_to_anonymous_request_v1_public_requests__number__devices_post: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscribeRequestPush"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_from_anonymous_request_v1_public_requests__number__devices__token__delete: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The code from the receipt. */
+                "X-Access-Code": string;
+            };
+            path: {
+                /** @description The request's reference number, like 1042. */
+                number: number;
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reply_to_anonymous_request_v1_public_requests__number__replies_post: {
         parameters: {
             query?: never;
@@ -7078,6 +7330,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_beds_v1_resources__resource_id__beds_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBedsRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

@@ -1,5 +1,5 @@
 """Shift handoff briefs: what a worker leaves for the next person on call
-when they switch off (0020_shift_handoffs.sql)."""
+when they switch off (0021_shift_handoffs.sql)."""
 
 from datetime import datetime
 from enum import StrEnum

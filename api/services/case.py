@@ -274,7 +274,7 @@ class CaseService:
         return case
 
     async def person(self, case_id: UUID, limit: int = 50) -> Person:
-        """The resident behind a case and all their cases (0021: same account,
+        """The resident behind a case and all their cases (0022: same account,
         phone or email). Contact details come from their newest case that
         has each one."""
         anchor = await self.get(case_id)

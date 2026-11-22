@@ -28,6 +28,11 @@ class Resource(ApiModel):
     is_sample: bool
     active: bool
     created_at: datetime
+    beds_available: int | None = Field(
+        default=None,
+        description="Open beds tonight, as staff last entered them. Null when unknown or older than 24 hours.",
+    )
+    beds_updated_at: datetime | None = None
 
 
 class CreateResourceRequest(ApiModel):
@@ -41,3 +46,7 @@ class CreateResourceRequest(ApiModel):
     hours: ContactField | None = None
     latitude: Latitude | None = None
     longitude: Longitude | None = None
+
+
+class SetBedsRequest(ApiModel):
+    beds_available: int | None = Field(ge=0, le=10000, description="Open beds tonight; null when unknown.")

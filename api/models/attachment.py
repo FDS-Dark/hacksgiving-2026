@@ -1,4 +1,4 @@
-"""Case attachments and knowledge search (0024_attachments_and_knowledge.sql)."""
+"""Case attachments and knowledge search (0025_attachments_and_knowledge.sql)."""
 
 from datetime import datetime
 from enum import StrEnum

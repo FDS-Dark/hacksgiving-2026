@@ -1,5 +1,5 @@
 -- =============================================================================
--- Worker training progress (see 0025_training_progress.py).
+-- Worker training progress (see 0026_training_progress.py).
 --
 -- The course content lives in the app (apps/mobile/src/lib/training.ts); this
 -- stores which modules each worker has finished, so progress survives a

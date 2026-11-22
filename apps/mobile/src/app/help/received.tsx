@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BigButton, Card, ResidentScreen } from '@/components/resident';
+import { Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import { shouldAskResident } from '@/lib/push';
+import { callPhone } from '@/lib/phone';
+import { openSettings, pushSupported, shouldAskResident, subscribeToRequest } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
 
@@ -17,6 +19,41 @@ const REACH: Record<string, string> = {
 
 /** Request received (Figma A3): the reference number and what happens next. */
 export default function ReceivedScreen() {
+  const { queued } = useLocalSearchParams<{ queued?: string }>();
+  return queued ? <QueuedScreen /> : <SentScreen />;
+}
+
+/** Figma E3: written with no connection, kept on the phone, sent on reconnect. */
+function QueuedScreen() {
+  const theme = useTheme();
+  return (
+    <ResidentScreen
+      back={false}
+      contentStyle={{ alignItems: 'center', paddingTop: 40 }}
+      footer={<BigButton label="Back to home" variant="outline" onPress={() => router.replace('/')} />}
+    >
+      <View style={[styles.check, { backgroundColor: theme.warningSoft }]}>
+        <Ionicons name="cloud-offline-outline" size={44} color={theme.soon} />
+      </View>
+      <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
+        Saved on your phone
+      </Text>
+      <Text style={[styles.lede, { color: theme.textSecondary }]}>
+        You’re offline. Your request will send as soon as you have signal, even if you close this screen.
+      </Text>
+      <Pressable onPress={() => callPhone('911')} accessibilityRole="button" accessibilityLabel="In danger? Call 911" style={styles.full}>
+        <Card tone="danger" style={{ paddingVertical: 12 }}>
+          <Text style={{ fontSize: 14, color: theme.text }}>
+            <Text style={{ fontWeight: '700', color: theme.red }}>In danger? Call 911. </Text>
+            It works without data.
+          </Text>
+        </Card>
+      </Pressable>
+    </ResidentScreen>
+  );
+}
+
+function SentScreen() {
   const theme = useTheme();
   const { id, number, method } = useLocalSearchParams<{ id: string; number: string; method?: string }>();
   // Sent without an account: the code is on this device, never in the URL.
@@ -63,6 +100,8 @@ export default function ReceivedScreen() {
         </Card>
       ) : null}
 
+      {saved && pushSupported() ? <NotifyMe number={saved.number} code={saved.code} /> : null}
+
       <Card style={[styles.full, { gap: 14 }]}>
         <Text style={[styles.cardTitle, { color: theme.text }]}>What happens next</Text>
         <Step done title="Received" detail="Just now" />
@@ -70,6 +109,36 @@ export default function ReceivedScreen() {
         <Step title="Connected with help" detail="Shelter, food, rides and more" />
       </Card>
     </ResidentScreen>
+  );
+}
+
+/**
+ * Sent without an account: this phone can still hear when ComForce replies
+ * (a push saying only "You have a new update", no sound). Asks iOS first.
+ */
+function NotifyMe({ number, code }: { number: number; code: string }) {
+  const theme = useTheme();
+  const [state, setState] = useState<'idle' | 'asking' | 'on' | 'off'>('idle');
+  const ask = async () => {
+    setState('asking');
+    setState((await subscribeToRequest(number, code)) ? 'on' : 'off');
+  };
+  return (
+    <Card style={[styles.full, { gap: 8 }]}>
+      <Text style={[styles.cardTitle, { color: theme.text }]}>Get notified on this phone</Text>
+      <Text style={{ fontSize: 13, color: theme.textSecondary }}>
+        {state === 'on'
+          ? 'You’ll get a notification when ComForce replies. It never shows your message on the lock screen.'
+          : state === 'off'
+            ? 'Notifications are off for ComForce. You can turn them on in Settings, or check back here.'
+            : 'We’ll let you know when ComForce replies. The notification only says “You have a new update”.'}
+      </Text>
+      {state === 'on' ? null : state === 'off' ? (
+        <Button label="Open Settings" variant="tinted" onPress={openSettings} />
+      ) : (
+        <Button label="Notify me" icon="notifications-outline" variant="tinted" loading={state === 'asking'} onPress={ask} />
+      )}
+    </Card>
   );
 }
 

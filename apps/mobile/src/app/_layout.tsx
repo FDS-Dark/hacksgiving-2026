@@ -8,6 +8,7 @@ import { LogoTile } from '@/components/LogoTile';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { usePush } from '@/lib/push';
 import { queryClient } from '@/services/queryClient';
+import { useSendPendingRequests } from '@/services/requests';
 import { space, useTheme } from '@/theme/tokens';
 
 export default function RootLayout() {
@@ -35,6 +36,8 @@ function RootStack() {
   const signedIn = SKIP_AUTH || status === 'signedIn';
   // Push handlers, once for the app; registration and taps need a real sign-in.
   usePush(status === 'signedIn');
+  // Requests written offline go out once the phone is back online (Figma E3).
+  useSendPendingRequests();
 
   if (status === 'loading' && !SKIP_AUTH) return <Splash />;
 

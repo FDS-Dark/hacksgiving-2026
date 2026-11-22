@@ -29,6 +29,8 @@ from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
 from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
+from databridge.community import CommunityDatabridge
+from databridge.request_push import RequestPushDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.opportunity import OpportunityDatabridge
@@ -38,6 +40,7 @@ from dependencies import (
     get_attachment_service,
     get_case_assistant,
     get_case_service,
+    get_community_service,
     get_opportunity_service,
     get_handoff_service,
     get_job_service,
@@ -46,6 +49,7 @@ from dependencies import (
     get_public_data_service,
     get_push_service,
     get_record_service,
+    get_request_push_service,
     get_resource_service,
     get_staff_service,
     get_task_service,
@@ -66,6 +70,8 @@ from services.notification import NotificationService
 from services.oncall import OncallService
 from services.push import PushService
 from services.record import RecordService
+from services.community import CommunityService
+from services.request_push import RequestPushService
 from services.resource import ResourceService
 from services.staff import StaffService
 from services.task import TaskService
@@ -200,6 +206,8 @@ async def api(database):
         get_training: lambda: TrainingDatabridge(executor),
         get_public_data_service: lambda: PublicDataService(PublicDataDatabridge(executor)),
         get_push_service: lambda: PushService(PushDatabridge(executor), notifications, executor),
+        get_community_service: lambda: CommunityService(CommunityDatabridge(executor)),
+        get_request_push_service: lambda: RequestPushService(RequestPushDatabridge(executor)),
     })
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client

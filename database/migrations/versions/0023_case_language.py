@@ -1,22 +1,22 @@
 """The language a resident writes in, per case (app.case_languages), so
-staff can reply in it. The SQL is in 0022_case_language.sql.
+staff can reply in it. The SQL is in 0023_case_language.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0023
+Revises: 0022
 Create Date: 2026-11-21
 """
 
 from alembic import context, op
 
-revision = "0022"
-down_revision = "0021"
+revision = "0023"
+down_revision = "0022"
 branch_labels = None
 depends_on = None
 
-# Every function 0022_case_language.sql creates. test_migrations.py checks the
+# Every function 0023_case_language.sql creates. test_migrations.py checks the
 # union of every revision's list against the database.
 FUNCTIONS = ("case_language_get", "case_language_set")
 

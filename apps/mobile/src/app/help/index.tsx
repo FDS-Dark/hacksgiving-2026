@@ -87,9 +87,10 @@ export default function GetHelpScreen() {
         safe_to_contact: method === 'none' ? null : safe,
       },
       {
-        onSuccess: ({ request }) => {
+        onSuccess: (result) => {
           success();
-          router.replace({ pathname: '/help/received', params: { id: request.id, number: String(request.number), method } });
+          if ('queued' in result) router.replace({ pathname: '/help/received', params: { queued: '1', method } });
+          else router.replace({ pathname: '/help/received', params: { id: result.request.id, number: String(result.request.number), method } });
         },
       },
     );
