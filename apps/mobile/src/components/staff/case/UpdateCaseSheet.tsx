@@ -70,7 +70,14 @@ function Form({ item: c, onDone }: { item: Case; onDone: () => void }) {
       <ChoiceRow label="Status" options={CASE_STATUSES} labels={STATUS_LABEL} value={status} onChange={(s) => s && setStatus(s)} colorOf={(s) => statusColor(theme, s)} />
 
       <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
-        <Summary label="Assigned to" value={ownerName} expanded={open === 'owner'} onPress={() => toggle('owner')} first />
+        <Summary
+          label="Assigned to"
+          // Say why Save may be waiting without opening the list.
+          value={workers.isPending ? `${ownerName} · loading staff…` : !workers.data ? `${ownerName} · couldn’t load staff` : ownerName}
+          expanded={open === 'owner'}
+          onPress={() => toggle('owner')}
+          first
+        />
         {open === 'owner' ? (
           workers.isPending ? (
             <View style={styles.state} accessible accessibilityLabel="Loading staff">

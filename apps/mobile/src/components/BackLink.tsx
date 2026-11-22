@@ -9,8 +9,9 @@ import { space, type, useTheme } from '@/theme/tokens';
  * promises a place it doesn't go (cognitive-load review: "Back to Queue"
  * opened another case):
  *
- * - `to` + `label` ("‹ Queue"): always goes to that screen. Pops whatever
- *   was pushed over it, then swaps it in, like a tab does.
+ * - `to` + `label` ("‹ Queue"): always goes to that screen. If it is under
+ *   this one in the stack, everything above it is popped (so the Queue keeps
+ *   its chip, search and scroll); if not, it replaces this screen.
  * - `fallback` only ("‹ Back"): follows history; `fallback` is for a deep
  *   link opened cold, with nothing to go back to. Any `label` is ignored:
  *   history can lead anywhere, so it only ever says "Back".
@@ -20,10 +21,8 @@ export function BackLink(props: { to: Href; label: string } | { fallback: Href; 
   const named = 'to' in props;
   const label = named ? props.label : 'Back';
   const go = () => {
-    if ('to' in props) {
-      if (router.canDismiss()) router.dismissAll();
-      router.replace(props.to);
-    } else if (router.canGoBack()) router.back();
+    if ('to' in props) router.dismissTo(props.to);
+    else if (router.canGoBack()) router.back();
     else router.replace(props.fallback);
   };
   return (

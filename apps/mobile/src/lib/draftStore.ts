@@ -1,15 +1,20 @@
 /**
- * Where drafts live on this device: one small JSON file each in the app's
- * documents folder on phones (a typed debrief can be 20,000 characters,
- * more than SecureStore is meant to hold), and localStorage on the web.
- * Drafts stay on the device and are never sent anywhere until saved.
+ * Where drafts live on this device: the Keychain/Keystore (SecureStore) on
+ * phones, like the sign-in session and saved requests, because a draft
+ * holds what the worker typed before any redaction (names, phone numbers).
+ * Kept to this device only: not migrated to a new phone from a backup.
+ * localStorage on the web. Drafts are never sent anywhere until saved.
+ *
+ * Expo sets no size limit, but some older iOS versions refused values over
+ * about 2 KB; a draft that can't be stored is skipped (DraftKeeper never
+ * lets a storage error reach the form).
  */
-import { File, Paths } from 'expo-file-system';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 import type { DraftStore } from '@/lib/drafts';
 
-const fileFor = (key: string) => new File(Paths.document, `${key.replace(/[^\w.-]/g, '_')}.json`);
+const OPTIONS: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
 export const deviceDraftStore: DraftStore =
   Platform.OS === 'web'
@@ -19,17 +24,7 @@ export const deviceDraftStore: DraftStore =
         remove: async (key) => globalThis.localStorage?.removeItem(key),
       }
     : {
-        get: async (key) => {
-          const file = fileFor(key);
-          return file.exists ? file.text() : null;
-        },
-        set: async (key, value) => {
-          const file = fileFor(key);
-          if (!file.exists) file.create();
-          await file.write(value);
-        },
-        remove: async (key) => {
-          const file = fileFor(key);
-          if (file.exists) file.delete();
-        },
+        get: (key) => SecureStore.getItemAsync(key, OPTIONS),
+        set: (key, value) => SecureStore.setItemAsync(key, value, OPTIONS),
+        remove: (key) => SecureStore.deleteItemAsync(key, OPTIONS),
       };

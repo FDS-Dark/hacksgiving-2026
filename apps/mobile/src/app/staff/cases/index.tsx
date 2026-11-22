@@ -121,7 +121,7 @@ export default function QueueScreen() {
               : isRecent
                 ? 'Cases you open, update, message or note show up here, newest first.'
                 : view === 'open'
-                  ? 'New requests from the community will show up here.'
+                  ? 'New cases show up here as they come in.'
                   : 'Pick another view above.'
           }
         />

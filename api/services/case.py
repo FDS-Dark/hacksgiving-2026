@@ -196,7 +196,7 @@ class CaseService:
                 label = guess.category.value.replace("_", " ")
                 await cases.add_update(
                     case.id, None, UpdateType.NOTE, Visibility.INTERNAL,
-                    f"Auto-triage suggested {label}.{urgent} {guess.reason}".strip(),
+                    f"Suggested type of help: {label}.{urgent} {guess.reason}".strip(),
                 )
             if urgent_note:
                 await cases.add_update(case.id, None, UpdateType.NOTE, Visibility.INTERNAL, urgent_note)
