@@ -1,7 +1,7 @@
 """The background worker: `python -m worker` (same image as the API, its own
-k8s Deployment). It runs jobs from the queue: task reminders always, and
-Phantom's pipeline stages when APP__OPENAI__API_KEY is set; plus the queue's
-upkeep. See worker/runner.py for how a job is handled.
+k8s Deployment). It runs jobs from the queue: task reminders and urgent
+escalation always, and Phantom's pipeline stages when APP__OPENAI__API_KEY
+is set; plus the queue's upkeep. See worker/runner.py for how a job is handled.
 
 Its wiring is its own, not dependencies.py: there's no request, no user,
 and it must not build the FastAPI app.
@@ -14,22 +14,32 @@ import signal
 import socket
 import time
 import uuid
+from zoneinfo import ZoneInfo
 
 from openai import AsyncOpenAI
 
+from adapters.push import PushProvider, make_push_provider
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.executor import PostgresExecutor
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
+from databridge.oncall import OncallDatabridge
+from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
+from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
 from engine.postgres_engine import PostgresDBEngine
 from logging_setup import configure_logging
 from services.extraction import RecordExtractor
 from services.notification import NotificationService
 from services.notification_jobs import TaskRemindStage
+from services.oncall import OncallService
+from services.oncall_jobs import EscalateStage, OfferStage, RemindStage
+from services.push_jobs import PushStage
 from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, TranscribeStage
 from services.redaction import PatternRedactor
+from services.staff import StaffService
+from services.task import TaskService
 from services.transcription import Transcriber
 from settings import config
 from worker.runner import Runner
@@ -41,14 +51,25 @@ PRUNE_EVERY_SECONDS = 3600
 
 
 def build_stages(
-    executor: PostgresExecutor, openai_api_key: str | None, storage: AudioStorage | None
+    executor: PostgresExecutor,
+    openai_api_key: str | None,
+    storage: AudioStorage | None,
+    push: PushProvider | None = None,
 ) -> tuple[list[Stage], AudioSweeper | None]:
     """The stages this worker runs, and the audio sweeper (None without
-    voice). Task reminders always run; Phantom's stages need the OpenAI key,
-    and transcription also needs object storage."""
+    voice). Task reminders and push always run (push without a provider
+    finishes its jobs without sending); Phantom's stages need the OpenAI
+    key, and transcription also needs object storage."""
     jobs, records = JobDatabridge(executor), RecordDatabridge(executor)
     notifications = NotificationService(NotificationDatabridge(executor), executor)
-    stages: list[Stage] = [TaskRemindStage(TaskDatabridge(executor), notifications)]
+    alerts, oncall = OncallDatabridge(executor), config.oncall
+    stages: list[Stage] = [
+        TaskRemindStage(TaskDatabridge(executor), notifications),
+        OfferStage(alerts, jobs, notifications, oncall.offer_seconds),
+        EscalateStage(alerts, jobs),
+        RemindStage(alerts, jobs, notifications, oncall.remind_seconds, oncall.max_reminders),
+    ]
+    stages.append(PushStage(PushDatabridge(executor), jobs, push, ZoneInfo(oncall.timezone)))
     if not openai_api_key:
         logger.warning("APP__OPENAI__API_KEY is not set: Phantom's stages are off (debriefs stay 'processing')")
         return stages, None
@@ -66,22 +87,37 @@ def build_stages(
     return stages, AudioSweeper(records, storage, config.storage.max_audio_age_seconds)
 
 
+def build_oncall(executor: PostgresExecutor) -> OncallService:
+    """For the upkeep's alert sweeper."""
+    jobs, notifications = JobDatabridge(executor), NotificationService(NotificationDatabridge(executor), executor)
+    tasks = TaskService(TaskDatabridge(executor), StaffService(StaffDatabridge(executor)), jobs, executor)
+    return OncallService(
+        OncallDatabridge(executor), executor, ZoneInfo(config.oncall.timezone),
+        jobs=jobs, notifications=notifications, tasks=tasks,
+    )
+
+
 async def upkeep(
     records: RecordDatabridge,
     jobs: JobDatabridge,
     notifications: NotificationDatabridge,
     sweeper: AudioSweeper | None,
     stop: asyncio.Event,
+    oncall: OncallService | None = None,
+    push: PushDatabridge | None = None,
 ) -> None:
-    """Fail records whose job died without telling them, delete audio that
-    should be gone, and prune old jobs and notifications. Safe on every
-    replica at once (each step is idempotent)."""
+    """Fail records whose job died without telling them, open on-call alerts
+    a code path missed, delete audio that should be gone, and prune old jobs
+    and notifications. Safe on every replica at once (each step is
+    idempotent)."""
     last_prune = 0.0
     while not stop.is_set():
         try:
             stalled = await records.fail_stalled(config.worker.stalled_record_seconds)
             if stalled:
                 logger.warning("Marked %d stalled record(s) failed", len(stalled))
+            if oncall is not None:
+                await oncall.sweep()
             if sweeper is not None:
                 swept = await sweeper.sweep()
                 if swept:
@@ -89,6 +125,11 @@ async def upkeep(
             if time.monotonic() - last_prune > PRUNE_EVERY_SECONDS:
                 pruned = await jobs.prune(config.worker.keep_jobs_days)
                 old = await notifications.prune(config.worker.keep_notifications_days)
+                if push is not None:
+                    devices = await push.prune_devices(config.worker.keep_push_devices_days)
+                    deliveries = await push.prune_deliveries(config.worker.keep_push_deliveries_days)
+                    if devices or deliveries:
+                        logger.info("Pruned %d unseen push device(s) and %d old delivery(ies)", devices, deliveries)
                 last_prune = time.monotonic()
                 if pruned or old:
                     logger.info("Pruned %d finished job(s) and %d old notification(s)", pruned, old)
@@ -129,7 +170,8 @@ async def main() -> None:
     storage = make_audio_storage(config.storage) if config.openai.api_key else None
     if storage is not None and config.storage.create_bucket:
         await storage.ensure_bucket()
-    stages, sweeper = build_stages(executor, config.openai.api_key, storage)
+    push = make_push_provider(config.push)
+    stages, sweeper = build_stages(executor, config.openai.api_key, storage, push)
     # Unique per process, readable in the jobs table: which pod holds a job.
     worker_id = f"{os.environ.get('HOSTNAME') or socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:6]}"
     runner = Runner(
@@ -152,10 +194,16 @@ async def main() -> None:
     health = await serve_health(runner, config.worker.health_port)
     try:
         await asyncio.gather(
-            runner.run(stop), upkeep(records, jobs, NotificationDatabridge(executor), sweeper, stop)
+            runner.run(stop),
+            upkeep(
+                records, jobs, NotificationDatabridge(executor), sweeper, stop, build_oncall(executor),
+                PushDatabridge(executor),
+            ),
         )
     finally:
         health.close()
+        if push is not None:
+            await push.close()
         await executor.dispose()
         logger.info("Worker %s stopped", worker_id)
 

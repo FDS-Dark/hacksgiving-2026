@@ -11,6 +11,7 @@ from datetime import datetime
 from uuid import UUID
 
 from databridge.executor import FunctionCaller, Transactions
+from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from errors import ApiError, not_found
 from models.case import UpdateType
@@ -24,6 +25,7 @@ from models.notification import (
     UpdateNotificationPreferences,
 )
 from models.user import AppUser
+from services.push_jobs import enqueue_push
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,16 @@ def render(facts: NotificationFacts) -> NotificationItem:
     """The title, body and route the app shows for one notification."""
     n = _case_ref(facts)
     route = f"/staff/cases/{facts.case_id}" if facts.case_id else None
-    if facts.kind == NotificationKind.ASSIGNMENT:
+    if facts.kind in (NotificationKind.URGENT_OFFER, NotificationKind.URGENT_UNANSWERED):
+        route = f"/staff/alerts/{facts.alert_id}" if facts.alert_id else route
+        if facts.kind == NotificationKind.URGENT_OFFER:
+            # The app shows the live countdown from the alert itself.
+            title, body = f"Urgent: {facts.case_title or 'a case'}", "You're on call. Open it to accept or pass."
+        else:
+            title, body = f"Nobody has accepted {n}", facts.case_title or ""
+    elif facts.kind == NotificationKind.TEST:
+        title, body, route = "Test notification", "Push works on this phone.", None
+    elif facts.kind == NotificationKind.ASSIGNMENT:
         title, body = f"{facts.actor_name or 'Someone'} assigned you {n}", facts.case_title or ""
     elif facts.kind == NotificationKind.REPLY:
         title = f"{facts.contact_name or 'The requester'} replied on {n}"
@@ -73,6 +84,7 @@ def render(facts: NotificationFacts) -> NotificationItem:
         case_id=facts.case_id,
         case_number=facts.case_number,
         task_id=facts.task_id,
+        alert_id=facts.alert_id,
         route=route,
         created_at=facts.created_at,
         read_at=facts.read_at,
@@ -96,17 +108,22 @@ class NotificationService:
         case_update_id: UUID | None = None,
         task_id: UUID | None = None,
         referral_id: UUID | None = None,
+        alert_id: UUID | None = None,
+        expires_at: datetime | None = None,
     ) -> bool:
         """One inbox row for `user_id`, inside `tx` (the change's own
-        transaction). Nobody to notify, the person who acted, or the same
-        event again: no row. True when a row was made."""
+        transaction), and its push job (services/push_jobs.py) in the same
+        transaction. Nobody to notify, the person who acted, or the same
+        event again: no row. True when a row was made. `expires_at`: an
+        urgent offer's end, after which its push is dropped."""
         if user_id is None or user_id == actor_id:
             return False
         created = await self.notifications.within(tx).create(
             user_id=user_id, kind=kind, dedupe_key=dedupe_key, case_id=case_id, case_update_id=case_update_id,
-            task_id=task_id, referral_id=referral_id, actor_id=actor_id,
+            task_id=task_id, referral_id=referral_id, actor_id=actor_id, alert_id=alert_id, expires_at=expires_at,
         )
         if created is not None:
+            await enqueue_push(JobDatabridge(tx), created.id)
             logger.info("Notification %s (%s) for user %s", created.id, kind.value, user_id)
         return created is not None
 

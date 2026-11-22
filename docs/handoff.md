@@ -1,6 +1,6 @@
 # Handoff: where things stand
 
-Last updated 2026-11-22 (on-call + inbox, phase 1). Update this file when you finish a piece of work or
+Last updated 2026-11-22 (push + urgent escalation, phases 2-3). Update this file when you finish a piece of work or
 change what's deployed, so the next person (or agent) starts from the truth.
 
 ## What the app is
@@ -28,7 +28,14 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   schedule at `/staff/oncall`, admins edit), and an in-app notifications inbox
   (`/staff/notifications`, the bell on Today; unread dots on a resident's
   Requests). Assignments, replies, messages, referral changes and tasks due in
-  30 min (job `task.remind`) create inbox rows. No push yet.
+  30 min (job `task.remind`) create inbox rows.
+- **Push + urgent escalation** (phases 2-3, migrations 0017-0018): pushes go
+  straight to APNs from the worker (`adapters/push.py`, job
+  `notification.push`; generic lock-screen text only). An open, unassigned
+  high/critical case opens an alert: offered to the primary on call, then the
+  backup or next shift, then every admin (5 min per step), with Accept / Pass
+  on `/staff/alerts/[id]`, red banners on Today and 3 reminders when nobody
+  accepts. Response times show in Insights.
 
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
@@ -41,8 +48,8 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0016** (`0015_oncall_shifts`,
-  `0016_notifications`; check `database/migrations/versions` for the rest).
+- Database: Alembic revisions through **0018** (`0015_oncall_shifts`,
+  `0016_notifications`, `0017_push`, `0018_urgent_alerts`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
@@ -62,10 +69,12 @@ for team D36AR26A38 on the Mac mini (`apps/mobile/README.md`).
 
 - APNs auth key `F4DVTY4Q2B` (team D36AR26A38, sandbox + production,
   team-scoped) is in Vault as `apns_key_p8`, `apns_key_id`, `apns_team_id`
-  in `secret/deployments/hacksgiving/app` and `.../staging/app`. Nothing reads
-  it until phase 2.
-- Xcode on the Mac mini is signed in to the team; automatic signing created a
-  push + time-sensitive profile for `com.austinkoske.hacksgiving`. Signing
+  in `secret/deployments/hacksgiving/app` and `.../staging/app`. The worker
+  reads it through its own optional ExternalSecret (`terraform/worker.tf`);
+  without it push is off, the worker still runs.
+- Xcode on the Mac mini is signed in to the team; automatic signing created
+  push + time-sensitive profiles for `com.austinkoske.hacksgiving` and
+  `.staging`. Signing
   works in Terminal and in the CI runner (the login session), not over SSH.
 
 ## Production
@@ -106,11 +115,11 @@ Easier:
   check with him).
 
 Needs focus:
-- **Push and urgent escalation** (phases 2-3 of
-  `docs/design/on-call-and-push.md`): APNs sending (direct, no Expo push
-  service), device tokens and the resident notification ask (R6), then urgent
-  cases offered to whoever is on call with Accept / Pass. Phase 3 needs the
-  team's answers to the design doc's questions 1-3 and 5.
+- **Verify push on a real phone**: deploy, install a signed build
+  (`ios-device-production`), then Me -> "Send a test notification". Escalation
+  defaults (high+critical page, 5 min steps, admins as fallback, 3 reminders)
+  are in `docs/design/push-escalation-contract.md`; change them there and in
+  `APP__ONCALL__*` if the team decides otherwise.
 - **Insights from debriefs** (step 3): patterns across records (repeat
   addresses, neighborhoods, times).
 - **Training and sharing with partners** (step 4).

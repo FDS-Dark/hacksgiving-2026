@@ -11,6 +11,7 @@ from databridge.case import CaseDatabridge
 from databridge.executor import FunctionCaller, Transactions
 from errors import ApiError, not_found
 from models.case import (
+    CLOSED_STATUSES,
     AddCaseUpdateRequest,
     AddReferralRequest,
     AnonymousRequestReceipt,
@@ -33,12 +34,14 @@ from models.case import (
     UpdateType,
     Visibility,
 )
-from models.case_enums import CaseCategory, CasePriority
+from models.case_enums import CaseCategory, CasePriority, pages_on_call
 from models.notification import NotificationKind
+from models.oncall import AlertStatus
 from models.staff import StaffMember
 from models.user import AppUser
 from services import access_code
 from services.notification import NotificationService
+from services.oncall import OncallService
 from services.resource import ResourceService
 from services.staff import StaffService
 from services.task import TaskService
@@ -81,7 +84,12 @@ class CaseService:
     status change for the requester, a referral's status) write the change
     and its notification in one transaction: `self.cases.within(tx)` and
     `notifications.notify(tx, ...)` share it. Nobody is notified of their
-    own action."""
+    own action.
+
+    A write that can make a case page on call (it is open, unassigned and
+    high or critical: `pages_on_call`) opens its alert in the same
+    transaction (`oncall.open_for_case`); one that assigns or closes it ends
+    the alert (`oncall.resolve_for_case`)."""
 
     def __init__(
         self,
@@ -91,6 +99,7 @@ class CaseService:
         tasks: TaskService,
         notifications: NotificationService,
         transactions: Transactions,
+        oncall: OncallService,
     ) -> None:
         self.cases = cases
         self.resources = resources
@@ -98,6 +107,7 @@ class CaseService:
         self.tasks = tasks
         self.notifications = notifications
         self.transactions = transactions
+        self.oncall = oncall
 
     # --- Public: the person asking for help ------------------------------------
 
@@ -128,6 +138,10 @@ class CaseService:
     async def _submit(
         self, body: SubmitRequest, triage: Triager | None, *, requester_id: UUID | None, access_code_hash: bytes | None
     ) -> Case:
+        """The triage (an AI call) runs first, outside any transaction; then
+        the case, its triage note and its on-call alert are one transaction.
+        The tasks come after the commit: a failure there never loses the
+        request."""
         guess: Triage | None = None
         if body.category is None and triage is not None:
             try:
@@ -138,30 +152,33 @@ class CaseService:
         priority = CasePriority.HIGH if guess and guess.urgent else CasePriority.MEDIUM
 
         contact_method = body.contact_method
-        case = await self.cases.create_request(
-            title=body.title or title_from(body.description),
-            description=body.description,
-            category=category,
-            priority=priority,
-            location=blank_to_none(body.location),
-            latitude=body.latitude,
-            longitude=body.longitude,
-            contact_name=blank_to_none(body.contact_name),
-            # "Don't contact me" means no number is kept either.
-            contact_phone=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_phone),
-            contact_email=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_email),
-            contact_method=contact_method,
-            safe_to_contact=None if contact_method == ContactMethod.NONE else body.safe_to_contact,
-            requester_id=requester_id,
-            access_code_hash=access_code_hash,
-        )
-        if guess:
-            urgent = " Flagged urgent." if guess.urgent else ""
-            label = guess.category.value.replace("_", " ")
-            await self.cases.add_update(
-                case.id, None, UpdateType.NOTE, Visibility.INTERNAL,
-                f"Auto-triage suggested {label}.{urgent} {guess.reason}".strip(),
+        async with self.transactions.transaction() as tx:
+            cases = self.cases.within(tx)
+            case = await cases.create_request(
+                title=body.title or title_from(body.description),
+                description=body.description,
+                category=category,
+                priority=priority,
+                location=blank_to_none(body.location),
+                latitude=body.latitude,
+                longitude=body.longitude,
+                contact_name=blank_to_none(body.contact_name),
+                # "Don't contact me" means no number is kept either.
+                contact_phone=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_phone),
+                contact_email=None if contact_method == ContactMethod.NONE else blank_to_none(body.contact_email),
+                contact_method=contact_method,
+                safe_to_contact=None if contact_method == ContactMethod.NONE else body.safe_to_contact,
+                requester_id=requester_id,
+                access_code_hash=access_code_hash,
             )
+            if guess:
+                urgent = " Flagged urgent." if guess.urgent else ""
+                label = guess.category.value.replace("_", " ")
+                await cases.add_update(
+                    case.id, None, UpdateType.NOTE, Visibility.INTERNAL,
+                    f"Auto-triage suggested {label}.{urgent} {guess.reason}".strip(),
+                )
+            await self.oncall.open_for_case(tx, case)
         await self.tasks.generate_for(case)
         return case
 
@@ -218,24 +235,28 @@ class CaseService:
             raise ApiError(422, "not_a_worker", "Cases can only be assigned to ComForce staff")
 
     async def create(self, worker: StaffMember, body: CreateCaseRequest) -> Case:
+        """A case staff open (also a confirmed Phantom record, which is
+        assigned to its author and so doesn't page)."""
         await self._check_assignee(body.assigned_worker_id)
-        case = await self.cases.create(
-            kind=body.kind,
-            title=body.title,
-            description=body.description,
-            category=body.category,
-            priority=body.priority,
-            source=CaseSource.WORKER,
-            location=blank_to_none(body.location),
-            latitude=body.latitude,
-            longitude=body.longitude,
-            contact_name=blank_to_none(body.contact_name),
-            contact_phone=blank_to_none(body.contact_phone),
-            contact_email=blank_to_none(body.contact_email),
-            requester_id=None,
-            assigned_worker_id=body.assigned_worker_id,
-            created_by=worker.id,
-        )
+        async with self.transactions.transaction() as tx:
+            case = await self.cases.within(tx).create(
+                kind=body.kind,
+                title=body.title,
+                description=body.description,
+                category=body.category,
+                priority=body.priority,
+                source=CaseSource.WORKER,
+                location=blank_to_none(body.location),
+                latitude=body.latitude,
+                longitude=body.longitude,
+                contact_name=blank_to_none(body.contact_name),
+                contact_phone=blank_to_none(body.contact_phone),
+                contact_email=blank_to_none(body.contact_email),
+                requester_id=None,
+                assigned_worker_id=body.assigned_worker_id,
+                created_by=worker.id,
+            )
+            await self.oncall.open_for_case(tx, case)
         logger.info("Case #%s opened by worker %s", case.number, worker.id)
         await self.tasks.generate_for(case)
         return case
@@ -268,7 +289,21 @@ class CaseService:
                 raise not_found("case")
             if changes.model_fields_set & {"assigned_worker_id", "status"}:
                 await self._notify_changes(tx, worker.id, case)
+            if changes.model_fields_set & {"assigned_worker_id", "status", "priority"}:
+                await self._sync_alert(tx, case)
         return case
+
+    async def _sync_alert(self, tx: FunctionCaller, case: Case) -> None:
+        """After a change of assignee, status or priority: a case that now
+        pages gets an alert (priority raised, unassigned, reopened); one that
+        doesn't ends its open alert, `resolved` when someone was assigned by
+        hand and `cancelled` otherwise (closed, or no longer urgent)."""
+        if pages_on_call(case):
+            await self.oncall.open_for_case(tx, case)
+        elif case.assigned_worker_id is not None and case.status not in CLOSED_STATUSES:
+            await self.oncall.resolve_for_case(tx, case.id, AlertStatus.RESOLVED)
+        else:
+            await self.oncall.resolve_for_case(tx, case.id, AlertStatus.CANCELLED)
 
     async def _notify_changes(self, tx: FunctionCaller, actor_id: UUID, case: Case) -> None:
         """case_update writes a history entry for each real change (none for

@@ -1,5 +1,6 @@
-"""On call: who is on now and next, the rota, and the "On call" switch.
-ComForce staff only (403 otherwise); changing the rota is for admins."""
+"""On call: who is on now and next, the rota, the "On call" switch, and
+urgent alerts (accept, pass, arrived). ComForce staff only (403 otherwise);
+changing the rota and the stats are for admins."""
 
 from typing import Annotated
 from uuid import UUID
@@ -8,7 +9,17 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import AwareDatetime
 
 from dependencies import get_current_admin, get_current_worker, get_oncall_service
-from models.oncall import CreateShiftRequest, OncallNow, OncallShift, ToggleOncallRequest, UpdateShiftRequest
+from models.oncall import (
+    CreateShiftRequest,
+    OncallAlert,
+    OncallAlertDetail,
+    OncallNow,
+    OncallShift,
+    OncallStats,
+    PassRequest,
+    ToggleOncallRequest,
+    UpdateShiftRequest,
+)
 from models.staff import StaffMember
 from services.oncall import OncallService
 
@@ -77,3 +88,74 @@ async def delete_shift(
     """Remove a shift (admins)."""
     await service.delete(shift_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- Urgent alerts -------------------------------------------------------------------
+
+
+@router.get("/alerts", response_model=list[OncallAlert])
+async def list_alerts(
+    open_only: bool = True,
+    worker: StaffMember = Depends(get_current_worker),
+    service: OncallService = Depends(get_oncall_service),
+) -> list[OncallAlert]:
+    """Urgent alerts, newest first: by default only open ones (offering or
+    unanswered). `my_offer` is the caller's own offer, if any."""
+    return await service.alerts(worker, open_only)
+
+
+@router.get("/alerts/{alert_id}", response_model=OncallAlertDetail)
+async def get_alert(
+    alert_id: UUID,
+    worker: StaffMember = Depends(get_current_worker),
+    service: OncallService = Depends(get_oncall_service),
+) -> OncallAlertDetail:
+    """One alert with what a responder needs (never contact details)."""
+    return await service.alert(worker, alert_id)
+
+
+@router.post("/alerts/{alert_id}/accept", response_model=OncallAlertDetail)
+async def accept_alert(
+    alert_id: UUID,
+    worker: StaffMember = Depends(get_current_worker),
+    service: OncallService = Depends(get_oncall_service),
+) -> OncallAlertDetail:
+    """Take the case: it's assigned to the caller and in progress. Any staff
+    member may while the alert is open; 409 `already_accepted` if someone
+    was first."""
+    return await service.accept(worker, alert_id)
+
+
+@router.post("/alerts/{alert_id}/pass", response_model=OncallAlertDetail)
+async def pass_alert(
+    alert_id: UUID,
+    body: PassRequest | None = None,
+    worker: StaffMember = Depends(get_current_worker),
+    service: OncallService = Depends(get_oncall_service),
+) -> OncallAlertDetail:
+    """Pass on your offer, optionally saying why. When everyone offered in
+    the step has passed, it moves to the next person at once."""
+    return await service.pass_offer(worker, alert_id, body or PassRequest())
+
+
+@router.post("/alerts/{alert_id}/arrived", response_model=OncallAlertDetail)
+async def alert_arrived(
+    alert_id: UUID,
+    worker: StaffMember = Depends(get_current_worker),
+    service: OncallService = Depends(get_oncall_service),
+) -> OncallAlertDetail:
+    """Mark "I've arrived" (only whoever accepted); written to the case history."""
+    return await service.arrived(worker, alert_id)
+
+
+@router.get("/stats", response_model=OncallStats)
+async def oncall_stats(
+    from_: Annotated[AwareDatetime, Query(alias="from")],
+    to: Annotated[AwareDatetime, Query()],
+    _: StaffMember = Depends(get_current_admin),
+    service: OncallService = Depends(get_oncall_service),
+) -> OncallStats:
+    """Alerts opened in [from, to): how many were accepted or went
+    unanswered, average time to accept and to arrive, passes by reason
+    (admins)."""
+    return await service.stats(from_, to)

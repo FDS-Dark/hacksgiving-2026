@@ -6,6 +6,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 
 import { LogoTile } from '@/components/LogoTile';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { usePush } from '@/lib/push';
 import { queryClient } from '@/services/queryClient';
 import { space, useTheme } from '@/theme/tokens';
 
@@ -32,6 +33,8 @@ function RootStack() {
   const theme = useTheme();
   const { status } = useAuth();
   const signedIn = SKIP_AUTH || status === 'signedIn';
+  // Push handlers, once for the app; registration and taps need a real sign-in.
+  usePush(status === 'signedIn');
 
   if (status === 'loading' && !SKIP_AUTH) return <Splash />;
 

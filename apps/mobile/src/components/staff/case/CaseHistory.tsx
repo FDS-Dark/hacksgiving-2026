@@ -15,6 +15,7 @@ const UPDATE_ICON: Record<CaseUpdate['update_type'], keyof typeof Ionicons.glyph
   assignment: 'person',
   referral: 'link',
   reply: 'arrow-undo',
+  alert: 'warning',
 };
 
 /** The case's History tab: every change, note and message, newest first. */

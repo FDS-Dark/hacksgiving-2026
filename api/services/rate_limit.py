@@ -18,6 +18,7 @@ class RateLimit:
     name: str
     limit: int
     window_seconds: float
+    message: str = "Too many requests. Try again in {retry} seconds, or call 911 in an emergency."
     _hits: dict[str, deque[float]] = field(default_factory=lambda: defaultdict(deque), repr=False)
 
     def check(self, key: str, now: float | None = None) -> None:
@@ -28,9 +29,7 @@ class RateLimit:
             hits.popleft()
         if len(hits) >= self.limit:
             retry = int(hits[0] + self.window_seconds - now) + 1
-            raise ApiError(
-                429, "rate_limited", f"Too many requests. Try again in {retry} seconds, or call 911 in an emergency."
-            )
+            raise ApiError(429, "rate_limited", self.message.format(retry=retry))
         hits.append(now)
         if len(self._hits) > 10_000:
             self._forget_idle(now)
@@ -54,3 +53,8 @@ anonymous_submissions = RateLimit("anonymous_submissions", limit=5, window_secon
 # Reading or replying with an access code: generous for a real person,
 # far too slow to guess a code.
 code_lookups = RateLimit("code_lookups", limit=60, window_seconds=600)
+# Test pushes, per signed-in user (routers/push.py).
+push_test_requests = RateLimit(
+    "push_test_requests", limit=3, window_seconds=600,
+    message="You've sent 3 test notifications in the last 10 minutes. Try again in {retry} seconds.",
+)

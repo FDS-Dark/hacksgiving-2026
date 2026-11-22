@@ -9,11 +9,18 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from databridge.job import JobDatabridge
+from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
+from databridge.staff import StaffDatabridge
+from databridge.task import TaskDatabridge
 from errors import ApiError
 from models.oncall import CreateShiftRequest, ToggleOncallRequest, UpdateShiftRequest
 from models.staff import Role, StaffMember
+from services.notification import NotificationService
 from services.oncall import OncallService, default_until
+from services.staff import StaffService
+from services.task import TaskService
 from tests.unit.fakes import FakeFunctions
 
 CHICAGO = ZoneInfo("America/Chicago")
@@ -42,7 +49,12 @@ def shift_row(
 
 
 def service(db: FakeFunctions) -> OncallService:
-    return OncallService(OncallDatabridge(db), db, CHICAGO, clock=lambda: NOW)
+    notifications = NotificationService(NotificationDatabridge(db), db)
+    tasks = TaskService(TaskDatabridge(db), StaffService(StaffDatabridge(db)), JobDatabridge(db), db)
+    return OncallService(
+        OncallDatabridge(db), db, CHICAGO, jobs=JobDatabridge(db), notifications=notifications, tasks=tasks,
+        clock=lambda: NOW,
+    )
 
 
 # --- The default end ------------------------------------------------------------

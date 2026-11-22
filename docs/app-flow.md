@@ -174,7 +174,7 @@ flowchart LR
 | Request received | resident | 1 | have (`/help/received`) |
 | My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
 | Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
-| Notifications ask, notification settings | resident | 2 | new (no push yet) |
+| Notifications ask, notification settings | resident | 2 | **built** (`/help/notifications` (R6), Me → Notifications) |
 | New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`, the Record tab) |
 | Review extraction | worker | 3 | **built** (`/staff/records/[id]`), with "Your debriefs" on Today |
 | My tasks | worker | 1 | new |
@@ -183,7 +183,7 @@ flowchart LR
 | New case | staff | 1 | **built** to Figma S6 (`/staff/cases/new`), with suggested service and urgency from `/v1/route` |
 | On-call toggle / schedule | worker, admin | 2 | **built** (Today card, Me → Shift, `/staff/oncall`) |
 | Notifications inbox (S7) | staff | 2 | **built** (`/staff/notifications`, in-app; push in phase 2) |
-| Push → accept / hand off | on-call | 2 | new |
+| Push → accept / hand off | on-call | 2 | **built** (`/staff/alerts/[id]`, Today banners, S7 urgent card) |
 | Insights | admin | 3 | **built** from case stats (`/staff/insights`); patterns wait on step 3 |
 | Team + roles | admin | 1 | **built** (`/staff/team`) |
 | Training | worker | 4 | archived prototype |
@@ -200,7 +200,7 @@ flowchart LR
 | `tasks` | generated work items per case | have (API, and the case's Tasks tab; workers can add tasks) |
 | `records` | captured text / transcript + extraction (no audio kept) | have (0011), with `jobs`, the background queue |
 | `oncall_shifts`, `notifications`, `notification_preferences` | who's on call, the in-app inbox | have (0015, 0016) |
-| `push_devices`, `notification_deliveries` | where to push, what was sent | new (phase 2) |
+| `push_devices`, `notification_deliveries`, `oncall_alerts`, `oncall_offers` | where to push, what was sent, urgent offers | have (0017, 0018) |
 | `shares` | what was shared with whom, when | new |
 | `training_*` | modules, completion | new |
 

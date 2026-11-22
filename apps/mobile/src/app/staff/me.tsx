@@ -1,18 +1,21 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { toApiError } from '@/api/client';
+
 import { Page } from '@/components/Page';
-import { Button, ErrorBanner, Group, Row, Toggle } from '@/components/ui';
+import { Button, ErrorBanner, Group, Notice, Row, Toggle } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/staff/kit';
-import { useOncallSwitch } from '@/components/staff/OncallCard';
+import { PushBlockedNotice, useOncallSwitch } from '@/components/staff/OncallCard';
 import { useAuth } from '@/lib/auth';
 import { hours } from '@/lib/format';
+import { ensurePermission, openSettings, usePushPermission, type PushPermission } from '@/lib/push';
 import { untilLabel } from '@/lib/oncall';
 import { ROLE_LABEL } from '@/lib/staff';
 import { showCommunityView } from '@/lib/viewMode';
 import { useInsights } from '@/services/cases';
-import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/services/notifications';
+import { useNotificationPreferences, useSendTestNotification, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useStaffStatus, useWorkers } from '@/services/staff';
 import { useStaffVoiceCalls } from '@/services/voice';
 import { space, useTheme } from '@/theme/tokens';
@@ -67,7 +70,10 @@ export default function StaffMeScreen() {
         />
       </Group>
       {oncall.error ? <ErrorBanner error={oncall.error} /> : null}
+      {oncall.pushBlocked ? <PushBlockedNotice /> : null}
       {updatePrefs.error ? <ErrorBanner error={updatePrefs.error} /> : null}
+
+      <PushSettings />
 
       <Group header="Manage">
         <Row
@@ -112,6 +118,52 @@ export default function StaffMeScreen() {
 
       <Button label="Sign out" variant="plain" onPress={signOut} />
     </Page>
+  );
+}
+
+const PERMISSION_LABEL: Record<PushPermission, string> = {
+  on: 'On',
+  off: 'Off',
+  blocked: 'Not allowed',
+  unsupported: 'Unavailable',
+};
+
+/** This phone's notification permission, and a test push to check the whole path. */
+function PushSettings() {
+  const permission = usePushPermission();
+  const test = useSendTestNotification();
+  const state = permission.state;
+  const rateLimited = test.error ? toApiError(test.error).status === 429 : false;
+  // Never asked: ask here. Refused: only Settings can turn it back on.
+  const onPress = state === 'off' ? () => void ensurePermission('staff') : state === 'blocked' ? openSettings : undefined;
+
+  return (
+    <>
+      <Group header="Notifications" footer={state === 'unsupported' ? 'Push needs the installed app; it doesn’t work in Expo Go. The bell still shows everything.' : undefined}>
+        <Row
+          title="Notifications"
+          icon="phone-portrait-outline"
+          detail={state ? PERMISSION_LABEL[state] : undefined}
+          accessory={onPress ? 'chevron' : undefined}
+          onPress={onPress}
+        />
+        <Row
+          title="Send a test notification"
+          icon="paper-plane-outline"
+          tone="accent"
+          onPress={() => test.mutate()}
+          disabled={test.isPending}
+        />
+      </Group>
+      {test.isSuccess ? <Notice icon="checkmark-circle-outline">Sent. It should arrive in a few seconds.</Notice> : null}
+      {rateLimited ? (
+        <Notice icon="time-outline" tone="warning">
+          You’ve sent a few tests already. Try again in a few minutes.
+        </Notice>
+      ) : test.error ? (
+        <ErrorBanner error={test.error} />
+      ) : null}
+    </>
   );
 }
 
