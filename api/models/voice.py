@@ -163,7 +163,6 @@ class VoiceCaseRequest(ApiModel):
     approved_summary: ApprovedCaseSummary
     category: CaseCategory
     urgency: VoiceCaseUrgency = Field(
-        default=VoiceCaseUrgency.ROUTINE,
         description="`urgent` (needs someone today, not an emergency) pages "
         "the ComForce worker on call. Emergencies are never submitted: they "
         "go to 911.",

@@ -27,9 +27,12 @@ resource "auth0_client" "mobile" {
   is_first_party  = true
   oidc_conformant = true
 
-  # Builds only. Expo Go's exp:// callbacks belong to the dev client (mobile_dev).
-  callbacks   = var.native_callback_urls
-  grant_types = ["authorization_code", "refresh_token"]
+  # Builds, plus the production website (<origin>/auth, and CORS for its
+  # token exchange). Expo Go's exp:// callbacks belong to the dev client (mobile_dev).
+  callbacks       = concat(var.native_callback_urls, [for o in var.web_origins : "${o}/auth"])
+  allowed_origins = var.web_origins
+  web_origins     = var.web_origins
+  grant_types     = ["authorization_code", "refresh_token"]
 
   jwt_configuration {
     alg = "RS256"

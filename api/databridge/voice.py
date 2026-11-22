@@ -22,9 +22,18 @@ from models.voice import (
     VoiceFollowUp,
     VoiceReferralDetail,
 )
+from models.case_enums import CaseCategory
 
 
 class VoiceDatabridge(Databridge):
+    async def directory_resources(
+        self, category: CaseCategory, query: str | None
+    ) -> list[VoiceResource]:
+        rows = await self._rows(
+            "voice_directory_resource_list", category=category, query=query
+        )
+        return [VoiceResource(**row) for row in rows]
+
     async def resources(
         self, category: str | None, language: str | None
     ) -> list[VoiceResource]:

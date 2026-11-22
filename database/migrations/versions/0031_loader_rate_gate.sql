@@ -9,11 +9,14 @@
 -- * loader_run_gate says when a source last asked, and when it was last
 --   refused. Skipped runs never asked, so they don't count.
 
-ALTER TABLE app.loader_runs ADD COLUMN rate_limited BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE app.loader_runs ADD COLUMN IF NOT EXISTS rate_limited BOOLEAN NOT NULL DEFAULT false;
 
-CREATE INDEX loader_runs_source_started_idx ON app.loader_runs (source, started_at DESC);
+CREATE INDEX IF NOT EXISTS loader_runs_source_started_idx ON app.loader_runs (source, started_at DESC);
 
-DROP FUNCTION app.loader_run_record(TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER, INTEGER, INTEGER, TEXT);
+-- Idempotent: a database that ran this as revision 0030 already has the new
+-- signature, so drop either one.
+DROP FUNCTION IF EXISTS app.loader_run_record(TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER, INTEGER, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS app.loader_run_record(TEXT, TEXT, TEXT, TIMESTAMPTZ, INTEGER, INTEGER, INTEGER, TEXT, BOOLEAN);
 
 -- Records one source's run and prunes runs older than 30 days.
 CREATE FUNCTION app.loader_run_record(
@@ -32,6 +35,7 @@ $$;
 -- When the source last asked its server (its latest attempt that wasn't
 -- skipped, by when it started), and when the server last refused it. One
 -- row, with nulls for a source that never asked.
+DROP FUNCTION IF EXISTS app.loader_run_gate(TEXT);
 CREATE FUNCTION app.loader_run_gate(p_source TEXT)
 RETURNS TABLE (last_attempt_at TIMESTAMPTZ, last_rate_limited_at TIMESTAMPTZ)
 LANGUAGE sql STABLE AS $$
