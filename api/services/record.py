@@ -14,7 +14,8 @@ from databridge.executor import Transactions
 from databridge.job import JobDatabridge
 from databridge.record import RecordDatabridge
 from errors import ApiError, not_found
-from models.case import AddCaseUpdateRequest, CreateCaseRequest, Visibility
+from models.case import AddCaseUpdateRequest, CreateCaseRequest, UpdateCaseRequest, Visibility
+from models.case_enums import CasePriority
 from models.record import (
     ConfirmedRecord,
     ConfirmRecordRequest,
@@ -33,6 +34,8 @@ from services.pipeline import AUDIO_CONTENT_TYPE, audio_key, enqueue_stage
 from services.task import TaskService
 
 logger = logging.getLogger(__name__)
+
+PRIORITY_RANK = {CasePriority.LOW: 0, CasePriority.MEDIUM: 1, CasePriority.HIGH: 2, CasePriority.CRITICAL: 3}
 
 
 def public(record: StoredRecord) -> Record:
@@ -64,20 +67,31 @@ class RecordService:
         self.upload_url_seconds = upload_url_seconds
 
     async def create(self, worker: StaffMember, body: CreateRecordRequest) -> Record:
+        if body.case_id is not None:
+            await self.cases.get(body.case_id)  # 404 for a case that doesn't exist
         # The record and its first job in one transaction: a record is never
         # left without the job that processes it, or the other way round.
         async with self.transactions.transaction() as tx:
-            record = await self.records.within(tx).create(worker.id, RecordSource.TEXT, body.text, RecordStage.REDACT)
+            records = self.records.within(tx)
+            record = await records.create(worker.id, RecordSource.TEXT, body.text, RecordStage.REDACT)
+            if body.case_id is not None:
+                record = await records.set_case(record.id, body.case_id) or record
             await enqueue_stage(self.jobs.within(tx), record.id, RecordStage.REDACT)
         logger.info("Record %s created by worker %s", record.id, worker.id)
         return public(record)
 
-    async def start_voice(self, worker: StaffMember) -> VoiceUpload:
+    async def start_voice(self, worker: StaffMember, case_id: UUID | None = None) -> VoiceUpload:
         """A voice record waiting for its audio, and a one-time URL to upload
         it to. Nothing is queued until the app says the upload finished; a
         record whose audio never arrives is failed by the worker's upkeep."""
         storage = self._storage()
-        record = await self.records.create(worker.id, RecordSource.AUDIO, None, RecordStage.UPLOAD)
+        if case_id is not None:
+            await self.cases.get(case_id)
+        async with self.transactions.transaction() as tx:
+            records = self.records.within(tx)
+            record = await records.create(worker.id, RecordSource.AUDIO, None, RecordStage.UPLOAD)
+            if case_id is not None:
+                record = await records.set_case(record.id, case_id) or record
         return VoiceUpload(
             record=public(record),
             upload_url=await storage.upload_url(audio_key(record.id), AUDIO_CONTENT_TYPE),
@@ -148,6 +162,9 @@ class RecordService:
                 raise ApiError(409, "record_busy", "This record is being saved right now")
             raise ApiError(409, "record_not_ready", "This record isn't ready to confirm yet")
 
+        if record.case_id is not None:
+            return await self._confirm_into(worker, record, body)
+
         try:
             case = await self.cases.create(
                 worker,
@@ -181,6 +198,43 @@ class RecordService:
             raise ApiError(409, "record_busy", "This record changed while it was being saved")
         logger.info("Record %s confirmed into case #%s", record_id, case.number)
         return ConfirmedRecord(record=public(confirmed), case=case)
+
+    async def _confirm_into(
+        self, worker: StaffMember, record: StoredRecord, body: ConfirmRecordRequest
+    ) -> ConfirmedRecord:
+        """A debrief about an existing case (taken from the Responding
+        screen): its summary goes on the case as an internal note, its tasks
+        are added, and the priority goes up if the debrief calls for more.
+        Nothing about the case is lowered or overwritten."""
+        assert record.case_id is not None
+        case_id = record.case_id
+        try:
+            case = await self.cases.get(case_id)
+            changes = UpdateCaseRequest()
+            if PRIORITY_RANK[body.priority] > PRIORITY_RANK[case.priority]:
+                changes.priority = body.priority
+            if body.location and not case.location:
+                changes.location = body.location
+            if changes.model_fields_set:
+                await self.cases.update(worker, case_id, changes)
+            note = f"Debrief: {body.title}" + (f"\n\n{body.summary}" if body.summary else "")
+            await self.cases.add_update(
+                worker, case_id, AddCaseUpdateRequest(content=note[:4000], visibility=Visibility.INTERNAL)
+            )
+            now = datetime.now(timezone.utc)
+            for task in body.tasks:
+                due = now + timedelta(hours=task.due_in_hours) if task.due_in_hours else None
+                await self.tasks.add(worker, case_id, CreateTaskRequest(title=task.title, due_at=due))
+            case = await self.cases.get(case_id)
+        except Exception:
+            await self.records.abort_confirm(record.id)
+            raise
+
+        confirmed = await self.records.finish_confirm(record.id, case_id)
+        if confirmed is None:  # pragma: no cover - only this call holds the record in confirming
+            raise ApiError(409, "record_busy", "This record changed while it was being saved")
+        logger.info("Record %s added to case #%s", record.id, case.number)
+        return ConfirmedRecord(record=public(confirmed), case=case, updated_existing=True)
 
     def _storage(self) -> AudioStorage:
         if self.storage is None:

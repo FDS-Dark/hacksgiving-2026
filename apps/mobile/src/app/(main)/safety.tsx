@@ -10,6 +10,7 @@ import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Sheet, Txt,
 import {
   INCIDENT_CATEGORIES,
   type IncidentCategory,
+  type SafetyWindowDays,
   type SafetyPoint,
   usePublicSafetyPoints,
 } from '@/services/publicSafety';
@@ -36,15 +37,14 @@ function approximateDistance(
 
 export default function SafetyScreen() {
   const theme = useTheme();
-  const safety = usePublicSafetyPoints();
+  const [windowDays, setWindowDays] = useState<SafetyWindowDays>(7);
   const [callWindow, setCallWindow] = useState<CallWindow>('6');
-  const [showCalls, setShowCalls] = useState(true);
   const [callCategory, setCallCategory] = useState<CallCategory | null>(null);
-  const calls = useCallFeed(Number(callWindow));
-  const mapCalls = useMemo(
-    () => (showCalls ? (calls.data?.calls ?? []).filter((call) => !callCategory || call.category === callCategory) : []),
-    [calls.data, callCategory, showCalls],
-  );
+  const [showReviewed, setShowReviewed] = useState(true);
+  const [showMpdCalls, setShowMpdCalls] = useState(true);
+  const [showMfdCalls, setShowMfdCalls] = useState(true);
+  const safety = usePublicSafetyPoints(windowDays);
+  const calls = useCallFeed(Number(callWindow), 'all');
   const [active, setActive] = useState<Set<IncidentCategory | 'community-report'>>(
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
@@ -56,7 +56,13 @@ export default function SafetyScreen() {
   const [note, setNote] = useState('');
 
   const allPoints = useMemo(() => [...safety.points, ...reports], [reports, safety.points]);
-  const visiblePoints = useMemo(() => allPoints.filter((point) => active.has(point.category)), [active, allPoints]);
+  const visiblePoints = useMemo(() => allPoints.filter((point) => (
+    active.has(point.category) && (point.category === 'community-report' || showReviewed)
+  )), [active, allPoints, showReviewed]);
+  const visibleCalls = useMemo(() => (calls.data?.calls ?? []).filter((call) => (
+    (call.source === 'mfd_calls' ? showMfdCalls : showMpdCalls)
+    && (!callCategory || call.category === callCategory)
+  )), [calls.data, callCategory, showMfdCalls, showMpdCalls]);
   const updatedAt = safety.dataUpdatedAt ? new Date(safety.dataUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading';
   const allSelected = INCIDENT_CATEGORIES.every((item) => active.has(item.id));
   const areaSummary = useMemo(() => {
@@ -114,13 +120,26 @@ export default function SafetyScreen() {
     <>
       <Page refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
         <BackLink label="Back" fallback="/nearby" />
-        <ResidentHeader title="Safety map" />
+        <ResidentHeader title="Neighborhood awareness" />
         <Txt variant="subhead" tone="secondary">Recent, generalized public safety activity from official public feeds.</Txt>
 
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
             <Txt variant="section">Recent activity</Txt>
             <Txt variant="footnote" tone="secondary">Updated {updatedAt}</Txt>
+          </View>
+          <Chips>
+            <Chip label="Past 7 days" active={windowDays === 7} onPress={() => setWindowDays(7)} />
+            <Chip label="30 days" active={windowDays === 30} onPress={() => setWindowDays(30)} />
+            <Chip label="1 year" active={windowDays === 365} onPress={() => setWindowDays(365)} />
+          </Chips>
+          <View style={{ gap: space.sm }}>
+            <Txt variant="headline">Map layers</Txt>
+            <Chips>
+              <Chip label="Reviewed incidents" color={theme.accent} active={showReviewed} onPress={() => setShowReviewed((value) => !value)} />
+              <Chip label="Police calls" color="#D76B18" active={showMpdCalls} onPress={() => setShowMpdCalls((value) => !value)} />
+              <Chip label="Fire & EMS" color="#B93815" active={showMfdCalls} onPress={() => setShowMfdCalls((value) => !value)} />
+            </Chips>
           </View>
           <Chips scroll>
             <Chip label="All" active={allSelected} onPress={toggleAll} />
@@ -141,15 +160,8 @@ export default function SafetyScreen() {
               count={reports.length}
               onPress={() => toggle('community-report')}
             />
-            <Chip
-              label="911 calls"
-              color="#141A1D"
-              active={showCalls}
-              count={calls.data?.summary.mapped}
-              onPress={() => setShowCalls((value) => !value)}
-            />
           </Chips>
-          <SafetyMap points={visiblePoints} recentCalls={mapCalls} onSelectArea={setSelectedArea} />
+          <SafetyMap points={visiblePoints} recentCalls={visibleCalls} windowDays={windowDays} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
             Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls at approximate locations—not confirmed crimes. All locations are generalized.
           </Txt>
@@ -157,7 +169,7 @@ export default function SafetyScreen() {
             <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
           ) : (
             <Txt variant="footnote" tone="secondary">
-              MPD-reviewed reported incidents · updated daily · may lag several weeks. Source: City of Milwaukee (CC BY).
+              MPD-reviewed reported incidents · updated daily · may lag several weeks. Police calls are delayed 30–90 minutes; fire/EMS calls 15–105 minutes. Source: City of Milwaukee (CC BY).
             </Txt>
           )}
         </View>
@@ -169,7 +181,10 @@ export default function SafetyScreen() {
           selectedCategory={callCategory}
           onSelectCategory={(value) => {
             setCallCategory(value);
-            if (value) setShowCalls(true);
+            if (value) {
+              setShowMpdCalls(true);
+              setShowMfdCalls(true);
+            }
           }}
           loading={calls.isPending}
           error={calls.isError}
@@ -262,7 +277,7 @@ export default function SafetyScreen() {
                 <View style={[styles.areaSummary, { backgroundColor: theme.accentSoft }]}>
                   <Ionicons name="analytics-outline" size={24} color={theme.accent} />
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Txt variant="headline">{areaSummary.total} reports in the past 30 days</Txt>
+                    <Txt variant="headline">{areaSummary.total} reports in the past {windowDays === 365 ? 'year' : `${windowDays} days`}</Txt>
                     {areaSummary.top ? (
                       <Txt variant="subhead" tone="secondary">Most common: {areaSummary.top[0]} ({areaSummary.top[1]})</Txt>
                     ) : null}
@@ -287,7 +302,7 @@ export default function SafetyScreen() {
                         ? 'Reported today'
                         : point.ageInDays
                           ? `Reported ${point.ageInDays} days ago`
-                          : 'Reported within 30 days';
+                          : `Reported within ${windowDays === 365 ? 'the past year' : `${windowDays} days`}`;
                     return (
                       <Row
                         key={point.id}
@@ -307,9 +322,9 @@ export default function SafetyScreen() {
                   <Row
                     key={call.id}
                     title={call.nature}
-                    subtitle={`${call.occurredAt} · District ${call.district}`}
+                    subtitle={`${call.occurredAt} · ${call.source === 'mfd_calls' ? 'MFD fire/EMS' : `MPD${call.district ? ` District ${call.district}` : ''}`} · ${call.status}`}
                     detail={approximateDistance(selectedArea.center, call)}
-                    tile={{ icon: 'phone-alert', color: '#D76B18' }}
+                    tile={{ icon: call.source === 'mfd_calls' ? 'fire-truck' : 'phone-alert', color: call.source === 'mfd_calls' ? '#B93815' : '#D76B18' }}
                   />
                 ))}
               </Group>

@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CASE_CATEGORIES, type Case, type CaseCategory, type Resource } from '@/api/types';
+import { CASE_CATEGORIES, type Case, type CaseCategory, type Resource, type ResourceSuggestion } from '@/api/types';
 import { Button, ErrorBanner, Field, Loading, Sheet } from '@/components/ui';
 import { ChoiceRow, SampleBadge } from '@/components/staff/kit';
 import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/cases';
@@ -51,7 +51,7 @@ export function ResourcePicker({ visible, onClose, item: c, referred }: { visibl
           <Text style={[type.subhead, { color: theme.textSecondary }]}>No suggestions left; search the directory below.</Text>
         ) : null}
         {suggestions.map((s) => (
-          <ResourceRow key={s.resource.id} resource={s.resource} reason={s.reason} onAdd={() => addResource(s.resource)} busy={add.isPending} />
+          <ResourceRow key={s.resource.id} resource={s.resource} reason={s.reason} outcomes={s.outcomes} stop={s.nearest_stop} onAdd={() => addResource(s.resource)} busy={add.isPending} />
         ))}
       </View>
 
@@ -71,7 +71,30 @@ export function ResourcePicker({ visible, onClose, item: c, referred }: { visibl
   );
 }
 
-function ResourceRow({ resource: r, reason, onAdd, added, busy }: { resource: Resource; reason?: string; onAdd: () => void; added?: boolean; busy: boolean }) {
+/** "Bus: Wisconsin & Water, 0.1 mi (30, GRE)". */
+export function stopLine(stop: NonNullable<ResourceSuggestion['nearest_stop']>) {
+  const miles = stop.distance_m / 1609.34;
+  const distance = miles < 0.1 ? 'steps away' : `${miles.toFixed(1)} mi`;
+  return `Bus: ${stop.name}, ${distance}${stop.routes.length ? ` (${stop.routes.slice(0, 4).join(', ')})` : ''}`;
+}
+
+function ResourceRow({
+  resource: r,
+  reason,
+  outcomes,
+  stop,
+  onAdd,
+  added,
+  busy,
+}: {
+  resource: Resource;
+  reason?: string;
+  outcomes?: ResourceSuggestion['outcomes'];
+  stop?: ResourceSuggestion['nearest_stop'];
+  onAdd: () => void;
+  added?: boolean;
+  busy: boolean;
+}) {
   const theme = useTheme();
   return (
     <View style={[styles.resource, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
@@ -82,6 +105,20 @@ function ResourceRow({ resource: r, reason, onAdd, added, busy }: { resource: Re
           {r.is_sample ? <SampleBadge /> : null}
         </View>
         {reason ? <Text style={[type.footnote, { color: theme.accent }]}>{reason}</Text> : null}
+        {outcomes && outcomes.success_rate !== null ? (
+          <View style={styles.row}>
+            <Ionicons name="trending-up-outline" size={13} color={theme.textSecondary} />
+            <Text style={[type.caption, { color: theme.textSecondary }]}>
+              Helped {outcomes.helped} of {outcomes.helped + outcomes.declined} referred ({Math.round((outcomes.success_rate ?? 0) * 100)}%)
+            </Text>
+          </View>
+        ) : null}
+        {stop ? (
+          <View style={styles.row}>
+            <Ionicons name="bus-outline" size={13} color={theme.textSecondary} />
+            <Text style={[type.caption, { color: theme.textSecondary, flexShrink: 1 }]}>{stopLine(stop)}</Text>
+          </View>
+        ) : null}
         <Text style={[type.footnote, { color: theme.textSecondary }]} numberOfLines={2}>{r.description}</Text>
         <Text style={[type.caption, { color: theme.textSecondary }]}>
           {[r.neighborhood, r.hours, r.phone].filter(Boolean).join(' · ')}

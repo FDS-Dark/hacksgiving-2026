@@ -13,3 +13,8 @@ web_hostname = "hacksgiving-staging.austinkoske.com"
 cors_origins = ["https://hacksgiving-staging.austinkoske.com", "http://localhost:8081"]
 # The data loader's source credentials (optional; see loader.tf).
 loader_secret_path = "deployments/hacksgiving/staging/loader"
+# Staging's live sources run hourly, and it asks MPD at most hourly: it shares
+# MPD's 10 requests per 30 minutes per IP with production (every 5 minutes)
+# and local dev (every 15).
+loader_live_schedule            = "0 * * * *"
+loader_mpd_min_interval_seconds = 3600

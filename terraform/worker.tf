@@ -5,8 +5,8 @@
 # claimed with SKIP LOCKED).
 #
 # Needs `openai_api_key` in the app secret in Vault (var.app_secret_path),
-# beside jwt_secret. Until it's there, that ExternalSecret can't render and the
-# worker doesn't start; the API is unaffected.
+# beside jwt_secret. Until it's there, that ExternalSecret can't render, the
+# worker doesn't start, and the API keeps serving with AI routing unavailable.
 #
 # The APNs push key (`apns_key_p8`, the .p8 file's contents, plus
 # `apns_key_id` and `apns_team_id`, same Vault secret) has its own

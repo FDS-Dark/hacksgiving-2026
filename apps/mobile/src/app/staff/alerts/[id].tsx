@@ -242,6 +242,16 @@ function Responding({
         <Group>
           <CaseLinkRow caseId={a.case_id} caseNumber={a.case_number} />
         </Group>
+        {/* A debrief taken here is about this case: confirming it adds its notes and tasks to the case. */}
+        <Button
+          label={a.arrived_at ? 'Debrief this response' : 'Debrief'}
+          icon="mic-outline"
+          size="lg"
+          variant={a.arrived_at ? 'filled' : 'tinted'}
+          onPress={() =>
+            router.push({ pathname: '/staff/records/new', params: { caseId: a.case_id, caseNumber: String(a.case_number) } })
+          }
+        />
       </Page>
       <View style={[styles.actions, styles.actionsRow, { borderTopColor: theme.separator, backgroundColor: theme.bg }]}>
         <Call911Button style={{ flex: 1 }} />

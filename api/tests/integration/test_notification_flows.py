@@ -72,6 +72,31 @@ async def test_an_assignment_by_someone_else_notifies_and_assigning_yourself_doe
     assert [i["case_id"] for i in await _inbox(api, maria)] == [case["id"]]
 
 
+async def test_a_handoff_note_goes_with_a_reassignment(api, people):
+    devon, maria = people["devon"], people["maria"]
+    case = await _case(api, devon, assigned_worker_id=devon["id"])
+    note = "Ride is booked for 7am; she prefers calls after 5. Insurance card still needed."
+
+    moved = await api.patch(f"/v1/cases/{case['id']}", headers=devon["headers"],
+                            json={"assigned_worker_id": maria["id"], "handoff_note": note})
+    assert moved.status_code == 200, moved.text
+
+    detail = (await api.get(f"/v1/cases/{case['id']}", headers=maria["headers"])).json()
+    handoffs = [u for u in detail["updates"] if u["content"] == f"Handoff note: {note}"]
+    assert len(handoffs) == 1 and handoffs[0]["visibility"] == "internal"
+    (item,) = await _inbox(api, maria)
+    assert item["kind"] == "assignment" and item["case_id"] == case["id"]
+
+    # A note alone, without a change of owner, is refused.
+    alone = await api.patch(f"/v1/cases/{case['id']}", headers=devon["headers"], json={"handoff_note": note})
+    assert alone.status_code == 422
+    # Re-assigning the same person writes no second note.
+    await api.patch(f"/v1/cases/{case['id']}", headers=devon["headers"],
+                    json={"assigned_worker_id": maria["id"], "handoff_note": note})
+    detail = (await api.get(f"/v1/cases/{case['id']}", headers=maria["headers"])).json()
+    assert sum(u["content"].startswith("Handoff note:") for u in detail["updates"]) == 1
+
+
 async def test_a_resident_reply_notifies_the_assignee(api, people):
     devon, maria, keisha = people["devon"], people["maria"], people["keisha"]
     request = await _request(api, keisha)

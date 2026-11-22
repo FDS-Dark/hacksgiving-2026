@@ -20,7 +20,7 @@ export default function PartnerScreen() {
   if (partner.error) {
     return (
       <Page>
-        <BackLink label="Partners" fallback="/staff/partners" />
+        <BackLink label="Partners" fallback="/staff/partners/index" />
         <ErrorBanner error={partner.error} onRetry={() => partner.refetch()} />
       </Page>
     );
@@ -30,7 +30,7 @@ export default function PartnerScreen() {
 
   return (
     <Page refreshing={partner.isRefetching} onRefresh={() => partner.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label="Partners" fallback="/staff/partners" />
+      <BackLink label="Partners" fallback="/staff/partners/index" />
       <PageTitle title={p.name} subtitle={p.active ? undefined : 'Inactive'} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {p.accepts_shares ? <Badge label="Accepts shared cases" color={theme.accent} icon="shield-checkmark-outline" /> : <Badge label="No sharing agreement" color={theme.textSecondary} />}

@@ -157,6 +157,30 @@ class CaseDetail(ApiModel):
     tasks: list[Task]
 
 
+class PersonMatch(StrEnum):
+    ACCOUNT = "account"
+    PHONE = "phone"
+    EMAIL = "email"
+
+
+class Person(ApiModel):
+    """The resident behind a case, as staff see them: their contact details
+    (from their newest case that has them) and every case that looks like
+    the same person. There's no separate person record; see 0024."""
+
+    name: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    contact_method: ContactMethod | None = None
+    safe_to_contact: bool | None = None
+    has_account: bool = Field(description="They have a resident account (their own requests).")
+    matched_by: list[PersonMatch] = Field(description="How the other cases were matched to this person.")
+    first_contact_at: datetime
+    last_activity_at: datetime
+    open_cases: int
+    cases: list[Case] = Field(description="Newest first; includes the case asked about.")
+
+
 class CreateCaseRequest(ApiModel):
     """A case a worker opens (a phone call, a walk-in, an incident)."""
 
@@ -186,6 +210,14 @@ class UpdateCaseRequest(ApiModel):
     status: CaseStatus | None = None
     location: Location | None = None
     assigned_worker_id: UUID | None = None
+    handoff_note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)] | None = (
+        Field(
+            default=None,
+            description="With a change of `assigned_worker_id`: what the new owner needs to know (where things "
+            "stand, what's next). Saved on the case's history as an internal note and sent with the assignment "
+            "notification. Ignored when the owner doesn't actually change.",
+        )
+    )
 
     @property
     def unassign(self) -> bool:

@@ -76,7 +76,7 @@ async def test_list_skips_folders_and_pages():
     assert [json.loads(r.content)["offset"] for r in seen] == [0, 1000]
 
 
-async def test_the_bucket_is_created_private_and_audio_only_once():
+async def test_the_bucket_is_created_private_for_audio_and_attachments_once():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "GET":
             return httpx.Response(400, json={"error": "Bucket not found"})
@@ -85,11 +85,26 @@ async def test_the_bucket_is_created_private_and_audio_only_once():
     s, seen = storage(handler)
     await s.ensure_bucket()
     body = json.loads(seen[1].content)
-    assert body["public"] is False and body["file_size_limit"] == 4096 and "audio/mp4" in body["allowed_mime_types"]
+    assert seen[1].method == "POST" and body["public"] is False and body["file_size_limit"] == 4096
+    assert "audio/mp4" in body["allowed_mime_types"] and "application/pdf" in body["allowed_mime_types"]
 
     exists, seen = storage(lambda r: httpx.Response(200, json={"id": "phantom-audio"}))
     await exists.ensure_bucket()
-    assert len(seen) == 1  # already there: nothing created
+    # Already there: nothing created, but its allowed types are widened (it stays private).
+    assert [r.method for r in seen] == ["GET", "PUT"]
+    widened = json.loads(seen[1].content)
+    assert widened["public"] is False and "image/jpeg" in widened["allowed_mime_types"]
+
+
+async def test_a_signed_download_link():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path.endswith("/object/sign/phantom-audio/attachments/c/a")
+        assert json.loads(request.content) == {"expiresIn": 300}
+        return httpx.Response(200, json={"signedURL": "/object/sign/phantom-audio/attachments/c/a?token=t"})
+
+    s, _ = storage(handler)
+    url = await s.download_url("attachments/c/a", 300)
+    assert url == "https://abc123.supabase.co/storage/v1/object/sign/phantom-audio/attachments/c/a?token=t"
 
 
 def test_the_backend_is_chosen_from_config():

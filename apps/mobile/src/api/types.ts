@@ -79,6 +79,8 @@ export type IncidentPoint = Schemas['IncidentPoint'];
 export type DispatchCall = Schemas['DispatchCall'];
 export type TransitNearby = Schemas['TransitNearby'];
 export type WeatherAlert = Schemas['WeatherAlert'];
+export type CrimeTrendPoint = Schemas['CrimeTrendPoint'];
+export type SourceHealth = Schemas['SourceHealth'];
 export type CommunityAlerts = Schemas['CommunityAlerts-Output'];
 export type DraftMessage = Schemas['DraftMessage'];
 export type StaffStatus = Schemas['StaffStatus'];
@@ -115,6 +117,9 @@ export type VoiceFollowUp = Schemas['VoiceFollowUp'];
 export type VoiceReferralDetail = Schemas['VoiceReferralDetail'];
 export type VoiceCallReview = Schemas['VoiceCallReview'];
 export type VoiceCallReviewDetail = Schemas['VoiceCallReviewDetail'];
+export type VoiceImpactSummary = Schemas['ImpactSummary'];
+export type VoiceOutcomeStatus = Schemas['OutcomeStatus'];
+export type RecordVoiceOutcome = Schemas['RecordOutcomeRequest'];
 export type VoiceDashboard = Schemas['VoiceDashboard'];
 export type ImpactSummary = Schemas['ImpactSummary'];
 
@@ -162,3 +167,25 @@ export type OncallStats = Schemas['OncallStats'];
 
 // ── Push devices (/v1/me/devices) ─────────────────────────────────────────
 export type RegisterDevice = Schemas['RegisterDeviceRequest'];
+
+// ── Shift handoffs ───────────────────────────────────────────────────────
+export type ShiftHandoff = Schemas['ShiftHandoff'];
+export type HandoffBrief = Schemas['HandoffBrief'];
+
+// ── The person behind a case ─────────────────────────────────────────────
+export type Person = Schemas['Person'];
+
+// ── Reply languages ──────────────────────────────────────────────────────
+export type CaseLanguage = Schemas['CaseLanguage'];
+export type LanguageOption = Schemas['LanguageOption'];
+export type Translation = Schemas['Translation'];
+export type ResourceSuggestion = Schemas['ResourceSuggestion'];
+
+// ── Attachments and knowledge search ─────────────────────────────────────
+export type Attachment = Schemas['Attachment'];
+export type AttachmentUpload = Schemas['AttachmentUpload'];
+export type AttachmentLink = Schemas['AttachmentLink'];
+export type KnowledgeHit = Schemas['KnowledgeHit'];
+
+// ── Training ─────────────────────────────────────────────────────────────
+export type TrainingProgress = Schemas['TrainingProgress'];

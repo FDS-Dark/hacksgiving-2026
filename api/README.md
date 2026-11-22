@@ -186,11 +186,10 @@ POST /v1/records/{id}/confirm  ->  case + planned tasks + the reviewed tasks
 
 ## Data loader
 
-`python -m loader` keeps outside data current: opportunities and resources
-(USAJOBS, CareerOneStop, Hunger Task Force) and public data (NIBRS incidents,
-MPD/MFD calls, boundaries, MCTS transit, NWS alerts, CDC PLACES, FBI
-trends), served at `/v1/public-data`. Daily sources run nightly, live ones
-every 5 minutes. See [docs/data-loader.md](../docs/data-loader.md).
+The data that comes from outside (imported opportunities and resources, and
+the public data served at `/v1/public-data`) is written by a separate batch
+app, [`dataloader/`](../dataloader/README.md), through its own stored
+functions. The API only reads it. See [docs/data-loader.md](../docs/data-loader.md).
 
 ## Local development
 

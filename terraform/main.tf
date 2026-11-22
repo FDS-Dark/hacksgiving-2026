@@ -211,6 +211,15 @@ resource "kubernetes_deployment" "hacksgiving_api" {
           env_from {
             secret_ref { name = "${local.api_name}-jwt" }
           }
+          # The synchronous Get Help and ElevenLabs routing endpoints use the
+          # same classifier as the worker. Keep this optional so the rest of
+          # the API can still start in an environment where AI is disabled.
+          env_from {
+            secret_ref {
+              name     = "${local.worker_name}-openai"
+              optional = true
+            }
+          }
           # Voice debriefs (storage.tf). Optional: without it voice is off.
           env_from {
             secret_ref {

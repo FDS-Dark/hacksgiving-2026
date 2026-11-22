@@ -31,6 +31,11 @@ function heatCells(points: SafetyPoint[]) {
   return [...cells.values()];
 }
 
+function callColor(category: RecentCall['category'], source: RecentCall['source']) {
+  if (source === 'mfd_calls') return '#B93815';
+  return callCategory(category).color;
+}
+
 function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
   const cells = heatCells(points);
   const maxCount = Math.max(1, ...cells.map((cell) => cell.count));
@@ -56,9 +61,9 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
       lat: call.latitude,
       lng: call.longitude,
       label: call.nature,
-      color: callCategory(call.category).color,
+      color: callColor(call.category, call.source),
       time: call.occurredAt,
-      detail: `911 call · ${callCategory(call.category).label} · District ${call.district} · ${call.status}`,
+      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : `MPD · ${callCategory(call.category).label}`} dispatch${call.district ? ` · District ${call.district}` : ''} · ${call.status}`,
     }));
 
   return `<!doctype html>
@@ -88,11 +93,13 @@ map.on('click',e=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'ar
 export function SafetyMap({
   points,
   recentCalls = [],
+  windowDays = 30,
   onSelectArea,
   callsOnly = false,
 }: {
   points: SafetyPoint[];
   recentCalls?: RecentCall[];
+  windowDays?: number;
   onSelectArea?: (selection: AreaSelection) => void;
   /** Just the 911-call layer (the staff map): a legend for calls only. */
   callsOnly?: boolean;
@@ -140,7 +147,7 @@ export function SafetyMap({
       ) : (
       <View style={[styles.legend, { backgroundColor: `${theme.surface}F2` }]} pointerEvents="none">
         <Txt variant="caption" tone="secondary" style={{ fontWeight: '700' }}>
-          {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · 30 DAYS
+          {points.filter((point) => point.category !== 'community-report').length} INCIDENTS · {windowDays === 365 ? '1 YEAR' : `${windowDays} DAYS`}
           {recentCalls.length ? ` · ${recentCalls.filter((call) => call.latitude !== undefined).length} 911 CALLS` : ''}
         </Txt>
         <View style={styles.legendRow}>

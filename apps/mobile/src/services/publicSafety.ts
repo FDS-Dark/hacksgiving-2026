@@ -54,17 +54,19 @@ export function toSafetyPoints(incidents: IncidentPoint[], now = Date.now()): Sa
   });
 }
 
-async function fetchSafetyPoints() {
-  return toSafetyPoints(await request<IncidentPoint[]>('/public-data/incidents?days=30&limit=10000', { auth: false }));
+export type SafetyWindowDays = 7 | 30 | 365;
+
+async function fetchSafetyPoints(days: SafetyWindowDays) {
+  return toSafetyPoints(await request<IncidentPoint[]>(`/public-data/incidents?days=${days}&limit=10000`, { auth: false }));
 }
 
-/** MPD-reviewed incidents from the last 30 days (updated daily; they can
+/** MPD-reviewed incidents for the selected window (updated daily; they can
  *  lag several weeks). When the API can't be reached the map shows nothing,
  *  never made-up points. */
-export function usePublicSafetyPoints() {
+export function usePublicSafetyPoints(days: SafetyWindowDays = 30) {
   const query = useQuery({
-    queryKey: ['public-safety-points'],
-    queryFn: fetchSafetyPoints,
+    queryKey: ['public-safety-points', days],
+    queryFn: () => fetchSafetyPoints(days),
     staleTime: 1000 * 60 * 15,
     refetchInterval: 1000 * 60 * 15,
     refetchOnMount: 'always',

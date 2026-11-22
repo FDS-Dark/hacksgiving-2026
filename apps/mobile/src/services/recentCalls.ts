@@ -93,8 +93,11 @@ export type RecentCall = {
   district: string;
   nature: string;
   status: string;
+  source: 'mpd_calls' | 'mfd_calls';
   category: CallCategory;
 };
+
+export type DispatchSource = RecentCall['source'] | 'all';
 
 export type CountItem = { label: string; count: number };
 
@@ -132,6 +135,7 @@ export function toRecentCall(call: DispatchCall): RecentCall {
     district: call.district ?? '',
     nature: call.category,
     status: call.status ?? '',
+    source: call.source === 'mfd_calls' ? 'mfd_calls' : 'mpd_calls',
     category: categoryOf(call.category),
     ...(call.latitude != null && call.longitude != null ? { latitude: call.latitude, longitude: call.longitude } : {}),
   };
@@ -140,7 +144,7 @@ export function toRecentCall(call: DispatchCall): RecentCall {
 /** The crime-related calls, in the shape the map and alerts use. */
 export function toRecentCalls(calls: DispatchCall[]): RecentCall[] {
   return calls
-    .filter((call) => ALERT_TERMS.some((term) => call.category.toLowerCase().includes(term)))
+    .filter((call) => call.source === 'mfd_calls' || ALERT_TERMS.some((term) => call.category.toLowerCase().includes(term)))
     .map(toRecentCall);
 }
 
@@ -196,20 +200,22 @@ export function toCallFeed(calls: DispatchCall[], hours: number, fetchedAt: numb
 }
 
 export const callsApi = {
-  list: (hours: number, limit = 1000) =>
-    request<DispatchCall[]>(`/public-data/calls?source=mpd_calls&hours=${hours}&limit=${limit}`, { auth: false }),
+  list: (hours: number, limit = 1000, source: DispatchSource = 'mpd_calls') => {
+    const sourceParam = source === 'all' ? '' : `source=${source}&`;
+    return request<DispatchCall[]>(`/public-data/calls?${sourceParam}hours=${hours}&limit=${limit}`, { auth: false });
+  },
 };
 
 export const callKeys = {
   all: ['mpd-calls'] as const,
-  window: (hours: number) => ['mpd-calls', hours] as const,
+  window: (hours: number, source: DispatchSource) => ['dispatch-calls', source, hours] as const,
 };
 
 /** Every call in the window, with its summary. */
-export function useCallFeed(hours: number) {
+export function useCallFeed(hours: number, source: DispatchSource = 'mpd_calls') {
   return useQuery({
-    queryKey: callKeys.window(hours),
-    queryFn: async () => ({ calls: await callsApi.list(hours), fetchedAt: Date.now() }),
+    queryKey: callKeys.window(hours, source),
+    queryFn: async () => ({ calls: await callsApi.list(hours, 1000, source), fetchedAt: Date.now() }),
     select: (data) => toCallFeed(data.calls, hours, data.fetchedAt),
     refetchInterval: CALL_REFRESH_MS,
     staleTime: CALL_REFRESH_MS / 2,

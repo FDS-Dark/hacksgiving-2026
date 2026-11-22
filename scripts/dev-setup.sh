@@ -6,8 +6,9 @@
 #   scripts/dev-setup.sh          then   scripts/dev.sh
 #
 # What it does:
-#   1. env files: database/.env, api/.env, apps/mobile/.env.local (from the
-#      examples if missing), with your Tailscale (or LAN) IP for the phone
+#   1. env files: database/.env, api/.env, dataloader/.env,
+#      apps/mobile/.env.local (from the examples if missing), with your
+#      Tailscale (or LAN) IP for the phone
 #   2. Postgres and the local storage container (Docker)
 #   3. migrations + the dev user
 #   4. Python and Node dependencies
@@ -85,6 +86,7 @@ ok "your phone will reach this machine at $IP"
 step "Env files"
 [ -f database/.env ] || { cp database/.env.example database/.env; ok "created database/.env"; }
 [ -f api/.env ] || { cp api/example.env api/.env; ok "created api/.env"; }
+[ -f dataloader/.env ] || { cp dataloader/example.env dataloader/.env; ok "created dataloader/.env"; }
 [ -f apps/mobile/.env.local ] || { cp apps/mobile/.env.example apps/mobile/.env.local; ok "created apps/mobile/.env.local"; }
 
 # Local storage (voice debriefs): the container's keys, and the API's matching ones.
@@ -108,6 +110,16 @@ if [ "$(get api/.env APP__STORAGE__PUBLIC_ENDPOINT_URL)" != "http://$IP:8333" ];
   warn "api/.env APP__STORAGE__PUBLIC_ENDPOINT_URL is $(get api/.env APP__STORAGE__PUBLIC_ENDPOINT_URL), not http://$IP:8333 (fine if that's on purpose)"
 fi
 
+# The data loader connects like the API: the same database settings, and
+# any source keys (APP__LOADER__*) still in api/.env from before it moved.
+# A value already set in dataloader/.env (other than the example's) stays.
+for key in $(grep -oE '^APP__(DATABASE|LOADER)__[A-Z_]+' api/.env | sort -u); do
+  value=$(get api/.env "$key")
+  if [ -n "$value" ] && [ "$value" != "$(get dataloader/.env "$key")" ]; then
+    ensure dataloader/.env "$key" "$value" "$(get dataloader/example.env "$key")"
+  fi
+done
+
 # The phone app: the API at this machine's IP, and the team's Auth0 dev tenant.
 ensure apps/mobile/.env.local EXPO_PUBLIC_API_BASE_URL "http://$IP:8000/v1" "http://localhost:8000/v1"
 ensure apps/mobile/.env.local REACT_NATIVE_PACKAGER_HOSTNAME "$IP"
@@ -128,6 +140,7 @@ ok "Postgres and storage are up (storage on :8333)"
 
 step "Python dependencies and migrations"
 (cd api && uv sync --quiet)
+(cd dataloader && uv sync --quiet)
 (cd database && ./migrate.sh --local)
 ok "database is at $(cd database && ./migrate.sh current 2>/dev/null | tail -1)"
 
@@ -148,4 +161,4 @@ if ! grep -q "$CALLBACK" auth0/terraform/variables.tf 2>/dev/null; then
 fi
 [ "$todo" -eq 0 ] && ok "nothing; you're set"
 
-printf '\nStart everything (API, worker, Expo):  scripts/dev.sh\n'
+printf '\nStart everything (API, worker, data loader, Expo):  scripts/dev.sh\n'

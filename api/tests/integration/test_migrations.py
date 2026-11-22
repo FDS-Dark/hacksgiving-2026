@@ -101,6 +101,15 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0019_resident_lane",
             "0020_case_places",
             "0021_partners_and_outreach",
+            "0022_case_debriefs",
+            "0023_shift_handoffs",
+            "0024_person_cases",
+            "0025_case_language",
+            "0026_referral_outcomes",
+            "0027_attachments_and_knowledge",
+            "0028_training_progress",
+            "0029_voice_safety_and_follow_up",
+            "0030_loader_rate_gate",
         )
         for name in _revision(revision).FUNCTIONS
     }

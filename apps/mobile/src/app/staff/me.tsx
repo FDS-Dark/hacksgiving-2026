@@ -76,6 +76,10 @@ export default function StaffMeScreen() {
       <PushSettings />
 
       <Group header="Manage">
+        <Row title="My tasks" icon="checkbox-outline" accessory="chevron" onPress={() => router.push('/staff/tasks')} />
+        <Row title="Shift handoffs" icon="swap-horizontal-outline" accessory="chevron" onPress={() => router.push('/staff/handoffs')} />
+        <Row title="Knowledge search" icon="search-outline" accessory="chevron" onPress={() => router.push('/staff/knowledge')} />
+        <Row title="Training" icon="school-outline" accessory="chevron" onPress={() => router.push('/staff/training')} />
         <Row
           title="Team & roles"
           icon="people-outline"
@@ -104,7 +108,7 @@ export default function StaffMeScreen() {
           accessory="chevron"
           onPress={() => router.push('/staff/calls/index')}
         />
-        <Row title="Partners" subtitle="Organizations we refer to and share cases with" icon="business-outline" accessory="chevron" onPress={() => router.push('/staff/partners')} />
+        <Row title="Partners" subtitle="Organizations we refer to and share cases with" icon="business-outline" accessory="chevron" onPress={() => router.push('/staff/partners/index')} />
         <Row title="Need vs coverage" subtitle="Where people need help, and where our cases are" icon="map-outline" accessory="chevron" onPress={() => router.push('/staff/areas')} />
         <Row
           title="Volunteer & job opportunities"
@@ -148,6 +152,12 @@ function PushSettings() {
           detail={state ? PERMISSION_LABEL[state] : undefined}
           accessory={onPress ? 'chevron' : undefined}
           onPress={onPress}
+        />
+        <Row
+          title="Quiet hours & muting"
+          icon="moon-outline"
+          accessory="chevron"
+          onPress={() => router.push('/staff/notification-settings')}
         />
         <Row
           title="Send a test notification"

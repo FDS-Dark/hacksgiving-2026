@@ -54,7 +54,7 @@ export default function MeTab() {
       <PhoneCalls />
 
       <Group header="Your neighborhood">
-        <Row title="Safety map" icon="map-outline" accessory="chevron" onPress={() => router.push('/safety')} />
+        <Row title="Neighborhood awareness" icon="map-outline" accessory="chevron" onPress={() => router.push('/safety')} />
         <Row title="Safety alerts" icon="notifications-outline" accessory="chevron" onPress={() => router.push('/alerts')} />
       </Group>
 
