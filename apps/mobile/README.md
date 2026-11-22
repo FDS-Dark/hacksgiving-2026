@@ -159,6 +159,23 @@ share a network. A developer-signed install lasts about a year. For
 TestFlight, use Xcode → Product → Archive → Distribute App, and bump
 `ios.buildNumber` in `app.json` for each upload.
 
+## TestFlight (teammates' phones)
+
+The production app goes to TestFlight from the Mac mini: the `testflight` CI
+job (manual; on `main` after a production deploy, or on any branch to try a
+build) runs `scripts/testflight.sh`. It archives a release with a new build
+number (UTC time) and uploads it with an App Store Connect API key (Admin
+role), which also lets Apple sign it in the cloud: the Mac needs no
+distribution certificate. The key is on the Mac at
+`~/.appstoreconnect/AuthKey_<ASC_KEY_ID>.p8`; `ASC_KEY_ID` and `ASC_ISSUER_ID`
+are CI/CD variables. Signing needs the Mac's login session (the CI runner or
+Terminal there), not SSH.
+
+After Apple processes a build (10-30 min) it shows up in the TestFlight app
+for the internal testing group. To add a teammate: invite them in App Store
+Connect (Users and Access), add them to the group under TestFlight, and have
+them install TestFlight and accept.
+
 ## Staging app
 
 **Hacksgiving Staging** is a second app that installs next to Hacksgiving. It has its

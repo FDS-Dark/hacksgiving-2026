@@ -16,7 +16,7 @@
 #      Terraform M2M app (domain, client_id, client_secret) for auth0/terraform.
 #
 # Promotion: feature branch -> staging -> main. Both are protected branches.
-#   feature branches, MRs into staging   tests + plans against staging
+#   MRs into staging                     tests + plans against staging
 #   staging (after a merge)              migrate-staging, tf-apply-staging and
 #                                        smoke-staging run on their own
 #   MRs from staging into main           tests + plans against production
@@ -27,17 +27,16 @@
 # state. Migrations run before the deploy that needs them. resource_group
 # keeps each one serial.
 
-# One pipeline per change: the merge request pipeline while an MR is open,
-# the branch pipeline otherwise.
+# One pipeline per change. A feature branch runs only in its merge request:
+# pushing a branch before opening the MR runs nothing.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     # The deploy branches always get a branch pipeline, even while an MR
     # from them is open (staging usually has one open into main).
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_BRANCH == $STAGING_BRANCH
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - if: $CI_COMMIT_BRANCH
+    # "Run pipeline" in the UI still works on any branch.
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 default:
   tags:
@@ -591,5 +590,31 @@ ios-device-production:
     - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      allow_failure: true
+    - when: never
+
+# ── TestFlight ───────────────────────────────────────────────────────────
+# Archives the production app on the Mac mini and uploads it to TestFlight
+# (apps/mobile/scripts/testflight.sh). By hand, after a production deploy.
+# The App Store Connect API key is on the Mac
+# (~/.appstoreconnect/AuthKey_<id>.p8); ASC_KEY_ID and ASC_ISSUER_ID are CI/CD
+# variables. Internal testers get the build once Apple has processed it.
+testflight:
+  stage: f-device
+  tags: [macos, ios, macmini]
+  timeout: 60m
+  resource_group: macmini-physical-ios-device
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - source /Users/austink/devops-mac/scripts/ci-job-env.sh
+  script:
+    - apps/mobile/scripts/testflight.sh
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    # main, or any MR to try a build: always by hand.
+    - if: $CI_COMMIT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
       allow_failure: true
     - when: never
