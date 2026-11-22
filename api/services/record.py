@@ -30,7 +30,7 @@ from models.record import (
 from models.staff import Role, StaffMember
 from models.task import CreateTaskRequest
 from services.case import CaseService
-from services.redaction import PHONE, find_phone
+from services.redaction import find_phone
 from services.pipeline import AUDIO_CONTENT_TYPE, audio_key, enqueue_stage
 from services.task import TaskService
 
@@ -174,18 +174,17 @@ class RecordService:
         # the debrief, so it isn't in the extraction. The app offers it on the
         # review screen; a client that leaves the field out entirely still
         # gets it from what the author wrote. (An explicit null means the
-        # author removed it.)
+        # author removed it.) The number goes only on the case contact and its
+        # call task, never into the title, summary or task titles: those reach
+        # the AI assistant and push notifications.
         phone = body.contact_phone if "contact_phone" in body.model_fields_set else find_phone(record.raw_text)
-
-        def restore(text: str) -> str:
-            return text.replace(PHONE, phone) if phone else text
 
         try:
             case = await self.cases.create(
                 worker,
                 CreateCaseRequest(
-                    title=restore(body.title)[:160],
-                    description=restore(body.summary),
+                    title=body.title,
+                    description=body.summary,
                     kind=body.kind,
                     category=body.category,
                     priority=body.priority,
@@ -198,7 +197,7 @@ class RecordService:
             now = datetime.now(timezone.utc)
             for task in body.tasks:
                 due = now + timedelta(hours=task.due_in_hours) if task.due_in_hours else None
-                await self.tasks.add(worker, case.id, CreateTaskRequest(title=restore(task.title)[:160], due_at=due))
+                await self.tasks.add(worker, case.id, CreateTaskRequest(title=task.title, due_at=due))
             await self.cases.add_update(
                 worker,
                 case.id,

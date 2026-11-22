@@ -158,10 +158,12 @@ async def test_the_callback_phone_in_a_debrief_reaches_the_case_and_its_task(api
 
     detail = (await api.get(f"/v1/cases/{case_id}", headers=worker_api)).json()
     assert detail["case"]["contact_phone"] == "414-555-0182"
-    assert "414-555-0182" in detail["case"]["description"]
     tasks = {t["title"]: t for t in detail["tasks"]}
     assert "414-555-0182" in tasks["Call the requester"]["detail"]
-    assert "Call back at 414-555-0182" in tasks
+    # The number stays out of the title, summary and task titles: those reach
+    # the AI assistant and push notifications.
+    assert "555-0182" not in detail["case"]["title"] + detail["case"]["description"]
+    assert all("555-0182" not in t["title"] for t in detail["tasks"])
 
 
 async def test_a_debrief_confirmed_without_a_contact_field_keeps_the_phone(api, worker_api, pipeline):
