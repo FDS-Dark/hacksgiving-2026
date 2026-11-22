@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ComForce MKE</title>
+<link rel="stylesheet" href="assets/deck.css">
+</head>
+<body>
+<!--
+  ComForce MKE keynote: one night, one family, under four minutes.
+  Open this file in Chrome and press F for full screen (that keypress also lets the call audio play).
+  Keys: → Space PageDown Enter next · ← PageUp Backspace back · F full screen
+        number + Enter jump · Home/End · B black · N notes · P presenter · H hairline
+  Swap screenshots and videos in assets/manifest.js. Missing clips show a placeholder
+  and swap in by themselves when the file appears.
+  Each slide's speaker notes are in its <aside class="notes">; [click] marks a build.
+  data-time is the corner timestamp; data-target is the beat's target window on the timer.
+  data-target="appendix" marks the untimed appendix after the close (for Q&A); End skips it.
+-->
+<div id="viewport">
+<div id="stage">
+
+  <!-- 00 · Title (pre-show; not timed) -->
+  <section class="slide s-title" data-title="Title (pre-show)" data-target="pre-show">
+    <div class="glow drift" style="--gx:70%;--gy:46%;--gs:1700px;--go:.95"></div>
+    <div class="glow drift2" style="--gx:22%;--gy:70%;--gs:1100px;--go:.45"></div>
+    <div class="hero">
+      <div class="phone t-res rise" data-asset="titleResident" style="--d:500"></div>
+      <div class="phone t-staff rise" data-asset="titleStaff" style="--d:700"></div>
+    </div>
+    <div class="wordmark rise" style="--d:100">ComForce<span class="mke">MKE</span></div>
+    <div class="tagline rise" style="--d:350">Help that moves as fast as the need.</div>
+    <div class="byline rise" style="--d:900">Austin Koske<span class="dot">·</span>Ava Latoria<span class="dot">·</span>Miles Trompeter<span class="dot">·</span>Peter Kwaterski<br><span class="event">Hacksgiving 2026</span></div>
+    <aside class="notes"><span class="dir">Pre-show: leave this up while people sit down. When you're ready, press → to go to the call (black stage, 3:01 AM), then click again to start it. The timer starts with the call.</span></aside>
+  </section>
+
+  <!-- 01 · The call -->
+  <section class="slide s-call" data-title="The call" data-hook="call" data-time="3:01 AM" data-target="0:00-0:33">
+    <canvas class="call-canvas" width="1920" height="620"></canvas>
+    <div class="call-status"><span class="dot"></span><span class="txt">Call connected</span></div>
+    <div class="captions"><div class="cap-track"></div></div>
+    <div class="call-hint">Click to start the call audio</div>
+    <span data-build="1" hidden></span>
+    <aside class="notes">It's 3:01 in the morning. <span class="dir">Wait a beat, then</span> <span class="cue">[click]</span> <span class="dir">to start the call. Say nothing: it cuts to the next slide by itself at "alerted."</span></aside>
+  </section>
+
+  <!-- 02 · Someone always answers -->
+  <section class="slide s-push" data-title="Someone always answers" data-hook="push" data-time="3:02 AM" data-target="0:33-0:50">
+    <div class="glow" style="--gx:78%;--gy:52%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise" style="--d:7700">Someone<br>always answers.</h1>
+    <div class="cam"><div class="phone dark push-phone" data-asset="push"></div></div>
+    <div class="ladder" data-build="1">
+      <div class="rung" style="--i:0"><span class="node">1</span><span class="name">Primary on call</span><span class="mins">5 min</span></div>
+      <div class="rung" style="--i:1"><span class="node">2</span><span class="name">Backup</span><span class="mins">5 min</span></div>
+      <div class="rung" style="--i:2"><span class="node">3</span><span class="name">Every admin</span><span class="mins">5 min</span></div>
+    </div>
+    <aside class="notes">Devon is on call. The lock screen says Urgent request, and nothing else: no case details. One tap opens the alert, and Devon taps Accept and head there. <span class="cue">[click]</span> No answer in five minutes? It moves to the backup, then to every admin.</aside>
+  </section>
+
+  <!-- 03 · The case builds itself -->
+  <section class="slide s-case" data-title="The case builds itself" data-time="3:10 AM" data-target="0:50-1:12">
+    <div class="glow" style="--gx:80%;--gy:50%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise">The case<br>builds itself.</h1>
+    <div class="stack">
+      <div class="card glass rise" style="--d:350">
+        <div class="lab"><i data-icon="list"></i>Tasks, already there</div>
+        <div class="task"><i data-icon="circle"></i>Offer a ride to the shelter</div>
+        <div class="task"><i data-icon="circle"></i>Check in with the family after breakfast</div>
+      </div>
+      <div class="card glass chat" data-build="1">
+        <div class="lab"><i data-icon="users"></i>Rapid response team</div>
+        <div class="msg"><b>Devon</b>Anyone know a family bed tonight near 27th &amp; Center?</div>
+        <div class="msg"><b>Maya</b>Sojourner has two open tonight. I'll call ahead.</div>
+      </div>
+      <div class="card glass shelter" data-build="2">
+        <div class="big"><i data-icon="home"></i>Sojourner Family Peace Center</div>
+        <div class="chips"><span class="chip on"><i data-icon="bed"></i>2 beds open</span><span class="chip"><i data-icon="bus"></i>Nearest bus stop · Walnut &amp; 6th</span></div>
+      </div>
+    </div>
+    <div class="phone p-back rise" data-asset="staffToday" style="--d:150"></div>
+    <div class="phone p-main rise p-case" data-asset="caseMgmt" style="--d:300"></div>
+    <div class="phone p-main p-chat" data-asset="teamChat"></div>
+    <aside class="notes">By 3:10, the case has built itself: her words, where she is, and tasks like offering a ride to the shelter. <span class="cue">[click]</span> In the rapid response chat, Devon asks for a family bed near 27th and Center. Maya says Sojourner has two open, and she'll call ahead. <span class="cue">[click]</span> The case shows Sojourner with two beds open and the nearest bus stop.</aside>
+  </section>
+
+  <!-- 04 · She's not left wondering -->
+  <section class="slide s-res" data-title="She's not left wondering" data-time="3:20 AM" data-target="1:12-1:28">
+    <div class="glow" style="--gx:80%;--gy:50%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise">She's not<br>left wondering.</h1>
+    <div class="stack">
+      <div class="card glass rise" style="--d:350">
+        <div class="lab"><i data-icon="user-check"></i>Her request</div>
+        <div class="big">With Devon at ComForce</div>
+        <div class="sub">Devon is working on it.</div>
+      </div>
+      <div class="card glass rise" style="--d:500">
+        <div class="lab"><i data-icon="globe"></i>A reply in her language</div>
+        <div class="es">“Sí. Encontré una habitación familiar para ustedes esta noche en Sojourner.”</div>
+      </div>
+      <div class="pills" data-build="1">
+        <span class="pill red"><i data-icon="x"></i>Quick exit</span>
+        <span class="pill"><i data-icon="user-x"></i>1 tap to ask · no account</span>
+      </div>
+    </div>
+    <div class="phone p-main rise" data-asset="resident" style="--d:250"></div>
+    <aside class="notes">On her phone, her request says Devon is working on it, and Devon's message arrives in Spanish, her language. <span class="cue">[click]</span> Every screen has a Quick exit, and anyone can ask with one tap, no account needed.</aside>
+  </section>
+
+  <!-- 05 · Shared only with her consent -->
+  <section class="slide s-consent" data-title="Shared only with her consent" data-time="3:20 AM" data-target="1:28-1:42">
+    <div class="glow" style="--gx:72%;--gy:50%;--gs:1400px;--go:.75"></div>
+    <h1 class="hl rise">Shared only<br>with her consent.</h1>
+    <div class="steps rise" style="--d:350">
+      <span class="st">Suggested</span><i data-icon="chev"></i><span class="st on">She agreed</span><i data-icon="chev"></i><span class="st">Shared</span><i data-icon="chev"></i><span class="st">Accepted</span>
+    </div>
+    <div class="flow">
+      <div class="nodeb her rise" style="--d:500"><i data-icon="user"></i><span>Her request</span></div>
+      <div class="link-line rise" style="--d:800"><span class="shield"><i data-icon="shield"></i></span><span class="cap">with her consent</span></div>
+      <div class="nodeb partner rise" style="--d:1000"><i data-icon="home"></i><span>Sojourner Family<br>Peace Center</span></div>
+      <div class="logged" data-build="1"><span class="pill"><i data-icon="list"></i>Every share logged</span><span class="pill"><i data-icon="undo"></i>She can revoke it</span></div>
+      <div class="wall" data-build="1"></div>
+      <div class="nodeb police" data-build="1"><i data-icon="badge"></i><span>Law enforcement</span><em>Kept separate</em></div>
+    </div>
+    <div class="phone p-main rise" data-asset="partners" style="--d:250"></div>
+    <aside class="notes">Sojourner can help, but only if she agrees. Devon sends the partner request, she says yes, and Sojourner accepts. <span class="cue">[click]</span> Every share is logged, and she can revoke it. Community work stays separate from law enforcement.</aside>
+  </section>
+
+  <!-- 06 · Just talk (a real spoken debrief) -->
+  <section class="slide s-phantom" data-title="Just talk. We'll write it down." data-time="4:05 AM" data-target="1:42-1:57">
+    <div class="glow" style="--gx:80%;--gy:50%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise">Just talk.<br>We'll write it down.</h1>
+    <div class="pipe">
+      <div class="prow" style="--d:0"><i class="pn" data-icon="mic"></i><span class="pl">Say what happened</span></div>
+      <div class="prow key" style="--d:600"><i class="pn" data-icon="eye-off"></i><span class="pl">Names removed</span><span class="note">before the AI sees anything</span></div>
+      <div class="prow" style="--d:1200"><i class="pn" data-icon="sparkle"></i><span class="pl">The AI drafts</span></div>
+      <div class="prow" style="--d:1800"><i class="pn" data-icon="user-check"></i><span class="pl">You confirm</span><span class="note plain">audio deleted</span></div>
+    </div>
+    <div class="phone p-main rise" data-asset="phantomVoice" style="--d:250"></div>
+    <aside class="notes">At 4:05, after the visit, Devon records a debrief out loud: no typing. <span class="dir">Stop talking and let Devon's recording play (about 11 seconds); this clip has sound.</span> Names are removed before the AI sees anything. The AI drafts the case update, Devon checks it before anything is saved, and the audio is deleted.</aside>
+  </section>
+
+  <!-- 07 · Help arrived -->
+  <section class="slide s-arrived" data-title="Help arrived" data-time="7:00 AM" data-target="1:57-2:10">
+    <div class="glow" style="--gx:80%;--gy:50%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise">Help arrived.</h1>
+    <div class="stack">
+      <div class="card glass rise" style="--d:350">
+        <div class="lab"><i data-icon="package"></i>Referral outcome</div>
+        <div class="big">Delivered by Sojourner</div>
+        <div class="sub">confirmed by Devon</div>
+      </div>
+      <div class="card glass rise" style="--d:500">
+        <div class="lab"><i data-icon="device"></i>On her phone</div>
+        <div class="big">Help from Sojourner</div>
+      </div>
+      <div class="card glass rise" style="--d:650">
+        <div class="lab"><i data-icon="sun"></i>7:00 AM · Shift handoff · Devon → Maya</div>
+        <div class="sub q">“Family from 27th &amp; Center is safe at Sojourner tonight.”</div>
+      </div>
+    </div>
+    <div class="phone p-main rise" data-asset="delivered" style="--d:250"></div>
+    <aside class="notes">By seven, help has arrived. The referral reads delivered by Sojourner, confirmed by Devon, and her phone says Help from Sojourner. Then Maya's shift starts with a handoff brief: the family from 27th and Center is safe at Sojourner.</aside>
+  </section>
+
+  <!-- 08 · A week later, a pattern -->
+  <section class="slide s-pattern" data-title="A week later, a pattern" data-time="One week later" data-target="2:10-2:30">
+    <div class="glow" style="--gx:80%;--gy:50%;--gs:1300px;--go:.8"></div>
+    <h1 class="hl rise">A week later,<br>a pattern.</h1>
+    <div class="rows">
+      <div class="row rise" style="--d:350"><i class="gtile" data-icon="pin"></i><span class="t">Requests cluster near N 27th St &amp; W Center St<span class="s">Pattern spotted · weekend nights</span></span></div>
+      <div class="row rise" style="--d:500"><i class="gtile" data-icon="siren"></i><span class="t">Nearby 911 dispatch calls<span class="s">delayed 30–90 min, never live</span></span></div>
+      <div class="row rise" style="--d:650"><i class="gtile" data-icon="chart"></i><span class="t">Where help is needed<span class="s">community need vs. where ComForce works</span></span></div>
+      <div class="row" data-build="1"><i class="gtile" data-icon="snow"></i><span class="t">Cold-weather alert<span class="s">creates check-in tasks for the team</span></span></div>
+    </div>
+    <div class="sources" data-build="2">
+      <div class="n16"><b>16</b> public data sources</div>
+      <div class="grid16">
+        <span>MPD dispatch calls</span><span>MFD dispatch calls</span><span>MPD incidents (NIBRS)</span><span>Districts &amp; census tracts</span>
+        <span>NWS weather alerts</span><span>MCTS service alerts</span><span>MCTS routes &amp; stops</span><span>CDC PLACES</span>
+        <span>FBI crime trends</span><span>USAJOBS</span><span>CareerOneStop jobs</span><span>Training programs</span>
+        <span>American Job Centers</span><span>Youth &amp; reentry programs</span><span>Hunger Task Force</span><span>ComForce-reviewed services</span>
+      </div>
+    </div>
+    <div class="phone p-main rise" data-asset="insights" style="--d:250"></div>
+    <aside class="notes">A week later, Insights spots a pattern near 27th and Center, mostly on weekend nights, next to nearby 911 dispatch calls. Those are delayed thirty to ninety minutes, so never live. <span class="cue">[click]</span> A cold-weather alert creates check-in tasks. <span class="cue">[click]</span> It all draws on sixteen public data sources.</aside>
+  </section>
+
+  <!-- 09 · And everything around it (montage) -->
+  <section class="slide s-montage" data-title="And everything around it" data-target="2:30-2:48">
+    <div class="glow" style="--gx:50%;--gy:70%;--gs:1800px;--go:.6"></div>
+    <h1 class="hl rise">And everything<br>around it.</h1>
+    <div class="reel">
+      <figure class="rise" style="--d:300"><div class="phone mini" data-asset="getHelp"></div><figcaption>Get help</figcaption></figure>
+      <figure class="rise" style="--d:420"><div class="phone mini" data-asset="jobs"></div><figcaption>Jobs &amp; programs</figcaption></figure>
+      <figure class="rise" style="--d:540"><div class="phone mini" data-asset="community"></div><figcaption>Community view</figcaption></figure>
+      <figure class="rise" style="--d:660"><div class="phone mini" data-asset="tasks"></div><figcaption>My tasks</figcaption></figure>
+      <figure class="rise" style="--d:780"><div class="phone mini" data-asset="queue"></div><figcaption>Queue</figcaption></figure>
+      <figure class="rise" style="--d:900"><div class="phone mini" data-asset="safetyMap"></div><figcaption>911 call map</figcaption></figure>
+    </div>
+    <aside class="notes">And everything around it. Residents ask for help in a short form, and find jobs and programs. The community view shows what's nearby. Workers get My tasks, and a Queue that puts urgent work first. And a map shows nearby 911 dispatch calls, always delayed.</aside>
+  </section>
+
+  <!-- 10 · The whole team gets better -->
+  <section class="slide s-team" data-title="The whole team gets better" data-target="2:48-3:02">
+    <div class="glow" style="--gx:76%;--gy:50%;--gs:1400px;--go:.8"></div>
+    <h1 class="hl rise">The whole team<br>gets better.</h1>
+    <div class="rows">
+      <div class="row rise" style="--d:350"><i class="gtile" data-icon="book"></i><span class="t">Training lessons<span class="s">De-escalation Basics</span></span></div>
+      <div class="row rise" style="--d:500"><i class="gtile" data-icon="search"></i><span class="t">Knowledge search<span class="s">what worked on past cases</span></span></div>
+      <div class="row" data-build="1"><i class="gtile" data-icon="export"></i><span class="t">Export my records<span class="s">workers own what they recorded</span></span></div>
+    </div>
+    <div class="phone p-back2" data-asset="exportRecs" data-build="1"></div>
+    <div class="phone p-main rise" data-asset="training" style="--d:250"></div>
+    <aside class="notes">And the whole team gets better: lessons like De-escalation Basics, and knowledge search for what worked on past cases. <span class="cue">[click]</span> And every worker can export their own records.</aside>
+  </section>
+
+  <!-- 11 · How it's built -->
+  <section class="slide s-arch" data-title="How it's built" data-target="3:02-3:30">
+    <div class="glow" style="--gx:50%;--gy:62%;--gs:1800px;--go:.55"></div>
+    <h1 class="hl rise">How it's built.</h1>
+    <svg class="edges" viewBox="0 0 1920 1080" aria-hidden="true">
+      <path class="edge" data-build="2" d="M430 410 C475 410 475 400 520 400"/>
+      <path class="edge" data-build="2" d="M430 470 C475 470 475 540 520 540"/>
+      <path class="edge" data-build="2" d="M430 650 C475 650 475 560 520 560"/>
+      <path class="edge" data-build="2" d="M690 485 L690 450"/>
+      <path class="edge" data-build="2" d="M690 595 L690 630"/>
+      <path class="edge" data-build="3" d="M860 690 C905 690 905 520 950 520"/>
+      <path class="edge" data-build="3" d="M950 750 C905 750 905 730 860 730"/>
+      <path class="edge t-ai" data-build="3" d="M1350 405 L1620 405"/>
+      <path class="edge t-store" data-build="3" d="M1350 570 C1485 570 1485 600 1620 600"/>
+      <path class="edge t-share" data-build="3" d="M690 770 L690 898 L1750 898 L1750 860"/>
+    </svg>
+    <div class="col-lab" style="left:90px" data-build="1">Clients</div>
+    <div class="col-lab" style="left:520px" data-build="2">Core</div>
+    <div class="col-lab" style="left:950px" data-build="3">Background</div>
+    <div class="col-lab" style="left:1620px" data-build="3">External</div>
+    <div class="box" data-build="1" style="left:90px;top:350px;width:340px;height:160px"><b>ComForce MKE app</b><span>Expo · iPhone, Android and the Web</span></div>
+    <div class="box nav" data-build="1" style="left:90px;top:545px;width:340px;height:235px"><b>Community Response Navigator</b><span>ElevenLabs voice agent on the phone · built by Ava Latoria</span></div>
+    <div class="box" data-build="2" style="left:520px;top:350px;width:340px;height:100px"><b>Auth0</b><span>sign-in</span></div>
+    <div class="box" data-build="2" style="left:520px;top:485px;width:340px;height:110px"><b>FastAPI API</b></div>
+    <div class="box" data-build="2" style="left:520px;top:630px;width:340px;height:140px"><b>Postgres</b><span>logic in stored functions</span></div>
+    <div class="box" data-build="3" style="left:950px;top:350px;width:400px;height:260px"><b>Worker · job queue</b><span>transcribe → remove names → AI draft · APNs push · on-call escalation · reminders · weather outreach</span></div>
+    <div class="box" data-build="3" style="left:950px;top:635px;width:400px;height:220px"><b>Data loader</b><span>rate-gated CronJobs · 16 public sources: MPD/MFD 911, NWS, MCTS, CDC PLACES, FBI, jobs</span></div>
+    <div class="box ext" data-build="3" style="left:1620px;top:350px;width:260px;height:120px"><b>OpenAI</b><span>drafts</span></div>
+    <div class="box ext store" data-build="3" style="left:1620px;top:530px;width:260px;height:190px"><b>Storage</b><span>debrief audio</span></div>
+    <div class="box ext" data-build="3" style="left:1620px;top:750px;width:260px;height:110px"><b>Partners</b><span>like Sojourner</span></div>
+    <div class="host" data-build="4"><i data-icon="server"></i>Deployed to production<span class="dot">·</span>open source<span class="dot">·</span>≈&nbsp;$560 / month for 1,000 residents a day</div>
+    <div class="trust t1" data-build="5">Names removed<br>before AI</div>
+    <div class="trust t2" data-build="5"><i data-icon="trash"></i>Audio deleted</div>
+    <div class="trust t3" data-build="5"><i data-icon="shield"></i>Consent before sharing</div>
+    <aside class="notes">Here's how it's built. <span class="cue">[click]</span> The Expo app runs on iPhone, Android and the web, and the Navigator, an ElevenLabs voice agent Ava built, answers the phone. <span class="cue">[click]</span> Auth0 signs people in to a FastAPI API on Postgres. <span class="cue">[click]</span> A worker runs debriefs, push alerts and escalation, and a rate-gated loader pulls the public data. <span class="cue">[click]</span> It's deployed to production, open source, and about $560 a month for a thousand residents a day. <span class="cue">[click]</span> And trust is built in: names removed before the AI, audio deleted, consent before sharing.</aside>
+  </section>
+
+  <!-- 12 · Close -->
+  <section class="slide s-close" data-title="Close" data-target="3:30-3:52">
+    <div class="glow" style="--gy:46%;--gs:1700px;--go:.85"></div>
+    <div class="statement">
+      <div class="l1 rise" style="--d:200">From one call at 3:01&nbsp;AM…</div>
+      <div class="l2 rise" style="--d:1400">to a pattern that changes where ComForce shows up.</div>
+    </div>
+    <div class="finale" data-build="1">
+      <div class="wordmark">ComForce<span class="mke">MKE</span></div>
+      <div class="ty display">Thank you.</div>
+      <div class="team">Austin Koske<span class="dot">·</span>Ava Latoria<span class="dot">·</span>Miles Trompeter<span class="dot">·</span>Peter Kwaterski</div>
+      <div class="thanks">With thanks to ComForce MKE and the AI Club · Navigator built by Ava Latoria</div>
+      <div class="link" data-config="link">hacksgiving.austinkoske.com</div>
+    </div>
+    <aside class="notes">From one call at 3:01 in the morning, to a pattern that changes where ComForce shows up. One night, one family, one team. <span class="cue">[click]</span> We're Austin, Ava, Miles and Peter. Thank you to ComForce MKE and the AI Club. Thank you.</aside>
+  </section>
+
+  <!-- ================= Appendix (after the close; for Q&A, not timed, no builds) ================= -->
+
+  <!-- A1 · What it costs to run -->
+  <section class="slide ax ax-cost" data-title="Appendix · What it costs to run" data-target="appendix">
+    <div class="glow" style="--gx:78%;--gy:20%;--gs:1300px;--go:.6"></div>
+    <div class="ax-kicker">Appendix<span class="ax-n">A1</span></div>
+    <h1 class="ax-title">What it costs to run.</h1>
+    <div class="ax-kpi glass">
+      <div class="ax-kpi-big">≈&nbsp;$560<span class="ax-kpi-unit">/ month all-in</span></div>
+      <div class="ax-kpi-sub">under 2¢ per resident per day</div>
+      <div class="ax-kpi-cap">Navigator calls are ~70% of usage cost.</div>
+    </div>
+    <div class="ax-cost-grid">
+      <div class="ax-card glass ax-usage">
+        <div class="ax-lab">Usage · per day, at 1,000 residents a day</div>
+        <table class="ax-table">
+          <thead><tr><th>Item</th><th class="num">Per unit</th><th class="num">Per day</th></tr></thead>
+          <tbody>
+            <tr><td><b>Navigator calls</b><span class="ax-d">ElevenLabs voice + model + Twilio · ~4 min · 30 a day</span></td><td class="num">~39¢ / call</td><td class="num">$11.70</td></tr>
+            <tr><td><b>Staff AI</b><span class="ax-d">debrief transcription and reading, assists, handoffs · 20 workers</span></td><td class="num">~17¢ / worker</td><td class="num">$3.40</td></tr>
+            <tr><td><b>App help requests</b><span class="ax-d">2 texts at ~1.2¢ each, plus routing · 50 a day</span></td><td class="num">~2.4¢ / request</td><td class="num">$1.20</td></tr>
+            <tr><td><b>Routing decisions</b><span class="ax-d">app + Navigator + triage · ~100 a day</span></td><td class="num">~0.0065¢</td><td class="num">$0.01</td></tr>
+          </tbody>
+          <tfoot><tr><td><b>Usage total</b></td><td class="num" colspan="2"><b>~$16.30 / day</b> <span class="ax-m">(~$490 / month)</span></td></tr></tfoot>
+        </table>
+      </div>
+      <div class="ax-card glass ax-hosting">
+        <div class="ax-lab">Hosting · estimated, AWS list prices</div>
+        <table class="ax-table">
+          <thead><tr><th>Component · AWS service</th><th class="num">≈ / month</th></tr></thead>
+          <tbody>
+            <tr><td><b>API (2 small containers)</b> <span class="ax-i">ECS Fargate, 0.25 vCPU / 0.5 GB each</span></td><td class="num">~$18</td></tr>
+            <tr><td><b>Background worker</b> <span class="ax-i">Fargate, 1 task</span></td><td class="num">~$9</td></tr>
+            <tr><td><b>Data loader (every 5 min)</b> <span class="ax-i">Fargate scheduled tasks</span></td><td class="num">~$4</td></tr>
+            <tr><td><b>Database</b> <span class="ax-i">RDS Postgres (db.t4g.micro, 20 GB)</span></td><td class="num">~$14</td></tr>
+            <tr><td><b>Load balancer</b> <span class="ax-i">ALB</span></td><td class="num">~$18</td></tr>
+            <tr><td><b>Website</b> <span class="ax-i">S3 + CloudFront</span></td><td class="num">~$2</td></tr>
+            <tr><td><b>Logs</b> <span class="ax-i">CloudWatch</span></td><td class="num">~$3</td></tr>
+          </tbody>
+          <tfoot><tr><td><b>Hosting total</b></td><td class="num"><b>~$70</b></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="ax-foot">Usage measured from our models' pricing; hosting is an estimate on AWS list prices (us-east-2), public subnets, no NAT gateway. Push notifications (APNs) are free.</div>
+    <aside class="notes">If asked what it costs: about $560 a month all-in at a thousand residents a day, under 2 cents per resident per day. Usage is measured from our models' pricing; hosting is an estimate on AWS list prices. Routing moved to a smaller model and got about 12 times cheaper. Navigator calls dominate the spend, so the next saving is shorter calls.</aside>
+  </section>
+
+  <!-- A2 · How fast help moves -->
+  <section class="slide ax ax-speed" data-title="Appendix · How fast help moves" data-target="appendix">
+    <div class="glow" style="--gx:78%;--gy:20%;--gs:1300px;--go:.6"></div>
+    <div class="ax-kicker">Appendix<span class="ax-n">A2</span></div>
+    <h1 class="ax-title">How fast help moves.</h1>
+    <div class="ax-sub">Real timings from our runs</div>
+    <div class="ax-stats">
+      <div class="ax-stat glass"><div class="ax-hd"><i class="gtile" data-icon="phone"></i><span class="ax-v">~30&nbsp;s</span></div><div class="ax-t">A caller with no smartphone reaches the Navigator, and on-call is paged.</div><div class="ax-d">Our recorded call: 31 s from greeting to “the staff member on call has been alerted.”</div></div>
+      <div class="ax-stat glass"><div class="ax-hd"><i class="gtile" data-icon="lock"></i><span class="ax-v">Seconds</span></div><div class="ax-t">The urgent push reaches the on-call phone's lock screen.</div><div class="ax-d">No case details on it.</div></div>
+      <div class="ax-stat glass"><div class="ax-hd"><i class="gtile" data-icon="users"></i><span class="ax-v">5&nbsp;min <small>per step</small></span></div><div class="ax-t">If nobody accepts, it escalates.</div><div class="ax-d">Primary → backup → every admin.</div></div>
+      <div class="ax-stat glass"><div class="ax-hd"><i class="gtile" data-icon="mic"></i><span class="ax-v">~10&nbsp;s</span></div><div class="ax-t">From ~12 s of talking to a draft case.</div><div class="ax-d">Phantom debrief: transcribed, names removed, the AI drafts, the worker confirms.</div></div>
+      <div class="ax-stat glass"><div class="ax-hd"><i class="gtile" data-icon="refresh"></i><span class="ax-v">Every 5&nbsp;min</span></div><div class="ax-t">Public data refresh: 911 dispatch, weather, transit.</div><div class="ax-d">Rate-gated so MPD never blocks us.</div></div>
+      <div class="ax-stat glass ax-theirs"><div class="ax-hd"><i class="gtile" data-icon="clock"></i><span class="ax-v">30–90&nbsp;min</span></div><div class="ax-t">MPD's own delay on 911 dispatch data.</div><div class="ax-d">We say so on every screen. It's never “live.”</div></div>
+    </div>
+    <aside class="notes">These are real timings from our runs. The recorded call took 31 seconds from the greeting to "the staff member on call has been alerted." The push lands in seconds and shows no case details. If nobody accepts, it moves on every five minutes: primary, backup, every admin. A 12-second spoken debrief becomes a draft case in about 10 seconds. The 30 to 90 minute delay is MPD's, not ours, and we never call that data live.</aside>
+  </section>
+
+  <!-- A3 · 16 public data sources -->
+  <section class="slide ax ax-sources" data-title="Appendix · 16 public data sources" data-target="appendix">
+    <div class="glow" style="--gx:78%;--gy:20%;--gs:1300px;--go:.6"></div>
+    <div class="ax-kicker">Appendix<span class="ax-n">A3</span></div>
+    <h1 class="ax-title"><span class="ax-16">16</span> public data sources.</h1>
+    <div class="ax-src">
+      <div class="ax-card glass ax-live">
+        <div class="ax-lab"><span class="ax-dot"></span>Live · every 5 min</div>
+        <div class="ax-it"><b>MPD dispatch calls</b><span>911 call map and Insights · <span class="nw">30–90 min</span> delayed</span></div>
+        <div class="ax-it"><b>MFD dispatch calls</b><span>fire and EMS calls on the map</span></div>
+        <div class="ax-it"><b>NWS weather alerts</b><span>cold-weather check-in tasks</span></div>
+        <div class="ax-it"><b>MCTS service alerts</b><span>transit disruptions</span></div>
+      </div>
+      <div class="ax-card glass">
+        <div class="ax-lab">Daily · places and need</div>
+        <div class="ax-it"><b>Districts &amp; census tracts</b><span>tags every call and incident by area</span></div>
+        <div class="ax-it"><b>MPD incidents (NIBRS)</b><span>Insights · the last 90 days</span></div>
+        <div class="ax-it"><b>FBI crime trends</b><span>monthly totals vs. Wisconsin and US</span></div>
+        <div class="ax-it"><b>CDC PLACES</b><span>“Where help is needed,” by tract</span></div>
+        <div class="ax-it"><b>MCTS routes &amp; stops</b><span>nearest bus stop on a case</span></div>
+      </div>
+      <div class="ax-card glass">
+        <div class="ax-lab">Daily · jobs and services</div>
+        <div class="ax-it"><b>USAJOBS</b><span>federal jobs near Milwaukee</span></div>
+        <div class="ax-it"><b>CareerOneStop jobs</b><span>fair-chance employers tagged</span></div>
+        <div class="ax-it"><b>Training programs</b><span>ones WIOA can pay for</span></div>
+        <div class="ax-it"><b>American Job Centers</b><span>in-person job help</span></div>
+        <div class="ax-it"><b>Youth &amp; reentry programs</b><span>youth and reentry support</span></div>
+        <div class="ax-it"><b>Hunger Task Force</b><span>pantries, meal sites, WIC</span></div>
+        <div class="ax-it"><b>ComForce-reviewed services</b><span>contacts the Navigator shares</span></div>
+      </div>
+    </div>
+    <div class="ax-bar"><i data-icon="shield"></i><span><b>MPD rate gate:</b> MPD allows 10 requests per 30 min per IP. Production polls every 5 min, staging hourly.</span></div>
+    <aside class="notes">Four sources are live, refreshed every five minutes in production and hourly on staging. The other twelve load nightly. MPD's calls page allows 10 requests per 30 minutes per IP address, so a rate gate shared by every loader keeps us under it. Production asks about six times per 30 minutes. 911 dispatch data is delayed 30 to 90 minutes by MPD.</aside>
+  </section>
+
+  <!-- A4 · Privacy and safety, by design -->
+  <section class="slide ax ax-privacy" data-title="Appendix · Privacy and safety, by design" data-target="appendix">
+    <div class="glow" style="--gx:78%;--gy:20%;--gs:1300px;--go:.6"></div>
+    <div class="ax-kicker">Appendix<span class="ax-n">A4</span></div>
+    <h1 class="ax-title">Privacy and safety, by design.</h1>
+    <div class="ax-cards">
+      <div class="ax-pc glass"><i class="gtile" data-icon="eye-off"></i><span>Names, phone numbers and emails removed before any AI sees text</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="trash"></i><span>Debrief audio deleted after transcription</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="phone"></i><span>No call recordings or transcripts stored from the Navigator</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="lock"></i><span>Lock-screen pushes never show case details</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="shield"></i><span>Partner sharing only with consent, logged and revocable</span></div>
+      <div class="ax-pc glass"><i class="gtile ax-red" data-icon="x"></i><span>Quick exit on every resident screen</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="user"></i><span>Residents see only staff first names</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="user-check"></i><span>A person confirms every AI suggestion</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="siren"></i><span>911 boundary: the Navigator tells callers in danger to hang up and call 911, and never dispatches</span></div>
+      <div class="ax-pc glass"><i class="gtile" data-icon="badge"></i><span>Community work stays separate from law enforcement</span></div>
+    </div>
+    <aside class="notes">Privacy is designed in. Names, phone numbers and emails come out before any AI sees text, and debrief audio is deleted after transcription. The Navigator stores no call recordings or transcripts. Pushes never show case details. Partners see a request only with consent, and every share is logged and revocable. A person confirms every AI suggestion. And the Navigator never dispatches: anyone in danger is told to hang up and call 911.</aside>
+  </section>
+
+  <!-- A5 · What's next -->
+  <section class="slide ax ax-next" data-title="Appendix · What's next" data-target="appendix">
+    <div class="glow" style="--gx:78%;--gy:20%;--gs:1300px;--go:.6"></div>
+    <div class="ax-kicker">Appendix<span class="ax-n">A5</span></div>
+    <h1 class="ax-title">What's next.</h1>
+    <div class="ax-rows">
+      <div class="ax-row"><i class="gtile" data-icon="device"></i><span class="t">Push on Android<span class="s">iOS push is verified</span></span></div>
+      <div class="ax-row"><i class="gtile" data-icon="bed"></i><span class="t">A partner portal<span class="s">so shelters can update bed counts themselves</span></span></div>
+      <div class="ax-row"><i class="gtile" data-icon="globe"></i><span class="t">Spanish across the whole resident app<span class="s">replies are already translated</span></span></div>
+      <div class="ax-row"><i class="gtile" data-icon="chart"></i><span class="t">More Insights from debriefs</span></div>
+      <div class="ax-row"><i class="gtile" data-icon="phone"></i><span class="t">Shorter Navigator calls<span class="s">to cut the biggest cost line</span></span></div>
+    </div>
+    <aside class="notes">What's next, kept modest: push on Android, since iOS push is verified. A partner portal so shelters can update their own bed counts. Spanish across the whole resident app; replies are already translated. More Insights from debriefs. And shorter Navigator calls, which is the biggest cost line.</aside>
+  </section>
+
+  <div id="clock"><span class="a"></span><span class="b"></span></div>
+  <div id="progress"></div>
+  <div id="qr" aria-label="Scan to open hacksgiving.austinkoske.com"><div class="qr-label"><span>Try it live</span><span class="u">hacksgiving.austinkoske.com</span></div><div class="qr-tile"><img src="assets/shots/qr-site.svg" alt="QR code for hacksgiving.austinkoske.com"></div></div>
+  <div id="black"></div>
+  <div id="jump"></div>
+</div>
+<div id="notes-overlay"></div>
+</div>
+<div id="presenter"></div>
+
+<script src="assets/manifest.js"></script>
+<script src="assets/audio/call/call-data.js"></script>
+<script src="assets/deck.js"></script>
+</body>
+</html>

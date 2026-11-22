@@ -1,0 +1,81 @@
+{
+ "speaker": "navigator",
+ "text": "Okay. I've marked this urgent, so the ComForce staff member on call has been alerted.",
+ "words": [
+  {
+   "w": "Okay.",
+   "start": 0.0,
+   "end": 0.72
+  },
+  {
+   "w": "I've",
+   "start": 0.76,
+   "end": 0.96
+  },
+  {
+   "w": "marked",
+   "start": 1.08,
+   "end": 1.2
+  },
+  {
+   "w": "this",
+   "start": 1.32,
+   "end": 1.44
+  },
+  {
+   "w": "urgent,",
+   "start": 1.52,
+   "end": 2.24
+  },
+  {
+   "w": "so",
+   "start": 2.32,
+   "end": 2.4
+  },
+  {
+   "w": "the",
+   "start": 2.44,
+   "end": 2.48
+  },
+  {
+   "w": "ComForce",
+   "start": 2.56,
+   "end": 3.04
+  },
+  {
+   "w": "staff",
+   "start": 3.2,
+   "end": 3.36
+  },
+  {
+   "w": "member",
+   "start": 3.44,
+   "end": 3.6
+  },
+  {
+   "w": "on",
+   "start": 3.68,
+   "end": 3.76
+  },
+  {
+   "w": "call",
+   "start": 3.92,
+   "end": 4.16
+  },
+  {
+   "w": "has",
+   "start": 4.24,
+   "end": 4.32
+  },
+  {
+   "w": "been",
+   "start": 4.4,
+   "end": 4.48
+  },
+  {
+   "w": "alerted.",
+   "start": 4.56,
+   "end": 5.28
+  }
+ ]
+}

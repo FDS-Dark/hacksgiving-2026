@@ -1,0 +1,136 @@
+{
+ "speaker": "navigator",
+ "text": "I'm so sorry you're dealing with this. I can get this to ComForce right now. Is it safe for them to text you at this number?",
+ "words": [
+  {
+   "w": "I'm",
+   "start": 0.0,
+   "end": 0.16
+  },
+  {
+   "w": "so",
+   "start": 0.24,
+   "end": 0.44
+  },
+  {
+   "w": "sorry",
+   "start": 0.56,
+   "end": 0.96
+  },
+  {
+   "w": "you're",
+   "start": 1.04,
+   "end": 1.2
+  },
+  {
+   "w": "dealing",
+   "start": 1.24,
+   "end": 1.52
+  },
+  {
+   "w": "with",
+   "start": 1.6,
+   "end": 1.68
+  },
+  {
+   "w": "this.",
+   "start": 1.84,
+   "end": 2.48
+  },
+  {
+   "w": "I",
+   "start": 2.56,
+   "end": 2.64
+  },
+  {
+   "w": "can",
+   "start": 2.72,
+   "end": 2.8
+  },
+  {
+   "w": "get",
+   "start": 2.88,
+   "end": 2.96
+  },
+  {
+   "w": "this",
+   "start": 3.04,
+   "end": 3.12
+  },
+  {
+   "w": "to",
+   "start": 3.16,
+   "end": 3.2
+  },
+  {
+   "w": "ComForce",
+   "start": 3.28,
+   "end": 3.84
+  },
+  {
+   "w": "right",
+   "start": 3.92,
+   "end": 4.16
+  },
+  {
+   "w": "now.",
+   "start": 4.24,
+   "end": 4.72
+  },
+  {
+   "w": "Is",
+   "start": 4.96,
+   "end": 5.12
+  },
+  {
+   "w": "it",
+   "start": 5.2,
+   "end": 5.28
+  },
+  {
+   "w": "safe",
+   "start": 5.36,
+   "end": 5.52
+  },
+  {
+   "w": "for",
+   "start": 5.6,
+   "end": 5.68
+  },
+  {
+   "w": "them",
+   "start": 5.76,
+   "end": 5.84
+  },
+  {
+   "w": "to",
+   "start": 5.92,
+   "end": 6.0
+  },
+  {
+   "w": "text",
+   "start": 6.12,
+   "end": 6.24
+  },
+  {
+   "w": "you",
+   "start": 6.32,
+   "end": 6.4
+  },
+  {
+   "w": "at",
+   "start": 6.44,
+   "end": 6.48
+  },
+  {
+   "w": "this",
+   "start": 6.56,
+   "end": 6.64
+  },
+  {
+   "w": "number?",
+   "start": 6.72,
+   "end": 7.28
+  }
+ ]
+}
