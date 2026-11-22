@@ -1,8 +1,7 @@
 # Call script: the 4:07 AM call (keynote beat 1)
 
 **Who:** a friend plays the caller. The other end is ComForce's **Community
-Response Navigator**, the AI phone agent built by **Ava Latoria**. (Don't call
-the bot "Ava". Ava is the teammate who made it.)
+Response Navigator**, the AI phone agent. (Don't call the bot "Ava".)
 
 **Number:** **+1 (414) 251-1724**
 **Length:** about 90–120 seconds live. The keynote uses a 20–25 second cut.
