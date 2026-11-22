@@ -3114,6 +3114,124 @@
         "title": "PassRequest",
         "type": "object"
       },
+      "Person": {
+        "description": "The resident behind a case, as staff see them: their contact details\n(from their newest case that has them) and every case that looks like\nthe same person. There's no separate person record; see 0021.",
+        "properties": {
+          "cases": {
+            "description": "Newest first; includes the case asked about.",
+            "items": {
+              "$ref": "#/components/schemas/Case"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "first_contact_at": {
+            "format": "date-time",
+            "title": "First Contact At",
+            "type": "string"
+          },
+          "has_account": {
+            "description": "They have a resident account (their own requests).",
+            "title": "Has Account",
+            "type": "boolean"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "matched_by": {
+            "description": "How the other cases were matched to this person.",
+            "items": {
+              "$ref": "#/components/schemas/PersonMatch"
+            },
+            "title": "Matched By",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "open_cases": {
+            "title": "Open Cases",
+            "type": "integer"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "email",
+          "contact_method",
+          "safe_to_contact",
+          "has_account",
+          "matched_by",
+          "first_contact_at",
+          "last_activity_at",
+          "open_cases",
+          "cases"
+        ],
+        "title": "Person",
+        "type": "object"
+      },
+      "PersonMatch": {
+        "enum": [
+          "account",
+          "phone",
+          "email"
+        ],
+        "title": "PersonMatch",
+        "type": "string"
+      },
       "PublicRequest": {
         "properties": {
           "category": {
@@ -6698,6 +6816,50 @@
           }
         },
         "summary": "Summarize Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/person": {
+      "get": {
+        "description": "The resident behind a case: their contact details and every case that\nlooks like the same person (same resident account, phone number or\nemail). Staff only.",
+        "operationId": "get_case_person_v1_cases__case_id__person_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Case Person",
         "tags": [
           "cases"
         ]

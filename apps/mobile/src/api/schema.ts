@@ -158,6 +158,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/{case_id}/person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Case Person
+         * @description The resident behind a case: their contact details and every case that
+         *     looks like the same person (same resident account, phone number or
+         *     email). Staff only.
+         */
+        get: operations["get_case_person_v1_cases__case_id__person_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/referrals": {
         parameters: {
             query?: never;
@@ -2912,6 +2934,55 @@ export interface components {
         PassRequest: {
             reason?: components["schemas"]["PassReason"] | null;
         };
+        /**
+         * Person
+         * @description The resident behind a case, as staff see them: their contact details
+         *     (from their newest case that has them) and every case that looks like
+         *     the same person. There's no separate person record; see 0021.
+         */
+        Person: {
+            /**
+             * Cases
+             * @description Newest first; includes the case asked about.
+             */
+            cases: components["schemas"]["Case"][];
+            contact_method: components["schemas"]["ContactMethod"] | null;
+            /** Email */
+            email: string | null;
+            /**
+             * First Contact At
+             * Format: date-time
+             */
+            first_contact_at: string;
+            /**
+             * Has Account
+             * @description They have a resident account (their own requests).
+             */
+            has_account: boolean;
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /**
+             * Matched By
+             * @description How the other cases were matched to this person.
+             */
+            matched_by: components["schemas"]["PersonMatch"][];
+            /** Name */
+            name: string | null;
+            /** Open Cases */
+            open_cases: number;
+            /** Phone */
+            phone: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
+        };
+        /**
+         * PersonMatch
+         * @enum {string}
+         */
+        PersonMatch: "account" | "phone" | "email";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -4257,6 +4328,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_person_v1_cases__case_id__person_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Person"];
                 };
             };
             /** @description Validation Error */

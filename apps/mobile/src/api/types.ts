@@ -145,3 +145,6 @@ export type RegisterDevice = Schemas['RegisterDeviceRequest'];
 // ── Shift handoffs ───────────────────────────────────────────────────────
 export type ShiftHandoff = Schemas['ShiftHandoff'];
 export type HandoffBrief = Schemas['HandoffBrief'];
+
+// ── The person behind a case ─────────────────────────────────────────────
+export type Person = Schemas['Person'];

@@ -3,6 +3,7 @@ worker opens it), and workers triage, assign, note, refer and resolve it.
 The history of each change is written by the database functions themselves."""
 
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from uuid import UUID
@@ -23,6 +24,8 @@ from models.case import (
     CaseUpdate,
     ContactMethod,
     CreateCaseRequest,
+    Person,
+    PersonMatch,
     PublicRequest,
     PublicRequestDetail,
     PublicRequestUpdate,
@@ -269,6 +272,47 @@ class CaseService:
         if case is None:
             raise not_found("case")
         return case
+
+    async def person(self, case_id: UUID, limit: int = 50) -> Person:
+        """The resident behind a case and all their cases (0021: same account,
+        phone or email). Contact details come from their newest case that
+        has each one."""
+        anchor = await self.get(case_id)
+        cases = await self.cases.person_cases(case_id, limit)
+        if not cases:  # pragma: no cover - the case itself always matches
+            cases = [anchor]
+
+        def digits(phone: str | None) -> str | None:
+            d = re.sub(r"\D", "", phone or "")
+            return d[-10:] if len(d) >= 7 else None
+
+        matched: list[PersonMatch] = []
+        others = [c for c in cases if c.id != anchor.id]
+        if anchor.requester_id and any(c.requester_id == anchor.requester_id for c in others):
+            matched.append(PersonMatch.ACCOUNT)
+        phone = digits(anchor.contact_phone)
+        if phone and any(digits(c.contact_phone) == phone for c in others):
+            matched.append(PersonMatch.PHONE)
+        email = (anchor.contact_email or "").strip().lower()
+        if email and any((c.contact_email or "").strip().lower() == email for c in others):
+            matched.append(PersonMatch.EMAIL)
+
+        def newest(field: str) -> object:
+            return next((getattr(c, field) for c in cases if getattr(c, field) not in (None, "")), None)
+
+        return Person(
+            name=newest("contact_name"),
+            phone=newest("contact_phone"),
+            email=newest("contact_email"),
+            contact_method=newest("contact_method"),
+            safe_to_contact=anchor.safe_to_contact,
+            has_account=any(c.requester_id for c in cases),
+            matched_by=matched,
+            first_contact_at=min(c.created_at for c in cases),
+            last_activity_at=max(c.last_activity_at for c in cases),
+            open_cases=sum(1 for c in cases if c.status not in CLOSED_STATUSES),
+            cases=cases,
+        )
 
     async def detail(self, case_id: UUID) -> CaseDetail:
         case = await self.get(case_id)

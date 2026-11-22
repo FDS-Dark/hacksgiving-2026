@@ -52,6 +52,7 @@ export default function StaffLayout() {
           <Stack.Screen name="cases/new" />
           <Stack.Screen name="cases/[id]/index" />
           <Stack.Screen name="cases/[id]/messages" />
+          <Stack.Screen name="cases/[id]/person" />
           <Stack.Screen name="records/new" />
           <Stack.Screen name="records/[id]" />
           <Stack.Screen name="map" />

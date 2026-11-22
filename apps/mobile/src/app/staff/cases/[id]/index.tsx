@@ -141,6 +141,13 @@ function Person({ item: c }: { item: Case }) {
   const reach = [c.contact_phone, c.contact_email].filter(Boolean).length ? null : 'No contact details shared';
   return (
     <Card style={styles.person}>
+      {/* The person page: their contact details and every case that looks like them. */}
+      <Pressable
+        onPress={() => router.push({ pathname: '/staff/cases/[id]/person', params: { id: c.id } })}
+        accessibilityRole="button"
+        accessibilityLabel={`${c.contact_name ?? 'This person'}: see all their cases`}
+        style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md }, pressed && { opacity: 0.7 }]}
+      >
       <Avatar name={c.contact_name ?? '?'} size={40} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[type.subhead, { color: theme.text, fontWeight: '700' }]}>{c.contact_name ?? 'Name not given'}</Text>
@@ -151,7 +158,9 @@ function Person({ item: c }: { item: Case }) {
         ) : null}
         {reach ? <Text style={[type.caption, { color: theme.textTertiary }]}>{reach}</Text> : null}
         {c.resolved_at ? <Text style={[type.caption, { color: theme.textSecondary }]}>Resolved {dateTime(c.resolved_at)}</Text> : null}
+        <Text style={[type.caption, { color: theme.accent, fontWeight: '600' }]}>All their cases ›</Text>
       </View>
+      </Pressable>
       {c.contact_phone ? <IconButton icon="call-outline" label={`Call ${c.contact_phone}`} onPress={() => callPhone(c.contact_phone!)} /> : null}
       {c.contact_email ? <IconButton icon="mail-outline" label={`Email ${c.contact_email}`} onPress={() => Linking.openURL(`mailto:${c.contact_email}`)} /> : null}
     </Card>

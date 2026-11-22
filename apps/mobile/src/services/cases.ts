@@ -17,6 +17,7 @@ import type {
   CaseUpdate,
   CreateCase,
   DraftMessage,
+  Person,
   Referral,
   ResourceSuggestions,
   UpdateCase,
@@ -106,4 +107,12 @@ export function useCaseAssist(id: string) {
     resources: useMutation({ mutationFn: () => casesApi.suggestResources(id) }),
     draft: useMutation({ mutationFn: () => casesApi.draftMessage(id) }),
   };
+}
+
+/** The resident behind a case and every case that looks like them (same account, phone or email). */
+export function usePerson(caseId: string) {
+  return useQuery({
+    queryKey: [...caseKeys.all, 'person', caseId] as const,
+    queryFn: () => request<Person>(`/cases/${caseId}/person`),
+  });
 }

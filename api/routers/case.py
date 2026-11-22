@@ -17,6 +17,7 @@ from models.case import (
     AddCaseUpdateRequest,
     AddReferralRequest,
     Case,
+    Person,
     CaseDetail,
     CaseFilters,
     CaseInsights,
@@ -87,6 +88,18 @@ async def get_case(
 ) -> CaseDetail:
     """A case with its full history and referrals."""
     return await service.detail(case_id)
+
+
+@router.get("/{case_id}/person", response_model=Person)
+async def get_case_person(
+    case_id: UUID,
+    _: StaffMember = Depends(get_current_worker),
+    service: CaseService = Depends(get_case_service),
+) -> Person:
+    """The resident behind a case: their contact details and every case that
+    looks like the same person (same resident account, phone number or
+    email). Staff only."""
+    return await service.person(case_id)
 
 
 @router.patch("/{case_id}", response_model=Case)
