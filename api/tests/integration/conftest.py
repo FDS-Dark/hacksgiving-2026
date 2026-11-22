@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.handoff import HandoffDatabridge
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
@@ -35,6 +36,7 @@ from dependencies import (
     get_case_assistant,
     get_case_service,
     get_opportunity_service,
+    get_handoff_service,
     get_job_service,
     get_notification_service,
     get_oncall_service,
@@ -50,6 +52,7 @@ from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
+from services.handoff import HandoffService
 from services.opportunity import OpportunityService
 from services.job import JobService
 from services.notification import NotificationService
@@ -166,6 +169,7 @@ async def api(database):
         jobs=JobDatabridge(executor), notifications=notifications, tasks=tasks,
     )
     cases = CaseService(CaseDatabridge(executor), resources, staff, tasks, notifications, executor, oncall)
+    handoffs = HandoffService(HandoffDatabridge(executor), OncallDatabridge(executor), cases, tasks, None)
     # Every service the routers use, so no test reaches api/.env's database.
     # No AI in integration tests: triage and the assistant are off.
     app.dependency_overrides.update({
@@ -183,6 +187,7 @@ async def api(database):
         ),
         get_job_service: lambda: JobService(JobDatabridge(executor)),
         get_oncall_service: lambda: oncall,
+        get_handoff_service: lambda: handoffs,
         get_push_service: lambda: PushService(PushDatabridge(executor), notifications, executor),
     })
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

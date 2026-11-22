@@ -13,7 +13,7 @@ import { space, type, useTheme } from '@/theme/tokens';
 
 /** Figma "App shell v2" staff tabs. Record (a Phantom debrief) sits raised in the middle; Team and Insights live under Me. */
 const TABS: TabItem[] = [
-  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') || p.startsWith('/staff/alerts') || p.startsWith('/staff/tasks') },
+  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') || p.startsWith('/staff/alerts') || p.startsWith('/staff/tasks') || p.startsWith('/staff/handoffs') },
   { label: 'Queue', href: '/staff/cases', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/staff/cases') },
   { label: 'Record', push: '/staff/records/new', icon: 'mic-outline', iconActive: 'mic', raised: true, match: (p) => p.startsWith('/staff/records') },
   { label: 'Map', href: '/staff/map', icon: 'location-outline', iconActive: 'location', match: (p) => p.startsWith('/staff/map') },
@@ -66,6 +66,8 @@ export default function StaffLayout() {
           <Stack.Screen name="alerts/[id]" />
           <Stack.Screen name="tasks" />
           <Stack.Screen name="notification-settings" />
+          <Stack.Screen name="handoffs/index" />
+          <Stack.Screen name="handoffs/[id]" />
         </Stack>
         {fullScreen ? null : <TabBar tabs={TABS} />}
       </>

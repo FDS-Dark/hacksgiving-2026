@@ -612,6 +612,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/oncall/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Handoffs
+         * @description Shift handoff briefs you wrote or were handed in the last 7 days, newest first.
+         */
+        get: operations["my_handoffs_v1_oncall_handoffs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/handoffs/{handoff_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Handoff */
+        get: operations["get_handoff_v1_oncall_handoffs__handoff_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/handoffs/{handoff_id}/summarize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Summarize Handoff
+         * @description Rewrite the brief's summary with the AI (titles, priorities and due
+         *     times only). 503 `ai_unavailable` when the assistant isn't set up.
+         */
+        post: operations["summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/oncall/me": {
         parameters: {
             query?: never;
@@ -624,7 +682,8 @@ export interface paths {
         /**
          * Toggle Oncall
          * @description Switch yourself on call (until `until`, or the next 07:00, 17:00 or
-         *     23:00 org time) or off (your shift ends now).
+         *     23:00 org time) or off (your shift ends now). Going off writes a shift
+         *     handoff brief for whoever is on next (`GET /oncall/handoffs`).
          */
         post: operations["toggle_oncall_v1_oncall_me_post"];
         delete?: never;
@@ -2354,6 +2413,56 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HandoffAlert */
+        HandoffAlert: {
+            /** Arrived At */
+            arrived_at: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["AlertStatus"];
+        };
+        /**
+         * HandoffBrief
+         * @description A snapshot from when the author went off call; links open the live cases.
+         */
+        HandoffBrief: {
+            /** Alerts */
+            alerts: components["schemas"]["HandoffAlert"][];
+            /** Cases */
+            cases: components["schemas"]["HandoffCase"][];
+            /** Tasks */
+            tasks: components["schemas"]["HandoffTask"][];
+        };
+        /** HandoffCase */
+        HandoffCase: {
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Activity At */
+            last_activity_at: string | null;
+            /** Number */
+            number: number;
+            priority: components["schemas"]["CasePriority"];
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
         /** HandoffCode */
         HandoffCode: {
             /** Code */
@@ -2363,6 +2472,32 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /** HandoffTask */
+        HandoffTask: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            /** Due At */
+            due_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /** Title */
+            title: string;
         };
         /** ImpactCategory */
         ImpactCategory: {
@@ -3098,6 +3233,34 @@ export interface components {
         SetRoleRequest: {
             role: components["schemas"]["Role"];
         };
+        /** ShiftHandoff */
+        ShiftHandoff: {
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /** Author Name */
+            author_name: string | null;
+            brief: components["schemas"]["HandoffBrief"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Recipient Id */
+            recipient_id: string | null;
+            /** Recipient Name */
+            recipient_name: string | null;
+            /** Summary */
+            summary: string;
+            summary_source: components["schemas"]["SummarySource"];
+        };
         /**
          * ShiftRank
          * @enum {integer}
@@ -3209,6 +3372,11 @@ export interface components {
          * @enum {string}
          */
         SuggestionMethod: "ai" | "rules";
+        /**
+         * SummarySource
+         * @enum {string}
+         */
+        SummarySource: "rules" | "ai";
         /**
          * Task
          * @description A piece of work on a case: generated when the case comes in
@@ -4783,6 +4951,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OncallAlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_handoffs_v1_oncall_handoffs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"][];
+                };
+            };
+        };
+    };
+    get_handoff_v1_oncall_handoffs__handoff_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"];
                 };
             };
             /** @description Validation Error */

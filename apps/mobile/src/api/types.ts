@@ -141,3 +141,7 @@ export type OncallStats = Schemas['OncallStats'];
 
 // ── Push devices (/v1/me/devices) ─────────────────────────────────────────
 export type RegisterDevice = Schemas['RegisterDeviceRequest'];
+
+// ── Shift handoffs ───────────────────────────────────────────────────────
+export type ShiftHandoff = Schemas['ShiftHandoff'];
+export type HandoffBrief = Schemas['HandoffBrief'];

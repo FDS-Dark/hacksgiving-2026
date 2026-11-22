@@ -19,6 +19,7 @@ from openai import AsyncOpenAI
 from adapters.storage import AudioStorage, make_audio_storage
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.handoff import HandoffDatabridge
 from databridge.opportunity import OpportunityDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
@@ -36,6 +37,7 @@ from errors import ApiError
 from models.staff import StaffMember
 from models.user import AppUser, TokenClaims
 from services.case import CaseService, Triager
+from services.handoff import HandoffService
 from services.job import JobService
 from services.notification import NotificationService
 from services.oncall import OncallService
@@ -178,6 +180,15 @@ def get_routing_service() -> RoutingService:
 @cache
 def get_case_assistant() -> CaseAssistant | None:
     return CaseAssistant(_openai().responses, config.openai.model) if config.openai.api_key else None
+
+
+@cache
+def get_handoff_service() -> HandoffService:
+    executor = get_executor()
+    return HandoffService(
+        HandoffDatabridge(executor), OncallDatabridge(executor), get_case_service(), get_task_service(),
+        get_case_assistant(),
+    )
 
 
 @cache

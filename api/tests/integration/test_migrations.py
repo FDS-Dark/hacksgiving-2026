@@ -99,6 +99,7 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0017_push",
             "0018_urgent_alerts",
             "0019_case_debriefs",
+            "0020_shift_handoffs",
         )
         for name in _revision(revision).FUNCTIONS
     }

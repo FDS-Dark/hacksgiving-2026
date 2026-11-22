@@ -1731,6 +1731,136 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HandoffAlert": {
+        "properties": {
+          "arrived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrived At"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "status",
+          "arrived_at"
+        ],
+        "title": "HandoffAlert",
+        "type": "object"
+      },
+      "HandoffBrief": {
+        "description": "A snapshot from when the author went off call; links open the live cases.",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cases",
+          "tasks",
+          "alerts"
+        ],
+        "title": "HandoffBrief",
+        "type": "object"
+      },
+      "HandoffCase": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "title",
+          "priority",
+          "status",
+          "category",
+          "last_activity_at"
+        ],
+        "title": "HandoffCase",
+        "type": "object"
+      },
       "HandoffCode": {
         "properties": {
           "code": {
@@ -1748,6 +1878,60 @@
           "expires_at"
         ],
         "title": "HandoffCode",
+        "type": "object"
+      },
+      "HandoffTask": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overdue": {
+            "default": false,
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "due_at",
+          "overdue",
+          "case_id",
+          "case_number",
+          "case_title"
+        ],
+        "title": "HandoffTask",
         "type": "object"
       },
       "ImpactCategory": {
@@ -3757,6 +3941,82 @@
         "title": "SetRoleRequest",
         "type": "object"
       },
+      "ShiftHandoff": {
+        "properties": {
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/HandoffBrief"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Id"
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Name"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "summary_source": {
+            "$ref": "#/components/schemas/SummarySource"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "author_name",
+          "recipient_id",
+          "recipient_name",
+          "brief",
+          "summary",
+          "summary_source",
+          "created_at"
+        ],
+        "title": "ShiftHandoff",
+        "type": "object"
+      },
       "ShiftRank": {
         "enum": [
           1,
@@ -4076,6 +4336,14 @@
           "rules"
         ],
         "title": "SuggestionMethod",
+        "type": "string"
+      },
+      "SummarySource": {
+        "enum": [
+          "rules",
+          "ai"
+        ],
+        "title": "SummarySource",
         "type": "string"
       },
       "Task": {
@@ -7403,9 +7671,122 @@
         ]
       }
     },
+    "/v1/oncall/handoffs": {
+      "get": {
+        "description": "Shift handoff briefs you wrote or were handed in the last 7 days, newest first.",
+        "operationId": "my_handoffs_v1_oncall_handoffs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShiftHandoff"
+                  },
+                  "title": "Response My Handoffs V1 Oncall Handoffs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Handoffs",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/handoffs/{handoff_id}": {
+      "get": {
+        "operationId": "get_handoff_v1_oncall_handoffs__handoff_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandoff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Handoff",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/handoffs/{handoff_id}/summarize": {
+      "post": {
+        "description": "Rewrite the brief's summary with the AI (titles, priorities and due\ntimes only). 503 `ai_unavailable` when the assistant isn't set up.",
+        "operationId": "summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandoff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summarize Handoff",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
     "/v1/oncall/me": {
       "post": {
-        "description": "Switch yourself on call (until `until`, or the next 07:00, 17:00 or\n23:00 org time) or off (your shift ends now).",
+        "description": "Switch yourself on call (until `until`, or the next 07:00, 17:00 or\n23:00 org time) or off (your shift ends now). Going off writes a shift\nhandoff brief for whoever is on next (`GET /oncall/handoffs`).",
         "operationId": "toggle_oncall_v1_oncall_me_post",
         "requestBody": {
           "content": {

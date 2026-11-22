@@ -2,13 +2,15 @@
 urgent alerts (accept, pass, arrived). ComForce staff only (403 otherwise);
 changing the rota and the stats are for admins."""
 
+import logging
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import AwareDatetime
 
-from dependencies import get_current_admin, get_current_worker, get_oncall_service
+from dependencies import get_current_admin, get_current_worker, get_handoff_service, get_oncall_service
+from models.handoff import ShiftHandoff
 from models.oncall import (
     CreateShiftRequest,
     OncallAlert,
@@ -21,7 +23,10 @@ from models.oncall import (
     UpdateShiftRequest,
 )
 from models.staff import StaffMember
+from services.handoff import HandoffService
 from services.oncall import OncallService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/oncall", tags=["oncall"])
 
@@ -41,10 +46,49 @@ async def toggle_oncall(
     body: ToggleOncallRequest,
     worker: StaffMember = Depends(get_current_worker),
     service: OncallService = Depends(get_oncall_service),
+    handoffs: HandoffService = Depends(get_handoff_service),
 ) -> OncallNow:
     """Switch yourself on call (until `until`, or the next 07:00, 17:00 or
-    23:00 org time) or off (your shift ends now)."""
-    return await service.toggle(worker, body)
+    23:00 org time) or off (your shift ends now). Going off writes a shift
+    handoff brief for whoever is on next (`GET /oncall/handoffs`)."""
+    was_on = (await service.now(worker)).me.on_call if not body.on else False
+    after = await service.toggle(worker, body)
+    if was_on and not after.me.on_call:
+        try:
+            await handoffs.going_off(worker, after)
+        except Exception:
+            # The brief is a courtesy: going off call never fails because of it.
+            logger.exception("Couldn't write the shift handoff for %s", worker.id)
+    return after
+
+
+@router.get("/handoffs", response_model=list[ShiftHandoff])
+async def my_handoffs(
+    worker: StaffMember = Depends(get_current_worker),
+    handoffs: HandoffService = Depends(get_handoff_service),
+) -> list[ShiftHandoff]:
+    """Shift handoff briefs you wrote or were handed in the last 7 days, newest first."""
+    return await handoffs.mine(worker)
+
+
+@router.get("/handoffs/{handoff_id}", response_model=ShiftHandoff)
+async def get_handoff(
+    handoff_id: UUID,
+    worker: StaffMember = Depends(get_current_worker),
+    handoffs: HandoffService = Depends(get_handoff_service),
+) -> ShiftHandoff:
+    return await handoffs.get(worker, handoff_id)
+
+
+@router.post("/handoffs/{handoff_id}/summarize", response_model=ShiftHandoff)
+async def summarize_handoff(
+    handoff_id: UUID,
+    worker: StaffMember = Depends(get_current_worker),
+    handoffs: HandoffService = Depends(get_handoff_service),
+) -> ShiftHandoff:
+    """Rewrite the brief's summary with the AI (titles, priorities and due
+    times only). 503 `ai_unavailable` when the assistant isn't set up."""
+    return await handoffs.summarize(worker, handoff_id)
 
 
 @router.get("/shifts", response_model=list[OncallShift])

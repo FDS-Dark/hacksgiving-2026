@@ -77,6 +77,7 @@ export default function StaffMeScreen() {
 
       <Group header="Manage">
         <Row title="My tasks" icon="checkbox-outline" accessory="chevron" onPress={() => router.push('/staff/tasks')} />
+        <Row title="Shift handoffs" icon="swap-horizontal-outline" accessory="chevron" onPress={() => router.push('/staff/handoffs')} />
         <Row
           title="Team & roles"
           icon="people-outline"
