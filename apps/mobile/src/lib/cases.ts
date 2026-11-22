@@ -9,9 +9,9 @@ import type { IconName } from '@/components/ui';
 export const CATEGORY_LABEL: Record<CaseCategory, string> = {
   homelessness: 'Housing & shelter',
   meal_programs: 'Food & meals',
-  transportation: 'Transportation',
+  transportation: 'Ride help',
   violence_prevention: 'Violence prevention',
-  incident_deescalation: 'De-escalation',
+  incident_deescalation: 'Calming support',
   missing_persons: 'Missing persons',
   burial_assistance: 'Burial assistance',
   bridge_to_employment: 'Bridge to employment',

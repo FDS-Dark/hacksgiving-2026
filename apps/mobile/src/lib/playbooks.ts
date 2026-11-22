@@ -97,7 +97,7 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     steps: [
       "Find the nearest open pantry or meal site on Hunger Task Force's emergency food map, or through 2-1-1.",
       'Call ahead when you can: hours change. Tell them who is coming.',
-      'If they cannot travel, arrange a ride (Transportation) or a delivery program.',
+      'If they cannot travel, arrange a ride (Ride help) or a delivery program.',
       'Screen for longer-term help: FoodShare (SNAP), WIC for young children, school meals.',
       'Log the referral and check in after the first visit.',
     ],

@@ -29,7 +29,7 @@ export function NotificationBell() {
 }
 
 const styles = StyleSheet.create({
-  bell: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
     top: 0,

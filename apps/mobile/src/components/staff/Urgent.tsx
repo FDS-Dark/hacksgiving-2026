@@ -1,5 +1,5 @@
 /**
- * Urgent escalation pieces shared by Today (the red banners), S7 (the urgent
+ * Urgent escalation pieces shared by S7 (the urgent
  * offer card) and the Respond screen (/staff/alerts/[id]): a ticking clock,
  * the Call 911 button and the Pass reason sheet.
  */
@@ -11,7 +11,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/staff/kit';
 import { Button, Row, Sheet, success } from '@/components/ui';
 import { callPhone } from '@/lib/phone';
-import { bannerLine, bannerTitle, offerLine } from '@/lib/urgent';
+import { bannerTitle, offerLine } from '@/lib/urgent';
 import { PASS_REASONS, oncallAlertError, useAcceptAlert, usePassAlert, type OncallAlert, type PassReason } from '@/services/oncall';
 import { radius, space, type, useTheme } from '@/theme/tokens';
 
@@ -96,36 +96,6 @@ export function PassSheet({ visible, onClose, onPass, loading }: { visible: bool
   );
 }
 
-/** Today: one red banner per open alert, above the on-call card. */
-export function UrgentBanners({ alerts }: { alerts: OncallAlert[] }) {
-  const theme = useTheme();
-  if (!alerts.length) return null;
-  return (
-    <View style={{ gap: space.sm }}>
-      {alerts.map((a) => (
-        <Pressable
-          key={a.id}
-          onPress={() => router.push(alertHref(a.id))}
-          accessibilityRole="link"
-          accessibilityLabel={`${bannerTitle(a)}. ${bannerLine(a)}`}
-          style={({ pressed }) => [styles.banner, { backgroundColor: theme.red }, pressed && { opacity: 0.8 }]}
-        >
-          <Ionicons name="warning" size={20} color="#FFFFFF" />
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[type.subhead, styles.bannerTitle]} numberOfLines={2}>
-              {bannerTitle(a)}
-            </Text>
-            <Text style={[type.caption, styles.bannerLine]} numberOfLines={1}>
-              {bannerLine(a)}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 /** S7's urgent card: title, the live countdown, inline Accept / Pass. Only for alerts with my pending offer. */
 export function UrgentOfferCard({ alert }: { alert: OncallAlert }) {
   const theme = useTheme();
@@ -198,9 +168,6 @@ const styles = StyleSheet.create({
   call: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, borderRadius: radius.lg, minHeight: 50, paddingHorizontal: space.lg },
   call911Small: { minHeight: 36, paddingHorizontal: space.md },
   line911: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.lg, padding: space.md },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderRadius: radius.lg, paddingHorizontal: space.lg, paddingVertical: space.md },
-  bannerTitle: { color: '#FFFFFF', fontWeight: '700' },
-  bannerLine: { color: '#FFFFFF', opacity: 0.92 },
   offer: { borderWidth: 1 },
   offerHead: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
   offerIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },

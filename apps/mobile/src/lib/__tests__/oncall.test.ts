@@ -60,8 +60,8 @@ describe('on-call card copy', () => {
 
   it('off call while someone else is on', () => {
     const now = { ...base, on_call: [maria] };
-    expect(oncallTitle(now)).toBe('On call');
-    expect(oncallSubtitle(now)).toBe('You’re off call · Maria is on until 11 PM');
+    expect(oncallTitle(now)).toBe('You’re off call');
+    expect(oncallSubtitle(now)).toBe('Maria is on call until 11 PM');
   });
 
   it('nobody on call', () => {
@@ -69,7 +69,7 @@ describe('on-call card copy', () => {
   });
 
   it('a nameless person reads as Someone', () => {
-    expect(oncallSubtitle({ ...base, on_call: [shift(null, iso(21, 17), iso(21, 23))] })).toBe('You’re off call · Someone is on until 11 PM');
+    expect(oncallSubtitle({ ...base, on_call: [shift(null, iso(21, 17), iso(21, 23))] })).toBe('Someone is on call until 11 PM');
   });
 });
 
