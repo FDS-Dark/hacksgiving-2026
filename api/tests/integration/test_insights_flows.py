@@ -11,11 +11,10 @@ import pytest
 
 from databridge.insights import InsightsDatabridge
 from databridge.place import PlaceDatabridge
-from databridge.public_data import PublicDataDatabridge
 from models.place import CasePlace, PendingPlace, PlaceSource, PlaceStatus
-from models.public_data import ImportedArea
 from services.insights import InsightsService
 from tests.integration.conftest import app_executor
+from tests.integration.loader_writes import sync
 
 NOW = datetime(2001, 6, 30, 12, tzinfo=UTC)
 
@@ -56,11 +55,11 @@ async def test_a_case_is_pending_until_placed_and_again_once_its_location_change
 
 async def test_patterns_totals_and_the_district_filter(executor, admin_conn):
     district, hood = "T" + uuid4().hex[:5], "TESTHOOD " + uuid4().hex[:6].upper()
-    await PublicDataDatabridge(executor).sync("test_areas", [ImportedArea(
-        external_id=f"police_district:{district}", kind="police_district", name=district,
-        geometry={"type": "Polygon", "coordinates": [[[-87.85, 42.85], [-87.8, 42.85], [-87.8, 42.9],
-                                                      [-87.85, 42.9], [-87.85, 42.85]]]},
-        min_lat=42.85, min_lon=-87.85, max_lat=42.9, max_lon=-87.8)], NOW)
+    await sync(executor, "geo_areas", "test_areas", [{
+        "external_id": f"police_district:{district}", "kind": "police_district", "name": district,
+        "geometry": {"type": "Polygon", "coordinates": [[[-87.85, 42.85], [-87.8, 42.85], [-87.8, 42.9],
+                                                         [-87.85, 42.9], [-87.85, 42.85]]]},
+        "min_lat": 42.85, "min_lon": -87.85, "max_lat": 42.9, "max_lon": -87.8}], NOW)
     places = PlaceDatabridge(executor)
 
     async def placed(when: str, category: str, lat: float, lon: float) -> None:

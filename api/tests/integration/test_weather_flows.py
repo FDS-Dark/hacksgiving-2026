@@ -8,12 +8,11 @@ from uuid import uuid4
 import pytest
 
 from databridge.notification import NotificationDatabridge
-from databridge.public_data import PublicDataDatabridge
-from models.public_data import ImportedWeatherAlert
 from services.notification import NotificationService
 from services.weather_jobs import WeatherWatch
 from tests.helpers import auth_header
 from tests.integration.conftest import app_executor
+from tests.integration.loader_writes import sync
 
 
 async def _person(api, admin_conn, name: str, role: str = "member") -> dict:
@@ -61,10 +60,10 @@ async def test_a_cold_alert_makes_check_in_tasks_and_alerts_opted_in_residents_o
 
     tag, now = uuid4().hex[:6], datetime.now(UTC)
     event = f"Extreme Cold Warning {tag}"
-    await PublicDataDatabridge(executor).sync("nws_alerts", [ImportedWeatherAlert(
-        external_id=f"urn:{tag}", event=event, severity="Severe", headline="Wind chills near 30 below",
-        effective_at=now - timedelta(hours=1), expires_at=now + timedelta(hours=12),
-    )], now)
+    await sync(executor, "weather_alerts", "nws_alerts", [{
+        "external_id": f"urn:{tag}", "event": event, "severity": "Severe", "headline": "Wind chills near 30 below",
+        "effective_at": now - timedelta(hours=1), "expires_at": now + timedelta(hours=12),
+    }], now)
 
     assert await sweep.sweep() >= 1
     assert await sweep.sweep() == 0  # handled once, whatever else runs
@@ -97,9 +96,9 @@ async def test_a_minor_wind_alert_does_nothing(api, admin_conn, watch):
     worker = await _person(api, admin_conn, "Devon Lee", "worker")
     await _case(api, worker, "homelessness")
     tag, now = uuid4().hex[:6], datetime.now(UTC)
-    await PublicDataDatabridge(executor).sync("nws_alerts", [ImportedWeatherAlert(
-        external_id=f"urn:{tag}", event=f"Wind Advisory {tag}", severity="Minor",
-        effective_at=now - timedelta(minutes=5), expires_at=now + timedelta(hours=3),
-    )], now)
+    await sync(executor, "weather_alerts", "nws_alerts", [{
+        "external_id": f"urn:{tag}", "event": f"Wind Advisory {tag}", "severity": "Minor",
+        "effective_at": now - timedelta(minutes=5), "expires_at": now + timedelta(hours=3),
+    }], now)
     await sweep.sweep()
     assert await admin_conn.fetchval("SELECT count(*) FROM app.tasks WHERE title LIKE $1", f"%{tag}%") == 0

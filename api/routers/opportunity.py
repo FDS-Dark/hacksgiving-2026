@@ -1,6 +1,6 @@
 """Volunteer, job and education opportunities. Anyone signed in can search
 the open ones; ComForce staff post them, close them, and also see closed
-ones. The data loader (api/loader) imports more from public sources."""
+ones. The data loader (dataloader/) imports more from public sources."""
 
 from typing import Annotated
 from uuid import UUID
