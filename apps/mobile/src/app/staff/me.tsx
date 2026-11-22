@@ -76,6 +76,7 @@ export default function StaffMeScreen() {
       <PushSettings />
 
       <Group header="Manage">
+        <Row title="My tasks" icon="checkbox-outline" accessory="chevron" onPress={() => router.push('/staff/tasks')} />
         <Row
           title="Team & roles"
           icon="people-outline"

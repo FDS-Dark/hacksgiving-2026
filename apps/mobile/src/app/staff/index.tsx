@@ -8,6 +8,7 @@ import { RefreshError } from '@/components/RefreshError';
 import { CaseListSkeleton, TilesSkeleton } from '@/components/Skeleton';
 import { CaseLine } from '@/components/staff/CaseLine';
 import { Debriefs } from '@/components/staff/Debriefs';
+import { MyTasksCard } from '@/components/staff/MyTasksCard';
 import { ErrorBanner } from '@/components/ui';
 import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
@@ -93,6 +94,7 @@ export default function TodayScreen() {
       ) : (
         <>
           <Debriefs />
+          <MyTasksCard />
           <Section title="Assigned to you" link={mine.length ? `${mine.length} open` : undefined} href="/staff/cases?view=mine">
             {mine.length ? (
               mine.slice(0, 5).map((c) => (
