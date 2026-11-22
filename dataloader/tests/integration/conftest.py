@@ -74,6 +74,19 @@ async def admin_conn(database):
 
 
 @pytest.fixture
+def app_env(database) -> dict[str, str]:
+    """The APP__DATABASE__* settings that point the loader at the test
+    database as the app role, the way the CronJob's secret does."""
+    url = make_url(_db_url(database, APP_ROLE, APP_PASSWORD))
+    return {
+        "APP__DATABASE__HOST": url.host or "localhost", "APP__DATABASE__PORT": str(url.port or 5432),
+        "APP__DATABASE__NAME": database, "APP__DATABASE__USERNAME": APP_ROLE,
+        "APP__DATABASE__PASSWORD": APP_PASSWORD, "APP__DATABASE__SSL": "disable",
+        "APP__DATABASE__PREPARED_STATEMENTS": "true",
+    }
+
+
+@pytest.fixture
 async def executor(database):
     """The executor the loader would have, connected as the app role."""
     url = make_url(_db_url(database, APP_ROLE, APP_PASSWORD)).set(drivername="postgresql+asyncpg")

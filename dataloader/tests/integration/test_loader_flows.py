@@ -5,20 +5,35 @@ Python fingerprints match the database's, and the run log feeds the rate
 gate. api/tests/integration/test_imported_opportunity_flows.py covers how
 the API lists imports next to staff postings."""
 
-from datetime import UTC, datetime, timedelta
+import os
+import subprocess
+import sys
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 
+from client import comforce
 from client.errors import RateLimited
 from databridge.loader_run import LoaderRunDatabridge
 from databridge.opportunity import OpportunityDatabridge
-from databridge.public_data import PublicDataDatabridge
+from databridge.public_data import TABLES, PublicDataDatabridge
 from databridge.resource import ResourceDatabridge
 from loader.base import RunContext, Status, Target, opportunity_fingerprint, resource_fingerprint, run_all
 from model.enums import Audience, CaseCategory, OpportunityKind
 from model.imported import ImportedOpportunity, ImportedResource, SyncResult
-from model.public_data import ImportedArea, ImportedSignal
+from model.public_data import (
+    ImportedArea,
+    ImportedCommunityMeasure,
+    ImportedCrimeTrend,
+    ImportedIncident,
+    ImportedSignal,
+    ImportedTransitAlert,
+    ImportedTransitRoute,
+    ImportedTransitStop,
+    ImportedWeatherAlert,
+)
 from settings import LoaderConfig
 from tests.fakes import make_loader
 
@@ -152,6 +167,57 @@ async def test_calls_are_tagged_with_the_tract_the_boundaries_source_loaded(publ
     assert [r.status for r in reports] == [Status.OK, Status.OK]
     row = await admin_conn.fetchrow("SELECT * FROM app.external_signals WHERE external_id = $1", call.external_id)
     assert row["tract_geoid"] == "55079999900"
+
+
+async def test_every_imported_row_type_syncs_and_retires(public_data, admin_conn):
+    """Each model in TABLES against its <table>_sync function: the columns
+    the JSON carries are the ones the function reads."""
+    source, now = f"all_{uuid4().hex[:6]}", datetime.now(UTC)
+    rows = [
+        ImportedArea(external_id="neighborhood:T1", kind="neighborhood", name="Test Park",
+                     geometry={"type": "Polygon", "coordinates": [[[-88.0, 43.0], [-87.9, 43.0], [-87.9, 43.1],
+                                                                   [-88.0, 43.0]]]},
+                     min_lat=43.0, min_lon=-88.0, max_lat=43.1, max_lon=-87.9),
+        ImportedIncident(external_id="C1", incident_at=now, latitude=43.012345, longitude=-87.987654,
+                         offense_codes=["13A"], weapons=["40"]),
+        ImportedSignal(external_id="P1", occurred_at=now, category="Theft", public=True,
+                       expires_at=now + timedelta(hours=24)),
+        ImportedTransitRoute(external_id="R30", short_name="30", color="008556"),
+        ImportedTransitStop(external_id="S66", name="WISCONSIN & JACKSON", latitude=43.04, longitude=-87.9,
+                            routes=["R30"]),
+        ImportedTransitAlert(external_id="A1", header="30 Detour", routes=["R30"], active_from=now),
+        ImportedWeatherAlert(external_id="urn:1", event="Heat Advisory", expires_at=now + timedelta(hours=2)),
+        ImportedCommunityMeasure(external_id="55079000100:FOODINSECU:2023", tract_geoid="55079000100",
+                                 measure_id="FOODINSECU", measure="Food insecurity", year=2023, value=18.5),
+        ImportedCrimeTrend(external_id="homicide:actual:mpd:2026-10", offense="homicide", measure="actual",
+                           series="mpd", month=date(2026, 10, 1), value=12),
+    ]
+    assert set(TABLES) == {type(r) for r in rows}
+
+    assert await public_data.sync(source, rows, now) == (len(rows), len(rows))
+    assert await public_data.sync(source, rows, now) == (len(rows), 0)  # idempotent
+    for row_type, (_, table) in TABLES.items():
+        count = await admin_conn.fetchval(f"SELECT count(*) FROM app.{table} WHERE source = $1", source)
+        assert count == 1, (row_type.__name__, table)
+
+    later = now + timedelta(seconds=1)
+    retired = [await public_data.retire(t, source, later, now - timedelta(days=1)) for _, t in TABLES.values()]
+    assert retired[1] == 1  # the incident, within its window
+
+
+async def test_main_runs_a_source_end_to_end_and_records_it(app_env, admin_conn):
+    """`python main.py --source ...` as the CronJob runs it: settings from
+    the environment, the dependencies' engine, the run recorded. The
+    ComForce source asks no server."""
+    result = subprocess.run([sys.executable, "main.py", "--source", comforce.SOURCE],
+                            cwd=Path(__file__).resolve().parents[2], env={**os.environ, **app_env},
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr
+    assert "comforce_reviewed: ok" in result.stderr
+    assert await admin_conn.fetchval(
+        "SELECT status FROM app.loader_runs WHERE source = 'comforce_reviewed' ORDER BY id DESC LIMIT 1") == "ok"
+    assert await admin_conn.fetchval(
+        "SELECT count(*) FROM app.resources WHERE source = 'comforce_reviewed' AND active") == 3
 
 
 async def test_the_run_log_tells_the_gate_about_attempts_and_rate_limits(runs, admin_conn):
