@@ -40,7 +40,7 @@ export default function DebriefScreen() {
 
   return (
     <Page refreshing={record.isRefetching} onRefresh={() => record.refetch()} contentStyle={{ maxWidth: 640, gap: space.lg }}>
-      <BackLink label="Today" fallback="/staff" />
+      <BackLink to="/staff" label="Today" />
       {record.isPending ? (
         <CardSkeleton lines={4} />
       ) : !record.data ? (

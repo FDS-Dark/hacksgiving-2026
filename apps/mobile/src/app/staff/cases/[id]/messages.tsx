@@ -45,7 +45,7 @@ export default function MessagesScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { borderBottomColor: theme.separator }]}>
-        <BackLink label="Case" fallback={`/staff/cases/${c.id}`} />
+        <BackLink fallback={`/staff/cases/${c.id}`} />
         <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
           {c.contact_name ?? `Case #${c.number}`}
         </Text>

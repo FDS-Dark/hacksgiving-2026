@@ -42,7 +42,7 @@ export default function PersonScreen() {
 
   return (
     <Page refreshing={person.isRefetching} onRefresh={() => person.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Case" fallback={`/staff/cases/${id}`} />
+      <BackLink fallback={`/staff/cases/${id}`} />
       {person.isPending ? (
         <Loading label="Loading" />
       ) : !p ? (

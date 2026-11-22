@@ -32,7 +32,7 @@ export default function NotificationSettingsScreen() {
 
   return (
     <Page refreshing={prefs.isRefetching} onRefresh={() => prefs.refetch()} contentStyle={{ maxWidth: 640, gap: space.lg }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <View style={{ gap: 4 }}>
         <Text accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
           Notifications

@@ -25,7 +25,7 @@ import { radius, space, useTheme } from '@/theme/tokens';
 export default function StaffOpportunitiesScreen() {
   return (
     <Page contentStyle={{ gap: space.lg, maxWidth: 900 }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle
         title="Opportunities"
         subtitle="Post jobs, education and volunteer work for residents to find in the app. Say who each one is open to: these show before the job-board listings."

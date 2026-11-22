@@ -52,7 +52,7 @@ export default function NotificationsScreen() {
       }}
       contentStyle={{ maxWidth: 720, gap: 16 }}
     >
-      <BackLink label="Today" fallback="/staff" />
+      <BackLink to="/staff" label="Today" />
       <PageTitle
         title="Notifications"
         right={<Button label="Mark read" variant="plain" disabled={!anyUnread} loading={readAll.isPending} onPress={() => readAll.mutate(null)} />}

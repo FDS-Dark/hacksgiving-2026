@@ -23,7 +23,7 @@ export default function PartnersScreen() {
 
   return (
     <Page refreshing={partners.isRefetching} onRefresh={() => partners.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle title="Partners" subtitle="Organizations we refer to and share cases with" />
       <Field icon="search-outline" value={q} onChangeText={setQ} placeholder="Search by name or contact" accessibilityLabel="Search partners" autoCorrect={false} />
       <ChoiceRow label="Service" options={CASE_CATEGORIES} value={category} onChange={setCategory} labels={CATEGORY_LABEL} allowNone noneLabel="All" />

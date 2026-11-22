@@ -54,7 +54,7 @@ export default function OncallScheduleScreen() {
 
   return (
     <Page refreshing={shifts.isRefetching} onRefresh={() => shifts.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle
         title="On call"
         subtitle="Who is on and who is next."

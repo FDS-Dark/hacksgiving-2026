@@ -45,7 +45,7 @@ export default function AreasScreen() {
 
   return (
     <Page refreshing={coverage.isRefetching} onRefresh={() => coverage.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label="Insights" fallback="/staff/insights" />
+      <BackLink to="/staff/insights" label="Insights" />
       <PageTitle title="Need vs coverage" subtitle={data ? `${data.measure_label}${data.need_year ? ` (CDC ${data.need_year})` : ''} · ComForce ${data.category ? `${CATEGORY_LABEL[data.category].toLowerCase()} ` : ''}cases, last ${PERIOD_LABEL[period]}` : undefined} />
 
       <View style={{ gap: space.sm }}>

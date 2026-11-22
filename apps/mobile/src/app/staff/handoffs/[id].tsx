@@ -22,7 +22,7 @@ export default function HandoffScreen() {
 
   return (
     <Page refreshing={handoff.isRefetching} onRefresh={() => handoff.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Handoffs" fallback="/staff/handoffs" />
+      <BackLink fallback="/staff/handoffs" />
       {handoff.isPending ? (
         <Loading label="Loading the handoff" />
       ) : !h ? (

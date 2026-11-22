@@ -45,7 +45,7 @@ export default function CaseScreen() {
   if (detail.isPending) {
     return (
       <Page contentStyle={{ maxWidth: 720, gap: space.lg }}>
-        <BackLink label="Queue" fallback="/staff/cases" />
+        <BackLink to="/staff/cases" label="Queue" />
         <CardSkeleton lines={2} />
         <CaseListSkeleton rows={3} />
       </Page>
@@ -54,7 +54,7 @@ export default function CaseScreen() {
   if (detail.error) {
     return (
       <Page contentStyle={{ maxWidth: 720 }}>
-        <BackLink label="Queue" fallback="/staff/cases" />
+        <BackLink to="/staff/cases" label="Queue" />
         <ErrorBanner error={detail.error} onRetry={() => detail.refetch()} />
       </Page>
     );
@@ -64,7 +64,7 @@ export default function CaseScreen() {
 
   return (
     <Page refreshing={detail.isRefetching} onRefresh={() => detail.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Queue" fallback="/staff/cases" />
+      <BackLink to="/staff/cases" label="Queue" />
       <Header item={c} />
       <Person item={c} />
 

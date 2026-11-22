@@ -85,7 +85,7 @@ export default function InsightsScreen() {
       onRefresh={refetch}
       contentStyle={{ maxWidth: 720, gap: space.md }}
     >
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle title="Insights" subtitle={`Last ${PERIOD_LABEL[period]} · ${where} · ${totals.opened} case${totals.opened === 1 ? '' : 's'}`} />
 
       <View style={{ gap: space.sm }}>

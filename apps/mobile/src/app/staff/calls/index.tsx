@@ -73,7 +73,7 @@ export default function StaffCallsScreen() {
 
   return (
     <Page refreshing={calls.isRefetching} onRefresh={() => calls.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle title="AI phone calls" subtitle="Structured outcomes for staff review — never recordings or transcripts." />
 
       <Notice icon="shield-checkmark-outline">

@@ -258,7 +258,7 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     ask: ['What is the most important thing you need help with today?', 'Is anyone in danger?', 'What have you already tried?'],
     steps: [
       'Talk with the person and figure out the main need.',
-      'Re-route the case to the right service in Triage below; the matching guide will show up.',
+      'Change the type of help under Update; the matching guide will show up.',
       'If nothing fits, use 2-1-1 to find the right agency, and record the referral.',
     ],
     avoid: ['Closing a request because it does not fit a category: route it instead.'],

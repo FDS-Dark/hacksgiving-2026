@@ -1,6 +1,6 @@
 /**
  * Routing (/v1/route): which ComForce service a free-text request belongs
- * to, and whether it sounds urgent. Used to suggest triage on a new case.
+ * to, and whether it sounds urgent. Used to suggest the type of help on a new case.
  * Needs the API's OpenAI key; without it the call fails and staff pick by hand.
  */
 import { useMutation } from '@tanstack/react-query';

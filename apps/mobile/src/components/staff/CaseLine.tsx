@@ -14,8 +14,8 @@ export function caseSummary(theme: Theme, c: Case): { color: string; line: strin
   const who = c.assigned_worker_name ?? 'Unassigned';
   if (!isOpenCase(c)) return { color: theme.textTertiary, line: `${STATUS_LABEL[c.status]} · ${CATEGORY_LABEL[c.category]}` };
   if (isUrgentCase(c)) return { color: theme.danger, line: `${PRIORITY_LABEL[c.priority]} · ${CATEGORY_LABEL[c.category]} · ${who}` };
-  if (c.status === 'new') return { color: statusColor(theme, 'new'), line: `New · not triaged · ${CATEGORY_LABEL[c.category]}` };
-  if (!c.assigned_worker_id) return { color: priorityColor(theme, 'high'), line: `Unassigned · ${CATEGORY_LABEL[c.category]}` };
+  if (c.status === 'new') return { color: statusColor(theme, 'new'), line: `New · not reviewed · ${CATEGORY_LABEL[c.category]}` };
+  if (!c.assigned_worker_id) return { color: priorityColor(theme, 'high'), line: `No worker assigned · ${CATEGORY_LABEL[c.category]}` };
   return { color: statusColor(theme, c.status), line: `${STATUS_LABEL[c.status]} · ${CATEGORY_LABEL[c.category]} · ${who}` };
 }
 

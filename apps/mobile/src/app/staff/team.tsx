@@ -23,7 +23,7 @@ export default function TeamScreen() {
 
   return (
     <Page refreshing={workers.isRefetching} onRefresh={() => { workers.refetch(); users.refetch(); }} contentStyle={{ maxWidth: 900 }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <PageTitle title="Team & roles" />
       <Card>
         <CardTitle title="Workers" icon="people-outline" />
