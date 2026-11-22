@@ -5,7 +5,7 @@
  * and the red Quick exit that every resident screen has.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -59,23 +59,16 @@ export function ResidentScreen({
       style={{ flex: 1, backgroundColor: theme.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Pinned above the scroll body. The title shrinks and truncates; Quick exit keeps its width. */}
       <View style={[styles.bar, styles.column, { paddingTop: insets.top + space.sm }]}>
-        {back ? (
-          <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            hitSlop={10}
-          >
-            <Ionicons name="chevron-back" size={24} color={theme.text} />
-          </Pressable>
-        ) : null}
-        {title ? (
-          <Text style={[styles.barTitle, { color: theme.text }]} accessibilityRole="header" numberOfLines={1}>
-            {title}
-          </Text>
-        ) : null}
-        <View style={{ flex: 1 }} />
+        {back ? <BackButton fallback="/" /> : null}
+        <View style={styles.titleSlot}>
+          {title ? (
+            <Text style={[styles.barTitle, { color: theme.text }]} accessibilityRole="header" numberOfLines={1}>
+              {title}
+            </Text>
+          ) : null}
+        </View>
         <QuickExitButton />
       </View>
       <ScrollView
@@ -97,7 +90,25 @@ export function ResidentScreen({
   );
 }
 
-/** Leaves for a weather site at once (lib/quickExit.ts). */
+/** A 44 pt back chevron: back if there is history, else `fallback` (a link opened cold). */
+function BackButton({ fallback }: { fallback: Href }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))}
+      accessibilityRole="button"
+      accessibilityLabel="Back"
+      style={({ pressed }) => [styles.back, pressed && { opacity: 0.6 }]}
+    >
+      <Ionicons name="chevron-back" size={24} color={theme.text} />
+    </Pressable>
+  );
+}
+
+/**
+ * Leaves for a weather site at once (lib/quickExit.ts). It never shrinks
+ * or wraps, so at 320 pt and large text the title next to it gives way.
+ */
 export function QuickExitButton() {
   const theme = useTheme();
   return (
@@ -105,12 +116,13 @@ export function QuickExitButton() {
       onPress={quickExit}
       accessibilityRole="button"
       accessibilityLabel="Quick exit"
-      accessibilityHint="Leaves this app right away and opens a weather site"
-      hitSlop={6}
+      accessibilityHint="Hides this app and opens a weather site"
       style={({ pressed }) => [styles.exit, { backgroundColor: theme.red }, pressed && { opacity: 0.8 }]}
     >
-      <Ionicons name="close" size={14} color="#FFFFFF" />
-      <Text style={styles.exitLabel}>Quick exit</Text>
+      <Ionicons name="close" size={16} color="#FFFFFF" />
+      <Text style={styles.exitLabel} numberOfLines={1}>
+        Quick exit
+      </Text>
     </Pressable>
   );
 }
@@ -375,14 +387,16 @@ export function SampleTag() {
 
 /**
  * The top of a resident screen under the tab bar (Home, Requests, Nearby,
- * Me, Safety map, Alerts): a large title,
- * an optional kicker above it, and Quick exit on the right.
+ * Me, Safety map, Alerts): a large title, an optional kicker above it, and
+ * Quick exit on the right. Pass it as Page's `header` so it stays pinned.
+ * `back` adds a Back chevron, going to that route when there's no history.
  */
-export function ResidentHeader({ title, kicker }: { title: string; kicker?: string }) {
+export function ResidentHeader({ title, kicker, back }: { title: string; kicker?: string; back?: Href }) {
   const theme = useTheme();
   return (
     <View style={styles.tabHeader}>
-      <View style={{ flex: 1, gap: 2 }}>
+      {back ? <BackButton fallback={back} /> : null}
+      <View style={styles.titleSlot}>
         {kicker ? <Text style={[styles.kicker, { color: theme.accent }]}>{kicker}</Text> : null}
         <Text style={[styles.tabTitle, { color: theme.text }]} accessibilityRole="header" numberOfLines={1}>
           {title}
@@ -395,12 +409,24 @@ export function ResidentHeader({ title, kicker }: { title: string; kicker?: stri
 
 const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: COLUMN, alignSelf: 'center' },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingBottom: 10 },
-  barTitle: { fontSize: 20, fontWeight: '800', flexShrink: 1 },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingBottom: 10 },
+  barTitle: { fontSize: 20, fontWeight: '800' },
+  titleSlot: { flex: 1, minWidth: 0, gap: 2 },
+  back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10, flexShrink: 0 },
   body: { paddingHorizontal: 20, paddingTop: space.md, paddingBottom: space.lg, gap: 16 },
   footer: { paddingHorizontal: 20, paddingTop: space.sm },
-  exit: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
-  exitLabel: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  exit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    flexShrink: 0,
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  exitLabel: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', flexShrink: 0 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 8 },
   bigButton: { minHeight: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.lg },
   bigButtonLabel: { fontSize: 16, fontWeight: '700' },
@@ -417,7 +443,7 @@ const styles = StyleSheet.create({
   progressStep: { flex: 1, height: 4, borderRadius: 2 },
   sample: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   sampleText: { fontSize: 11, fontWeight: '600' },
-  tabHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  tabHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
   tabTitle: { fontSize: 28, fontWeight: '800' },
 });

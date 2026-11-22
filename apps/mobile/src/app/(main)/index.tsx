@@ -52,6 +52,7 @@ function HomeScreen() {
 
   return (
     <Page
+      header={<ResidentHeader kicker="COMFORCE MKE" title={first ? `Hi, ${first}` : 'Hi there'} />}
       refreshing={list.isRefetching}
       onRefresh={() => {
         list.refetch();
@@ -60,7 +61,6 @@ function HomeScreen() {
       }}
       contentStyle={{ maxWidth: 560, gap: space.lg }}
     >
-      <ResidentHeader kicker="COMFORCE MKE" title={first ? `Hi, ${first}` : 'Hi there'} />
 
       <Pressable onPress={() => router.push('/help')} accessibilityRole="button" accessibilityLabel="Get help now" style={({ pressed }) => pressed && { opacity: 0.8 }}>
         <Card style={{ gap: space.sm }}>
