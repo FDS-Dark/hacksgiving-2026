@@ -34,7 +34,7 @@ from models.staff import Role, StaffMember
 from models.user import AppUser
 from services.notification import NotificationService
 from services.oncall import OncallService
-from services.case import CaseService, Triage, title_from
+from services.case import CaseService, Triage, first_name, title_from
 from services.case_assist import CaseAssistant, case_context, rule_based_suggestions
 from services.resource import ResourceService
 from services.staff import StaffService
@@ -199,6 +199,43 @@ async def test_a_requester_never_sees_someone_elses_request(sample_user: AppUser
         await service(db).my_request(sample_user, uuid4())
 
     assert e.value.status_code == 404
+
+
+async def test_a_requester_sees_only_the_workers_first_name_and_their_contact_choice(sample_user: AppUser):
+    case = case_row(assigned_worker_id=uuid4(), assigned_worker_name="Dana Reyes", contact_method="text")
+    db = FakeFunctions(
+        request_get_for_user=[public_row(case)],
+        request_list_updates_for_user=[],
+        request_list_for_user=[public_row(case)],
+        case_get=[case],
+    )
+
+    detail = await service(db).my_request(sample_user, case["id"])
+    (listed,) = await service(db).my_requests(sample_user)
+
+    for request in (detail.request, listed):
+        assert request.worker_first_name == "Dana"
+        assert request.contact_method == "text"
+        dumped = request.model_dump()
+        assert "Reyes" not in str(dumped)
+        assert "contact_phone" not in dumped and "assigned_worker_id" not in dumped
+
+
+async def test_an_unassigned_request_waits_on_nobody_by_name(sample_user: AppUser):
+    case = case_row()
+    db = FakeFunctions(request_get_for_user=[public_row(case)], request_list_updates_for_user=[], case_get=[case])
+
+    detail = await service(db).my_request(sample_user, case["id"])
+
+    assert detail.request.worker_first_name is None
+
+
+def test_a_workers_first_name_never_comes_from_an_email():
+    assert first_name("Dana Reyes") == "Dana"
+    assert first_name("  Sam  ") == "Sam"
+    assert first_name("worker@comforce.org") is None
+    assert first_name(None) is None
+    assert first_name("") is None
 
 
 # --- Worker workflow -----------------------------------------------------------------

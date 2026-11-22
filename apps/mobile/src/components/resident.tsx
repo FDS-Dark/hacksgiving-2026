@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CaseCategory, CaseStatus } from '@/api/types';
 import { tap, type IconName } from '@/components/ui';
 import { quickExit } from '@/lib/quickExit';
+import { requestStanding } from '@/lib/requestStatus';
 import { space, useTheme, type Theme } from '@/theme/tokens';
 
 /** Resident screens are phone-shaped; on a wide screen they sit in a column. */
@@ -353,24 +354,14 @@ export function isOpenStatus(status: CaseStatus) {
   return status === 'new' || status === 'in_progress' || status === 'awaiting_resources';
 }
 
-/** Where a request stands, as steps for the progress bar (Figma R1). */
-const STEP: Record<CaseStatus, number> = { new: 1, in_progress: 2, awaiting_resources: 3, resolved: 4, closed: 4 };
-export const REQUEST_STEPS = 4;
-
-/** Which of the four steps a request is on (1 = received). */
-export function requestStep(status: CaseStatus) {
-  return STEP[status];
-}
-
-/** Four segments, filled up to where the request stands. */
-export function RequestProgress({ status }: { status: CaseStatus }) {
+/** Who a request is waiting on and what happens next (lib/requestStatus.ts), on lists and the request screen. */
+export function WaitingOn({ request }: { request: Parameters<typeof requestStanding>[0] }) {
   const theme = useTheme();
-  const done = STEP[status];
+  const { owner, next } = requestStanding(request);
   return (
-    <View style={styles.progress} accessible accessibilityLabel={`Step ${done} of ${REQUEST_STEPS}`}>
-      {Array.from({ length: REQUEST_STEPS }, (_, i) => (
-        <View key={i} style={[styles.progressStep, { backgroundColor: i < done ? theme.accent : theme.separator }]} />
-      ))}
+    <View style={{ gap: 2 }} accessible accessibilityLabel={`${owner}. ${next}`}>
+      <Text style={[styles.owner, { color: theme.text }]}>{owner}</Text>
+      <Text style={[styles.next, { color: theme.textSecondary }]}>{next}</Text>
     </View>
   );
 }
@@ -439,8 +430,8 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   checkLabel: { flex: 1, fontSize: 14, fontWeight: '500' },
-  progress: { flexDirection: 'row', gap: 4 },
-  progressStep: { flex: 1, height: 4, borderRadius: 2 },
+  owner: { fontSize: 14, fontWeight: '700' },
+  next: { fontSize: 14, lineHeight: 19 },
   sample: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   sampleText: { fontSize: 11, fontWeight: '600' },
   tabHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

@@ -4081,6 +4081,8 @@ export interface components {
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
+            /** @description How the requester asked to be reached; null when the form didn't ask. */
+            contact_method: components["schemas"]["ContactMethod"] | null;
             /**
              * Created At
              * Format: date-time
@@ -4107,6 +4109,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Worker First Name
+             * @description First name of the ComForce worker the request is assigned to; null until someone is. Nothing else about staff reaches the requester.
+             */
+            worker_first_name: string | null;
         };
         /** PublicRequestDetail */
         PublicRequestDetail: {

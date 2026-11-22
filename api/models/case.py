@@ -1,7 +1,8 @@
 """The case-management domain: requests for help and incidents, as ComForce
 MKE workers handle them (Case*) and as the person who asked sees them
 (PublicRequest*). The two shapes are separate on purpose: nothing internal
-(notes, contact details, assignee) is a field of a public model."""
+(notes, contact details, who the assignee is beyond a first name) is a
+field of a public model."""
 
 from datetime import datetime
 from enum import StrEnum
@@ -346,6 +347,14 @@ class PublicRequest(ApiModel):
     created_at: datetime
     updated_at: datetime
     resolved_at: datetime | None = None
+    contact_method: ContactMethod | None = Field(
+        default=None, description="How the requester asked to be reached; null when the form didn't ask."
+    )
+    worker_first_name: str | None = Field(
+        default=None,
+        description="First name of the ComForce worker the request is assigned to; null until someone is. "
+        "Nothing else about staff reaches the requester.",
+    )
 
 
 class PublicRequestUpdate(ApiModel):
