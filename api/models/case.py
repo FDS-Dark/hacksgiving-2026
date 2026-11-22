@@ -186,6 +186,14 @@ class UpdateCaseRequest(ApiModel):
     status: CaseStatus | None = None
     location: Location | None = None
     assigned_worker_id: UUID | None = None
+    handoff_note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)] | None = (
+        Field(
+            default=None,
+            description="With a change of `assigned_worker_id`: what the new owner needs to know (where things "
+            "stand, what's next). Saved on the case's history as an internal note and sent with the assignment "
+            "notification. Ignored when the owner doesn't actually change.",
+        )
+    )
 
     @property
     def unassign(self) -> bool:

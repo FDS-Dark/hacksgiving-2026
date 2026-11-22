@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CASE_CATEGORIES, CASE_PRIORITIES, CASE_STATUSES, type Case, type UpdateCase } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
 import { ChoiceRow, priorityColor, statusColor } from '@/components/staff/kit';
-import { Button, ErrorBanner, Sheet, success } from '@/components/ui';
+import { Button, ErrorBanner, Field, Sheet, success } from '@/components/ui';
 import { CATEGORY_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { useUpdateCase } from '@/services/cases';
 import { useStaffStatus, useWorkers } from '@/services/staff';
@@ -43,9 +43,13 @@ function Form({ item: c, onDone }: { item: Case; onDone: () => void }) {
   const [priority, setPriority] = useState(c.priority);
   const [category, setCategory] = useState(c.category);
   const [owner, setOwner] = useState<string | null>(c.assigned_worker_id ?? null);
+  const [handoff, setHandoff] = useState('');
 
   const changes = caseChanges(c, { status, priority, category, assigned_worker_id: owner });
   const dirty = Object.keys(changes).length > 0;
+  // Handing the case to someone else: a note for them, saved on the history and sent with their notification.
+  const handingOff = 'assigned_worker_id' in changes && owner !== null && owner !== me.data?.id;
+  const ownerName = workers.data?.find((w) => w.id === owner)?.display_name ?? 'them';
 
   const people = [...(workers.data ?? [])].sort((a, b) => (a.id === me.data?.id ? -1 : b.id === me.data?.id ? 1 : 0));
 
@@ -72,6 +76,18 @@ function Form({ item: c, onDone }: { item: Case; onDone: () => void }) {
         </View>
       </View>
 
+      {handingOff ? (
+        <Field
+          label={`Handoff note for ${ownerName} (optional)`}
+          placeholder="Where things stand, what’s next, anything they should know before they call"
+          value={handoff}
+          onChangeText={setHandoff}
+          multiline
+          maxLength={2000}
+          style={styles.note}
+        />
+      ) : null}
+
       {update.error ? <ErrorBanner error={update.error} /> : null}
       <Button
         label="Save changes"
@@ -79,7 +95,7 @@ function Form({ item: c, onDone }: { item: Case; onDone: () => void }) {
         disabled={!dirty}
         loading={update.isPending}
         onPress={() =>
-          update.mutate(changes, {
+          update.mutate(handingOff && handoff.trim() ? { ...changes, handoff_note: handoff.trim() } : changes, {
             onSuccess: () => {
               success();
               onDone();
@@ -115,4 +131,5 @@ const styles = StyleSheet.create({
   list: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   owner: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md },
   none: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  note: { minHeight: 96, textAlignVertical: 'top', paddingTop: space.sm },
 });
