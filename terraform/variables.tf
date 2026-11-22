@@ -28,6 +28,18 @@ variable "api_hostname" {
   default = "hacksgiving-api.austinkoske.com"
 }
 
+variable "web_image" {
+  type        = string
+  description = "Full image ref for the website (apps/mobile/web.Dockerfile). Empty turns the website off (web.tf)."
+  default     = ""
+}
+
+variable "web_hostname" {
+  type        = string
+  description = "Public hostname for the website. Must be listed in auth0/terraform dev_web_origins (as https://<host>) and in cors_origins."
+  default     = "hacksgiving.austinkoske.com"
+}
+
 variable "registry_username" {
   type      = string
   sensitive = true

@@ -25,7 +25,9 @@ variable "dev_callback_urls" {
 variable "dev_web_origins" {
   type        = list(string)
   description = "Origins the Expo web build runs on in development (npx expo start --web). Each gets <origin>/auth as a callback on Hacksgiving Mobile (dev), and is allowed to call Auth0's token endpoint from the browser."
-  default     = ["http://localhost:8081"]
+  # Plus the staging website (terraform/web.tf), which uses this client too:
+  # it's a dev/staging surface, and production builds keep their own client.
+  default = ["http://localhost:8081", "https://hacksgiving-staging.austinkoske.com"]
 }
 
 variable "name_claim" {

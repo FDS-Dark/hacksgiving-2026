@@ -1,7 +1,8 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LogoTile } from '@/components/LogoTile';
@@ -18,11 +19,26 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RootStack />
+          <WebColumn>
+            <RootStack />
+          </WebColumn>
         </AuthProvider>
       </QueryClientProvider>
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
     </SafeAreaProvider>
+  );
+}
+
+/** On a computer the screens are designed for a phone, so the web build shows
+ *  them in a centered phone-width column instead of stretching edge to edge.
+ *  Native renders children untouched. */
+function WebColumn({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <View style={[styles.webOuter, { backgroundColor: theme.separator }]}>
+      <View style={[styles.webColumn, { backgroundColor: theme.bg }]}>{children}</View>
+    </View>
   );
 }
 
@@ -84,6 +100,8 @@ function Splash() {
 }
 
 const styles = StyleSheet.create({
+  webOuter: { flex: 1, alignItems: 'center' },
+  webColumn: { flex: 1, width: '100%', maxWidth: 480, overflow: 'hidden' },
   splash: { flex: 1, alignItems: 'center', gap: space.md, padding: space.xl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md },
   name: { fontSize: 28, fontWeight: '800' },
