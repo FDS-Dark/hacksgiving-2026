@@ -27,6 +27,7 @@ from databridge.oncall import OncallDatabridge
 from databridge.push import PushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.community import CommunityDatabridge
+from databridge.request_push import RequestPushDatabridge
 from databridge.resource import ResourceDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -46,6 +47,7 @@ from services.case_assist import CaseAssistant, triage_with
 from services.opportunity import OpportunityService
 from services.public_data import PublicDataService
 from services.community import CommunityService
+from services.request_push import RequestPushService
 from services.resource import ResourceService
 from services.routing import RoutingService
 from services.staff import StaffService
@@ -99,6 +101,11 @@ def get_push_service() -> PushService:
 @cache
 def get_community_service() -> CommunityService:
     return CommunityService(CommunityDatabridge(get_executor()))
+
+
+@cache
+def get_request_push_service() -> RequestPushService:
+    return RequestPushService(RequestPushDatabridge(get_executor()))
 
 
 @cache

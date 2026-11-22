@@ -25,6 +25,7 @@ from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
 from databridge.push import PushDatabridge
+from databridge.request_push import RequestPushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -40,6 +41,7 @@ from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, Tr
 from services.redaction import PatternRedactor
 from services.staff import StaffService
 from services.task import TaskService
+from services.request_push import RequestPushStage
 from services.transcription import Transcriber
 from services.weather_jobs import WeatherWatch
 from settings import config
@@ -71,6 +73,7 @@ def build_stages(
         RemindStage(alerts, jobs, notifications, oncall.remind_seconds, oncall.max_reminders),
     ]
     stages.append(PushStage(PushDatabridge(executor), jobs, push, ZoneInfo(oncall.timezone)))
+    stages.append(RequestPushStage(RequestPushDatabridge(executor), push))
     if not openai_api_key:
         logger.warning("APP__OPENAI__API_KEY is not set: Phantom's stages are off (debriefs stay 'processing')")
         return stages, None

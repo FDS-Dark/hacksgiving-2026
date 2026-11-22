@@ -1,6 +1,7 @@
 """The resident lane: open bed counts on resources, weather alerts the
-worker has acted on (outreach tasks), and community alert opt-ins with the
-`community_alert` notification kind. The SQL is in 0019_resident_lane.sql.
+worker has acted on (outreach tasks), community alert opt-ins with the
+`community_alert` notification kind, and push subscriptions for requests
+sent without an account. The SQL is in 0019_resident_lane.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
@@ -27,9 +28,15 @@ FUNCTIONS = (
     "community_alerts_get",
     "community_alerts_set",
     "community_alert_recipients",
+    "request_push_subscribe",
+    "request_push_unsubscribe",
+    "request_push_targets",
+    "request_push_disable",
 )
 
 DOWNGRADE = """
+DROP TABLE app.request_push_subscriptions;
+
 -- 0018's view and kinds.
 CREATE OR REPLACE VIEW app.notification_view AS
 SELECT n.id, n.user_id, n.kind, n.case_id, c.number AS case_number, c.title AS case_title,

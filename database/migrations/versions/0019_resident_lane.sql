@@ -5,6 +5,8 @@
 --     alerts give every open homelessness case a check-in task.
 --   * Community alerts (Figma R5): residents who opt in get a push for a
 --     serious weather alert. The `community_alert` notification kind.
+--   * Push for requests sent without an account: a phone subscribes to one
+--     request with its number and access code.
 
 -- =============================================================================
 -- BED COUNTS
@@ -133,3 +135,82 @@ LEFT JOIN app.case_referrals f ON f.id = n.referral_id
 LEFT JOIN app.resources res ON res.id = f.resource_id
 LEFT JOIN app.users a ON a.id = n.actor_id
 WHERE s.staff OR n.kind IN ('request_update', 'test', 'community_alert');
+
+-- =============================================================================
+-- PUSH FOR REQUESTS SENT WITHOUT AN ACCOUNT
+-- =============================================================================
+
+-- A phone that holds a request's access code and asked to hear about it.
+-- The code already opens the whole public thread, so subscribing gives its
+-- holder nothing more; the push itself is generic ("You have a new
+-- update"). At most 3 phones per request: a 4th replaces the oldest.
+CREATE TABLE app.request_push_subscriptions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id         UUID NOT NULL REFERENCES app.cases (id) ON DELETE CASCADE,
+    token           TEXT NOT NULL CHECK (length(token) BETWEEN 1 AND 200),
+    platform        TEXT NOT NULL CHECK (platform IN ('ios', 'android')),
+    environment     TEXT CHECK (environment IN ('sandbox', 'production')),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    disabled_at     TIMESTAMPTZ,
+    disabled_reason TEXT,
+    CONSTRAINT request_push_case_token UNIQUE (case_id, token)
+);
+
+-- Subscribe, if p_number and p_code_hash match a request. No row back: no
+-- such request (a wrong number or code alike).
+CREATE FUNCTION app.request_push_subscribe(
+    p_number INTEGER, p_code_hash BYTEA, p_token TEXT, p_platform TEXT, p_environment TEXT)
+RETURNS TABLE (case_id UUID)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_case UUID;
+BEGIN
+    SELECT c.id INTO v_case FROM app.cases c WHERE c.number = p_number AND c.access_code_hash = p_code_hash;
+    IF v_case IS NULL THEN
+        RETURN;
+    END IF;
+    INSERT INTO app.request_push_subscriptions AS s (case_id, token, platform, environment)
+    VALUES (v_case, p_token, p_platform, p_environment)
+    ON CONFLICT ON CONSTRAINT request_push_case_token DO UPDATE
+    SET platform = EXCLUDED.platform, environment = EXCLUDED.environment, created_at = now(),
+        disabled_at = NULL, disabled_reason = NULL;
+    DELETE FROM app.request_push_subscriptions s
+    WHERE s.case_id = v_case AND s.id NOT IN (
+        SELECT k.id FROM app.request_push_subscriptions k
+        WHERE k.case_id = v_case AND k.disabled_at IS NULL
+        ORDER BY k.created_at DESC LIMIT 3);
+    RETURN QUERY SELECT v_case;
+END
+$$;
+
+CREATE FUNCTION app.request_push_unsubscribe(p_number INTEGER, p_code_hash BYTEA, p_token TEXT)
+RETURNS TABLE (removed BIGINT)
+LANGUAGE sql AS $$
+    WITH gone AS (
+        DELETE FROM app.request_push_subscriptions s
+        USING app.cases c
+        WHERE s.case_id = c.id AND c.number = p_number AND c.access_code_hash = p_code_hash AND s.token = p_token
+        RETURNING 1
+    )
+    SELECT count(*) FROM gone
+$$;
+
+-- The phones to push for an update on p_case_id. A request closed more
+-- than 7 days ago has nobody left listening.
+CREATE FUNCTION app.request_push_targets(p_case_id UUID)
+RETURNS TABLE (id UUID, token TEXT, environment TEXT)
+LANGUAGE sql STABLE AS $$
+    SELECT s.id, s.token, s.environment FROM app.request_push_subscriptions s
+    JOIN app.cases c ON c.id = s.case_id
+    WHERE s.case_id = p_case_id AND s.disabled_at IS NULL AND s.platform = 'ios'
+      AND NOT (c.status IN ('resolved', 'closed') AND c.updated_at < now() - interval '7 days')
+    ORDER BY s.created_at
+$$;
+
+CREATE FUNCTION app.request_push_disable(p_id UUID, p_reason TEXT)
+RETURNS TABLE (id UUID)
+LANGUAGE sql AS $$
+    UPDATE app.request_push_subscriptions s SET disabled_at = now(), disabled_reason = p_reason
+    WHERE s.id = p_id AND s.disabled_at IS NULL
+    RETURNING s.id
+$$;
