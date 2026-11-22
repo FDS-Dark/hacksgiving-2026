@@ -6,7 +6,9 @@ import type { CaseCategory, PublicRequest } from '@/api/types';
 import { Page } from '@/components/Page';
 import { Card, RequestProgress, StatusChip, ResidentHeader, isOpenStatus } from '@/components/resident';
 import type { IconName } from '@/components/ui';
+import { jobsLine, places, shelterLine } from '@/lib/homeCounts';
 import { prefersCommunityView } from '@/lib/viewMode';
+import { useOpportunities } from '@/services/opportunities';
 import { usePendingRequests, useResidentRequest, useResidentRequests } from '@/services/requests';
 import { useResources } from '@/services/resources';
 import { useIsStaff } from '@/services/staff';
@@ -37,10 +39,16 @@ function HomeScreen() {
   const list = useResidentRequests();
   const resources = useResources();
   const pending = usePendingRequests();
+  const jobs = useOpportunities({});
   const open = list.requests.find((r) => isOpenStatus(r.status));
   const first = me.data?.display_name?.trim().split(/\s+/)[0];
 
-  const count = (category: CaseCategory) => (resources.data ?? []).filter((r) => r.category === category).length;
+  const inCategory = (category: CaseCategory) => (resources.data ?? []).filter((r) => r.category === category);
+  const line = (category: CaseCategory) => {
+    if (category === 'homelessness') return shelterLine(inCategory(category));
+    if (category === 'bridge_to_employment' && jobs.data) return jobsLine(jobs.data);
+    return places(inCategory(category).length);
+  };
 
   return (
     <Page
@@ -48,6 +56,7 @@ function HomeScreen() {
       onRefresh={() => {
         list.refetch();
         resources.refetch();
+        jobs.refetch();
       }}
       contentStyle={{ maxWidth: 560, gap: space.lg }}
     >
@@ -107,19 +116,24 @@ function HomeScreen() {
         </View>
         <View style={styles.tiles}>
           {SUPPORT.map((s) => {
-            const n = count(s.category);
+            const detail = line(s.category);
+            // Jobs are postings, not places: that tile opens the listings.
+            const open = () =>
+              s.category === 'bridge_to_employment'
+                ? router.push('/opportunities')
+                : router.replace({ pathname: '/nearby', params: { category: s.category } });
             return (
               <Pressable
                 key={s.category}
-                onPress={() => router.replace({ pathname: '/nearby', params: { category: s.category } })}
+                onPress={open}
                 accessibilityRole="button"
-                accessibilityLabel={`${s.label}, ${n} places`}
+                accessibilityLabel={`${s.label}, ${detail}`}
                 style={({ pressed }) => [styles.tile, { backgroundColor: theme.surface, borderColor: theme.separator }, pressed && { opacity: 0.7 }]}
               >
                 <Ionicons name={s.icon} size={22} color={theme.accent} />
                 <Text style={[styles.tileTitle, { color: theme.text }]}>{s.label}</Text>
                 <Text style={[styles.small, { color: theme.textSecondary }]}>
-                  {resources.isPending ? ' ' : `${n} place${n === 1 ? '' : 's'}`}
+                  {resources.isPending ? ' ' : detail}
                 </Text>
               </Pressable>
             );

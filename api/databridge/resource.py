@@ -24,6 +24,10 @@ class ResourceDatabridge(Databridge):
             hours=body.hours or None, latitude=body.latitude, longitude=body.longitude, created_by=created_by,
         ))
 
+    async def set_beds(self, resource_id: UUID, beds: int | None, updated_by: UUID) -> Resource | None:
+        row = await self._first("resource_beds_set", resource_id=resource_id, beds=beds, updated_by=updated_by)
+        return Resource(**row) if row else None
+
     # --- The data loader (api/loader) ------------------------------------------
 
     async def sync_upsert(self, item: ImportedResource, seen_at: datetime) -> SyncResult:

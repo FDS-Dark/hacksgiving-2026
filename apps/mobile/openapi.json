@@ -3488,6 +3488,30 @@
             ],
             "title": "Address"
           },
+          "beds_available": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Open beds tonight, as staff last entered them. Null when unknown or older than 24 hours.",
+            "title": "Beds Available"
+          },
+          "beds_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beds Updated At"
+          },
           "category": {
             "$ref": "#/components/schemas/CaseCategory"
           },
@@ -3601,7 +3625,9 @@
           "source",
           "is_sample",
           "active",
-          "created_at"
+          "created_at",
+          "beds_available",
+          "beds_updated_at"
         ],
         "title": "Resource",
         "type": "object"
@@ -3724,6 +3750,29 @@
         ],
         "title": "Service",
         "type": "string"
+      },
+      "SetBedsRequest": {
+        "properties": {
+          "beds_available": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Open beds tonight; null when unknown.",
+            "title": "Beds Available"
+          }
+        },
+        "required": [
+          "beds_available"
+        ],
+        "title": "SetBedsRequest",
+        "type": "object"
       },
       "SetRoleRequest": {
         "properties": {
@@ -9187,6 +9236,60 @@
           }
         },
         "summary": "Get Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/resources/{resource_id}/beds": {
+      "put": {
+        "description": "Set tonight's open beds (null: unknown). Staff only. Residents see the\ncount on Nearby for 24 hours after it was set.",
+        "operationId": "set_beds_v1_resources__resource_id__beds_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Resource Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetBedsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Beds",
         "tags": [
           "resources"
         ]

@@ -1242,6 +1242,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/resources/{resource_id}/beds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Beds
+         * @description Set tonight's open beds (null: unknown). Staff only. Residents see the
+         *     count on Nearby for 24 hours after it was set.
+         */
+        put: operations["set_beds_v1_resources__resource_id__beds_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/route": {
         parameters: {
             query?: never;
@@ -3003,6 +3024,13 @@ export interface components {
             active: boolean;
             /** Address */
             address: string | null;
+            /**
+             * Beds Available
+             * @description Open beds tonight, as staff last entered them. Null when unknown or older than 24 hours.
+             */
+            beds_available: number | null;
+            /** Beds Updated At */
+            beds_updated_at: string | null;
             category: components["schemas"]["CaseCategory"];
             /**
              * Created At
@@ -3081,6 +3109,14 @@ export interface components {
          * @enum {string}
          */
         Service: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "unclear";
+        /** SetBedsRequest */
+        SetBedsRequest: {
+            /**
+             * Beds Available
+             * @description Open beds tonight; null when unknown.
+             */
+            beds_available: number | null;
+        };
         /** SetRoleRequest */
         SetRoleRequest: {
             role: components["schemas"]["Role"];
@@ -5890,6 +5926,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Resource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_beds_v1_resources__resource_id__beds_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resource_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBedsRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
