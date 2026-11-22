@@ -1,6 +1,6 @@
 /**
- * Shared pieces for the Leaflet maps rendered in a WebView
- * (components/SafetyMap.tsx, components/staff/CaseMap.tsx).
+ * Shared pieces for the Leaflet maps rendered through components/MapFrame
+ * (a WebView on native, an iframe on web): PinMap, SafetyMap, staff/CoverageMap.
  */
 
 /** Milwaukee, roughly downtown: where every map starts. */
