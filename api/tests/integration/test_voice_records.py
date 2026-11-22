@@ -131,8 +131,13 @@ async def test_a_voice_debrief_is_transcribed_and_its_audio_deleted(api, voice):
 
     assert voice.transcriber.heard == [b"m4a-bytes"]
     assert key not in voice.storage.objects  # deleted right after transcription
-    (seen,) = voice.extractor.seen
-    assert "Marcus" not in seen and "27th and Wells" in seen  # redacted before the AI read it
+    # The integration suite shares one database, so this runner may also drain
+    # an extract job deliberately left queued by another test. Select this
+    # recording's transcript instead of assuming the global queue held only
+    # one extraction.
+    matching = [seen for seen in voice.extractor.seen if "27th and Wells" in seen]
+    assert len(matching) == 1
+    assert "Marcus" not in matching[0]  # redacted before the AI read it
 
     ready = (await api.get(f"/v1/records/{record_id}", headers=voice.headers)).json()
     assert ready["status"] == "ready" and ready["raw_text"] == SPOKEN
