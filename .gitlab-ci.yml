@@ -593,3 +593,29 @@ ios-device-production:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       allow_failure: true
     - when: never
+
+# ── TestFlight ───────────────────────────────────────────────────────────
+# Archives the production app on the Mac mini and uploads it to TestFlight
+# (apps/mobile/scripts/testflight.sh). By hand, after a production deploy.
+# The App Store Connect API key is on the Mac
+# (~/.appstoreconnect/AuthKey_<id>.p8); ASC_KEY_ID and ASC_ISSUER_ID are CI/CD
+# variables. Internal testers get the build once Apple has processed it.
+testflight:
+  stage: f-device
+  tags: [macos, ios, macmini]
+  timeout: 60m
+  resource_group: macmini-physical-ios-device
+  variables:
+    GIT_STRATEGY: fetch
+  before_script:
+    - source /Users/austink/devops-mac/scripts/ci-job-env.sh
+  script:
+    - apps/mobile/scripts/testflight.sh
+  rules:
+    - if: '$CI_PROJECT_PATH == "austinkoske/project-templates/full-stack-app"'
+      when: never
+    # main, or any branch to try a build: always by hand.
+    - if: $CI_COMMIT_BRANCH
+      when: manual
+      allow_failure: true
+    - when: never
