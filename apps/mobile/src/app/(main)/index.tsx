@@ -4,9 +4,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { CaseCategory, PublicRequest } from '@/api/types';
 import { Page } from '@/components/Page';
-import { Card, RequestProgress, StatusChip, ResidentHeader, isOpenStatus } from '@/components/resident';
+import { Card, StatusChip, ResidentHeader, WaitingOn, isOpenStatus } from '@/components/resident';
 import type { IconName } from '@/components/ui';
 import { jobsLine, places, shelterLine } from '@/lib/homeCounts';
+import { requestStanding } from '@/lib/requestStatus';
 import { prefersCommunityView } from '@/lib/viewMode';
 import { useOpportunities } from '@/services/opportunities';
 import { usePendingRequests, useResidentRequest, useResidentRequests } from '@/services/requests';
@@ -22,7 +23,7 @@ const SUPPORT: { category: CaseCategory; label: string; icon: IconName }[] = [
   { category: 'homelessness', label: 'Shelter', icon: 'bed-outline' },
   { category: 'meal_programs', label: 'Meals', icon: 'restaurant-outline' },
   { category: 'transportation', label: 'Rides', icon: 'bus-outline' },
-  { category: 'bridge_to_employment', label: 'Jobs & training', icon: 'briefcase-outline' },
+  { category: 'bridge_to_employment', label: 'Jobs and programs', icon: 'briefcase-outline' },
 ];
 
 /** Staff skip the resident home and land on their work (Figma "Today"), unless they switched views. */
@@ -52,6 +53,7 @@ function HomeScreen() {
 
   return (
     <Page
+      header={<ResidentHeader kicker="COMFORCE MKE" title={first ? `Hi, ${first}` : 'Hi there'} />}
       refreshing={list.isRefetching}
       onRefresh={() => {
         list.refetch();
@@ -60,7 +62,6 @@ function HomeScreen() {
       }}
       contentStyle={{ maxWidth: 560, gap: space.lg }}
     >
-      <ResidentHeader kicker="COMFORCE MKE" title={first ? `Hi, ${first}` : 'Hi there'} />
 
       <Pressable onPress={() => router.push('/help')} accessibilityRole="button" accessibilityLabel="Get help now" style={({ pressed }) => pressed && { opacity: 0.8 }}>
         <Card style={{ gap: space.sm }}>
@@ -200,7 +201,7 @@ function OpenRequest({ request }: { request: PublicRequest }) {
     <Pressable
       onPress={() => router.push({ pathname: '/help/request/[id]', params: { id: request.id } })}
       accessibilityRole="button"
-      accessibilityLabel={`Your request #${request.number}: ${request.title}`}
+      accessibilityLabel={`Your request #${request.number}: ${request.title}. ${requestStanding(request).owner}`}
       style={({ pressed }) => pressed && { opacity: 0.8 }}
     >
       <Card style={{ gap: 10 }}>
@@ -211,7 +212,7 @@ function OpenRequest({ request }: { request: PublicRequest }) {
         <Text style={[styles.requestTitle, { color: theme.text }]} numberOfLines={2}>
           {request.title}
         </Text>
-        <RequestProgress status={request.status} />
+        <WaitingOn request={request} />
         {message ? (
           <View style={[styles.row, { alignItems: 'flex-start' }]}>
             <Ionicons name="chatbubble-outline" size={14} color={theme.textSecondary} style={{ marginTop: 2 }} />

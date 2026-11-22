@@ -8,10 +8,11 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { PublicRequest } from '@/api/types';
-import { BigButton, Card, Input, RequestProgress, StatusChip, isOpenStatus, requestHeading, updatedAgo } from '@/components/resident';
+import { BigButton, Card, Input, StatusChip, WaitingOn, isOpenStatus, requestHeading, updatedAgo } from '@/components/resident';
 import { CaseListSkeleton } from '@/components/Skeleton';
 import { Button, Chip, Chips, EmptyState, ErrorBanner } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { requestStanding } from '@/lib/requestStatus';
 import { unreadCaseIds } from '@/lib/notifications';
 import { useNotifications } from '@/services/notifications';
 import { useFindRequest, useForgetRequest, useResidentRequests } from '@/services/requests';
@@ -74,7 +75,7 @@ export function RequestCard({ request, label, unread = false }: { request: Publi
     <Pressable
       onPress={() => router.push({ pathname: '/help/request/[id]', params: { id: request.id } })}
       accessibilityRole="button"
-      accessibilityLabel={`${unread ? 'New update. ' : ''}${label ? `${label}: ` : ''}${requestHeading(request)}`}
+      accessibilityLabel={`${unread ? 'New update. ' : ''}${label ? `${label}: ` : ''}${requestHeading(request)}. ${requestStanding(request).owner}`}
       style={({ pressed }) => pressed && { opacity: 0.7 }}
     >
       <Card style={{ gap: 10 }}>
@@ -86,7 +87,7 @@ export function RequestCard({ request, label, unread = false }: { request: Publi
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
           {request.title}
         </Text>
-        {open ? <RequestProgress status={request.status} /> : null}
+        <WaitingOn request={request} />
         <View style={styles.row}>
           {open ? null : <Ionicons name="checkmark" size={14} color={theme.accent} />}
           <Text style={[styles.small, { color: theme.textSecondary }]}>{updatedAgo(request.updated_at)}</Text>

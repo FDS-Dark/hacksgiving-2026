@@ -6,13 +6,13 @@ variable "api_identifier" {
 
 variable "native_callback_urls" {
   type        = list(string)
-  description = "Redirect URIs for builds (expo-auth-session makeRedirectUri, path auth): hacksgiving for the production app, hacksgiving-staging for the staging app (apps/mobile/app.config.ts). Hacksgiving Mobile only."
+  description = "Redirect URIs for builds (expo-auth-session makeRedirectUri, path auth): hacksgiving for the production app, hacksgiving-staging for the staging app (apps/mobile/app.config.ts). The build client (auth0_client.mobile) only."
   default     = ["hacksgiving://auth", "hacksgiving-staging://auth"]
 }
 
 variable "dev_callback_urls" {
   type        = list(string)
-  description = "Expo Go redirect URIs, exp://<metro host>:8081/--/auth, for Hacksgiving Mobile (dev) only. The sign-in screen shows the exact value in dev."
+  description = "Expo Go redirect URIs, exp://<metro host>:8081/--/auth, for the dev client (auth0_client.mobile_dev) only. The sign-in screen shows the exact value in dev."
   # One per teammate's Tailscale address. Auth0 has no wildcard for IPs.
   default = [
     "exp://100.102.172.1:8081/--/auth",
@@ -24,7 +24,7 @@ variable "dev_callback_urls" {
 
 variable "dev_web_origins" {
   type        = list(string)
-  description = "Origins the Expo web build runs on in development (npx expo start --web). Each gets <origin>/auth as a callback on Hacksgiving Mobile (dev), and is allowed to call Auth0's token endpoint from the browser."
+  description = "Origins the Expo web build runs on in development (npx expo start --web). Each gets <origin>/auth as a callback on the dev client (auth0_client.mobile_dev), and is allowed to call Auth0's token endpoint from the browser."
   # Plus the staging website (terraform/web.tf), which uses this client too:
   # it's a dev/staging surface, and production builds keep their own client.
   default = ["http://localhost:8081", "https://hacksgiving-staging.austinkoske.com"]
