@@ -101,7 +101,7 @@ export default function StaffMeScreen() {
           onPress={() => router.push('/staff/insights')}
         />
         <Row
-          title="Ava’s phone calls"
+          title="Phone agent calls"
           subtitle="Call outcomes and places we recommended"
           icon="call-outline"
           detail={calls.data === undefined ? undefined : String(calls.data.length)}

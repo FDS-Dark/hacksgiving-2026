@@ -184,7 +184,7 @@ flowchart LR
 | On-call toggle / schedule | worker, admin | 2 | **built** (Today card, Me → Shift, `/staff/oncall`) |
 | Notifications inbox (S7) | staff | 2 | **built** (`/staff/notifications`, in-app; push in phase 2) |
 | Push → accept / hand off | on-call | 2 | **built** (`/staff/alerts/[id]`, Today banners, S7 urgent card) |
-| Insights | admin | 3 | **built** (`/staff/insights`): period and police-district filters, "Pattern spotted" (repeat cases at one block or intersection, or a neighborhood that doubled) from case places (`GET /v1/insights`, migration 0020), Ava's phone numbers |
+| Insights | admin | 3 | **built** (`/staff/insights`): period and police-district filters, "Pattern spotted" (repeat cases at one block or intersection, or a neighborhood that doubled) from case places (`GET /v1/insights`, migration 0020), phone-agent metrics |
 | Team + roles | admin | 1 | **built** (`/staff/team`) |
 | Training | worker | 4 | archived prototype |
 | Partners directory (P1) | staff | 4 | **built** (`/staff/partners`) |

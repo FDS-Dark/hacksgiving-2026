@@ -7580,7 +7580,6 @@
           },
           "urgency": {
             "$ref": "#/components/schemas/VoiceCaseUrgency",
-            "default": "routine",
             "description": "`urgent` (needs someone today, not an emergency) pages the ComForce worker on call. Emergencies are never submitted: they go to 911."
           },
           "voicemail_allowed": {
@@ -7593,7 +7592,8 @@
           "conversation_id",
           "consent",
           "approved_summary",
-          "category"
+          "category",
+          "urgency"
         ],
         "title": "VoiceCaseRequest",
         "type": "object"
@@ -14245,6 +14245,85 @@
         ]
       }
     },
+    "/v1/voice/directory-resources": {
+      "get": {
+        "description": "Return named community places for a routed ComForce service.\n\nResults are directory listings, not guaranteed real-time availability.",
+        "operationId": "directory_resources_v1_voice_directory_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CaseCategory"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Voice-Tool-Secret",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Voice-Tool-Secret"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceResource"
+                  },
+                  "title": "Response Directory Resources V1 Voice Directory Resources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Directory Resources",
+        "tags": [
+          "voice"
+        ]
+      }
+    },
     "/v1/voice/follow-ups": {
       "get": {
         "operationId": "follow_ups_v1_voice_follow_ups_get",
@@ -14784,7 +14863,7 @@
     },
     "/v1/voice/requests": {
       "post": {
-        "description": "Create a consented anonymous Get Help case from approved fields only.\nOne Ava marks urgent (needs someone today, not 911) goes in at high\npriority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`\nis off.",
+        "description": "Create a consented anonymous Get Help case from approved fields only.\nA request the phone agent marks urgent (needs someone today, not 911) goes in at high\npriority and pages on call, unless `APP__VOICE__URGENT_PAGES_ON_CALL`\nis off.",
         "operationId": "submit_voice_request_v1_voice_requests_post",
         "parameters": [
           {

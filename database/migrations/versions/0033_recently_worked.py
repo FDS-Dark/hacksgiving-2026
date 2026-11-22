@@ -4,20 +4,21 @@ task) or opening the case. The Queue's "Recently worked" view reads it. The
 SQL is in 0033_recently_worked.sql.
 
 Numbered 0033 because 0030-0032 are taken by branches merging at the same
-time; whoever merges last re-points `down_revision` to the head before it.
+time (0031 is feat/track-gaps); whoever merges last re-points
+`down_revision` to the head before it.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
 Revision ID: 0033
-Revises: 0029
+Revises: 0030
 Create Date: 2026-11-22
 """
 
 from alembic import context, op
 
 revision = "0033"
-down_revision = "0029"
+down_revision = "0030"
 branch_labels = None
 depends_on = None
 
