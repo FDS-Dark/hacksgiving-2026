@@ -25,6 +25,7 @@ from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
 from databridge.push import PushDatabridge
+from databridge.request_push import RequestPushDatabridge
 from databridge.record import RecordDatabridge
 from databridge.staff import StaffDatabridge
 from databridge.task import TaskDatabridge
@@ -40,7 +41,9 @@ from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, Tr
 from services.redaction import PatternRedactor
 from services.staff import StaffService
 from services.task import TaskService
+from services.request_push import RequestPushStage
 from services.transcription import Transcriber
+from services.weather_jobs import WeatherWatch
 from settings import config
 from worker.runner import Runner
 
@@ -70,6 +73,7 @@ def build_stages(
         RemindStage(alerts, jobs, notifications, oncall.remind_seconds, oncall.max_reminders),
     ]
     stages.append(PushStage(PushDatabridge(executor), jobs, push, ZoneInfo(oncall.timezone)))
+    stages.append(RequestPushStage(RequestPushDatabridge(executor), push))
     if not openai_api_key:
         logger.warning("APP__OPENAI__API_KEY is not set: Phantom's stages are off (debriefs stay 'processing')")
         return stages, None
@@ -105,6 +109,7 @@ async def upkeep(
     stop: asyncio.Event,
     oncall: OncallService | None = None,
     push: PushDatabridge | None = None,
+    weather: WeatherWatch | None = None,
 ) -> None:
     """Fail records whose job died without telling them, open on-call alerts
     a code path missed, delete audio that should be gone, and prune old jobs
@@ -118,6 +123,8 @@ async def upkeep(
                 logger.warning("Marked %d stalled record(s) failed", len(stalled))
             if oncall is not None:
                 await oncall.sweep()
+            if weather is not None:
+                await weather.sweep()
             if sweeper is not None:
                 swept = await sweeper.sweep()
                 if swept:
@@ -198,6 +205,7 @@ async def main() -> None:
             upkeep(
                 records, jobs, NotificationDatabridge(executor), sweeper, stop, build_oncall(executor),
                 PushDatabridge(executor),
+                WeatherWatch(executor, NotificationService(NotificationDatabridge(executor), executor)),
             ),
         )
     finally:

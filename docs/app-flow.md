@@ -169,12 +169,12 @@ flowchart LR
 |---|---|---|---|
 | Launch / Welcome | everyone | 0 | **built** (splash in `_layout.tsx`, `/sign-in`) |
 | Resident tabs: Home, Requests, Nearby, Me | resident | 0 / 1 | **built** (`/`, `/requests`, `/nearby`, `/me`) |
-| Nearby map + Place details | resident | 1 | **built** (`/nearby`, `/place/[id]`); resources have coordinates since 0009 |
-| Get help (form) | resident | 1 | have (`/help`, works signed out) |
-| Request received | resident | 1 | have (`/help/received`) |
+| Nearby map + Place details | resident | 1 | **built** (`/nearby`, `/place/[id]`); resources have coordinates since 0009; open bed counts (staff set them on the place) since 0019 |
+| Get help (form) | resident | 1 | have (`/help`, works signed out); offline queue (E3) built: sent on reconnect |
+| Request received | resident | 1 | have (`/help/received`); "Notify me on this phone" for signed-out requests |
 | My request (thread) | resident | 1 | **built** to Figma R2 (`/help/request/[id]`); signed out, saved requests are at `/help/requests` |
-| Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me |
-| Notifications ask, notification settings | resident | 2 | **built** (`/help/notifications` (R6), Me → Notifications) |
+| Safety map, Safety alerts | resident | 1 | have (`/safety`, `/alerts`), from Nearby and Me; weather alerts, and a Home banner |
+| Notifications ask, notification settings | resident | 2 | **built** (`/help/notifications` (R6), Me → Notifications, Community alerts opt-in) |
 | New record (voice or typed) | worker | 1 / 3 | **built** (`/staff/records/new`, the Record tab) |
 | Review extraction | worker | 3 | **built** (`/staff/records/[id]`), with "Your debriefs" on Today |
 | My tasks | worker | 1 | new |

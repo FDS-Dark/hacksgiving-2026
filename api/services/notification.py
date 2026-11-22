@@ -26,6 +26,7 @@ from models.notification import (
 )
 from models.user import AppUser
 from services.push_jobs import enqueue_push
+from services.request_push import enqueue_request_push
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,8 @@ def render(facts: NotificationFacts) -> NotificationItem:
             title, body = f"Nobody has accepted {n}", facts.case_title or ""
     elif facts.kind == NotificationKind.TEST:
         title, body, route = "Test notification", "Push works on this phone.", None
+    elif facts.kind == NotificationKind.COMMUNITY_ALERT:
+        title, body, route = "Weather alert", "The National Weather Service issued an alert for Milwaukee.", "/alerts"
     elif facts.kind == NotificationKind.ASSIGNMENT:
         title, body = f"{facts.actor_name or 'Someone'} assigned you {n}", facts.case_title or ""
     elif facts.kind == NotificationKind.REPLY:
@@ -116,6 +119,10 @@ class NotificationService:
         transaction. Nobody to notify, the person who acted, or the same
         event again: no row. True when a row was made. `expires_at`: an
         urgent offer's end, after which its push is dropped."""
+        if kind == NotificationKind.REQUEST_UPDATE and user_id is None and case_id and case_update_id:
+            # Sent without an account: phones that subscribed with the
+            # access code hear of it instead (services/request_push.py).
+            await enqueue_request_push(JobDatabridge(tx), case_id, case_update_id)
         if user_id is None or user_id == actor_id:
             return False
         created = await self.notifications.within(tx).create(

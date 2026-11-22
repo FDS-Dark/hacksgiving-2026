@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from dependencies import get_current_user, get_current_worker, get_resource_service
 from models.case_enums import CaseCategory
-from models.resource import CreateResourceRequest, Resource
+from models.resource import CreateResourceRequest, Resource, SetBedsRequest
 from models.staff import StaffMember
 from models.user import AppUser
 from services.resource import ResourceService
@@ -47,3 +47,15 @@ async def create_resource(
 ) -> Resource:
     """Add a resource to the directory. Staff only."""
     return await service.create(worker, body)
+
+
+@router.put("/{resource_id}/beds", response_model=Resource)
+async def set_beds(
+    resource_id: UUID,
+    body: SetBedsRequest,
+    worker: StaffMember = Depends(get_current_worker),
+    service: ResourceService = Depends(get_resource_service),
+) -> Resource:
+    """Set tonight's open beds (null: unknown). Staff only. Residents see the
+    count on Nearby for 24 hours after it was set."""
+    return await service.set_beds(worker, resource_id, body.beds_available)

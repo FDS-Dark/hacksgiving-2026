@@ -4,7 +4,9 @@
  * (/public/requests); this device remembers it (lib/savedRequests.ts), and
  * the number plus the code opens it anywhere.
  */
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 
 import { request } from '@/api/client';
 import type {
@@ -15,6 +17,8 @@ import type {
   SubmitRequest,
 } from '@/api/types';
 import { useAuth } from '@/lib/auth';
+import { isOffline, loadPending, queueRequest, removePending } from '@/lib/pendingRequests';
+import { unsubscribeFromRequest } from '@/lib/push';
 import { forgetRequest, loadSavedRequests, saveRequest, type SavedRequest } from '@/lib/savedRequests';
 
 const codeHeader = (code: string) => ({ 'X-Access-Code': code });
@@ -43,6 +47,7 @@ export const requestKeys = {
   all: ['requests'] as const,
   mine: ['requests', 'mine'] as const,
   saved: ['requests', 'saved'] as const,
+  pending: ['requests', 'pending'] as const,
   detail: (id: string) => ['requests', 'detail', id] as const,
 };
 
@@ -62,22 +67,86 @@ function detailFetcher(id: string, saved: SavedRequest | undefined) {
   return saved ? () => requestsApi.getByCode(saved.number, saved.code) : () => requestsApi.get(id);
 }
 
-/** Send the form. Signed in, the request joins the account; otherwise it
- *  comes back with an access code that this device keeps. */
+type Sent = { request: PublicRequest; code: string | null };
+
+/** One send. Signed in, the request joins the account; otherwise it comes
+ *  back with an access code that this device keeps. */
+async function sendNow(qc: QueryClient, signedIn: boolean, body: SubmitRequest): Promise<Sent> {
+  if (signedIn) return { request: await requestsApi.submit(body), code: null };
+  const { request: sent, access_code: code } = await requestsApi.submitAnonymous(body);
+  const saved = await saveRequest({ id: sent.id, number: sent.number, code, title: sent.title, savedAt: new Date().toISOString() });
+  qc.setQueryData(requestKeys.saved, saved);
+  return { request: sent, code };
+}
+
+/** Send the form. With no connection it is kept on the phone and sent later
+ *  (`usePendingRequests`), and the result is `{ queued: true }`. */
 export function useSendRequest() {
   const qc = useQueryClient();
   const signedIn = useSignedIn();
   return useMutation({
-    mutationFn: async (body: SubmitRequest): Promise<{ request: PublicRequest; code: string | null }> => {
-      if (signedIn) return { request: await requestsApi.submit(body), code: null };
-      const receipt = await requestsApi.submitAnonymous(body);
-      const { request: sent, access_code: code } = receipt;
-      const saved = await saveRequest({ id: sent.id, number: sent.number, code, title: sent.title, savedAt: new Date().toISOString() });
-      qc.setQueryData(requestKeys.saved, saved);
-      return { request: sent, code };
+    mutationFn: async (body: SubmitRequest): Promise<Sent | { queued: true }> => {
+      try {
+        return await sendNow(qc, signedIn, body);
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        qc.setQueryData(requestKeys.pending, await queueRequest(body));
+        return { queued: true };
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: requestKeys.all }),
   });
+}
+
+/** Retry queued requests every 30 s while any are waiting. */
+const PENDING_RETRY_MS = 30_000;
+
+/**
+ * Requests waiting to be sent, and the sender that empties the queue: on
+ * launch, whenever the app comes back to the foreground, and every 30 s
+ * while something is waiting. Mounted once, in the root layout.
+ */
+export function usePendingRequests() {
+  return useQuery({ queryKey: requestKeys.pending, queryFn: loadPending, staleTime: Infinity });
+}
+
+export function useSendPendingRequests() {
+  const qc = useQueryClient();
+  const signedIn = useSignedIn();
+  const pending = usePendingRequests();
+  const waiting = (pending.data?.length ?? 0) > 0;
+  const busy = useRef(false);
+
+  const flush = useCallback(async () => {
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      for (const entry of await loadPending()) {
+        try {
+          await sendNow(qc, signedIn, entry.body);
+        } catch (e) {
+          // Still offline: try again later. Refused for good: drop it, or it
+          // would block every request behind it forever.
+          if (isOffline(e)) break;
+        }
+        qc.setQueryData(requestKeys.pending, await removePending(entry.localId));
+        qc.invalidateQueries({ queryKey: requestKeys.all });
+      }
+    } finally {
+      busy.current = false;
+    }
+  }, [qc, signedIn]);
+
+  useEffect(() => {
+    if (!waiting) return;
+    flush();
+    const timer = setInterval(flush, PENDING_RETRY_MS);
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && flush());
+    return () => {
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [waiting, flush]);
 }
 
 /** One request with its public updates. */
@@ -124,7 +193,12 @@ export function useFindRequest() {
 export function useForgetRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: forgetRequest,
+    mutationFn: async (id: string) => {
+      // Its pushes stop too; best effort (offline, it simply stays subscribed).
+      const entry = (await loadSavedRequests()).find((r) => r.id === id);
+      if (entry) await unsubscribeFromRequest(entry.number, entry.code);
+      return forgetRequest(id);
+    },
     onSuccess: (saved, id) => {
       qc.setQueryData(requestKeys.saved, saved);
       qc.removeQueries({ queryKey: requestKeys.detail(id) });

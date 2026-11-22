@@ -10,6 +10,7 @@ import { Card, SampleTag, ResidentHeader } from '@/components/resident';
 import { RefreshError } from '@/components/RefreshError';
 import { CaseListSkeleton } from '@/components/Skeleton';
 import { Chip, Chips, EmptyState, ErrorBanner, Field } from '@/components/ui';
+import { bedsLabel } from '@/lib/beds';
 import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/cases';
 import { useResources } from '@/services/resources';
 import { space, useTheme } from '@/theme/tokens';
@@ -105,11 +106,12 @@ export default function NearbyTab() {
 function PlaceRow({ place: r, first }: { place: Resource; first: boolean }) {
   const theme = useTheme();
   const meta = [CATEGORY_LABEL[r.category], r.neighborhood, r.hours].filter(Boolean).join(' · ');
+  const beds = bedsLabel(r);
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/place/[id]', params: { id: r.id } })}
       accessibilityRole="button"
-      accessibilityLabel={`${r.name}. ${meta}`}
+      accessibilityLabel={`${r.name}. ${meta}${beds ? `. ${beds}` : ''}`}
       style={({ pressed }) => [styles.place, !first && { borderTopColor: theme.separator, borderTopWidth: StyleSheet.hairlineWidth }, pressed && { opacity: 0.7 }]}
     >
       <View style={[styles.icon, { backgroundColor: theme.fill }]}>
@@ -125,6 +127,7 @@ function PlaceRow({ place: r, first }: { place: Resource; first: boolean }) {
         <Text style={[styles.meta, { color: theme.textSecondary }]} numberOfLines={2}>
           {meta}
         </Text>
+        {beds ? <Text style={[styles.meta, { color: r.beds_available ? theme.accent : theme.textSecondary, fontWeight: '700' }]}>{beds}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
     </Pressable>

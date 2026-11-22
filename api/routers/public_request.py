@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Path, status
 
-from dependencies import get_case_service, get_triager
+from dependencies import get_case_service, get_request_push_service, get_triager
 from models.case import (
     AnonymousRequestReceipt,
     PublicRequestDetail,
@@ -15,7 +15,9 @@ from models.case import (
     ReplyRequest,
     SubmitRequest,
 )
+from models.push import SubscribeRequestPush
 from services.case import CaseService, Triager
+from services.request_push import RequestPushService
 from services.rate_limit import anonymous_submissions, code_lookups
 
 router = APIRouter(prefix="/public/requests", tags=["requests"])
@@ -66,3 +68,35 @@ async def reply_to_anonymous_request(
 ) -> PublicRequestUpdate:
     """Answer on a request sent without an account."""
     return await service.reply_by_code(number, code, body)
+
+
+@router.post(
+    "/{number}/devices",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(code_lookups)],
+)
+async def subscribe_to_anonymous_request(
+    number: Number,
+    body: SubscribeRequestPush,
+    code: AccessCode,
+    service: RequestPushService = Depends(get_request_push_service),
+) -> None:
+    """This phone gets a push ("You have a new update", no sound) when
+    ComForce replies or the status changes. At most 3 phones per request.
+    404 for a wrong number or code alike."""
+    await service.subscribe(number, code, body)
+
+
+@router.delete(
+    "/{number}/devices/{token}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(code_lookups)],
+)
+async def unsubscribe_from_anonymous_request(
+    number: Number,
+    token: Annotated[str, Path(max_length=200)],
+    code: AccessCode,
+    service: RequestPushService = Depends(get_request_push_service),
+) -> None:
+    """Stop this phone's pushes for the request (forgetting it on the phone)."""
+    await service.unsubscribe(number, code, token)

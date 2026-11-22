@@ -9,6 +9,7 @@ import { Button, ErrorBanner, Field, Group, Notice, Row, success, Toggle } from 
 import { useAuth } from '@/lib/auth';
 import { ensurePermission, openSettings, usePushPermission } from '@/lib/push';
 import { withKindMuted } from '@/lib/pushRules';
+import { useCommunityAlerts, useSetCommunityAlerts } from '@/services/community';
 import { useApiHealth } from '@/services/health';
 import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/services/notifications';
 import { useIsStaff } from '@/services/staff';
@@ -78,6 +79,8 @@ export default function MeTab() {
 function NotificationSettings() {
   const prefs = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
+  const community = useCommunityAlerts();
+  const setCommunity = useSetCommunityAlerts();
   const permission = usePushPermission();
   const muted = (update.isPending ? update.variables?.muted_kinds : undefined) ?? prefs.data?.muted_kinds ?? [];
   const on = !muted.includes('request_update');
@@ -110,9 +113,26 @@ function NotificationSettings() {
             />
           }
         />
+        <Row
+          title="Community alerts"
+          subtitle="Serious weather in Milwaukee, like extreme cold. Off unless you turn it on."
+          icon="cloudy-outline"
+          right={
+            <Toggle
+              value={(setCommunity.isPending ? setCommunity.variables : community.data?.subscribed) ?? false}
+              onChange={(next) => {
+                setCommunity.mutate(next);
+                if (next && permission.state === 'off') void ensurePermission('resident');
+              }}
+              disabled={setCommunity.isPending || !community.data}
+              label="Community alerts"
+            />
+          }
+        />
         {blocked ? <Row title="Open Settings" icon="settings-outline" accessory="chevron" onPress={openSettings} /> : null}
       </Group>
       {update.error ? <ErrorBanner error={update.error} /> : null}
+      {setCommunity.error ? <ErrorBanner error={setCommunity.error} /> : null}
     </>
   );
 }
