@@ -1,5 +1,5 @@
 -- =============================================================================
--- Shift handoff briefs (see 0021_shift_handoffs.py).
+-- Shift handoff briefs (see 0023_shift_handoffs.py).
 --
 -- When someone switches off call, the API snapshots what they're leaving
 -- (their open cases, open tasks, urgent alerts they accepted) into a brief

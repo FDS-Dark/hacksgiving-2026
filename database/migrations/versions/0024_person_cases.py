@@ -1,22 +1,22 @@
 """The person behind a case: app.person_cases finds a resident's other
-cases by account, phone or email. The SQL is in 0022_person_cases.sql.
+cases by account, phone or email. The SQL is in 0024_person_cases.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0024
+Revises: 0023
 Create Date: 2026-11-21
 """
 
 from alembic import context, op
 
-revision = "0022"
-down_revision = "0021"
+revision = "0024"
+down_revision = "0023"
 branch_labels = None
 depends_on = None
 
-# Every function 0022_person_cases.sql creates. test_migrations.py checks the
+# Every function 0024_person_cases.sql creates. test_migrations.py checks the
 # union of every revision's list against the database.
 FUNCTIONS = ("phone_key", "person_cases")
 

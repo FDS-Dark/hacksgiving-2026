@@ -1,5 +1,5 @@
 -- =============================================================================
--- Debriefs for an existing case (see 0020_case_debriefs.py).
+-- Debriefs for an existing case (see 0022_case_debriefs.py).
 --
 -- A record normally becomes a new case when it is confirmed (0011). A worker
 -- responding to an urgent alert already has a case, though: a debrief taken

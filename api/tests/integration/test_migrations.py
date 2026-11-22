@@ -99,13 +99,15 @@ def test_every_api_function_is_declared_for_the_downgrade(empty_database):
             "0017_push",
             "0018_urgent_alerts",
             "0019_resident_lane",
-            "0020_case_debriefs",
-            "0021_shift_handoffs",
-            "0022_person_cases",
-            "0023_case_language",
-            "0024_referral_outcomes",
-            "0025_attachments_and_knowledge",
-            "0026_training_progress",
+            "0020_case_places",
+            "0021_partners_and_outreach",
+            "0022_case_debriefs",
+            "0023_shift_handoffs",
+            "0024_person_cases",
+            "0025_case_language",
+            "0026_referral_outcomes",
+            "0027_attachments_and_knowledge",
+            "0028_training_progress",
         )
         for name in _revision(revision).FUNCTIONS
     }

@@ -125,13 +125,22 @@ class CaseService:
             raise RuntimeError(f"Case {case.id} isn't visible to its requester")
         return request
 
-    async def submit_anonymous_request(self, body: SubmitRequest, triage: Triager | None) -> AnonymousRequestReceipt:
+    async def submit_anonymous_request(
+        self, body: SubmitRequest, triage: Triager | None, *, urgent_note: str | None = None
+    ) -> AnonymousRequestReceipt:
         """A request from someone who isn't signed in (an emergency shouldn't
         wait on an account). The access code in the receipt, with the
-        request's number, is how they get back to it."""
+        request's number, is how they get back to it.
+
+        `urgent_note` is for a trusted caller that has already judged the
+        request urgent (Ava, on the phone): the case goes in at high
+        priority, which pages on call, with the note in its history. A
+        resident's own form can't set it."""
         code = access_code.new_code()
         code_hash = access_code.hash_code(code)
-        case = await self._submit(body, triage, requester_id=None, access_code_hash=code_hash)
+        case = await self._submit(
+            body, triage, requester_id=None, access_code_hash=code_hash, urgent_note=urgent_note
+        )
         logger.info("Request #%s submitted without an account", case.number)
         request = await self.cases.get_by_code(case.number, code_hash)
         if request is None:
@@ -139,7 +148,13 @@ class CaseService:
         return AnonymousRequestReceipt(request=request, access_code=code)
 
     async def _submit(
-        self, body: SubmitRequest, triage: Triager | None, *, requester_id: UUID | None, access_code_hash: bytes | None
+        self,
+        body: SubmitRequest,
+        triage: Triager | None,
+        *,
+        requester_id: UUID | None,
+        access_code_hash: bytes | None,
+        urgent_note: str | None = None,
     ) -> Case:
         """The triage (an AI call) runs first, outside any transaction; then
         the case, its triage note and its on-call alert are one transaction.
@@ -152,7 +167,8 @@ class CaseService:
             except Exception:
                 logger.exception("Triage failed; the request goes in uncategorized")
         category = body.category or (guess.category if guess else CaseCategory.OTHER)
-        priority = CasePriority.HIGH if guess and guess.urgent else CasePriority.MEDIUM
+        is_urgent = urgent_note is not None or bool(guess and guess.urgent)
+        priority = CasePriority.HIGH if is_urgent else CasePriority.MEDIUM
 
         contact_method = body.contact_method
         async with self.transactions.transaction() as tx:
@@ -181,6 +197,8 @@ class CaseService:
                     case.id, None, UpdateType.NOTE, Visibility.INTERNAL,
                     f"Auto-triage suggested {label}.{urgent} {guess.reason}".strip(),
                 )
+            if urgent_note:
+                await cases.add_update(case.id, None, UpdateType.NOTE, Visibility.INTERNAL, urgent_note)
             await self.oncall.open_for_case(tx, case)
         await self.tasks.generate_for(case)
         return case
@@ -274,7 +292,7 @@ class CaseService:
         return case
 
     async def person(self, case_id: UUID, limit: int = 50) -> Person:
-        """The resident behind a case and all their cases (0022: same account,
+        """The resident behind a case and all their cases (0024: same account,
         phone or email). Contact details come from their newest case that
         has each one."""
         anchor = await self.get(case_id)

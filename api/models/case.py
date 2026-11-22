@@ -166,7 +166,7 @@ class PersonMatch(StrEnum):
 class Person(ApiModel):
     """The resident behind a case, as staff see them: their contact details
     (from their newest case that has them) and every case that looks like
-    the same person. There's no separate person record; see 0022."""
+    the same person. There's no separate person record; see 0024."""
 
     name: str | None = None
     phone: str | None = None

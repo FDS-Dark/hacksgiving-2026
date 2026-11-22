@@ -1,23 +1,23 @@
 """Shift handoff briefs: what someone leaves for the next person on call
 when they switch off (app.shift_handoffs). The SQL is in
-0021_shift_handoffs.sql.
+0023_shift_handoffs.sql.
 
 Never edit this file once it has been applied; change a function in a new
 revision.
 
-Revision ID: 0021
-Revises: 0020
+Revision ID: 0023
+Revises: 0022
 Create Date: 2026-11-21
 """
 
 from alembic import context, op
 
-revision = "0021"
-down_revision = "0020"
+revision = "0023"
+down_revision = "0022"
 branch_labels = None
 depends_on = None
 
-# Every function 0021_shift_handoffs.sql creates. test_migrations.py checks the
+# Every function 0023_shift_handoffs.sql creates. test_migrations.py checks the
 # union of every revision's list against the database.
 FUNCTIONS = (
     "shift_handoff_create",

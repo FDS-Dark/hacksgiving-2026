@@ -1,5 +1,5 @@
 -- =============================================================================
--- How referrals to each resource have turned out (see 0024_referral_outcomes.py).
+-- How referrals to each resource have turned out (see 0026_referral_outcomes.py).
 --
 -- Suggestions learn from outcomes: a resource whose referrals are accepted
 -- or completed ranks above one whose referrals are declined. Counted from

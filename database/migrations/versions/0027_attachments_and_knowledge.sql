@@ -1,5 +1,5 @@
 -- =============================================================================
--- Case attachments and knowledge search (see 0025_attachments_and_knowledge.py).
+-- Case attachments and knowledge search (see 0027_attachments_and_knowledge.py).
 --
 -- Attachments: a photo or PDF on a case (an ID card, an eviction notice, a
 -- shelter letter). The file goes straight from the phone to the private

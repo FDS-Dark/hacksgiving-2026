@@ -100,7 +100,7 @@ class CaseDatabridge(Databridge):
         )
 
     async def person_cases(self, case_id: UUID, limit: int) -> list[Case]:
-        """The case and every case that looks like the same person (0022)."""
+        """The case and every case that looks like the same person (0024)."""
         return [Case(**row) for row in await self._rows("person_cases", case_id=case_id, limit=limit)]
 
     async def update(self, case_id: UUID, actor_id: UUID, changes: UpdateCaseRequest) -> Case | None:

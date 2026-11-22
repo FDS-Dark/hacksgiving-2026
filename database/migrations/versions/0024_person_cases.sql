@@ -1,5 +1,5 @@
 -- =============================================================================
--- The person behind a case (see 0022_person_cases.py).
+-- The person behind a case (see 0024_person_cases.py).
 --
 -- There is no separate person record: a resident is whoever a case is about.
 -- Their other cases are found by the same resident account (requester_id),

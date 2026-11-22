@@ -143,6 +143,26 @@ class WorkerConfig(BaseModel):
     # this, are deleted.
     keep_push_devices_days: int = Field(default=60, ge=1)
     keep_push_deliveries_days: int = Field(default=30, ge=1)
+    # Place cases for Insights (services/place.py). The geocoder sends only
+    # a block or intersection to the City of Milwaukee's locator; off, cases
+    # are placed from their coordinates and neighborhood names alone.
+    place_cases: bool = Field(default=True)
+    geocode_cases: bool = Field(default=True)
+
+
+class SmsConfig(BaseModel):
+    """Texts to requesters who chose "text me" and said it's safe
+    (adapters/sms.py, services/text.py). Off unless a provider is set."""
+
+    provider: Literal["off", "fake", "twilio"] = Field(default="off")
+    twilio_account_sid: str = Field(default="")
+    twilio_auth_token: str = Field(default="")
+    # Either a number on the account (E.164) or a Messaging Service.
+    from_number: str = Field(default="")
+    twilio_messaging_service_sid: str = Field(default="")
+    # At most one text per case in this many minutes; later updates in the
+    # window are skipped (the text only says "there's an update").
+    coalesce_minutes: int = Field(default=30, ge=0, le=24 * 60)
 
 
 class VoiceConfig(BaseModel):
@@ -150,6 +170,10 @@ class VoiceConfig(BaseModel):
 
     elevenlabs_webhook_secret: str = Field(default="")
     tool_secret: str = Field(default="")
+    # A phone request Ava marks urgent goes in at high priority, which pages
+    # on call (D3). False keeps every phone request at medium: the urgency is
+    # still recorded on the call, but nobody is paged.
+    urgent_pages_on_call: bool = Field(default=True)
 
 
 class LoaderConfig(BaseModel):
@@ -273,6 +297,7 @@ class AppConfig(BaseSettings):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    sms: SmsConfig = Field(default_factory=SmsConfig)
     worker: WorkerConfig = Field(default_factory=WorkerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     loader: LoaderConfig = Field(default_factory=LoaderConfig)

@@ -47,7 +47,7 @@ class ResourceDatabridge(Databridge):
         return int(row["retired"])
 
     async def outcome_stats(self) -> dict[UUID, ResourceOutcomes]:
-        """Referral outcomes per resource (0024); resources never referred are absent."""
+        """Referral outcomes per resource (0026); resources never referred are absent."""
         stats: dict[UUID, ResourceOutcomes] = {}
         for row in await self._rows("resource_outcome_stats"):
             decided = row["helped"] + row["declined"]

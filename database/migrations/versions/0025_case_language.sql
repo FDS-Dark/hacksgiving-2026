@@ -1,5 +1,5 @@
 -- =============================================================================
--- The language a resident writes in, per case (see 0023_case_language.py).
+-- The language a resident writes in, per case (see 0025_case_language.py).
 --
 -- Staff reply in it: the AI draft is written in it (with an English version
 -- for the worker) and a reply typed in English can be translated into it.
