@@ -70,6 +70,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reply Languages
+         * @description The languages staff can reply to residents in.
+         */
+        get: operations["reply_languages_v1_cases_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}": {
         parameters: {
             query?: never;
@@ -129,7 +149,8 @@ export interface paths {
          * Suggest Resources
          * @description Resources that fit the case, each with a reason, chosen only from the
          *     resource directory. Without AI (`method: rules`), the resources in the
-         *     case's category.
+         *     case's category. Both rank by how earlier referrals turned out
+         *     (`outcomes`), and each says its nearest bus stop (`nearest_stop`).
          */
         post: operations["suggest_resources_v1_cases__case_id__assist_resources_post"];
         delete?: never;
@@ -152,6 +173,154 @@ export interface paths {
          * @description A short summary of the case and its history. 503 when AI isn't configured.
          */
         post: operations["summarize_case_v1_cases__case_id__assist_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/assist/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate Message
+         * @description A reply typed in English, translated into the case's language (or
+         *     `language`). English in, English out. 503 when AI isn't configured.
+         */
+        post: operations["translate_message_v1_cases__case_id__assist_translate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Attachments */
+        get: operations["list_attachments_v1_cases__case_id__attachments_get"];
+        put?: never;
+        /**
+         * Start Attachment
+         * @description Attach a photo or PDF (up to 10 MB): returns a one-time URL to PUT the
+         *     file to. Then call `.../uploaded`. 503 when file storage isn't set up.
+         */
+        post: operations["start_attachment_v1_cases__case_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Attachment */
+        delete: operations["delete_attachment_v1_cases__case_id__attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attachment Link
+         * @description A link that opens the file for five minutes.
+         */
+        get: operations["attachment_link_v1_cases__case_id__attachments__attachment_id__link_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}/uploaded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attachment Uploaded
+         * @description The file is uploaded: it's checked, marked ready and noted on the case.
+         */
+        post: operations["attachment_uploaded_v1_cases__case_id__attachments__attachment_id__uploaded_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Case Language
+         * @description The language staff reply to the resident in (set by a worker, or
+         *     noticed by the AI draft). `language: null` means not set.
+         */
+        get: operations["get_case_language_v1_cases__case_id__language_get"];
+        /**
+         * Set Case Language
+         * @description Choose the reply language (a code from `GET /cases/languages`; null
+         *     clears it). A worker's choice is never replaced by detection.
+         */
+        put: operations["set_case_language_v1_cases__case_id__language_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Case Person
+         * @description The resident behind a case: their contact details and every case that
+         *     looks like the same person (same resident account, phone number or
+         *     email). Staff only.
+         */
+        get: operations["get_case_person_v1_cases__case_id__person_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -387,6 +556,28 @@ export interface paths {
          *     finished in the last day. `oldest_run_at` on queued work shows a backlog.
          */
         get: operations["job_stats_v1_jobs_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/knowledge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Knowledge Search
+         * @description Search what the team knows: the resource directory, resolved and
+         *     closed cases, the internal notes on them, and attachment notes. Best
+         *     matches first; matching words in `snippet` are wrapped in « ».
+         */
+        get: operations["knowledge_search_v1_knowledge_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -746,6 +937,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/oncall/handoffs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Handoffs
+         * @description Shift handoff briefs you wrote or were handed in the last 7 days, newest first.
+         */
+        get: operations["my_handoffs_v1_oncall_handoffs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/handoffs/{handoff_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Handoff */
+        get: operations["get_handoff_v1_oncall_handoffs__handoff_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oncall/handoffs/{handoff_id}/summarize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Summarize Handoff
+         * @description Rewrite the brief's summary with the AI (titles, priorities and due
+         *     times only). 503 `ai_unavailable` when the assistant isn't set up.
+         */
+        post: operations["summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/oncall/me": {
         parameters: {
             query?: never;
@@ -758,7 +1007,8 @@ export interface paths {
         /**
          * Toggle Oncall
          * @description Switch yourself on call (until `until`, or the next 07:00, 17:00 or
-         *     23:00 org time) or off (your shift ends now).
+         *     23:00 org time) or off (your shift ends now). Going off writes a shift
+         *     handoff brief for whoever is on next (`GET /oncall/handoffs`).
          */
         post: operations["toggle_oncall_v1_oncall_me_post"];
         delete?: never;
@@ -1257,7 +1507,7 @@ export interface paths {
          * @description Start a voice debrief: a record waiting for its audio, and a one-time
          *     URL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.
          *     The audio is deleted as soon as it's transcribed. 503 when voice isn't
-         *     set up on the server.
+         *     set up on the server. Send `case_id` for a debrief about an existing case.
          */
         post: operations["start_voice_record_v1_records_voice_post"];
         delete?: never;
@@ -1299,8 +1549,10 @@ export interface paths {
         /**
          * Confirm Record
          * @description Open a case from the reviewed record (assigned to the caller), with its
-         *     planned tasks plus the ones sent here. Calling it again returns the same
-         *     case.
+         *     planned tasks plus the ones sent here. A debrief captured for an existing
+         *     case (`case_id` set) is added to that case instead: an internal note, its
+         *     tasks, and a higher priority if it calls for one (`updated_existing`).
+         *     Calling it again returns the same case.
          */
         post: operations["confirm_record_v1_records__record_id__confirm_post"];
         delete?: never;
@@ -1646,6 +1898,66 @@ export interface paths {
          *     Finishing a task is noted in the case history.
          */
         patch: operations["update_task_v1_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/v1/training/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Progress
+         * @description The modules you've finished, and whether every required one is done.
+         */
+        get: operations["my_progress_v1_training_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/training/progress/{module_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Module
+         * @description Mark a module done (`done: true`) or not done.
+         */
+        put: operations["set_module_v1_training_progress__module_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/training/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team Progress
+         * @description Every staff member's progress, for admins.
+         */
+        get: operations["team_progress_v1_training_team_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/voice/app-capabilities": {
@@ -2131,6 +2443,66 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** Attachment */
+        Attachment: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Content Type */
+            content_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string;
+            /** Size Bytes */
+            size_bytes: number;
+            status: components["schemas"]["AttachmentStatus"];
+            /** Uploaded By */
+            uploaded_by: string | null;
+            /** Uploaded By Name */
+            uploaded_by_name: string | null;
+        };
+        /**
+         * AttachmentLink
+         * @description A short-lived link to open the file.
+         */
+        AttachmentLink: {
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Url */
+            url: string;
+        };
+        /**
+         * AttachmentStatus
+         * @enum {string}
+         */
+        AttachmentStatus: "pending" | "ready";
+        /**
+         * AttachmentUpload
+         * @description PUT the file to `upload_url` with this Content-Type, then call
+         *     `POST /cases/{case_id}/attachments/{id}/uploaded`.
+         */
+        AttachmentUpload: {
+            attachment: components["schemas"]["Attachment"];
+            /** Content Type */
+            content_type: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Upload Url */
+            upload_url: string;
+        };
         /**
          * Audience
          * @description Who a posting is open to, beyond everyone: staff tag their own postings,
@@ -2233,6 +2605,18 @@ export interface components {
          * @enum {string}
          */
         CaseKind: "request" | "incident";
+        /**
+         * CaseLanguage
+         * @description The language to reply to the resident in. `language: null`: not set
+         *     (English until someone sets it or the AI notices otherwise).
+         */
+        CaseLanguage: {
+            /** Language */
+            language: string | null;
+            /** Language Name */
+            language_name: string | null;
+            source: components["schemas"]["LanguageSource"] | null;
+        };
         /**
          * CasePriority
          * @enum {string}
@@ -2434,6 +2818,16 @@ export interface components {
             /** Year */
             year: number;
         };
+        /** CompletedModule */
+        CompletedModule: {
+            /**
+             * Completed At
+             * Format: date-time
+             */
+            completed_at: string;
+            /** Module Id */
+            module_id: string;
+        };
         /**
          * ConfirmRecordRequest
          * @description The author's reviewed version of the extraction: this becomes the case.
@@ -2475,6 +2869,12 @@ export interface components {
         ConfirmedRecord: {
             case: components["schemas"]["Case"];
             record: components["schemas"]["Record"];
+            /**
+             * Updated Existing
+             * @description True when the debrief was added to an existing case rather than opening one.
+             * @default false
+             */
+            updated_existing: boolean;
         };
         /**
          * ConsentMethod
@@ -2596,6 +2996,11 @@ export interface components {
          * @description A typed debrief. (Voice records upload audio first; see the pipeline.)
          */
         CreateRecordRequest: {
+            /**
+             * Case Id
+             * @description The case this debrief is about (e.g. the urgent case being responded to). Confirming it then updates that case instead of opening a new one.
+             */
+            case_id?: string | null;
             /** Text */
             text: string;
         };
@@ -2750,8 +3155,27 @@ export interface components {
          *     public update.
          */
         DraftMessage: {
+            /**
+             * English
+             * @description An English version for the worker, when `message` isn't English.
+             */
+            english: string | null;
+            /**
+             * Language
+             * @description The language `message` is in (ISO 639).
+             * @default en
+             */
+            language: string;
             /** Message */
             message: string;
+        };
+        /** DraftMessageRequest */
+        DraftMessageRequest: {
+            /**
+             * Language
+             * @description Write it in this language. Default: the case's language, else the resident's own.
+             */
+            language?: string | null;
         };
         /** ExtractedTask */
         ExtractedTask: {
@@ -2809,6 +3233,56 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HandoffAlert */
+        HandoffAlert: {
+            /** Arrived At */
+            arrived_at: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["AlertStatus"];
+        };
+        /**
+         * HandoffBrief
+         * @description A snapshot from when the author went off call; links open the live cases.
+         */
+        HandoffBrief: {
+            /** Alerts */
+            alerts: components["schemas"]["HandoffAlert"][];
+            /** Cases */
+            cases: components["schemas"]["HandoffCase"][];
+            /** Tasks */
+            tasks: components["schemas"]["HandoffTask"][];
+        };
+        /** HandoffCase */
+        HandoffCase: {
+            category: components["schemas"]["CaseCategory"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Activity At */
+            last_activity_at: string | null;
+            /** Number */
+            number: number;
+            priority: components["schemas"]["CasePriority"];
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
         /** HandoffCode */
         HandoffCode: {
             /** Code */
@@ -2818,6 +3292,32 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+        };
+        /** HandoffTask */
+        HandoffTask: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Case Number */
+            case_number: number;
+            /** Case Title */
+            case_title: string;
+            /** Due At */
+            due_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Overdue
+             * @default false
+             */
+            overdue: boolean;
+            /** Title */
+            title: string;
         };
         /** ImpactCategory */
         ImpactCategory: {
@@ -2975,6 +3475,45 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "running" | "done" | "dead";
+        /** KnowledgeHit */
+        KnowledgeHit: {
+            /** At */
+            at: string | null;
+            /** Case Id */
+            case_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["KnowledgeKind"];
+            /** Rank */
+            rank: number;
+            /**
+             * Snippet
+             * @description Matching words are wrapped in « ».
+             */
+            snippet: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * KnowledgeKind
+         * @enum {string}
+         */
+        KnowledgeKind: "resource" | "case" | "note" | "attachment";
+        /** LanguageOption */
+        LanguageOption: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * LanguageSource
+         * @enum {string}
+         */
+        LanguageSource: "staff" | "detected";
         /**
          * MyOffer
          * @description The caller's latest offer on an alert.
@@ -2993,6 +3532,18 @@ export interface components {
             outcome: components["schemas"]["OfferOutcome"];
             /** Step */
             step: number;
+        };
+        /**
+         * NearbyStop
+         * @description The closest MCTS bus stop to the resource (within about half a mile).
+         */
+        NearbyStop: {
+            /** Distance M */
+            distance_m: number;
+            /** Name */
+            name: string;
+            /** Routes */
+            routes: string[];
         };
         /**
          * NeedMeasure
@@ -3478,6 +4029,55 @@ export interface components {
          * @enum {string}
          */
         PatternKind: "spot" | "neighborhood";
+        /**
+         * Person
+         * @description The resident behind a case, as staff see them: their contact details
+         *     (from their newest case that has them) and every case that looks like
+         *     the same person. There's no separate person record; see 0024.
+         */
+        Person: {
+            /**
+             * Cases
+             * @description Newest first; includes the case asked about.
+             */
+            cases: components["schemas"]["Case"][];
+            contact_method: components["schemas"]["ContactMethod"] | null;
+            /** Email */
+            email: string | null;
+            /**
+             * First Contact At
+             * Format: date-time
+             */
+            first_contact_at: string;
+            /**
+             * Has Account
+             * @description They have a resident account (their own requests).
+             */
+            has_account: boolean;
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /**
+             * Matched By
+             * @description How the other cases were matched to this person.
+             */
+            matched_by: components["schemas"]["PersonMatch"][];
+            /** Name */
+            name: string | null;
+            /** Open Cases */
+            open_cases: number;
+            /** Phone */
+            phone: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
+        };
+        /**
+         * PersonMatch
+         * @enum {string}
+         */
+        PersonMatch: "account" | "phone" | "email";
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -3786,8 +4386,30 @@ export interface components {
             /** Website */
             website: string | null;
         };
+        /**
+         * ResourceOutcomes
+         * @description How referrals to this resource have turned out so far.
+         */
+        ResourceOutcomes: {
+            /** Declined */
+            declined: number;
+            /**
+             * Helped
+             * @description Accepted or completed.
+             */
+            helped: number;
+            /** Referred */
+            referred: number;
+            /**
+             * Success Rate
+             * @description helped / (helped + declined), once at least one has been decided.
+             */
+            success_rate: number | null;
+        };
         /** ResourceSuggestion */
         ResourceSuggestion: {
+            nearest_stop: components["schemas"]["NearbyStop"] | null;
+            outcomes: components["schemas"]["ResourceOutcomes"] | null;
             /** Reason */
             reason: string;
             resource: components["schemas"]["Resource"];
@@ -3848,6 +4470,19 @@ export interface components {
              */
             beds_available: number | null;
         };
+        /** SetCaseLanguageRequest */
+        SetCaseLanguageRequest: {
+            /**
+             * Language
+             * @description An ISO 639 code from `GET /cases/languages`; null clears it.
+             */
+            language: string | null;
+        };
+        /** SetModuleRequest */
+        SetModuleRequest: {
+            /** Done */
+            done: boolean;
+        };
         /** SetRoleRequest */
         SetRoleRequest: {
             role: components["schemas"]["Role"];
@@ -3863,6 +4498,34 @@ export interface components {
             share: components["schemas"]["CaseShare"];
             /** Subject */
             subject: string;
+        };
+        /** ShiftHandoff */
+        ShiftHandoff: {
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /** Author Name */
+            author_name: string | null;
+            brief: components["schemas"]["HandoffBrief"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Recipient Id */
+            recipient_id: string | null;
+            /** Recipient Name */
+            recipient_name: string | null;
+            /** Summary */
+            summary: string;
+            summary_source: components["schemas"]["SummarySource"];
         };
         /**
          * ShiftRank
@@ -3923,6 +4586,35 @@ export interface components {
             is_worker: boolean;
             role: components["schemas"]["Role"];
         };
+        /** StartAttachmentRequest */
+        StartAttachmentRequest: {
+            /**
+             * Content Type
+             * @description image/jpeg, image/png, image/heic, image/heif or application/pdf.
+             */
+            content_type: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Note
+             * @description What it is ('Eviction notice, dated Nov 18'): searchable by the team.
+             * @default
+             */
+            note?: string;
+            /**
+             * Size Bytes
+             * @description At most 10 MB.
+             */
+            size_bytes: number;
+        };
+        /** StartVoiceRecordRequest */
+        StartVoiceRecordRequest: {
+            /**
+             * Case Id
+             * @description As for a typed debrief: the case it's about.
+             */
+            case_id?: string | null;
+        };
         /** StatusCount */
         StatusCount: {
             status: components["schemas"]["CaseStatus"];
@@ -3980,6 +4672,11 @@ export interface components {
          */
         SuggestionMethod: "ai" | "rules";
         /**
+         * SummarySource
+         * @enum {string}
+         */
+        SummarySource: "rules" | "ai";
+        /**
          * Task
          * @description A piece of work on a case: generated when the case comes in
          *     (services/task.py), or added by a worker.
@@ -4029,6 +4726,24 @@ export interface components {
          * @enum {string}
          */
         TaskStatus: "open" | "done";
+        /** TeamMemberTraining */
+        TeamMemberTraining: {
+            /** Completed */
+            completed: string[];
+            /** Display Name */
+            display_name: string | null;
+            /** Ready */
+            ready: boolean;
+            /** Required Left */
+            required_left: number;
+            /** Role */
+            role: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * TextStatus
          * @enum {string}
@@ -4085,6 +4800,15 @@ export interface components {
             need: number | null;
             /** Tract Geoid */
             tract_geoid: string;
+        };
+        /** TrainingProgress */
+        TrainingProgress: {
+            /** Completed */
+            completed: components["schemas"]["CompletedModule"][];
+            /** Ready */
+            ready: boolean;
+            /** Required Left */
+            required_left: number;
         };
         /** TransitAlert */
         TransitAlert: {
@@ -4155,6 +4879,23 @@ export interface components {
             /** Stop Id */
             stop_id: string;
         };
+        /** TranslateRequest */
+        TranslateRequest: {
+            /**
+             * Language
+             * @description Default: the case's language.
+             */
+            language?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** Translation */
+        Translation: {
+            /** Language */
+            language: string;
+            /** Text */
+            text: string;
+        };
         /** UnreadCount */
         UnreadCount: {
             /** Count */
@@ -4171,6 +4912,11 @@ export interface components {
             category?: components["schemas"]["CaseCategory"] | null;
             /** Description */
             description?: string | null;
+            /**
+             * Handoff Note
+             * @description With a change of `assigned_worker_id`: what the new owner needs to know (where things stand, what's next). Saved on the case's history as an internal note and sent with the assignment notification. Ignored when the owner doesn't actually change.
+             */
+            handoff_note?: string | null;
             kind?: components["schemas"]["CaseKind"] | null;
             /** Location */
             location?: string | null;
@@ -4860,6 +5606,26 @@ export interface operations {
             };
         };
     };
+    reply_languages_v1_cases_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguageOption"][];
+                };
+            };
+        };
+    };
     get_case_v1_cases__case_id__get: {
         parameters: {
             query?: never;
@@ -4935,7 +5701,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DraftMessageRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -5006,6 +5776,298 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    translate_message_v1_cases__case_id__assist_translate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Translation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachments_v1_cases__case_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_attachment_v1_cases__case_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartAttachmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_v1_cases__case_id__attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_link_v1_cases__case_id__attachments__attachment_id__link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_uploaded_v1_cases__case_id__attachments__attachment_id__uploaded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_language_v1_cases__case_id__language_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseLanguage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_case_language_v1_cases__case_id__language_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCaseLanguageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseLanguage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_person_v1_cases__case_id__person_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Person"];
                 };
             };
             /** @description Validation Error */
@@ -5393,6 +6455,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStat"][];
+                };
+            };
+        };
+    };
+    knowledge_search_v1_knowledge_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5948,6 +7041,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OncallAlertDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_handoffs_v1_oncall_handoffs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"][];
+                };
+            };
+        };
+    };
+    get_handoff_v1_oncall_handoffs__handoff_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handoff_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHandoff"];
                 };
             };
             /** @description Validation Error */
@@ -6918,7 +8093,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StartVoiceRecordRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -6927,6 +8106,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7553,6 +8741,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_progress_v1_training_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgress"];
+                };
+            };
+        };
+    };
+    set_module_v1_training_progress__module_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                module_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetModuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    team_progress_v1_training_team_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamMemberTraining"][];
                 };
             };
         };

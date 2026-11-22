@@ -14,6 +14,7 @@ Keys look like `records/<record id>.m4a`: nothing about the person.
 
 import asyncio
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
@@ -24,6 +25,13 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from settings import StorageConfig
+
+
+logger = logging.getLogger(__name__)
+
+AUDIO_TYPES = ("audio/mp4", "audio/m4a", "audio/x-m4a")
+# What can be attached to a case: photos (iPhone HEIC too) and PDFs.
+ATTACHMENT_TYPES = ("image/jpeg", "image/png", "image/heic", "image/heif", "application/pdf")
 
 
 @dataclass(frozen=True)
@@ -41,6 +49,10 @@ class AudioStorage(Protocol):
     async def head(self, key: str) -> StoredObject | None: ...
 
     async def read(self, key: str) -> bytes: ...
+
+    async def download_url(self, key: str, seconds: int) -> str:
+        """A signed URL that GETs the object for `seconds` (case attachments)."""
+        ...
 
     async def delete(self, key: str) -> None:
         """Deleting a key that's already gone succeeds: safe to repeat."""
@@ -112,6 +124,12 @@ class SupabaseAudioStorage:
         response.raise_for_status()
         return response.content
 
+    async def download_url(self, key: str, seconds: int) -> str:
+        response = await self._http.post(f"/object/sign/{self.bucket}/{key}", json={"expiresIn": seconds})
+        response.raise_for_status()
+        signed: str = response.json()["signedURL"]
+        return self.base + (signed if signed.startswith("/") else "/" + signed)
+
     async def delete(self, key: str) -> None:
         response = await self._http.request("DELETE", f"/object/{self.bucket}", json={"prefixes": [key]})
         response.raise_for_status()
@@ -141,18 +159,19 @@ class SupabaseAudioStorage:
             offset += 1000
 
     async def ensure_bucket(self) -> None:
+        settings = {
+            "public": False,
+            "file_size_limit": self.config.max_audio_bytes,
+            # Voice debriefs, and case attachments (photos and PDFs).
+            "allowed_mime_types": [*AUDIO_TYPES, *ATTACHMENT_TYPES],
+        }
         if (await self._http.get(f"/bucket/{self.bucket}")).status_code == 200:
+            # A bucket made before attachments only took audio: widen it (it stays private).
+            updated = await self._http.put(f"/bucket/{self.bucket}", json={"id": self.bucket, **settings})
+            if updated.status_code not in (200, 201):
+                logger.warning("Couldn't update the storage bucket's allowed types (%s)", updated.status_code)
             return
-        response = await self._http.post(
-            "/bucket",
-            json={
-                "id": self.bucket,
-                "name": self.bucket,
-                "public": False,
-                "file_size_limit": self.config.max_audio_bytes,
-                "allowed_mime_types": ["audio/mp4", "audio/m4a", "audio/x-m4a"],
-            },
-        )
+        response = await self._http.post("/bucket", json={"id": self.bucket, "name": self.bucket, **settings})
         # Another replica may have made it a moment ago.
         if response.status_code not in (200, 201) and "already exists" not in json.dumps(response.json()).lower():
             response.raise_for_status()
@@ -203,6 +222,12 @@ class S3AudioStorage:
         response = await asyncio.to_thread(self._s3.get_object, Bucket=self.bucket, Key=key)
         body: bytes = await asyncio.to_thread(response["Body"].read)
         return body
+
+    async def download_url(self, key: str, seconds: int) -> str:
+        url: str = self._public.generate_presigned_url(
+            "get_object", Params={"Bucket": self.bucket, "Key": key}, ExpiresIn=seconds
+        )
+        return url
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self._s3.delete_object, Bucket=self.bucket, Key=key)

@@ -131,6 +131,44 @@ async def test_a_debrief_becomes_a_case(api, worker_api, pipeline, admin_conn):
     assert live == 0
 
 
+async def test_a_debrief_about_an_existing_case_updates_it(api, worker_api, pipeline):
+    """From the Responding screen: the debrief names the accepted case, and
+    confirming adds to that case instead of opening a new one."""
+    tag = uuid4().hex[:8]
+    case = (await api.post("/v1/cases", headers=worker_api, json={
+        "title": f"Urgent: family outside {tag}", "category": "homelessness", "priority": "medium",
+    })).json()
+    created = await api.post("/v1/records", headers=worker_api, json={"text": DEBRIEF, "case_id": case["id"]})
+    assert created.status_code == 202 and created.json()["case_id"] == case["id"]
+    await pipeline.run()
+
+    review = {
+        "title": f"Family evicted {tag}",
+        "summary": "A mother and two kids need shelter tonight.",
+        "category": "homelessness",
+        "priority": "high",
+        "location": "N 35th St & W Center St",
+        "tasks": [{"title": "Find a shelter bed", "due_in_hours": 2}],
+    }
+    confirmed = await api.post(f"/v1/records/{created.json()['id']}/confirm", headers=worker_api, json=review)
+    assert confirmed.status_code == 200, confirmed.text
+    body = confirmed.json()
+    assert body["updated_existing"] is True and body["case"]["id"] == case["id"]
+    # Raised, never lowered; location filled because the case had none.
+    assert body["case"]["priority"] == "high" and body["case"]["location"] == "N 35th St & W Center St"
+
+    detail = (await api.get(f"/v1/cases/{case['id']}", headers=worker_api)).json()
+    assert any(t["title"] == "Find a shelter bed" for t in detail["tasks"])
+    assert any(u["content"].startswith(f"Debrief: Family evicted {tag}") for u in detail["updates"])
+    # No second case was opened.
+    found = (await api.get("/v1/cases", headers=worker_api, params={"q": tag})).json()
+    assert [c["id"] for c in found] == [case["id"]]
+
+    # A debrief about a case that doesn't exist is refused up front.
+    missing = await api.post("/v1/records", headers=worker_api, json={"text": DEBRIEF, "case_id": str(uuid4())})
+    assert missing.status_code == 404
+
+
 async def test_records_are_private_to_their_author(api, worker_api, admin_conn):
     record = (await api.post("/v1/records", headers=worker_api, json={"text": "Short note."})).json()
     other = auth_header(f"auth0|{uuid4().hex}", name="Another Worker")

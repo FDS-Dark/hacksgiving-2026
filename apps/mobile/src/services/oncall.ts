@@ -17,6 +17,7 @@ import type {
   OncallShift,
   OncallStats,
   PassReason,
+  ShiftHandoff,
   ToggleOncall,
   UpdateShift,
 } from '@/api/types';
@@ -36,6 +37,9 @@ export const oncallApi = {
   pass: (id: string, reason: PassReason | null) => request<OncallAlertDetail>(`/oncall/alerts/${id}/pass`, { method: 'POST', body: reason ? { reason } : {} }),
   arrived: (id: string) => request<OncallAlertDetail>(`/oncall/alerts/${id}/arrived`, { method: 'POST' }),
   stats: (from: string, to: string) => request<OncallStats>(`/oncall/stats${queryString({ from, to })}`),
+  handoffs: () => request<ShiftHandoff[]>('/oncall/handoffs'),
+  handoff: (id: string) => request<ShiftHandoff>(`/oncall/handoffs/${id}`),
+  summarizeHandoff: (id: string) => request<ShiftHandoff>(`/oncall/handoffs/${id}/summarize`, { method: 'POST' }),
 };
 
 export const oncallKeys = {
@@ -46,6 +50,8 @@ export const oncallKeys = {
   openAlerts: ['oncall', 'alerts', 'open'] as const,
   alert: (id: string) => ['oncall', 'alerts', 'detail', id] as const,
   stats: (from: string, to: string) => ['oncall', 'stats', from, to] as const,
+  handoffs: ['oncall', 'handoffs'] as const,
+  handoff: (id: string) => ['oncall', 'handoffs', id] as const,
 };
 
 /** Shifts start and end on the clock, so check about once a minute. */
@@ -197,4 +203,27 @@ export function oncallAlertError(error: unknown): ApiError {
   }
   const message = ALERT_ERRORS[e.code];
   return message ? new ApiError(e.status, e.code, message, e.requestId) : e;
+}
+
+// ── Shift handoffs (feature 11) ─────────────────────────────────────────
+
+/** Briefs I wrote or was handed in the last week. Going off call writes one, and invalidates 'oncall'. */
+export function useHandoffs(enabled = true) {
+  return useQuery({ queryKey: oncallKeys.handoffs, queryFn: oncallApi.handoffs, enabled, refetchInterval: 120_000 });
+}
+
+export function useHandoff(id: string) {
+  return useQuery({ queryKey: oncallKeys.handoff(id), queryFn: () => oncallApi.handoff(id) });
+}
+
+/** Rewrite the brief's summary with the AI (503 `ai_unavailable` when it isn't set up). */
+export function useSummarizeHandoff(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => oncallApi.summarizeHandoff(id),
+    onSuccess: (handoff) => {
+      qc.setQueryData(oncallKeys.handoff(id), handoff);
+      qc.invalidateQueries({ queryKey: oncallKeys.handoffs });
+    },
+  });
 }

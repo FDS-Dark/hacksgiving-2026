@@ -3,6 +3,7 @@ worker opens it), and workers triage, assign, note, refer and resolve it.
 The history of each change is written by the database functions themselves."""
 
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from uuid import UUID
@@ -23,6 +24,8 @@ from models.case import (
     CaseUpdate,
     ContactMethod,
     CreateCaseRequest,
+    Person,
+    PersonMatch,
     PublicRequest,
     PublicRequestDetail,
     PublicRequestUpdate,
@@ -288,6 +291,47 @@ class CaseService:
             raise not_found("case")
         return case
 
+    async def person(self, case_id: UUID, limit: int = 50) -> Person:
+        """The resident behind a case and all their cases (0024: same account,
+        phone or email). Contact details come from their newest case that
+        has each one."""
+        anchor = await self.get(case_id)
+        cases = await self.cases.person_cases(case_id, limit)
+        if not cases:  # pragma: no cover - the case itself always matches
+            cases = [anchor]
+
+        def digits(phone: str | None) -> str | None:
+            d = re.sub(r"\D", "", phone or "")
+            return d[-10:] if len(d) >= 7 else None
+
+        matched: list[PersonMatch] = []
+        others = [c for c in cases if c.id != anchor.id]
+        if anchor.requester_id and any(c.requester_id == anchor.requester_id for c in others):
+            matched.append(PersonMatch.ACCOUNT)
+        phone = digits(anchor.contact_phone)
+        if phone and any(digits(c.contact_phone) == phone for c in others):
+            matched.append(PersonMatch.PHONE)
+        email = (anchor.contact_email or "").strip().lower()
+        if email and any((c.contact_email or "").strip().lower() == email for c in others):
+            matched.append(PersonMatch.EMAIL)
+
+        def newest(field: str) -> object:
+            return next((getattr(c, field) for c in cases if getattr(c, field) not in (None, "")), None)
+
+        return Person(
+            name=newest("contact_name"),
+            phone=newest("contact_phone"),
+            email=newest("contact_email"),
+            contact_method=newest("contact_method"),
+            safe_to_contact=anchor.safe_to_contact,
+            has_account=any(c.requester_id for c in cases),
+            matched_by=matched,
+            first_contact_at=min(c.created_at for c in cases),
+            last_activity_at=max(c.last_activity_at for c in cases),
+            open_cases=sum(1 for c in cases if c.status not in CLOSED_STATUSES),
+            cases=cases,
+        )
+
     async def detail(self, case_id: UUID) -> CaseDetail:
         case = await self.get(case_id)
         return CaseDetail(
@@ -298,15 +342,17 @@ class CaseService:
         )
 
     async def update(self, worker: StaffMember, case_id: UUID, changes: UpdateCaseRequest) -> Case:
-        if not changes.model_fields_set:
+        if not changes.model_fields_set - {"handoff_note"}:
             raise ApiError(422, "no_changes", "Send at least one field to change")
+        if changes.handoff_note and "assigned_worker_id" not in changes.model_fields_set:
+            raise ApiError(422, "handoff_without_reassign", "A handoff note goes with a change of owner")
         await self._check_assignee(changes.assigned_worker_id)
         async with self.transactions.transaction() as tx:
             case = await self.cases.within(tx).update(case_id, worker.id, changes)
             if case is None:
                 raise not_found("case")
             if changes.model_fields_set & {"assigned_worker_id", "status"}:
-                await self._notify_changes(tx, worker.id, case)
+                await self._notify_changes(tx, worker.id, case, changes.handoff_note)
             if changes.model_fields_set & {"assigned_worker_id", "status", "priority"}:
                 await self._sync_alert(tx, case)
         return case
@@ -323,14 +369,29 @@ class CaseService:
         else:
             await self.oncall.resolve_for_case(tx, case.id, AlertStatus.CANCELLED)
 
-    async def _notify_changes(self, tx: FunctionCaller, actor_id: UUID, case: Case) -> None:
+    async def _notify_changes(
+        self, tx: FunctionCaller, actor_id: UUID, case: Case, handoff_note: str | None = None
+    ) -> None:
         """case_update writes a history entry for each real change (none for
         re-assigning the same person): the new assignee hears of an
-        assignment, the requester of a status change."""
-        for entry in await self.cases.within(tx).updates_this_transaction(case.id, actor_id):
+        assignment, the requester of a status change. A handoff note sent
+        with a real reassignment is saved as an internal note, and the new
+        owner's notification points at it so they read it first."""
+        cases = self.cases.within(tx)
+        for entry in await cases.updates_this_transaction(case.id, actor_id):
             if entry.update_type == UpdateType.ASSIGNMENT:
                 await self.tasks.remind_new_case_owner(tx, case.id)
                 user_id, kind, key = case.assigned_worker_id, NotificationKind.ASSIGNMENT, f"assignment:{entry.id}"
+                if handoff_note and case.assigned_worker_id is not None:
+                    note = await cases.add_update(
+                        case.id, actor_id, UpdateType.NOTE, Visibility.INTERNAL, f"Handoff note: {handoff_note}"
+                    )
+                    if note is not None:
+                        await self.notifications.notify(
+                            tx, user_id=user_id, kind=kind, dedupe_key=key, actor_id=actor_id, case_id=case.id,
+                            case_update_id=note.id,
+                        )
+                        continue
             elif entry.update_type == UpdateType.STATUS_CHANGE:
                 user_id, kind, key = case.requester_id, NotificationKind.REQUEST_UPDATE, f"update:{entry.id}"
             else:

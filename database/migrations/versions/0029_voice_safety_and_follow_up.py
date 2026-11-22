@@ -1,7 +1,7 @@
 """Voice safety plans, resumable checkpoints, referral follow-up and funnel metrics.
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0029
+Revises: 0028
 Create Date: 2026-11-21
 """
 
@@ -9,8 +9,8 @@ from pathlib import Path
 
 from alembic import context, op
 
-revision = "0022"
-down_revision = "0021"
+revision = "0029"
+down_revision = "0028"
 branch_labels = None
 depends_on = None
 
@@ -32,7 +32,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     sql = (
         Path(__file__)
-        .with_name("0022_voice_safety_and_follow_up.downgrade.sql")
+        .with_name("0029_voice_safety_and_follow_up.downgrade.sql")
         .read_text(encoding="utf-8")
     )
     context.config.attributes["execute_script"](op.get_bind(), sql)

@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
+from models.assist import ResourceOutcomes
 from models.case_enums import CaseCategory
 from models.loader import ImportedResource, SyncResult
 from models.resource import CreateResourceRequest, Resource
@@ -44,3 +45,14 @@ class ResourceDatabridge(Databridge):
         """Closes `source`'s open resources last seen before `seen_before`."""
         row = await self._one("resource_sync_retire", source=source, seen_before=seen_before)
         return int(row["retired"])
+
+    async def outcome_stats(self) -> dict[UUID, ResourceOutcomes]:
+        """Referral outcomes per resource (0026); resources never referred are absent."""
+        stats: dict[UUID, ResourceOutcomes] = {}
+        for row in await self._rows("resource_outcome_stats"):
+            decided = row["helped"] + row["declined"]
+            stats[row["resource_id"]] = ResourceOutcomes(
+                referred=row["referred"], helped=row["helped"], declined=row["declined"],
+                success_rate=round(row["helped"] / decided, 2) if decided else None,
+            )
+        return stats

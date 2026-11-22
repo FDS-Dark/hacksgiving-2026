@@ -175,6 +175,136 @@
         "title": "AppUser",
         "type": "object"
       },
+      "Attachment": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AttachmentStatus"
+          },
+          "uploaded_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded By"
+          },
+          "uploaded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded By Name"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "uploaded_by",
+          "uploaded_by_name",
+          "file_name",
+          "content_type",
+          "size_bytes",
+          "note",
+          "status",
+          "created_at"
+        ],
+        "title": "Attachment",
+        "type": "object"
+      },
+      "AttachmentLink": {
+        "description": "A short-lived link to open the file.",
+        "properties": {
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "expires_in_seconds"
+        ],
+        "title": "AttachmentLink",
+        "type": "object"
+      },
+      "AttachmentStatus": {
+        "enum": [
+          "pending",
+          "ready"
+        ],
+        "title": "AttachmentStatus",
+        "type": "string"
+      },
+      "AttachmentUpload": {
+        "description": "PUT the file to `upload_url` with this Content-Type, then call\n`POST /cases/{case_id}/attachments/{id}/uploaded`.",
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/Attachment"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attachment",
+          "upload_url",
+          "content_type",
+          "expires_in_seconds"
+        ],
+        "title": "AttachmentUpload",
+        "type": "object"
+      },
       "Audience": {
         "description": "Who a posting is open to, beyond everyone: staff tag their own postings,\nand an import is tagged when its source says so.",
         "enum": [
@@ -514,6 +644,50 @@
         ],
         "title": "CaseKind",
         "type": "string"
+      },
+      "CaseLanguage": {
+        "description": "The language to reply to the resident in. `language: null`: not set\n(English until someone sets it or the AI notices otherwise).",
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "language_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Name"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LanguageSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "language",
+          "language_name",
+          "source"
+        ],
+        "title": "CaseLanguage",
+        "type": "object"
       },
       "CasePriority": {
         "enum": [
@@ -1047,6 +1221,25 @@
         "title": "CommunityMeasure",
         "type": "object"
       },
+      "CompletedModule": {
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "completed_at"
+        ],
+        "title": "CompletedModule",
+        "type": "object"
+      },
       "ConfirmRecordRequest": {
         "description": "The author's reviewed version of the extraction: this becomes the case.",
         "properties": {
@@ -1161,11 +1354,18 @@
           },
           "record": {
             "$ref": "#/components/schemas/Record"
+          },
+          "updated_existing": {
+            "default": false,
+            "description": "True when the debrief was added to an existing case rather than opening one.",
+            "title": "Updated Existing",
+            "type": "boolean"
           }
         },
         "required": [
           "record",
-          "case"
+          "case",
+          "updated_existing"
         ],
         "title": "ConfirmedRecord",
         "type": "object"
@@ -1545,6 +1745,19 @@
       "CreateRecordRequest": {
         "description": "A typed debrief. (Voice records upload audio first; see the pipeline.)",
         "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The case this debrief is about (e.g. the urgent case being responded to). Confirming it then updates that case instead of opening a new one.",
+            "title": "Case Id"
+          },
           "text": {
             "maxLength": 20000,
             "minLength": 1,
@@ -1965,15 +2178,54 @@
       "DraftMessage": {
         "description": "A message to the requester. Sent only if a worker posts it as a\npublic update.",
         "properties": {
+          "english": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An English version for the worker, when `message` isn't English.",
+            "title": "English"
+          },
+          "language": {
+            "default": "en",
+            "description": "The language `message` is in (ISO 639).",
+            "title": "Language",
+            "type": "string"
+          },
           "message": {
             "title": "Message",
             "type": "string"
           }
         },
         "required": [
-          "message"
+          "message",
+          "language",
+          "english"
         ],
         "title": "DraftMessage",
+        "type": "object"
+      },
+      "DraftMessageRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Write it in this language. Default: the case's language, else the resident's own.",
+            "title": "Language"
+          }
+        },
+        "title": "DraftMessageRequest",
         "type": "object"
       },
       "ExtractedTask": {
@@ -2083,6 +2335,136 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HandoffAlert": {
+        "properties": {
+          "arrived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrived At"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_number",
+          "case_title",
+          "status",
+          "arrived_at"
+        ],
+        "title": "HandoffAlert",
+        "type": "object"
+      },
+      "HandoffBrief": {
+        "description": "A snapshot from when the author went off call; links open the live cases.",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/HandoffTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cases",
+          "tasks",
+          "alerts"
+        ],
+        "title": "HandoffBrief",
+        "type": "object"
+      },
+      "HandoffCase": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/CasePriority"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "title",
+          "priority",
+          "status",
+          "category",
+          "last_activity_at"
+        ],
+        "title": "HandoffCase",
+        "type": "object"
+      },
       "HandoffCode": {
         "properties": {
           "code": {
@@ -2100,6 +2482,60 @@
           "expires_at"
         ],
         "title": "HandoffCode",
+        "type": "object"
+      },
+      "HandoffTask": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "case_title": {
+            "title": "Case Title",
+            "type": "string"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overdue": {
+            "default": false,
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "due_at",
+          "overdue",
+          "case_id",
+          "case_number",
+          "case_title"
+        ],
+        "title": "HandoffTask",
         "type": "object"
       },
       "ImpactCategory": {
@@ -2459,6 +2895,102 @@
         "title": "JobStatus",
         "type": "string"
       },
+      "KnowledgeHit": {
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/KnowledgeKind"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "number"
+          },
+          "snippet": {
+            "description": "Matching words are wrapped in \u00ab \u00bb.",
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "case_id",
+          "title",
+          "snippet",
+          "rank",
+          "at"
+        ],
+        "title": "KnowledgeHit",
+        "type": "object"
+      },
+      "KnowledgeKind": {
+        "enum": [
+          "resource",
+          "case",
+          "note",
+          "attachment"
+        ],
+        "title": "KnowledgeKind",
+        "type": "string"
+      },
+      "LanguageOption": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "LanguageOption",
+        "type": "object"
+      },
+      "LanguageSource": {
+        "enum": [
+          "staff",
+          "detected"
+        ],
+        "title": "LanguageSource",
+        "type": "string"
+      },
       "MyOffer": {
         "description": "The caller's latest offer on an alert.",
         "properties": {
@@ -2487,6 +3019,33 @@
           "outcome"
         ],
         "title": "MyOffer",
+        "type": "object"
+      },
+      "NearbyStop": {
+        "description": "The closest MCTS bus stop to the resource (within about half a mile).",
+        "properties": {
+          "distance_m": {
+            "title": "Distance M",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "routes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Routes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "routes",
+          "distance_m"
+        ],
+        "title": "NearbyStop",
         "type": "object"
       },
       "NeedMeasure": {
@@ -3851,6 +4410,124 @@
         "title": "PatternKind",
         "type": "string"
       },
+      "Person": {
+        "description": "The resident behind a case, as staff see them: their contact details\n(from their newest case that has them) and every case that looks like\nthe same person. There's no separate person record; see 0024.",
+        "properties": {
+          "cases": {
+            "description": "Newest first; includes the case asked about.",
+            "items": {
+              "$ref": "#/components/schemas/Case"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "first_contact_at": {
+            "format": "date-time",
+            "title": "First Contact At",
+            "type": "string"
+          },
+          "has_account": {
+            "description": "They have a resident account (their own requests).",
+            "title": "Has Account",
+            "type": "boolean"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "matched_by": {
+            "description": "How the other cases were matched to this person.",
+            "items": {
+              "$ref": "#/components/schemas/PersonMatch"
+            },
+            "title": "Matched By",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "open_cases": {
+            "title": "Open Cases",
+            "type": "integer"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "safe_to_contact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe To Contact"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "email",
+          "contact_method",
+          "safe_to_contact",
+          "has_account",
+          "matched_by",
+          "first_contact_at",
+          "last_activity_at",
+          "open_cases",
+          "cases"
+        ],
+        "title": "Person",
+        "type": "object"
+      },
+      "PersonMatch": {
+        "enum": [
+          "account",
+          "phone",
+          "email"
+        ],
+        "title": "PersonMatch",
+        "type": "string"
+      },
       "PublicRequest": {
         "properties": {
           "category": {
@@ -4640,8 +5317,66 @@
         "title": "Resource",
         "type": "object"
       },
+      "ResourceOutcomes": {
+        "description": "How referrals to this resource have turned out so far.",
+        "properties": {
+          "declined": {
+            "title": "Declined",
+            "type": "integer"
+          },
+          "helped": {
+            "description": "Accepted or completed.",
+            "title": "Helped",
+            "type": "integer"
+          },
+          "referred": {
+            "title": "Referred",
+            "type": "integer"
+          },
+          "success_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "helped / (helped + declined), once at least one has been decided.",
+            "title": "Success Rate"
+          }
+        },
+        "required": [
+          "referred",
+          "helped",
+          "declined",
+          "success_rate"
+        ],
+        "title": "ResourceOutcomes",
+        "type": "object"
+      },
       "ResourceSuggestion": {
         "properties": {
+          "nearest_stop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NearbyStop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcomes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResourceOutcomes"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "reason": {
             "title": "Reason",
             "type": "string"
@@ -4652,7 +5387,9 @@
         },
         "required": [
           "resource",
-          "reason"
+          "reason",
+          "outcomes",
+          "nearest_stop"
         ],
         "title": "ResourceSuggestion",
         "type": "object"
@@ -4821,6 +5558,41 @@
         "title": "SetBedsRequest",
         "type": "object"
       },
+      "SetCaseLanguageRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An ISO 639 code from `GET /cases/languages`; null clears it.",
+            "title": "Language"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "title": "SetCaseLanguageRequest",
+        "type": "object"
+      },
+      "SetModuleRequest": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "done"
+        ],
+        "title": "SetModuleRequest",
+        "type": "object"
+      },
       "SetRoleRequest": {
         "properties": {
           "role": {
@@ -4854,6 +5626,82 @@
           "message"
         ],
         "title": "SharedCase",
+        "type": "object"
+      },
+      "ShiftHandoff": {
+        "properties": {
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/HandoffBrief"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Id"
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Name"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "summary_source": {
+            "$ref": "#/components/schemas/SummarySource"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "author_name",
+          "recipient_id",
+          "recipient_name",
+          "brief",
+          "summary",
+          "summary_source",
+          "created_at"
+        ],
+        "title": "ShiftHandoff",
         "type": "object"
       },
       "ShiftRank": {
@@ -4993,6 +5841,61 @@
           "is_admin"
         ],
         "title": "StaffStatus",
+        "type": "object"
+      },
+      "StartAttachmentRequest": {
+        "properties": {
+          "content_type": {
+            "description": "image/jpeg, image/png, image/heic, image/heif or application/pdf.",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "file_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "File Name",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "description": "What it is ('Eviction notice, dated Nov 18'): searchable by the team.",
+            "maxLength": 1000,
+            "title": "Note",
+            "type": "string"
+          },
+          "size_bytes": {
+            "description": "At most 10 MB.",
+            "exclusiveMinimum": 0.0,
+            "maximum": 10485760.0,
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "file_name",
+          "content_type",
+          "size_bytes"
+        ],
+        "title": "StartAttachmentRequest",
+        "type": "object"
+      },
+      "StartVoiceRecordRequest": {
+        "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "As for a typed debrief: the case it's about.",
+            "title": "Case Id"
+          }
+        },
+        "title": "StartVoiceRecordRequest",
         "type": "object"
       },
       "StatusCount": {
@@ -5181,6 +6084,14 @@
         "title": "SuggestionMethod",
         "type": "string"
       },
+      "SummarySource": {
+        "enum": [
+          "rules",
+          "ai"
+        ],
+        "title": "SummarySource",
+        "type": "string"
+      },
       "Task": {
         "description": "A piece of work on a case: generated when the case comes in\n(services/task.py), or added by a worker.",
         "properties": {
@@ -5325,6 +6236,55 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "TeamMemberTraining": {
+        "properties": {
+          "completed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Completed",
+            "type": "array"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "required_left": {
+            "title": "Required Left",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "role",
+          "completed",
+          "required_left",
+          "ready"
+        ],
+        "title": "TeamMemberTraining",
+        "type": "object"
+      },
       "TextStatus": {
         "enum": [
           "sent",
@@ -5454,6 +6414,32 @@
           "gap"
         ],
         "title": "TractCoverage",
+        "type": "object"
+      },
+      "TrainingProgress": {
+        "properties": {
+          "completed": {
+            "items": {
+              "$ref": "#/components/schemas/CompletedModule"
+            },
+            "title": "Completed",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "required_left": {
+            "title": "Required Left",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "completed",
+          "required_left",
+          "ready"
+        ],
+        "title": "TrainingProgress",
         "type": "object"
       },
       "TransitAlert": {
@@ -5665,6 +6651,52 @@
         "title": "TransitStop",
         "type": "object"
       },
+      "TranslateRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the case's language.",
+            "title": "Language"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "TranslateRequest",
+        "type": "object"
+      },
+      "Translation": {
+        "properties": {
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "language"
+        ],
+        "title": "Translation",
+        "type": "object"
+      },
       "UnreadCount": {
         "properties": {
           "count": {
@@ -5714,6 +6746,20 @@
               }
             ],
             "title": "Description"
+          },
+          "handoff_note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With a change of `assigned_worker_id`: what the new owner needs to know (where things stand, what's next). Saved on the case's history as an internal note and sent with the assignment notification. Ignored when the owner doesn't actually change.",
+            "title": "Handoff Note"
           },
           "kind": {
             "anyOf": [
@@ -7702,6 +8748,32 @@
         ]
       }
     },
+    "/v1/cases/languages": {
+      "get": {
+        "description": "The languages staff can reply to residents in.",
+        "operationId": "reply_languages_v1_cases_languages_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LanguageOption"
+                  },
+                  "title": "Response Reply Languages V1 Cases Languages Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reply Languages",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
     "/v1/cases/{case_id}": {
       "get": {
         "description": "A case with its full history and referrals.",
@@ -7814,6 +8886,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DraftMessageRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -7844,7 +8933,7 @@
     },
     "/v1/cases/{case_id}/assist/resources": {
       "post": {
-        "description": "Resources that fit the case, each with a reason, chosen only from the\nresource directory. Without AI (`method: rules`), the resources in the\ncase's category.",
+        "description": "Resources that fit the case, each with a reason, chosen only from the\nresource directory. Without AI (`method: rules`), the resources in the\ncase's category. Both rank by how earlier referrals turned out\n(`outcomes`), and each says its nearest bus stop (`nearest_stop`).",
         "operationId": "suggest_resources_v1_cases__case_id__assist_resources_post",
         "parameters": [
           {
@@ -7925,6 +9014,453 @@
           }
         },
         "summary": "Summarize Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/assist/translate": {
+      "post": {
+        "description": "A reply typed in English, translated into the case's language (or\n`language`). English in, English out. 503 when AI isn't configured.",
+        "operationId": "translate_message_v1_cases__case_id__assist_translate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Translation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Translate Message",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/attachments": {
+      "get": {
+        "operationId": "list_attachments_v1_cases__case_id__attachments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Attachment"
+                  },
+                  "title": "Response List Attachments V1 Cases  Case Id  Attachments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Attachments",
+        "tags": [
+          "attachments"
+        ]
+      },
+      "post": {
+        "description": "Attach a photo or PDF (up to 10 MB): returns a one-time URL to PUT the\nfile to. Then call `.../uploaded`. 503 when file storage isn't set up.",
+        "operationId": "start_attachment_v1_cases__case_id__attachments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartAttachmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentUpload"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Attachment",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/attachments/{attachment_id}": {
+      "delete": {
+        "operationId": "delete_attachment_v1_cases__case_id__attachments__attachment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Attachment",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/attachments/{attachment_id}/link": {
+      "get": {
+        "description": "A link that opens the file for five minutes.",
+        "operationId": "attachment_link_v1_cases__case_id__attachments__attachment_id__link_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attachment Link",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/attachments/{attachment_id}/uploaded": {
+      "post": {
+        "description": "The file is uploaded: it's checked, marked ready and noted on the case.",
+        "operationId": "attachment_uploaded_v1_cases__case_id__attachments__attachment_id__uploaded_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attachment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Attachment Uploaded",
+        "tags": [
+          "attachments"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/language": {
+      "get": {
+        "description": "The language staff reply to the resident in (set by a worker, or\nnoticed by the AI draft). `language: null` means not set.",
+        "operationId": "get_case_language_v1_cases__case_id__language_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseLanguage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Case Language",
+        "tags": [
+          "cases"
+        ]
+      },
+      "put": {
+        "description": "Choose the reply language (a code from `GET /cases/languages`; null\nclears it). A worker's choice is never replaced by detection.",
+        "operationId": "set_case_language_v1_cases__case_id__language_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCaseLanguageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseLanguage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Case Language",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/person": {
+      "get": {
+        "description": "The resident behind a case: their contact details and every case that\nlooks like the same person (same resident account, phone number or\nemail). Staff only.",
+        "operationId": "get_case_person_v1_cases__case_id__person_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Case Person",
         "tags": [
           "cases"
         ]
@@ -8529,6 +10065,55 @@
         "summary": "Job Stats",
         "tags": [
           "jobs"
+        ]
+      }
+    },
+    "/v1/knowledge/search": {
+      "get": {
+        "description": "Search what the team knows: the resource directory, resolved and\nclosed cases, the internal notes on them, and attachment notes. Best\nmatches first; matching words in `snippet` are wrapped in \u00ab \u00bb.",
+        "operationId": "knowledge_search_v1_knowledge_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeHit"
+                  },
+                  "title": "Response Knowledge Search V1 Knowledge Search Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Knowledge Search",
+        "tags": [
+          "attachments"
         ]
       }
     },
@@ -9283,9 +10868,122 @@
         ]
       }
     },
+    "/v1/oncall/handoffs": {
+      "get": {
+        "description": "Shift handoff briefs you wrote or were handed in the last 7 days, newest first.",
+        "operationId": "my_handoffs_v1_oncall_handoffs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShiftHandoff"
+                  },
+                  "title": "Response My Handoffs V1 Oncall Handoffs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Handoffs",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/handoffs/{handoff_id}": {
+      "get": {
+        "operationId": "get_handoff_v1_oncall_handoffs__handoff_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandoff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Handoff",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
+    "/v1/oncall/handoffs/{handoff_id}/summarize": {
+      "post": {
+        "description": "Rewrite the brief's summary with the AI (titles, priorities and due\ntimes only). 503 `ai_unavailable` when the assistant isn't set up.",
+        "operationId": "summarize_handoff_v1_oncall_handoffs__handoff_id__summarize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "handoff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Handoff Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandoff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summarize Handoff",
+        "tags": [
+          "oncall"
+        ]
+      }
+    },
     "/v1/oncall/me": {
       "post": {
-        "description": "Switch yourself on call (until `until`, or the next 07:00, 17:00 or\n23:00 org time) or off (your shift ends now).",
+        "description": "Switch yourself on call (until `until`, or the next 07:00, 17:00 or\n23:00 org time) or off (your shift ends now). Going off writes a shift\nhandoff brief for whoever is on next (`GET /oncall/handoffs`).",
         "operationId": "toggle_oncall_v1_oncall_me_post",
         "requestBody": {
           "content": {
@@ -10897,8 +12595,25 @@
     },
     "/v1/records/voice": {
       "post": {
-        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server.",
+        "description": "Start a voice debrief: a record waiting for its audio, and a one-time\nURL to PUT the recording (.m4a) to. Then call `/records/{id}/uploaded`.\nThe audio is deleted as soon as it's transcribed. 503 when voice isn't\nset up on the server. Send `case_id` for a debrief about an existing case.",
         "operationId": "start_voice_record_v1_records_voice_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StartVoiceRecordRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "content": {
@@ -10909,6 +12624,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Start Voice Record",
@@ -11004,7 +12729,7 @@
     },
     "/v1/records/{record_id}/confirm": {
       "post": {
-        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. Calling it again returns the same\ncase.",
+        "description": "Open a case from the reviewed record (assigned to the caller), with its\nplanned tasks plus the ones sent here. A debrief captured for an existing\ncase (`case_id` set) is added to that case instead: an internal note, its\ntasks, and a higher priority if it calls for one (`updated_existing`).\nCalling it again returns the same case.",
         "operationId": "confirm_record_v1_records__record_id__confirm_post",
         "parameters": [
           {
@@ -11846,6 +13571,108 @@
         "summary": "Update Task",
         "tags": [
           "tasks"
+        ]
+      }
+    },
+    "/v1/training/progress": {
+      "get": {
+        "description": "The modules you've finished, and whether every required one is done.",
+        "operationId": "my_progress_v1_training_progress_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Progress",
+        "tags": [
+          "training"
+        ]
+      }
+    },
+    "/v1/training/progress/{module_id}": {
+      "put": {
+        "description": "Mark a module done (`done: true`) or not done.",
+        "operationId": "set_module_v1_training_progress__module_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "maxLength": 60,
+              "title": "Module Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetModuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingProgress"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Module",
+        "tags": [
+          "training"
+        ]
+      }
+    },
+    "/v1/training/team": {
+      "get": {
+        "description": "Every staff member's progress, for admins.",
+        "operationId": "team_progress_v1_training_team_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberTraining"
+                  },
+                  "title": "Response Team Progress V1 Training Team Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Team Progress",
+        "tags": [
+          "training"
         ]
       }
     },
