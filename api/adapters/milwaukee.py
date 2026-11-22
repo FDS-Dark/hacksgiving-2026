@@ -9,6 +9,7 @@ kept, and coordinates are rounded (the database rounds them again). Parsing
 is separate from fetching, so tests run on recorded payloads.
 """
 
+import asyncio
 import html
 import re
 from collections.abc import Iterator, Mapping
@@ -198,6 +199,43 @@ def is_public(category: str) -> bool:
 def parse_mpd_calls(page: str, ttl: timedelta) -> Iterator[ImportedSignal]:
     """MPD calls. The location is read only for its embedded coordinates
     (rounded to about 110 m); the address itself is dropped."""
+    for signal, _block in _parse_mpd_rows(page, ttl):
+        yield signal
+
+
+# Street-type words, so a trailing one isn't mistaken for a city code (MKE, OC, GF...).
+_STREET_TYPES = frozenset(
+    "AL ALY AV AVE BLVD BL CIR CR CT CTR DR EXPY FWY HWY LN LA PKWY PK PL PLZ RD RDG ROW SQ ST TER TR TRL WAY WY "
+    "XING".split()
+)
+_DIRECTIONS = frozenset({"N", "S", "E", "W", "NB", "SB", "EB", "WB"})
+
+
+def mpd_block(location: str) -> str | None:
+    """What to geocode for a call without MPD's own estimate: the start of
+    its block, or its intersection. Never the house number, and never a
+    place or unit note.
+
+    '2816 S GREELEY ST MKE' → '2800 S GREELEY ST'
+    '4603 N 29TH ST MKE: @UNIT 6' → '4600 N 29TH ST'
+    'N 76TH ST/W GOOD HOPE RD MKE' → 'N 76TH ST/W GOOD HOPE RD'
+    """
+    text = _COORDINATES.sub("", location.upper())
+    text = re.sub(r"^\s*:?\s*(EST\s+)?", "", text)
+    words = text.split(":", 1)[0].split()  # ': @UNIT 6', ': @SOLDIERS HOME'
+    if len(words) > 1 and words[-1].isalpha() and 2 <= len(words[-1]) <= 4 \
+            and words[-1] not in _STREET_TYPES and words[-1] not in _DIRECTIONS:
+        words = words[:-1]
+    if not words:
+        return None
+    if "/" not in " ".join(words) and words[0].isdigit() and len(words) > 1:
+        words[0] = str(max(int(words[0]) // 100 * 100, 1))
+    return " ".join(words)
+
+
+def _parse_mpd_rows(page: str, ttl: timedelta) -> Iterator[tuple[ImportedSignal, str | None]]:
+    """Each call, with the block to geocode when it has no coordinates and
+    is public (sensitive calls are never placed)."""
     for number, when, location, district, nature, status in _table(page, MPD_COLUMNS):
         if "unreasonable amount of requests" in nature.lower():
             # The page allows 10 requests per 30 minutes per address and
@@ -211,7 +249,8 @@ def parse_mpd_calls(page: str, ttl: timedelta) -> Iterator[ImportedSignal]:
             longitude, latitude = _dms(match.group(1)), _dms(match.group(2))
             if not in_milwaukee(latitude, longitude):
                 latitude = longitude = None
-        yield ImportedSignal(
+        public = is_public(nature)
+        signal = ImportedSignal(
             external_id=number,
             occurred_at=occurred_at,
             category=nature,
@@ -219,9 +258,64 @@ def parse_mpd_calls(page: str, ttl: timedelta) -> Iterator[ImportedSignal]:
             district=district or None,
             latitude=round(latitude, 3) if latitude is not None else None,
             longitude=round(longitude, 3) if longitude is not None else None,
-            public=is_public(nature),
+            public=public,
             expires_at=occurred_at + ttl,
         )
+        yield signal, (mpd_block(location) if public and latitude is None else None)
+
+
+# MPD's own CAD locator: the one city locator that places intersections
+# ("N 76TH ST/W GOOD HOPE RD") as well as addresses. A different host from
+# the rate-limited calls page.
+MPD_GEOCODER = f"{ARCGIS}/MPDTritech/TriTechLocator/GeocodeServer/findAddressCandidates"
+_GEOCODE_MIN_SCORE = 85
+_GEOCODES_PER_RUN = 80
+_GEOCODE_CONCURRENCY = 4
+# Block → rounded point, or None when the locator has no answer. Lives as
+# long as the loader process (`--watch` keeps it warm), so each block costs
+# one lookup. Only blocks and intersections are kept, never an address.
+_block_points: dict[str, tuple[float, float] | None] = {}
+
+
+async def geocode_block(http: httpx.AsyncClient, block: str) -> tuple[float, float] | None:
+    """The block's point, rounded to about 110 m, or None when the locator
+    has no confident Milwaukee answer. Raises on a failed request, so a
+    network blip isn't cached as 'no answer'."""
+    response = await _get(http, MPD_GEOCODER, SingleLine=block, outSR="4326", maxLocations="1", f="json")
+    try:
+        candidates = response.json().get("candidates") or []
+    except ValueError:
+        raise MilwaukeeDataError("The MPD geocoder answered with something other than JSON") from None
+    if not candidates or (candidates[0].get("score") or 0) < _GEOCODE_MIN_SCORE:
+        return None
+    location = candidates[0].get("location") or {}
+    latitude, longitude = _float(location.get("y")), _float(location.get("x"))
+    if not in_milwaukee(latitude, longitude):
+        return None
+    assert latitude is not None and longitude is not None
+    return round(latitude, 3), round(longitude, 3)
+
+
+async def _place(http: httpx.AsyncClient, rows: list[tuple[ImportedSignal, str | None]]) -> list[ImportedSignal]:
+    """Gives calls without MPD's estimate their block's point."""
+    wanted = sorted({block for _, block in rows if block and block not in _block_points})[:_GEOCODES_PER_RUN]
+    gate = asyncio.Semaphore(_GEOCODE_CONCURRENCY)
+
+    async def look_up(block: str) -> None:
+        async with gate:
+            try:
+                _block_points[block] = await geocode_block(http, block)
+            except MilwaukeeDataError:
+                pass  # try again next run; a missing pin never fails the source
+
+    await asyncio.gather(*(look_up(block) for block in wanted))
+    if len(_block_points) > 50_000:
+        _block_points.clear()
+    placed = []
+    for signal, block in rows:
+        point = _block_points.get(block) if block else None
+        placed.append(signal.model_copy(update={"latitude": point[0], "longitude": point[1]}) if point else signal)
+    return placed
 
 
 def parse_mfd_calls(page: str, ttl: timedelta) -> Iterator[ImportedSignal]:
@@ -242,7 +336,10 @@ def parse_mfd_calls(page: str, ttl: timedelta) -> Iterator[ImportedSignal]:
 
 
 async def fetch_mpd_calls(http: httpx.AsyncClient, *, ttl: timedelta) -> list[ImportedSignal]:
-    return list(parse_mpd_calls((await _get(http, MPD_CALLS_URL)).text, ttl))
+    """The calls, with a point for each public one: MPD's own estimate when
+    the row has one (about one in five), otherwise its block, geocoded."""
+    rows = list(_parse_mpd_rows((await _get(http, MPD_CALLS_URL)).text, ttl))
+    return await _place(http, rows)
 
 
 async def fetch_mfd_calls(http: httpx.AsyncClient, *, ttl: timedelta) -> list[ImportedSignal]:

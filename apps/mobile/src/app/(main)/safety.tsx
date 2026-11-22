@@ -13,7 +13,8 @@ import {
   type SafetyPoint,
   usePublicSafetyPoints,
 } from '@/services/publicSafety';
-import { milesBetween, useRecentCalls } from '@/services/recentCalls';
+import { CallSummary } from '@/components/CallSummary';
+import { type CallCategory, type CallWindow, milesBetween, useCallFeed } from '@/services/recentCalls';
 import { radius, space, useTheme } from '@/theme/tokens';
 import { callPhone } from '@/lib/phone';
 
@@ -36,7 +37,14 @@ function approximateDistance(
 export default function SafetyScreen() {
   const theme = useTheme();
   const safety = usePublicSafetyPoints();
-  const calls = useRecentCalls();
+  const [callWindow, setCallWindow] = useState<CallWindow>('6');
+  const [showCalls, setShowCalls] = useState(true);
+  const [callCategory, setCallCategory] = useState<CallCategory | null>(null);
+  const calls = useCallFeed(Number(callWindow));
+  const mapCalls = useMemo(
+    () => (showCalls ? (calls.data?.calls ?? []).filter((call) => !callCategory || call.category === callCategory) : []),
+    [calls.data, callCategory, showCalls],
+  );
   const [active, setActive] = useState<Set<IncidentCategory | 'community-report'>>(
     () => new Set([...INCIDENT_CATEGORIES.map((item) => item.id), 'community-report']),
   );
@@ -133,10 +141,17 @@ export default function SafetyScreen() {
               count={reports.length}
               onPress={() => toggle('community-report')}
             />
+            <Chip
+              label="911 calls"
+              color="#141A1D"
+              active={showCalls}
+              count={calls.data?.summary.mapped}
+              onPress={() => setShowCalls((value) => !value)}
+            />
           </Chips>
-          <SafetyMap points={visiblePoints} recentCalls={calls.data ?? []} onSelectArea={setSelectedArea} />
+          <SafetyMap points={visiblePoints} recentCalls={mapCalls} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
-            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Outlined markers are delayed police calls—not confirmed crimes. All locations are generalized.
+            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls at approximate locations—not confirmed crimes. All locations are generalized.
           </Txt>
           {safety.isUnavailable ? (
             <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
@@ -146,6 +161,19 @@ export default function SafetyScreen() {
             </Txt>
           )}
         </View>
+
+        <CallSummary
+          feed={calls.data}
+          window={callWindow}
+          onWindowChange={setCallWindow}
+          selectedCategory={callCategory}
+          onSelectCategory={(value) => {
+            setCallCategory(value);
+            if (value) setShowCalls(true);
+          }}
+          loading={calls.isPending}
+          error={calls.isError}
+        />
 
         <Button label="Report nearby activity" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />
 
@@ -279,7 +307,7 @@ export default function SafetyScreen() {
                   <Row
                     key={call.id}
                     title={call.nature}
-                    subtitle={`${call.occurredAt} · District ${call.district} · ${call.status}`}
+                    subtitle={`${call.occurredAt} · District ${call.district}`}
                     detail={approximateDistance(selectedArea.center, call)}
                     tile={{ icon: 'phone-alert', color: '#D76B18' }}
                   />
