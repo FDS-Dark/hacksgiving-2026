@@ -65,7 +65,8 @@ export default function StaffLayout() {
           <Stack.Screen name="calls/[id]" />
           <Stack.Screen name="team" />
           <Stack.Screen name="insights" />
-          <Stack.Screen name="opportunities" />
+          <Stack.Screen name="opportunities/index" />
+          <Stack.Screen name="opportunities/new" />
           <Stack.Screen name="oncall" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="alerts/[id]" />

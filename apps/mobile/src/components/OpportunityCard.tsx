@@ -42,7 +42,12 @@ function closesOn(iso: string) {
 }
 
 /** One posting: what, who, where and when, and how to apply or get in touch. */
-export function OpportunityCard({ item, footer }: { item: Opportunity; footer?: ReactNode }) {
+/**
+ * One job, program or volunteer posting. With `manage` (the staff view) it has no
+ * Apply / call / email actions (staff manage postings, they don't apply),
+ * and a shorter description, so the list stays scannable.
+ */
+export function OpportunityCard({ item, footer, manage = false }: { item: Opportunity; footer?: ReactNode; manage?: boolean }) {
   const theme = useTheme();
   const kind = KIND_INFO[item.kind];
   const colors = kindColors(item.kind, theme);
@@ -79,7 +84,11 @@ export function OpportunityCard({ item, footer }: { item: Opportunity; footer?: 
         </View>
       ) : null}
 
-      {item.description ? <Text style={[styles.body, { color: theme.text }]}>{item.description}</Text> : null}
+      {item.description ? (
+        <Text style={[styles.body, { color: theme.text }]} numberOfLines={manage ? 3 : undefined}>
+          {item.description}
+        </Text>
+      ) : null}
 
       <View style={{ gap: 4 }}>
         {item.location ? <Meta icon="location-outline" text={item.location} /> : null}
@@ -88,6 +97,7 @@ export function OpportunityCard({ item, footer }: { item: Opportunity; footer?: 
         {item.expires_at ? <Meta icon="calendar-outline" text={`Apply by ${closesOn(item.expires_at)}`} /> : null}
       </View>
 
+      {manage ? null : (
       <View style={styles.actions}>
         {item.apply_url ? (
           <Action
@@ -102,6 +112,7 @@ export function OpportunityCard({ item, footer }: { item: Opportunity; footer?: 
         ) : null}
         {item.contact_email ? <Action icon="mail-outline" label="Email" onPress={() => open(`mailto:${item.contact_email}`)} /> : null}
       </View>
+      )}
 
       <Text style={[styles.from, { color: theme.textTertiary }]}>{from}</Text>
 
