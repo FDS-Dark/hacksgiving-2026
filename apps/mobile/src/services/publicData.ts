@@ -63,13 +63,13 @@ export function yearOverYear(points: CrimeTrendPoint[]): YearComparison | null {
 export function sourceLabel(source: string) {
   return ({
     mke_nibrs: 'MPD reviewed incidents',
-    mke_boundaries: 'Milwaukee map boundaries',
+    mke_boundaries: 'Milwaukee map areas',
     mpd_calls: 'MPD dispatch calls',
     mfd_calls: 'MFD fire & EMS calls',
     mcts_gtfs: 'MCTS routes & stops',
     mcts_alerts: 'MCTS service alerts',
     nws_alerts: 'National Weather Service',
     fbi_cde: 'FBI crime trends',
-    cdc_places: 'CDC community indicators',
+    cdc_places: 'Community need estimates from the CDC',
   } as Record<string, string>)[source] ?? source.replaceAll('_', ' ');
 }

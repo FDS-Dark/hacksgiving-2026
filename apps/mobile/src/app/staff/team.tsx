@@ -44,7 +44,7 @@ export default function TeamScreen() {
         <Card>
           <CardTitle title="Access" icon="key-outline" />
           <Text style={[type.footnote, { color: theme.textSecondary }]}>
-            Everyone who has signed in. Make ComForce staff workers; admins can also manage this list.
+            Choose each person’s role and access.
           </Text>
           {setRole.error ? <ErrorBanner error={setRole.error} /> : null}
           {users.isPending ? <Loading /> : users.error ? <ErrorBanner error={users.error} /> : users.data.map((u) => (

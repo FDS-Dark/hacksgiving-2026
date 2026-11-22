@@ -7,8 +7,8 @@ import type { Pattern } from '@/api/types';
 import { CASE_STATUSES } from '@/api/types';
 import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
-import { Button, ErrorBanner, Loading, tap } from '@/components/ui';
-import { BarList, Card, CardTitle, ChoiceRow, PageTitle, StatTile, statusColor } from '@/components/staff/kit';
+import { ErrorBanner, Group, Loading, Row, tap } from '@/components/ui';
+import { BarList, Card, CardTitle, ChoiceRow, MoreDetails, PageTitle, StatTile, statusColor } from '@/components/staff/kit';
 import { CATEGORY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { dateTime, hours } from '@/lib/format';
 import { addDays, startOfDay } from '@/lib/oncall';
@@ -41,18 +41,34 @@ export default function InsightsScreen() {
   const sources = useSourceHealth();
   const isAdmin = !!useStaffStatus().data?.is_admin;
 
-  if (filtered.isPending || insights.isPending) return <Loading label="Loading insights" />;
+  const refetch = () => {
+    filtered.refetch();
+    insights.refetch();
+    trends.refetch();
+    sources.refetch();
+  };
+
+  // The header stays up while loading and on errors (fix plan 2C).
+  const header = (
+    <>
+      <BackLink to="/staff/me" label="Me" />
+      <PageTitle title="Insights" />
+    </>
+  );
+  if (filtered.isPending || insights.isPending) {
+    return (
+      <Page contentStyle={{ maxWidth: 720, gap: space.md }}>
+        {header}
+        <Loading label="Loading insights" />
+      </Page>
+    );
+  }
   const failed = filtered.error ?? insights.error;
   if (failed || !filtered.data || !insights.data) {
     return (
-      <Page>
-        <ErrorBanner
-          error={failed}
-          onRetry={() => {
-            filtered.refetch();
-            insights.refetch();
-          }}
-        />
+      <Page contentStyle={{ maxWidth: 720, gap: space.md }}>
+        {header}
+        <ErrorBanner error={failed} onRetry={refetch} />
       </Page>
     );
   }
@@ -62,22 +78,16 @@ export default function InsightsScreen() {
 
   const districtKeys = districts.map((d) => d.key);
   const districtLabels = Object.fromEntries(districts.map((d) => [d.key, `District ${d.name}`]));
-  const where = district ? districtLabels[district] ?? `District ${district}` : 'All districts';
+  const where = district ? districtLabels[district] ?? `District ${district}` : 'all districts';
 
   const byNeed = [...by_category]
     .filter((c) => c.total > 0)
     .sort((a, b) => b.total - a.total)
     .map((c) => ({ key: c.category, label: CATEGORY_LABEL[c.category], value: c.total, color: theme.accent, detail: c.active ? `${c.active} open` : undefined }));
+  const top = byNeed[0];
 
   const statusCounts = new Map(by_status.map((s) => [s.status, s.total]));
   const byStatus = CASE_STATUSES.map((s) => ({ key: s, label: STATUS_LABEL[s], value: statusCounts.get(s) ?? 0, color: statusColor(theme, s) })).filter((s) => s.value > 0);
-
-  const refetch = () => {
-    filtered.refetch();
-    insights.refetch();
-    trends.refetch();
-    sources.refetch();
-  };
 
   return (
     <Page
@@ -85,118 +95,144 @@ export default function InsightsScreen() {
       onRefresh={refetch}
       contentStyle={{ maxWidth: 720, gap: space.md }}
     >
-      <BackLink to="/staff/me" label="Me" />
-      <PageTitle title="Insights" subtitle={`Last ${PERIOD_LABEL[period]} · ${where} · ${totals.opened} case${totals.opened === 1 ? '' : 's'}`} />
+      {header}
+      <ChoiceRow label="Period" options={INSIGHT_PERIODS} value={period} onChange={(p) => setPeriod(p ?? '30')} labels={PERIOD_LABEL} />
 
-      <View style={{ gap: space.sm }}>
-        <ChoiceRow label="Period" options={INSIGHT_PERIODS} value={period} onChange={(p) => setPeriod(p ?? '30')} labels={PERIOD_LABEL} />
-        {districtKeys.length ? (
-          <ChoiceRow
-            label="Police district"
-            options={districtKeys}
-            value={district}
-            onChange={setDistrict}
-            labels={districtLabels}
-            allowNone
-            noneLabel="All"
-          />
-        ) : null}
-      </View>
-
-      <PatternsCard patterns={patterns} days={days} />
-
-      <Button label="Need vs coverage map" icon="map-outline" variant="tinted" onPress={() => router.push('/staff/areas')} />
-
-      <View style={{ gap: 10 }}>
-        <View style={styles.tiles}>
-          <StatTile label="Opened" value={totals.opened} />
-          <StatTile label="Resolved" value={totals.resolved} color={theme.accent} />
-        </View>
-        <View style={styles.tiles}>
-          <StatTile label="Urgent" value={totals.urgent} color={totals.urgent ? theme.danger : undefined} />
-          <StatTile label="Avg time to resolve" value={hours(totals.avg_resolution_hours)} color={theme.accent} />
-        </View>
-        {totals.placed < totals.opened ? (
-          <Text style={[type.caption, { color: theme.textSecondary }]}>
-            {totals.opened - totals.placed} of these {totals.opened} have no known place yet, so they aren&apos;t in a district or a pattern.
-          </Text>
-        ) : null}
-      </View>
-
-      <Card style={{ gap: space.md }}>
-        <CardTitle title="Requests by need" right={<Text style={[type.caption, { color: theme.textSecondary }]}>{PERIOD_LABEL[period]}</Text>} />
-        <BarList items={byNeed} empty="No cases in this period." />
+      {/* One headline first (cognitive-load review, top 10: Insights had 38 actions at once). */}
+      <Card style={{ gap: space.xs }}>
+        <Text accessibilityRole="header" style={[type.title, { color: theme.text }]}>
+          {totals.opened} case{totals.opened === 1 ? '' : 's'} in the last {PERIOD_LABEL[period]}
+        </Text>
+        <Text style={[type.subhead, { color: theme.textSecondary }]}>
+          {totals.resolved} resolved
+          {totals.urgent ? ` · ${totals.urgent} urgent` : ''}
+          {top ? ` · most for ${top.label.toLowerCase()}` : ''} · {where}
+        </Text>
       </Card>
 
-      {isAdmin ? <OncallResponse /> : null}
+      <Group>
+        <Row
+          title="Where help is needed"
+          subtitle="Areas with high need and little ComForce support"
+          tile={{ icon: 'map-marker-radius-outline', color: theme.accent }}
+          accessory="chevron"
+          onPress={() => router.push('/staff/areas')}
+        />
+      </Group>
 
-      <AvaImpact />
+      {districtKeys.length ? (
+        <MoreDetails label="Filter by police district" hint={district ? districtLabels[district] : 'All districts'}>
+          <ChoiceRow label="Police district" options={districtKeys} value={district} onChange={setDistrict} labels={districtLabels} allowNone noneLabel="All" />
+        </MoreDetails>
+      ) : null}
 
-      <Card style={{ gap: space.md }}>
-        <CardTitle title="Where cases stand" right={<Text style={[type.caption, { color: theme.textSecondary }]}>All time</Text>} />
-        <BarList items={byStatus} empty="No cases yet." />
-      </Card>
+      <MoreDetails label={patterns.length > 1 ? 'Patterns spotted' : 'Pattern spotted'} hint={patterns.length ? patterns[0].headline : 'Nothing stands out'}>
+        <PatternsCard patterns={patterns} days={days} />
+      </MoreDetails>
 
-      <Card style={{ gap: space.sm }}>
-        <CardTitle title="Milwaukee violent-crime trend" icon="trending-up-outline" />
-        {comparison ? (
-          <>
-            <View style={styles.trendRow}>
-              <Text style={[styles.trendValue, { color: comparison.percentChange != null && comparison.percentChange <= 0 ? theme.accent : theme.danger }]}>
-                {comparison.percentChange == null ? '—' : `${comparison.percentChange > 0 ? '+' : ''}${comparison.percentChange.toFixed(1)}%`}
-              </Text>
-              <Text style={[type.subhead, { color: theme.textSecondary, flex: 1 }]}>latest 12 months vs. the preceding 12 months</Text>
-            </View>
-            <Text style={[type.footnote, { color: theme.textSecondary }]}>
-              {comparison.current.toLocaleString()} reported offenses vs. {comparison.previous.toLocaleString()} previously · through {new Date(`${comparison.latestMonth}T12:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+      <MoreDetails label="Cases by type of help" hint={`${PERIOD_LABEL[period]} · resolved, urgent and time to resolve`}>
+        <View style={{ gap: 10 }}>
+          <View style={styles.tiles}>
+            <StatTile label="Opened" value={totals.opened} />
+            <StatTile label="Resolved" value={totals.resolved} color={theme.accent} />
+          </View>
+          <View style={styles.tiles}>
+            <StatTile label="Urgent" value={totals.urgent} color={totals.urgent ? theme.danger : undefined} />
+            <StatTile label="Avg time to resolve" value={hours(totals.avg_resolution_hours)} color={theme.accent} />
+          </View>
+          {totals.placed < totals.opened ? (
+            <Text style={[type.caption, { color: theme.textSecondary }]}>
+              {totals.opened - totals.placed} of these {totals.opened} have no known place yet, so they aren&apos;t in a district or a pattern.
             </Text>
-          </>
-        ) : (
-          <Text style={[type.subhead, { color: theme.textSecondary }]}>Two complete years of FBI Crime Data Explorer results are needed before a fair comparison is shown.</Text>
-        )}
-        <Text style={[type.caption, { color: theme.textSecondary }]}>Reported offenses can be revised and do not predict future safety. Source: FBI Crime Data Explorer.</Text>
-      </Card>
+          ) : null}
+        </View>
+        <Card style={{ gap: space.md }}>
+          <BarList items={byNeed} empty="No cases in this period." />
+        </Card>
+      </MoreDetails>
 
-      <Card style={{ gap: space.sm }}>
-        <CardTitle title="Data freshness" icon="cloud-done-outline" />
-        {sources.data?.length ? sources.data.map((source) => {
-          const isCurrent = source.status === 'ok';
-          const successfulAt = source.last_success_at ?? (isCurrent ? source.finished_at : null);
-          return (
-            <View key={`${source.source}-${source.target}`} style={[styles.sourceRow, { borderTopColor: theme.separator }]}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[type.subhead, { color: theme.text, fontWeight: '700' }]}>{sourceLabel(source.source)}</Text>
-                <Text style={[type.caption, { color: theme.textSecondary }]}>{successfulAt ? `Last successful update ${dateTime(successfulAt)}` : 'No successful update recorded yet'}</Text>
+      <MoreDetails label="Where cases stand" hint="All time, by status">
+        <Card style={{ gap: space.md }}>
+          <BarList items={byStatus} empty="No cases yet." />
+        </Card>
+      </MoreDetails>
+
+      {isAdmin ? (
+        <MoreDetails label="Urgent response" hint="Last 30 days">
+          <OncallResponse />
+        </MoreDetails>
+      ) : null}
+
+      <MoreDetails label="Ava on the phone" hint="Call outcomes and places we recommended">
+        <AvaImpact />
+      </MoreDetails>
+
+      <MoreDetails label="Milwaukee violence trend" hint="FBI reported offenses, year over year">
+        <Card style={{ gap: space.sm }}>
+          {comparison ? (
+            <>
+              <View style={styles.trendRow}>
+                <Text style={[styles.trendValue, { color: comparison.percentChange != null && comparison.percentChange <= 0 ? theme.accent : theme.danger }]}>
+                  {comparison.percentChange == null ? '—' : `${comparison.percentChange > 0 ? '+' : ''}${comparison.percentChange.toFixed(1)}%`}
+                </Text>
+                <Text style={[type.subhead, { color: theme.textSecondary, flex: 1 }]}>the last 12 months compared with the 12 before</Text>
               </View>
-              <Text style={[type.caption, { color: isCurrent ? theme.accent : theme.soon, fontWeight: '700' }]}>
-                {isCurrent ? 'Current' : source.status.replaceAll('_', ' ')}
+              <Text style={[type.footnote, { color: theme.textSecondary }]}>
+                {comparison.current.toLocaleString()} reported offenses, compared with {comparison.previous.toLocaleString()} · through{' '}
+                {new Date(`${comparison.latestMonth}T12:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
               </Text>
-            </View>
-          );
-        }) : (
-          <Text style={[type.subhead, { color: theme.textSecondary }]}>Source status is unavailable right now.</Text>
-        )}
-      </Card>
+            </>
+          ) : (
+            <Text style={[type.subhead, { color: theme.textSecondary }]}>We need two full years of FBI data before we can compare them fairly.</Text>
+          )}
+          <Text style={[type.caption, { color: theme.textSecondary }]}>Reported numbers can change later and don’t predict safety. Source: FBI Crime Data Explorer.</Text>
+        </Card>
+      </MoreDetails>
+
+      <MoreDetails label="Data freshness" hint="When each public data source last updated">
+        <Card style={{ gap: space.sm }}>
+          {sources.data?.length ? (
+            sources.data.map((source) => {
+              const isCurrent = source.status === 'ok';
+              const successfulAt = source.last_success_at ?? (isCurrent ? source.finished_at : null);
+              return (
+                <View key={`${source.source}-${source.target}`} style={[styles.sourceRow, { borderTopColor: theme.separator }]}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={[type.subhead, { color: theme.text, fontWeight: '700' }]}>{sourceLabel(source.source)}</Text>
+                    <Text style={[type.caption, { color: theme.textSecondary }]}>{successfulAt ? `Last updated ${dateTime(successfulAt)}` : 'Not updated yet'}</Text>
+                  </View>
+                  <Text style={[type.caption, { color: isCurrent ? theme.accent : theme.soon, fontWeight: '700' }]}>{isCurrent ? 'Current' : source.status.replaceAll('_', ' ')}</Text>
+                </View>
+              );
+            })
+          ) : sources.error ? (
+            <ErrorBanner error={sources.error} onRetry={() => sources.refetch()} />
+          ) : (
+            <Text style={[type.subhead, { color: theme.textSecondary }]}>Source status isn’t available right now.</Text>
+          )}
+        </Card>
+      </MoreDetails>
 
       {recent_activity.length ? (
-        <Card style={{ gap: space.sm }}>
-          <CardTitle title="Recent activity" />
-          {recent_activity.slice(0, 8).map((u) => (
-            <Text
-              key={u.id}
-              onPress={() => router.push({ pathname: '/staff/cases/[id]', params: { id: u.case_id } })}
-              accessibilityRole="link"
-              style={[type.footnote, styles.activity, { color: theme.text, borderTopColor: theme.separator }]}
-              numberOfLines={2}
-            >
-              <Text style={{ fontWeight: '700' }}>#{u.case_number}</Text> {u.content}
-              <Text style={{ color: theme.textSecondary }}>
-                {' '}
-                · {u.author_name ?? 'System'} · {dateTime(u.created_at)}
+        <MoreDetails label="Recent activity" hint="The latest updates across all cases">
+          <Card style={{ gap: space.sm }}>
+            {recent_activity.slice(0, 8).map((u) => (
+              <Text
+                key={u.id}
+                onPress={() => router.push({ pathname: '/staff/cases/[id]', params: { id: u.case_id } })}
+                accessibilityRole="link"
+                style={[type.footnote, styles.activity, { color: theme.text, borderTopColor: theme.separator }]}
+                numberOfLines={2}
+              >
+                <Text style={{ fontWeight: '700' }}>#{u.case_number}</Text> {u.content}
+                <Text style={{ color: theme.textSecondary }}>
+                  {' '}
+                  · {u.author_name ?? 'System'} · {dateTime(u.created_at)}
+                </Text>
               </Text>
-            </Text>
-          ))}
-        </Card>
+            ))}
+          </Card>
+        </MoreDetails>
       ) : null}
     </Page>
   );

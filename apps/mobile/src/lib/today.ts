@@ -10,9 +10,8 @@
  */
 import type { Case, DebriefRecord, ShiftHandoff, Task } from '@/api/types';
 import { CATEGORY_LABEL, PRIORITY_LABEL } from '@/lib/cases';
-import { timeAgo } from '@/lib/format';
 import { bucketOf } from '@/lib/myTasks';
-import { isOpenCase, isUrgentCase } from '@/lib/queue';
+import { agoInWords, isOpenCase, isUrgentCase } from '@/lib/queue';
 import { bannerLine, bannerTitle, isOpen, type AlertLike } from '@/lib/urgent';
 
 export type WorkKind = 'urgent' | 'overdue' | 'due_today' | 'review' | 'assigned';
@@ -103,7 +102,7 @@ export function buildWorklist({ alerts, tasks, records, handoffs, cases, myId, n
       key: `handoff-${h.id}`,
       kind: 'review',
       title: `Read the handoff from ${h.author_name ?? 'a teammate'}`,
-      line: `Shift handoff · ${timeAgo(h.created_at, nowMs)}`,
+      line: `Shift handoff · ${agoInWords(h.created_at, nowMs)}`,
       target: { screen: 'handoff', id: h.id },
     });
   }
@@ -113,13 +112,13 @@ export function buildWorklist({ alerts, tasks, records, handoffs, cases, myId, n
       key: `record-${r.id}`,
       kind: 'review',
       title: recordTitle(r),
-      line: r.status === 'ready' ? `Debrief ready to check · ${timeAgo(r.created_at, nowMs)}` : 'Debrief couldn’t finish · try again',
+      line: r.status === 'ready' ? `Debrief ready to check · ${agoInWords(r.created_at, nowMs)}` : 'Debrief couldn’t finish · try again',
       target: { screen: 'record', id: r.id },
     });
   }
   for (const c of open.filter((c) => c.status === 'new' && !c.assigned_worker_id && !seenCases.has(c.id))) {
     seenCases.add(c.id);
-    out.push({ key: `case-${c.id}`, kind: 'review', title: `#${c.number} ${c.title}`, line: `New · not reviewed · opened ${timeAgo(c.created_at, nowMs)}`, target: { screen: 'case', id: c.id } });
+    out.push({ key: `case-${c.id}`, kind: 'review', title: `#${c.number} ${c.title}`, line: `New · not reviewed · opened ${agoInWords(c.created_at, nowMs)}`, target: { screen: 'case', id: c.id } });
   }
 
   // Assigned to me: the ones I've left longest first, so nothing goes stale.
@@ -129,7 +128,7 @@ export function buildWorklist({ alerts, tasks, records, handoffs, cases, myId, n
       key: `case-${c.id}`,
       kind: 'assigned',
       title: `#${c.number} ${c.title}`,
-      line: `Assigned to you · last update ${timeAgo(c.last_activity_at, nowMs)}`,
+      line: `Assigned to you · last update ${agoInWords(c.last_activity_at, nowMs)}`,
       target: { screen: 'case', id: c.id },
     });
   }

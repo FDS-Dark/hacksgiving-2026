@@ -78,7 +78,7 @@ export function useRevokeShare(caseId: string) {
 
 /** The API's sharing errors in words, keeping the server's message. */
 export const SHARE_ERRORS: Record<string, string> = {
-  consent_required: 'Share only after the person agrees.',
+  consent_required: 'Ask first. Share only the details the person approved.',
   partner_not_accepting: "That partner hasn't agreed to receive shared cases.",
   already_shared: 'This case is already shared with that partner.',
 };

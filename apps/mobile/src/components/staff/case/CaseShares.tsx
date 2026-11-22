@@ -34,7 +34,7 @@ export function CaseShares({ item }: { item: Case }) {
       {shares.data?.length ? (
         shares.data.map((s) => <ShareLine key={s.id} share={s} onRevoke={() => revoke.mutate(s.id, { onSuccess: () => success() })} busy={revoke.isPending} />)
       ) : (
-        <Text style={[type.footnote, { color: theme.textSecondary }]}>Not shared. Share only after the person agrees, and only what they agree to.</Text>
+        <Text style={[type.footnote, { color: theme.textSecondary }]}>Not shared. Ask first. Share only the details the person approved.</Text>
       )}
       {revoke.error ? <ErrorBanner error={revoke.error} /> : null}
       <Button label="Share with a partner" icon="share-outline" variant="tinted" onPress={() => setOpen(true)} />

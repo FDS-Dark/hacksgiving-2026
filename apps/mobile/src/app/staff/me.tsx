@@ -101,17 +101,17 @@ export default function StaffMeScreen() {
           onPress={() => router.push('/staff/insights')}
         />
         <Row
-          title="AI phone calls"
-          subtitle="Privacy-safe routing outcomes and referrals"
+          title="Ava’s phone calls"
+          subtitle="Call outcomes and places we recommended"
           icon="call-outline"
           detail={calls.data === undefined ? undefined : String(calls.data.length)}
           accessory="chevron"
-          onPress={() => router.push('/staff/calls/index')}
+          onPress={() => router.push('/staff/calls')}
         />
-        <Row title="Partners" subtitle="Organizations we refer to and share cases with" icon="business-outline" accessory="chevron" onPress={() => router.push('/staff/partners/index')} />
-        <Row title="Need vs coverage" subtitle="Where people need help, and where our cases are" icon="map-outline" accessory="chevron" onPress={() => router.push('/staff/areas')} />
+        <Row title="Partners" subtitle="Organizations we refer to and share cases with" icon="business-outline" accessory="chevron" onPress={() => router.push('/staff/partners')} />
+        <Row title="Where help is needed" subtitle="Areas with high need and little ComForce support" icon="map-outline" accessory="chevron" onPress={() => router.push('/staff/areas')} />
         <Row
-          title="Volunteer & job opportunities"
+          title="Manage jobs and programs"
           icon="briefcase-outline"
           accessory="chevron"
           onPress={() => router.push('/staff/opportunities')}

@@ -73,7 +73,7 @@ export default function StaffCallDetailScreen() {
       />
 
       <Notice icon="lock-closed-outline">
-        Privacy-safe review: no caller number, recording, transcript, exact address, or AI-generated risk score is available.
+        To protect callers, we don’t keep their number, the recording, a transcript, the exact address or an AI risk score.
       </Notice>
 
       <Card style={{ gap: space.lg }}>

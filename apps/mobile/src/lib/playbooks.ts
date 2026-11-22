@@ -118,15 +118,15 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     ],
     steps: [
       'Court dates and medical appointments come first: confirm the time and address.',
-      'For regular trips, check reduced-fare bus eligibility (WisGo card: seniors, kids, people with disabilities, Medicare).',
-      'For riders with disabilities, Transit Plus paratransit must be booked a day ahead.',
+      'For regular trips, check whether the rider can get a reduced-fare WisGo card.',
+      'Transit Plus serves riders with disabilities. Book at least one day ahead.',
       'If no option works in time, escalate to a lead for a ComForce ride or bus pass.',
       'Log the ride details and confirm it happened.',
     ],
     avoid: ['Booking a ride that arrives after the appointment starts: leave a buffer.'],
     contacts: [
       { name: 'MCTS reduced fare (WisGo)', detail: 'Half-price bus fare for eligible riders.', url: 'https://www.ridemcts.com/fares/reduced-fare' },
-      { name: 'MCTS Transit Plus', detail: 'Paratransit vans for riders with disabilities; book 24 hours ahead.', phone: '414-343-1700', url: 'https://www.ridemcts.com/accessibility/transit-plus' },
+      { name: 'MCTS Transit Plus', detail: 'Accessible vans are available. Book 24 hours ahead.', phone: '414-343-1700', url: 'https://www.ridemcts.com/accessibility/transit-plus' },
     ],
   },
 

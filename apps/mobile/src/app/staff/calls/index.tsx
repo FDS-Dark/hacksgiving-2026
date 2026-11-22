@@ -74,7 +74,7 @@ export default function StaffCallsScreen() {
   return (
     <Page refreshing={calls.isRefetching} onRefresh={() => calls.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
       <BackLink to="/staff/me" label="Me" />
-      <PageTitle title="AI phone calls" subtitle="Structured outcomes for staff review — never recordings or transcripts." />
+      <PageTitle title="Ava’s phone calls" subtitle="Call outcomes and places we recommended. Never recordings or transcripts." />
 
       <Notice icon="shield-checkmark-outline">
         These records contain only routing fields the caller chose to share. Caller phone numbers, raw audio, transcripts, and exact addresses are not stored.
@@ -108,7 +108,7 @@ export default function StaffCallsScreen() {
               <EmptyState
                 icon="call-outline"
                 title="No calls to review"
-                body="Completed AI phone calls will appear here after their privacy-safe routing data is saved."
+                body="Calls with Ava show up here once they end. We keep the outcome, never the recording."
               />
             </Card>
           )}
