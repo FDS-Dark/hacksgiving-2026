@@ -37,6 +37,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       ...config.ios,
       bundleIdentifier: v.bundleIdentifier,
+      // scripts/testflight.sh sets a new build number for each upload.
+      buildNumber: process.env.IOS_BUILD_NUMBER ?? config.ios?.buildNumber,
       infoPlist: { ...config.ios?.infoPlist, CFBundleDisplayName: v.displayName },
     },
     android: { ...config.android, package: v.androidPackage },
