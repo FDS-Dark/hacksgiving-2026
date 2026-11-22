@@ -11,6 +11,7 @@ import { useResidentRequest, useResidentRequests } from '@/services/requests';
 import { useResources } from '@/services/resources';
 import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
+import { needsShelter, useWeatherAlerts } from '@/services/weather';
 import { radius, space, useTheme } from '@/theme/tokens';
 import { callPhone } from '@/lib/phone';
 
@@ -77,6 +78,8 @@ function HomeScreen() {
         <Text style={[styles.dangerCall, { color: theme.danger }]}>Call</Text>
       </Pressable>
 
+      <WeatherBanner />
+
       {open ? <OpenRequest request={open} /> : null}
 
       <View style={{ gap: space.sm }}>
@@ -110,6 +113,53 @@ function HomeScreen() {
         </View>
       </View>
     </Page>
+  );
+}
+
+/**
+ * The most severe National Weather Service alert in effect, if any. Opens
+ * Safety alerts for the details. For cold or heat it also points to shelter,
+ * since someone outside needs a warm or cool place tonight.
+ */
+function WeatherBanner() {
+  const theme = useTheme();
+  const { active } = useWeatherAlerts();
+  const top = active[0];
+  if (!top) return null;
+  const more = active.length - 1;
+  const heat = /heat/i.test(top.event);
+  return (
+    <View style={[styles.weather, { backgroundColor: theme.warningSoft }]}>
+      <Pressable
+        onPress={() => router.push('/alerts')}
+        accessibilityRole="button"
+        accessibilityLabel={`Weather alert: ${top.event}. Open safety alerts`}
+        style={({ pressed }) => [{ gap: 4 }, pressed && { opacity: 0.7 }]}
+      >
+        <View style={styles.row}>
+          <Ionicons name={heat ? 'sunny-outline' : 'cloudy-outline'} size={18} color={theme.soon} />
+          <Text style={[styles.weatherTitle, { color: theme.soon }]} numberOfLines={1}>
+            {top.event}
+          </Text>
+          {more > 0 ? <Text style={[styles.small, { color: theme.soon }]}>+{more} more</Text> : null}
+          <Ionicons name="chevron-forward" size={16} color={theme.soon} />
+        </View>
+        {top.headline ? (
+          <Text style={[styles.small, { color: theme.text }]} numberOfLines={2}>
+            {top.headline}
+          </Text>
+        ) : null}
+      </Pressable>
+      {needsShelter(top) ? (
+        <Text
+          onPress={() => router.replace({ pathname: '/nearby', params: { category: 'homelessness' } })}
+          accessibilityRole="link"
+          style={[styles.link, { color: theme.soon }]}
+        >
+          {heat ? 'Find a cool place to stay' : 'Find a warm place tonight'}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -155,6 +205,8 @@ const styles = StyleSheet.create({
   danger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
   dangerText: { fontSize: 14, fontWeight: '600', flex: 1 },
   dangerCall: { fontSize: 14, fontWeight: '800' },
+  weather: { gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
+  weatherTitle: { flex: 1, fontSize: 14, fontWeight: '800' },
   section: { fontSize: 17, fontWeight: '800' },
   link: { fontSize: 14, fontWeight: '700' },
   kicker: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, flex: 1 },
