@@ -21,6 +21,10 @@ export default function ReferralDetailScreen() {
             <Row title="Service area" detail={item.service_area} />
             {item.hours_label ? <Row title="Hours" detail={item.hours_label} /> : null}
             <Row title="Referral status" detail={item.outcome_status ?? item.status} />
+            {/* Who delivered the help: the organization only, never a staff member's name. */}
+            {item.outcome_status === 'completed' ? (
+              <Row title={`Help from ${item.resource_name}`} icon="checkmark-circle-outline" accessibilityLabel={`Help from ${item.resource_name}`} />
+            ) : null}
             <Row title="Follow-up" detail={item.follow_up_status === 'pending' && item.follow_up_due_at
               ? `Check in ${new Date(item.follow_up_due_at).toLocaleDateString()}`
               : item.follow_up_status.replaceAll('_', ' ')} />

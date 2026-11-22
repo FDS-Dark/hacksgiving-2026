@@ -15,6 +15,7 @@ import { Avatar } from '@/components/Avatar';
 import { Card, StatTile, priorityColor, statusColor } from '@/components/staff/kit';
 import { NotificationBell } from '@/components/staff/NotificationBell';
 import { OncallCard } from '@/components/staff/OncallCard';
+import { TeamChatCard } from '@/components/staff/TeamChatCard';
 import { UrgentBanners } from '@/components/staff/Urgent';
 import { needsAttention } from '@/lib/attention';
 import { CATEGORY_LABEL } from '@/lib/cases';
@@ -69,6 +70,7 @@ export default function TodayScreen() {
 
       <UrgentBanners alerts={alerts.data ?? []} />
       <OncallCard />
+      <TeamChatCard />
 
       {insights.error && !insights.data ? <ErrorBanner error={insights.error} onRetry={refresh} /> : null}
       <RefreshError query={open} what="your cases" />

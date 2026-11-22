@@ -1,6 +1,6 @@
 # Handoff: where things stand
 
-Last updated 2026-11-21 (resident lane: weather, offline, beds, community alerts, signed-out push). Update this file when you finish a piece of work or
+Last updated 2026-11-22 (branch `feat/track-gaps`: team chat, partner requests, delivered by, export my records). Update this file when you finish a piece of work or
 change what's deployed, so the next person (or agent) starts from the truth.
 
 ## What the app is
@@ -97,6 +97,28 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
   - `database/seeds/local/20_demo_story.sql`: three weekend-night requests
     at N 27th St & W Center St, for "Pattern spotted" in the demo.
 
+- **Track gaps** (branch `feat/track-gaps`, migration 0031, which revises 0030 from `feat/standalone-dataloader`: merge that first):
+  - Team chat (`/staff/chat`, `/staff/chat/[id]`, `/v1/chat`): Team (all
+    staff), On call (on call now plus admins) and one staff-only channel per
+    case ("Discuss this case" on case detail). Entry on Today with unread
+    counts. Polls every 5 s while on screen; no websockets. Ordinary messages
+    are inbox rows that never push; "Rapid response" pushes the channel's
+    members with "New message in <channel>" only, under quiet hours.
+  - Request help from a partner (case > Referrals, `/v1/cases/{id}/partner-requests`):
+    texted from the worker's upkeep when SMS is on and the partner has a
+    number, otherwise composed on the phone (email or Messages). Only the
+    need, the note, the case number and the worker's name, unless a live
+    consented share with that partner included contact details or location.
+    Logged on the case history.
+  - Delivered by: completing a referral records the provider or ComForce
+    (a named worker) and who confirmed it; shown on the staff referral, the
+    case history and Insights ("Help delivered by"). Residents' voice
+    referrals show "Help from <Org>" once completed.
+  - Export my records (staff Me, `GET /v1/me/export`): one CSV (summary,
+    then debriefs, cases, completed tasks, confirmed outcomes), shared with
+    `expo-sharing` on a phone and downloaded on the web. No contact details,
+    raw text or audio.
+
 The design source of truth is the Figma file "Hacksgiving 2027"
 (page "App shell v2"). Plan and screen status: `docs/app-flow.md`.
 
@@ -108,11 +130,11 @@ The design source of truth is the Figma file "Hacksgiving 2027"
 - App: Expo Router; one service module per API domain under
   `apps/mobile/src/services` (TanStack Query); visual style "C · Light" (white
   cards, hairline borders, green only for primary actions).
-- Database: Alembic revisions through **0029** (`0015_oncall_shifts`,
+- Database: Alembic revisions through **0031** (`0015_oncall_shifts`,
   `0016_notifications`, `0017_push`, `0018_urgent_alerts`,
   `0019_resident_lane`, `0020_case_places`, `0021_partners_and_outreach`,
   `0022_case_debriefs` through `0028_training_progress`, and
-  `0029_voice_safety_and_follow_up`).
+  `0029_voice_safety_and_follow_up`, `0031_team_chat_and_delivery`).
 - The worker starts without the OpenAI key: task reminders always run,
   Phantom's stages only with the key.
 - Storage for voice audio: S3-compatible locally (SeaweedFS container),
