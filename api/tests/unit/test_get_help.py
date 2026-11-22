@@ -108,6 +108,7 @@ async def test_an_anonymous_request_comes_back_with_a_code_that_opens_it():
         request_create=[case],
         request_get_by_code=lambda p: [public_row(case)] if p["number"] == case["number"] else [],
         request_list_public_updates=[],
+        case_get=[case],
         task_create=[],
     )
     cases = service(db)

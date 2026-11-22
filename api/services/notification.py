@@ -47,6 +47,16 @@ def _label(value: str) -> str:
     return value.replace("_", " ").capitalize()
 
 
+CHANNEL_NAMES = {"team": "Team chat", "oncall": "On call chat"}
+
+
+def chat_route(channel: str | None, case_id: UUID | None) -> str:
+    """Where a chat notification opens: /staff/chat/team, /oncall or the case's id."""
+    if channel == "case" and case_id:
+        return f"/staff/chat/{case_id}"
+    return f"/staff/chat/{channel}" if channel in CHANNEL_NAMES else "/staff/chat"
+
+
 def render(facts: NotificationFacts) -> NotificationItem:
     """The title, body and route the app shows for one notification."""
     n = _case_ref(facts)
@@ -58,6 +68,13 @@ def render(facts: NotificationFacts) -> NotificationItem:
             title, body = f"Urgent: {facts.case_title or 'a case'}", "You're on call. Open it to accept or pass."
         else:
             title, body = f"Nobody has accepted {n}", facts.case_title or ""
+    elif facts.kind in (NotificationKind.CHAT_MESSAGE, NotificationKind.CHAT_RAPID):
+        route = chat_route(facts.chat_channel, facts.case_id)
+        name = CHANNEL_NAMES.get(facts.chat_channel or "", f"the chat on {n}")
+        if facts.kind == NotificationKind.CHAT_RAPID:
+            title, body = f"Rapid response in {name}", "Open the chat to read it."
+        else:
+            title, body = f"New messages in {name}", "Open the chat to read them."
     elif facts.kind == NotificationKind.TEST:
         title, body, route = "Test notification", "Push works on this phone.", None
     elif facts.kind == NotificationKind.COMMUNITY_ALERT:
@@ -132,6 +149,28 @@ class NotificationService:
         if created is not None:
             await enqueue_push(JobDatabridge(tx), created.id)
             logger.info("Notification %s (%s) for user %s", created.id, kind.value, user_id)
+        return created is not None
+
+    async def notify_chat(
+        self,
+        tx: FunctionCaller,
+        *,
+        user_id: UUID,
+        kind: NotificationKind,
+        dedupe_key: str,
+        channel: str,
+        case_id: UUID | None,
+        actor_id: UUID,
+        push: bool,
+    ) -> bool:
+        """An inbox row about a chat channel, inside `tx`. Only with `push`
+        (a rapid-response message) is its push job queued; ordinary messages
+        stay in the inbox and the unread counts. True when a row was made."""
+        created = await self.notifications.within(tx).create_chat(
+            user_id=user_id, kind=kind, dedupe_key=dedupe_key, channel=channel, case_id=case_id, actor_id=actor_id,
+        )
+        if created is not None and push:
+            await enqueue_push(JobDatabridge(tx), created.id)
         return created is not None
 
     # --- The reader -------------------------------------------------------------

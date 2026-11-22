@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import Field
 
 from models.base import ApiModel
-from models.case import CategoryCount
+from models.case import CategoryCount, DeliveredBy
 from models.case_enums import CaseCategory
 
 
@@ -54,6 +54,14 @@ class Pattern(ApiModel):
     detail: str
 
 
+class DeliveredByCount(ApiModel):
+    """Helped (completed) referrals confirmed in the period, by who delivered them."""
+
+    provider: str = Field(description="The resource's name, or ComForce MKE.")
+    delivered_by: DeliveredBy
+    helped: int
+
+
 class Insights(ApiModel):
     period_start: datetime
     period_end: datetime
@@ -63,6 +71,7 @@ class Insights(ApiModel):
     totals: InsightsTotals
     by_category: list[CategoryCount]
     patterns: list[Pattern]
+    delivered_by: list[DeliveredByCount] = Field(description="Most helped first.")
 
 
 class NeedMeasure(StrEnum):

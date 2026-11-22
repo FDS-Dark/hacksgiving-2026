@@ -181,52 +181,6 @@ class VoiceConfig(BaseModel):
     urgent_pages_on_call: bool = Field(default=True)
 
 
-class LoaderConfig(BaseModel):
-    """The data loader (api/loader, docs/data-loader.md): where to look, and
-    the sources' credentials. A source without credentials is skipped."""
-
-    # Job and training searches: a "City, ST" place and a radius in miles.
-    location: str = Field(default="Milwaukee, WI")
-    radius_miles: int = Field(default=25, ge=1, le=100)
-    # Directory downloads (no search): keep rows in this state whose ZIP code
-    # starts with one of these. 530-532 is the Milwaukee metro.
-    state: str = Field(default="WI")
-    zip_prefixes: list[str] = Field(default_factory=lambda: ["530", "531", "532"])
-    # Postings older than this many days aren't fetched.
-    max_age_days: int = Field(default=30, ge=1, le=60)
-    # At most this many rows per source and run.
-    max_per_source: int = Field(default=500, ge=1, le=2000)
-    timeout: float = Field(default=30.0)
-
-    # USAJOBS (developer.usajobs.gov): an API key and the email address it
-    # was requested with, which USAJOBS wants as the User-Agent.
-    usajobs_api_key: str = Field(default="")
-    usajobs_email: str = Field(default="")
-    # CareerOneStop Web API (careeronestop.org/Developers): the user id and
-    # token from registration. Jobs and training programs need them; the
-    # American Job Center and reentry directories are public downloads.
-    careeronestop_user_id: str = Field(default="")
-    careeronestop_token: str = Field(default="")
-    # Job search terms; "0" means every job in the area.
-    careeronestop_job_keywords: list[str] = Field(default_factory=lambda: ["0"])
-
-    # Public data (docs/real-data-sources.md). NIBRS: how many days back each
-    # nightly run refreshes (the source edits records for weeks).
-    nibrs_window_days: int = Field(default=90, ge=7, le=730)
-    # Dispatch calls (MPD, MFD) are kept this long, then deleted.
-    signal_ttl_hours: int = Field(default=24, ge=1, le=168)
-    # NWS forecast zones: Milwaukee County and its lakeshore zone.
-    nws_zones: list[str] = Field(default_factory=lambda: ["WIC079", "WIZ066"])
-    # CDC PLACES: Milwaukee County.
-    county_fips: str = Field(default="55079")
-    # FBI Crime Data Explorer: an api.data.gov key (optional; it answers
-    # without one), and how many months back.
-    fbi_api_key: str = Field(default="")
-    fbi_months: int = Field(default=24, ge=1, le=120)
-    # Seconds between live runs in --watch mode (MPD/MFD calls, alerts).
-    live_every_seconds: int = Field(default=300, ge=60)
-
-
 class OncallConfig(BaseModel):
     """On call (services/oncall.py)."""
 
@@ -305,7 +259,6 @@ class AppConfig(BaseSettings):
     sms: SmsConfig = Field(default_factory=SmsConfig)
     worker: WorkerConfig = Field(default_factory=WorkerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
-    loader: LoaderConfig = Field(default_factory=LoaderConfig)
     oncall: OncallConfig = Field(default_factory=OncallConfig)
     push: PushConfig = Field(default_factory=PushConfig)
     # Browser origins allowed to call the API. The native app doesn't need

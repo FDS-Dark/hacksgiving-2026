@@ -15,6 +15,7 @@ import { CaseAttachments } from '@/components/staff/case/CaseAttachments';
 import { CaseHistory } from '@/components/staff/case/CaseHistory';
 import { CaseReferrals } from '@/components/staff/case/CaseReferrals';
 import { CaseShares } from '@/components/staff/case/CaseShares';
+import { PartnerRequests } from '@/components/staff/case/PartnerRequests';
 import { CaseTasks } from '@/components/staff/case/CaseTasks';
 import { UpdateCaseSheet } from '@/components/staff/case/UpdateCaseSheet';
 import { Badge, Card, ConfirmSheet, PriorityBadge, StatusBadge } from '@/components/staff/kit';
@@ -99,6 +100,7 @@ export default function CaseScreen() {
       {tab === 'tasks' ? <CaseTasks caseId={c.id} tasks={tasks} /> : null}
       {tab === 'history' ? <CaseHistory updates={updates} /> : null}
       {tab === 'referrals' ? <CaseReferrals item={c} referrals={referrals} /> : null}
+      {tab === 'referrals' ? <PartnerRequests item={c} /> : null}
       {tab === 'referrals' ? <CaseShares item={c} /> : null}
       {tab === 'files' ? <CaseAttachments caseId={c.id} /> : null}
       {tab === 'guide' ? (
@@ -185,6 +187,13 @@ function QuickActions({ item: c }: { item: Case }) {
   const mine = !!me.data && c.assigned_worker_id === me.data.id;
   return (
     <View style={styles.quick}>
+      {/* Staff only: the case's own team chat, never shown to the resident. */}
+      <Button
+        label="Discuss this case"
+        icon="chatbubbles-outline"
+        variant="plain"
+        onPress={() => router.push({ pathname: '/staff/chat/[id]', params: { id: c.id } })}
+      />
       {me.data && !mine && !closed ? (
         <Button
           label="Assign to me"

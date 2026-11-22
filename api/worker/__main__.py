@@ -26,6 +26,7 @@ from databridge.executor import PostgresExecutor
 from databridge.job import JobDatabridge
 from databridge.notification import NotificationDatabridge
 from databridge.oncall import OncallDatabridge
+from databridge.partner import PartnerDatabridge
 from databridge.place import PlaceDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.push import PushDatabridge
@@ -47,6 +48,7 @@ from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, Tr
 from services.redaction import PatternRedactor
 from services.staff import StaffService
 from services.task import TaskService
+from services.partner import PartnerTexter
 from services.text import CaseTexter
 from services.request_push import RequestPushStage
 from services.transcription import Transcriber
@@ -119,10 +121,11 @@ async def upkeep(
     weather: WeatherWatch | None = None,
     placer: CasePlacer | None = None,
     texter: CaseTexter | None = None,
+    partner_texter: PartnerTexter | None = None,
 ) -> None:
     """Fail records whose job died without telling them, open on-call alerts
     a code path missed, place new cases for Insights, text requesters
-    about updates, delete audio that should be gone, and prune old jobs
+    about updates and partners about requests for help, delete audio that should be gone, and prune old jobs
     and notifications. Safe on every replica at once (each step is
     idempotent)."""
     last_prune = 0.0
@@ -139,6 +142,8 @@ async def upkeep(
                 await placer.sweep()
             if texter is not None:
                 await texter.sweep()
+            if partner_texter is not None:
+                await partner_texter.sweep()
             if sweeper is not None:
                 swept = await sweeper.sweep()
                 if swept:
@@ -220,6 +225,7 @@ async def main() -> None:
 
     sms = make_sms_sender(config.sms)
     texter = CaseTexter(TextDatabridge(executor), sms, coalesce_minutes=config.sms.coalesce_minutes) if sms else None
+    partner_texter = PartnerTexter(PartnerDatabridge(executor), sms) if sms else None
 
     health = await serve_health(runner, config.worker.health_port)
     try:
@@ -229,7 +235,7 @@ async def main() -> None:
                 records, jobs, NotificationDatabridge(executor), sweeper, stop, build_oncall(executor),
                 PushDatabridge(executor),
                 WeatherWatch(executor, NotificationService(NotificationDatabridge(executor), executor)),
-                placer, texter,
+                placer, texter, partner_texter,
             ),
         )
     finally:

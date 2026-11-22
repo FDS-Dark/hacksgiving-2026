@@ -29,6 +29,18 @@ class NotificationDatabridge(Databridge):
         )
         return StoredNotification(**row) if row else None
 
+    async def create_chat(
+        self, *, user_id: UUID, kind: NotificationKind, dedupe_key: str, channel: str, case_id: UUID | None,
+        actor_id: UUID,
+    ) -> StoredNotification | None:
+        """An inbox row about a chat channel (app.chat_notify). None when it
+        already exists or `user_id` is the actor."""
+        row = await self._first(
+            "chat_notify", user_id=user_id, kind=kind, dedupe_key=dedupe_key, channel=channel, case_id=case_id,
+            actor_id=actor_id,
+        )
+        return StoredNotification(**row) if row else None
+
     async def list_for(self, user_id: UUID, before: datetime | None, limit: int) -> list[NotificationFacts]:
         rows = await self._rows("notification_list", user_id=user_id, before=before, limit=limit)
         return [NotificationFacts(**row) for row in rows]

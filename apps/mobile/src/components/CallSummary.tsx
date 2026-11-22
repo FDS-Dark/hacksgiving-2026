@@ -149,7 +149,7 @@ export function CallSummary({
       <View style={[styles.delay, { backgroundColor: theme.warningSoft }]}>
         <Ionicons name="time-outline" size={16} color={theme.soon} />
         <Txt variant="footnote" style={{ flex: 1 }}>
-          Delayed dispatch calls · not confirmed incidents. {CALL_DELAY_NOTE}; the app checks for new ones every 30 seconds.
+          Public safety calls, not confirmed crimes. {CALL_DELAY_NOTE}; the app checks for new ones every 30 seconds.
         </Txt>
       </View>
       <Segmented options={CALL_WINDOWS} value={window} onChange={onWindowChange} label="Time window" />

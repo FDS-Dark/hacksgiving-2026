@@ -30,6 +30,7 @@ from models.case import (
     PublicRequestDetail,
     PublicRequestUpdate,
     Referral,
+    ReferralStatus,
     ReplyRequest,
     SubmitRequest,
     UpdateCaseRequest,
@@ -71,6 +72,15 @@ TITLE_LENGTH = 80
 def blank_to_none(value: str | None) -> str | None:
     value = (value or "").strip()
     return value or None
+
+
+def first_name(display_name: str | None) -> str | None:
+    """All of a worker's name a requester sees: "Dana" from "Dana Reyes".
+    None for a name that is really an email address."""
+    words = (display_name or "").split()
+    if not words or "@" in words[0]:
+        return None
+    return words[0]
 
 
 def title_from(description: str) -> str:
@@ -205,13 +215,25 @@ class CaseService:
         return case
 
     async def my_requests(self, user: AppUser) -> list[PublicRequest]:
-        return await self.cases.list_for_requester(user.id)
+        return [await self._with_owner(r) for r in await self.cases.list_for_requester(user.id)]
 
     async def my_request(self, user: AppUser, case_id: UUID) -> PublicRequestDetail:
         request = await self.cases.get_for_requester(user.id, case_id)
         if request is None:
             raise not_found("request")
-        return PublicRequestDetail(request=request, updates=await self.cases.list_public_updates(user.id, case_id))
+        return PublicRequestDetail(
+            request=await self._with_owner(request), updates=await self.cases.list_public_updates(user.id, case_id)
+        )
+
+    async def _with_owner(self, request: PublicRequest) -> PublicRequest:
+        """Who it waits on, as the requester may see it: how they asked to
+        be reached, and the first name of the worker on it (nothing else)."""
+        case = await self.cases.get(request.id)
+        if case is None:
+            return request
+        return request.model_copy(
+            update={"contact_method": case.contact_method, "worker_first_name": first_name(case.assigned_worker_name)}
+        )
 
     async def reply(self, user: AppUser, case_id: UUID, body: ReplyRequest) -> PublicRequestUpdate:
         """The member answers on their own request."""
@@ -223,7 +245,9 @@ class CaseService:
         """A request sent without an account, for whoever holds its code.
         A wrong number or code is the same 404, so neither can be probed."""
         request = await self._by_code(number, code)
-        return PublicRequestDetail(request=request, updates=await self.cases.list_public_updates_for_case(request.id))
+        return PublicRequestDetail(
+            request=await self._with_owner(request), updates=await self.cases.list_public_updates_for_case(request.id)
+        )
 
     async def reply_by_code(self, number: int, code: str, body: ReplyRequest) -> PublicRequestUpdate:
         request = await self._by_code(number, code)
@@ -448,12 +472,19 @@ class CaseService:
     async def update_referral(
         self, worker: StaffMember, case_id: UUID, referral_id: UUID, body: UpdateReferralRequest
     ) -> Referral:
+        if body.delivered_by_worker_id is not None and not await self.staff.is_worker(body.delivered_by_worker_id):
+            raise ApiError(422, "not_a_worker", "Help delivered by ComForce names a ComForce staff member")
         async with self.transactions.transaction() as tx:
             cases = self.cases.within(tx)
             before = None
-            if body.status is not None:
+            if body.status is not None or body.delivered_by is not None:
                 before = next((r.status for r in await cases.list_referrals(case_id) if r.id == referral_id), None)
-            referral = await cases.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
+            if body.delivered_by is not None and body.status is None and before != ReferralStatus.COMPLETED:
+                raise ApiError(422, "not_completed", "Mark the referral completed to record who delivered the help")
+            referral = await cases.update_referral(
+                case_id, referral_id, body.status, body.outcome, worker.id, body.delivered_by,
+                body.delivered_by_worker_id,
+            )
             if referral is None:
                 raise not_found("referral")
             if before is not None and referral.status != before:

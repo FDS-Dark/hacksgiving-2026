@@ -91,6 +91,8 @@ class PushFacts(ApiModel):
     unread_count: int = 0
     recent_push_count: int = 0
     last_case_push_at: datetime | None = None
+    # chat_rapid: which channel (the push names it); filled in by the job.
+    chat_channel: str | None = None
 
 
 class ReasonCount(ApiModel):

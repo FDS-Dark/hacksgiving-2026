@@ -10,8 +10,7 @@ import { space } from '@/theme/tokens';
 export default function RequestsTab() {
   const list = useResidentRequests();
   return (
-    <Page refreshing={list.isRefetching} onRefresh={list.refetch} contentStyle={{ maxWidth: 560, gap: space.lg }}>
-      <ResidentHeader title="Requests" />
+    <Page header={<ResidentHeader title="Requests" />} refreshing={list.isRefetching} onRefresh={list.refetch} contentStyle={{ maxWidth: 560, gap: space.lg }}>
       <RequestList />
       <BigButton label="Ask for help" variant="outline" onPress={() => router.push('/help')} />
     </Page>

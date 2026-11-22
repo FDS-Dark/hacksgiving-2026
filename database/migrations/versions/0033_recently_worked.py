@@ -11,14 +11,14 @@ Never edit this file once it has been applied; change a function in a new
 revision.
 
 Revision ID: 0033
-Revises: 0030
+Revises: 0032
 Create Date: 2026-11-22
 """
 
 from alembic import context, op
 
 revision = "0033"
-down_revision = "0030"
+down_revision = "0032"
 branch_labels = None
 depends_on = None
 

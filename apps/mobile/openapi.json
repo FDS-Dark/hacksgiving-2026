@@ -1116,6 +1116,259 @@
         "title": "CategoryCount",
         "type": "object"
       },
+      "ChatChannel": {
+        "description": "One channel as the caller sees it. `key` is how routes name it:\n`team`, `oncall`, or the case's id.",
+        "properties": {
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "case_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Number"
+          },
+          "case_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Title"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ChatChannelKind"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "last_author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Author Name"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message"
+          },
+          "last_message_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message At"
+          },
+          "last_read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Read At"
+          },
+          "name": {
+            "description": "Team, On call, or Case #1048.",
+            "title": "Name",
+            "type": "string"
+          },
+          "rapid_unread": {
+            "description": "Of those, rapid-response ones.",
+            "minimum": 0.0,
+            "title": "Rapid Unread",
+            "type": "integer"
+          },
+          "unread": {
+            "description": "Messages from others since the caller last read the channel.",
+            "minimum": 0.0,
+            "title": "Unread",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "channel",
+          "name",
+          "case_id",
+          "case_number",
+          "case_title",
+          "last_message_at",
+          "last_message",
+          "last_author_name",
+          "last_read_at",
+          "unread",
+          "rapid_unread"
+        ],
+        "title": "ChatChannel",
+        "type": "object"
+      },
+      "ChatChannelKind": {
+        "enum": [
+          "team",
+          "oncall",
+          "case"
+        ],
+        "title": "ChatChannelKind",
+        "type": "string"
+      },
+      "ChatMessage": {
+        "properties": {
+          "author_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ChatChannelKind"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rapid": {
+            "title": "Rapid",
+            "type": "boolean"
+          },
+          "read_by": {
+            "description": "People other than the author who have read it.",
+            "minimum": 0.0,
+            "title": "Read By",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "channel",
+          "case_id",
+          "author_id",
+          "author_name",
+          "body",
+          "rapid",
+          "created_at",
+          "read_by"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "ChatReadResult": {
+        "properties": {
+          "last_read_at": {
+            "format": "date-time",
+            "title": "Last Read At",
+            "type": "string"
+          },
+          "notifications_read": {
+            "title": "Notifications Read",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "last_read_at",
+          "notifications_read"
+        ],
+        "title": "ChatReadResult",
+        "type": "object"
+      },
+      "ChatThread": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ChatChannel"
+          },
+          "messages": {
+            "description": "Oldest first.",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "channel",
+          "messages"
+        ],
+        "title": "ChatThread",
+        "type": "object"
+      },
       "ClaimHandoffRequest": {
         "properties": {
           "code": {
@@ -1742,6 +1995,33 @@
         "title": "CreateOpportunityRequest",
         "type": "object"
       },
+      "CreatePartnerRequest": {
+        "properties": {
+          "need": {
+            "$ref": "#/components/schemas/CaseCategory",
+            "description": "The service the help is for."
+          },
+          "note": {
+            "description": "What you're asking for, in your words. Leave out names and numbers.",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "partner_id": {
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "partner_id",
+          "need",
+          "note"
+        ],
+        "title": "CreatePartnerRequest",
+        "type": "object"
+      },
       "CreateRecordRequest": {
         "description": "A typed debrief. (Voice records upload audio first; see the pipeline.)",
         "properties": {
@@ -2074,6 +2354,39 @@
         "title": "CrimeTrendPoint",
         "type": "object"
       },
+      "DeliveredBy": {
+        "description": "Who delivered a completed referral's help: the referral's own\nresource (the provider), or ComForce MKE itself (a named worker).",
+        "enum": [
+          "provider",
+          "comforce"
+        ],
+        "title": "DeliveredBy",
+        "type": "string"
+      },
+      "DeliveredByCount": {
+        "description": "Helped (completed) referrals confirmed in the period, by who delivered them.",
+        "properties": {
+          "delivered_by": {
+            "$ref": "#/components/schemas/DeliveredBy"
+          },
+          "helped": {
+            "title": "Helped",
+            "type": "integer"
+          },
+          "provider": {
+            "description": "The resource's name, or ComForce MKE.",
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "delivered_by",
+          "helped"
+        ],
+        "title": "DeliveredByCount",
+        "type": "object"
+      },
       "DeliveryStatus": {
         "enum": [
           "pending",
@@ -2226,6 +2539,51 @@
           }
         },
         "title": "DraftMessageRequest",
+        "type": "object"
+      },
+      "ExportSummary": {
+        "properties": {
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "cases_resolved": {
+            "title": "Cases Resolved",
+            "type": "integer"
+          },
+          "debriefs": {
+            "title": "Debriefs",
+            "type": "integer"
+          },
+          "outcomes_confirmed": {
+            "title": "Outcomes Confirmed",
+            "type": "integer"
+          },
+          "people_helped": {
+            "description": "Your cases that were resolved or had a referral that helped.",
+            "title": "People Helped",
+            "type": "integer"
+          },
+          "referrals_helped": {
+            "description": "Your cases' referrals marked completed.",
+            "title": "Referrals Helped",
+            "type": "integer"
+          },
+          "tasks_completed": {
+            "title": "Tasks Completed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "debriefs",
+          "cases",
+          "cases_resolved",
+          "people_helped",
+          "tasks_completed",
+          "outcomes_confirmed",
+          "referrals_helped"
+        ],
+        "title": "ExportSummary",
         "type": "object"
       },
       "ExtractedTask": {
@@ -2731,6 +3089,14 @@
             "title": "Days",
             "type": "integer"
           },
+          "delivered_by": {
+            "description": "Most helped first.",
+            "items": {
+              "$ref": "#/components/schemas/DeliveredByCount"
+            },
+            "title": "Delivered By",
+            "type": "array"
+          },
           "district": {
             "anyOf": [
               {
@@ -2778,7 +3144,8 @@
           "districts",
           "totals",
           "by_category",
-          "patterns"
+          "patterns",
+          "delivered_by"
         ],
         "title": "Insights",
         "type": "object"
@@ -3183,7 +3550,9 @@
           "test",
           "urgent_offer",
           "urgent_unanswered",
-          "community_alert"
+          "community_alert",
+          "chat_message",
+          "chat_rapid"
         ],
         "title": "NotificationKind",
         "type": "string"
@@ -4256,6 +4625,170 @@
         "title": "PartnerBody",
         "type": "object"
       },
+      "PartnerRequest": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/PartnerRequestDelivery"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "included_contact": {
+            "description": "The person's name and phone went too (a live consented share).",
+            "title": "Included Contact",
+            "type": "boolean"
+          },
+          "included_location": {
+            "title": "Included Location",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "Everything the partner was sent.",
+            "title": "Message",
+            "type": "string"
+          },
+          "need": {
+            "$ref": "#/components/schemas/CaseCategory"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "partner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Email"
+          },
+          "partner_id": {
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "partner_name": {
+            "title": "Partner Name",
+            "type": "string"
+          },
+          "partner_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Phone"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PartnerRequestStatus"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "partner_id",
+          "partner_name",
+          "partner_email",
+          "partner_phone",
+          "requested_by",
+          "requested_by_name",
+          "need",
+          "note",
+          "message",
+          "delivery",
+          "status",
+          "reason",
+          "included_contact",
+          "included_location",
+          "created_at",
+          "sent_at"
+        ],
+        "title": "PartnerRequest",
+        "type": "object"
+      },
+      "PartnerRequestDelivery": {
+        "description": "sms: texted to the partner's phone by the worker's upkeep. compose:\nthe app opens the worker's own email or phone with the message.",
+        "enum": [
+          "sms",
+          "compose"
+        ],
+        "title": "PartnerRequestDelivery",
+        "type": "string"
+      },
+      "PartnerRequestStatus": {
+        "enum": [
+          "pending",
+          "sent",
+          "failed",
+          "composed"
+        ],
+        "title": "PartnerRequestStatus",
+        "type": "string"
+      },
       "PassReason": {
         "enum": [
           "busy",
@@ -4533,6 +5066,17 @@
           "category": {
             "$ref": "#/components/schemas/CaseCategory"
           },
+          "contact_method": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContactMethod"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the requester asked to be reached; null when the form didn't ask."
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -4585,6 +5129,18 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
+          },
+          "worker_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "First name of the ComForce worker the request is assigned to; null until someone is. Nothing else about staff reaches the requester.",
+            "title": "Worker First Name"
           }
         },
         "required": [
@@ -4597,7 +5153,9 @@
           "location",
           "created_at",
           "updated_at",
-          "resolved_at"
+          "resolved_at",
+          "contact_method",
+          "worker_first_name"
         ],
         "title": "PublicRequest",
         "type": "object"
@@ -4892,12 +5450,76 @@
         "title": "RecordStatus",
         "type": "string"
       },
+      "RecordsExport": {
+        "description": "One CSV file: a summary at the top, then a section per kind of record\n(debriefs, cases, tasks, referral outcomes).",
+        "properties": {
+          "csv": {
+            "title": "Csv",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExportSummary"
+          }
+        },
+        "required": [
+          "filename",
+          "generated_at",
+          "summary",
+          "csv"
+        ],
+        "title": "RecordsExport",
+        "type": "object"
+      },
       "Referral": {
         "properties": {
           "case_id": {
             "format": "uuid",
             "title": "Case Id",
             "type": "string"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By"
+          },
+          "confirmed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By Name"
           },
           "created_at": {
             "format": "date-time",
@@ -4915,6 +5537,40 @@
               }
             ],
             "title": "Created By"
+          },
+          "delivered_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeliveredBy"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set once the referral is completed."
+          },
+          "delivered_by_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered By Worker Id"
+          },
+          "delivered_by_worker_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered By Worker Name"
           },
           "id": {
             "format": "uuid",
@@ -4992,7 +5648,13 @@
           "outcome",
           "created_by",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "delivered_by",
+          "delivered_by_worker_id",
+          "delivered_by_worker_name",
+          "confirmed_by",
+          "confirmed_by_name",
+          "confirmed_at"
         ],
         "title": "Referral",
         "type": "object"
@@ -5531,6 +6193,50 @@
           "safe_contact_window"
         ],
         "title": "SafeContactPlan",
+        "type": "object"
+      },
+      "SendChatMessageRequest": {
+        "properties": {
+          "body": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "rapid": {
+            "default": false,
+            "description": "Rapid response: pushes the channel's members (generic lock-screen text only).",
+            "title": "Rapid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "SendChatMessageRequest",
+        "type": "object"
+      },
+      "SentPartnerRequest": {
+        "description": "A new request, and (for `compose`) the message to send from the\nworker's own email or phone.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/PartnerRequest"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request",
+          "subject",
+          "message"
+        ],
+        "title": "SentPartnerRequest",
         "type": "object"
       },
       "Service": {
@@ -6947,6 +7653,30 @@
       },
       "UpdateReferralRequest": {
         "properties": {
+          "delivered_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeliveredBy"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With status completed (or on a completed referral): who delivered the help. Defaults to the provider. You are recorded as the one who confirmed it."
+          },
+          "delivered_by_worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "With delivered_by comforce: which worker (default: you).",
+            "title": "Delivered By Worker Id"
+          },
           "outcome": {
             "anyOf": [
               {
@@ -9729,6 +10459,106 @@
         ]
       }
     },
+    "/v1/cases/{case_id}/partner-requests": {
+      "get": {
+        "description": "Who on staff asked which partner for what on this case, newest first.",
+        "operationId": "list_partner_requests_v1_cases__case_id__partner_requests_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PartnerRequest"
+                  },
+                  "title": "Response List Partner Requests V1 Cases  Case Id  Partner Requests Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Partner Requests",
+        "tags": [
+          "partners"
+        ]
+      },
+      "post": {
+        "description": "Ask a partner for help with the case. Sends the need, your note, the\ncase number and your name; the person's name and phone or location only\nwhen the case has a live consented share with that partner that included\nthem. `delivery: sms` is texted by the worker; `compose` returns the\nmessage for you to send from your own email or phone. Logged on the\ncase's history. 409 `partner_inactive`.",
+        "operationId": "request_partner_help_v1_cases__case_id__partner_requests_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartnerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentPartnerRequest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Partner Help",
+        "tags": [
+          "partners"
+        ]
+      }
+    },
     "/v1/cases/{case_id}/person": {
       "get": {
         "description": "The resident behind a case: their contact details and every case that\nlooks like the same person (same resident account, phone number or\nemail). Staff only.",
@@ -10201,6 +11031,202 @@
         ]
       }
     },
+    "/v1/chat/channels": {
+      "get": {
+        "description": "Team and On call, then the case channels you belong to (assigned,\nopened, or wrote in) that have messages, with unread counts.",
+        "operationId": "list_channels_v1_chat_channels_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChatChannel"
+                  },
+                  "title": "Response List Channels V1 Chat Channels Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Channels",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/v1/chat/channels/{key}": {
+      "get": {
+        "description": "The channel and its newest messages, oldest first. Doesn't mark it\nread: the app does that while the thread is on screen.",
+        "operationId": "get_thread_v1_chat_channels__key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only messages before this (older ones)",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only messages before this (older ones)",
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatThread"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Thread",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/v1/chat/channels/{key}/messages": {
+      "post": {
+        "description": "Post to a channel. Members get an inbox row; with `rapid: true` they\nare also pushed (\"New message in Team chat\", never the text).",
+        "operationId": "send_message_v1_chat_channels__key__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendChatMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Message",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/v1/chat/channels/{key}/read": {
+      "post": {
+        "description": "You've read the channel up to now; its inbox rows are cleared.",
+        "operationId": "mark_read_v1_chat_channels__key__read_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatReadResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Read",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
     "/v1/health": {
       "get": {
         "description": "Liveness only: no database round-trip and no deployment metadata.",
@@ -10616,6 +11642,28 @@
         "summary": "Remove Device",
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/v1/me/export": {
+      "get": {
+        "description": "Your debriefs (summary and fields, never the text or audio), the cases\nassigned to or opened by you, the tasks you completed and the referral\noutcomes you confirmed, with a summary at the top. Only your own; never\na resident's phone, email or name.",
+        "operationId": "export_my_records_v1_me_export_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordsExport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Export My Records",
+        "tags": [
+          "export"
         ]
       }
     },

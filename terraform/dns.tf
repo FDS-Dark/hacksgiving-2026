@@ -16,9 +16,10 @@ variable "cloudflare_tunnel_id" {
 }
 
 resource "cloudflare_dns_record" "public" {
-  for_each = {
-    api = var.api_hostname
-  }
+  for_each = merge(
+    { api = var.api_hostname },
+    var.web_image != "" ? { web = var.web_hostname } : {},
+  )
 
   zone_id = var.cloudflare_zone_id
   name    = each.value

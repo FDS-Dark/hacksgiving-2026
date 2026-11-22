@@ -15,6 +15,7 @@ const MUTABLE: { kind: NotificationKind; title: string; subtitle: string }[] = [
   { kind: 'reply', title: 'Resident replies', subtitle: 'New messages on your cases' },
   { kind: 'task_due', title: 'Task reminders', subtitle: 'Follow-ups coming due' },
   { kind: 'referral_update', title: 'Referral updates', subtitle: 'A partner accepted, declined or finished one' },
+  { kind: 'chat_rapid', title: 'Rapid response messages', subtitle: 'A teammate flags a chat message urgent' },
 ];
 
 /**

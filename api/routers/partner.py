@@ -1,6 +1,7 @@
 """Partner organizations (`/v1/partners`, Figma P1) and sharing a case with
 one, with the resident's consent (`/v1/cases/{id}/shares`, Figma P2).
-Staff only: partners' notes and the shares are internal."""
+Also asking a partner for help with a case (`/v1/cases/{id}/partner-requests`).
+Staff only: partners' notes, the shares and the requests are internal."""
 
 from typing import Annotated
 from uuid import UUID
@@ -9,7 +10,16 @@ from fastapi import APIRouter, Depends, Query, status
 
 from dependencies import get_case_text_service, get_current_worker, get_partner_service
 from models.case_enums import CaseCategory
-from models.partner import CaseShare, CreateShareRequest, Partner, PartnerBody, SharedCase
+from models.partner import (
+    CaseShare,
+    CreatePartnerRequest,
+    CreateShareRequest,
+    Partner,
+    PartnerBody,
+    PartnerRequest,
+    SentPartnerRequest,
+    SharedCase,
+)
 from models.staff import StaffMember
 from models.text import CaseText
 from services.partner import PartnerService
@@ -70,6 +80,27 @@ async def revoke_share(case_id: UUID, share_id: UUID, worker: Worker, service: S
     """Stop sharing (the person changed their mind, or it's no longer
     needed). The record stays, marked revoked."""
     return await service.revoke(worker, case_id, share_id)
+
+
+@router.get("/cases/{case_id}/partner-requests", response_model=list[PartnerRequest])
+async def list_partner_requests(case_id: UUID, _worker: Worker, service: Service) -> list[PartnerRequest]:
+    """Who on staff asked which partner for what on this case, newest first."""
+    return await service.requests(case_id)
+
+
+@router.post(
+    "/cases/{case_id}/partner-requests", response_model=SentPartnerRequest, status_code=status.HTTP_201_CREATED
+)
+async def request_partner_help(
+    case_id: UUID, body: CreatePartnerRequest, worker: Worker, service: Service
+) -> SentPartnerRequest:
+    """Ask a partner for help with the case. Sends the need, your note, the
+    case number and your name; the person's name and phone or location only
+    when the case has a live consented share with that partner that included
+    them. `delivery: sms` is texted by the worker; `compose` returns the
+    message for you to send from your own email or phone. Logged on the
+    case's history. 409 `partner_inactive`."""
+    return await service.request_help(worker, case_id, body)
 
 
 @router.get("/cases/{case_id}/texts", response_model=list[CaseText])

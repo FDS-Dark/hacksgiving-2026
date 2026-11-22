@@ -86,6 +86,14 @@ export default function InsightsScreen() {
     .map((c) => ({ key: c.category, label: CATEGORY_LABEL[c.category], value: c.total, color: theme.accent, detail: c.active ? `${c.active} open` : undefined }));
   const top = byNeed[0];
 
+  // Completed referrals by who delivered the help: each provider, and ComForce itself.
+  const deliveredBy = filtered.data.delivered_by.map((d) => ({
+    key: `${d.delivered_by}:${d.provider}`,
+    label: d.provider,
+    value: d.helped,
+    color: d.delivered_by === 'comforce' ? theme.info : theme.accent,
+  }));
+
   const statusCounts = new Map(by_status.map((s) => [s.status, s.total]));
   const byStatus = CASE_STATUSES.map((s) => ({ key: s, label: STATUS_LABEL[s], value: statusCounts.get(s) ?? 0, color: statusColor(theme, s) })).filter((s) => s.value > 0);
 
@@ -119,6 +127,13 @@ export default function InsightsScreen() {
           onPress={() => router.push('/staff/areas')}
         />
       </Group>
+
+      <Card style={{ gap: space.md }}>
+        <CardTitle title="Help delivered by" icon="hand-left-outline" right={<Text style={[type.caption, { color: theme.textSecondary }]}>{PERIOD_LABEL[period]}</Text>} />
+        <BarList items={deliveredBy} empty="No referral marked helped in this period." />
+      </Card>
+
+      {isAdmin ? <OncallResponse /> : null}
 
       {districtKeys.length ? (
         <MoreDetails label="Filter by police district" hint={district ? districtLabels[district] : 'All districts'}>

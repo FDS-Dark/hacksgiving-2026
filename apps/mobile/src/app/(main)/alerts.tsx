@@ -1,15 +1,12 @@
-import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Linking } from 'react-native';
 
-import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
 import { Button, EmptyState, Group, Loading, Notice, Row, Txt } from '@/components/ui';
 import { useDeviceLocation } from '@/services/deviceLocation';
 import { INCIDENT_CATEGORIES, type SafetyPoint, usePublicSafetyPoints } from '@/services/publicSafety';
 import { milesBetween, useRecentCalls } from '@/services/recentCalls';
-import { useVoiceFollowUps } from '@/services/voice';
 import { useWeatherAlerts } from '@/services/weather';
 import { dateTime } from '@/lib/format';
 
@@ -33,7 +30,6 @@ export default function AlertsScreen() {
   const calls = useRecentCalls();
   const safety = usePublicSafetyPoints();
   const device = useDeviceLocation();
-  const followUps = useVoiceFollowUps();
   const weather = useWeatherAlerts();
 
   const recentIncidents = useMemo(
@@ -57,17 +53,13 @@ export default function AlertsScreen() {
   const refresh = () => {
     calls.refetch();
     safety.refetch();
-    followUps.refetch();
     weather.refetch();
   };
 
   return (
-    <Page refreshing={calls.isRefetching || safety.isRefetching} onRefresh={refresh}>
-      <BackLink label="Back" fallback="/me" />
-      <ResidentHeader title="Safety alerts" />
-
+    <Page header={<ResidentHeader title="Safety alerts" back="/safety" />} refreshing={calls.isRefetching || safety.isRefetching} onRefresh={refresh}>
       <Notice icon="information-circle-outline">
-        Dispatch calls are delayed 30–90 minutes and are not confirmed crimes. Incident locations and distances are approximate.
+        These calls may be 30–90 minutes old. A call does not mean a crime happened. Locations and distances are approximate.
       </Notice>
 
       {weather.active.length ? (
@@ -87,32 +79,17 @@ export default function AlertsScreen() {
         </Group>
       ) : null}
 
-      {/* Phone-call follow-ups live in one place, Me > Phone calls; this row points there. */}
-      <Group header="Your ComForce notifications">
-        <Row
-          title="Phone call follow-ups"
-          subtitle={
-            followUps.data?.length
-              ? `${followUps.data.length} connected call${followUps.data.length === 1 ? '' : 's'} · under Me > Phone calls`
-              : 'Connect a call with the phone assistant under Me > Phone calls.'
-          }
-          tile={{ icon: 'phone-check', color: '#247A63' }}
-          accessory="chevron"
-          onPress={() => router.push('/me')}
-        />
-      </Group>
-
       {!device.location ? (
         <>
           <Button
-            label="Sort alerts by my location"
+            label="Show alerts near me"
             icon="navigate-outline"
             size="lg"
             loading={device.loading}
             onPress={device.locate}
           />
           <Txt variant="footnote" tone="secondary" style={{ textAlign: 'center' }}>
-            Optional: your location stays on this device and is used only to calculate distance.
+            Optional. Your location stays on this phone. We use it only to measure distance.
           </Txt>
           {device.error ? <Notice icon="location-outline" tone="warning">{device.error}</Notice> : null}
         </>
@@ -123,13 +100,13 @@ export default function AlertsScreen() {
       ) : (
         <Group
           header={device.location ? `Closest recent incidents · within 5 miles` : 'Latest reported incidents'}
-          footer="These are generalized MPD incident records from the past 30 days, not predictions or risk scores."
+          footer="Police-reviewed reports from the past 30 days. They do not predict what will happen."
         >
           {(device.location ? nearbyIncidents : recentIncidents).map((point) => (
             <Row
               key={point.id}
               title={`${categoryLabel(point)} reported nearby`}
-              subtitle={`${ageLabel(point.ageInDays)} · generalized location`}
+              subtitle={`${ageLabel(point.ageInDays)} · approximate location`}
               detail={distanceLabel(point)}
               detailTint="rgba(180,35,24,0.09)"
               detailColor="#B42318"
@@ -141,14 +118,14 @@ export default function AlertsScreen() {
 
       {calls.error ? (
         <Notice icon="cloud-offline-outline" tone="warning">
-          The live city dispatch feed is unavailable right now. Historical incident alerts above are still available.
+          Recent public safety calls can’t load right now. The reports above still work.
         </Notice>
       ) : calls.isPending ? (
-        <Loading label="Checking the live dispatch feed" />
+        <Loading label="Checking recent public safety calls" />
       ) : calls.data?.length ? (
         <Group
-          header={`Live dispatch feed · ${calls.data.length}`}
-          footer="Safety-related calls from the last six hours. Not live: MPD publishes calls 30–90 min after dispatch; the app checks every 30 seconds. Locations are approximate."
+          header={`Recent public safety calls · ${calls.data.length}`}
+          footer="Calls from the last six hours. They may be 30–90 minutes old. The app checks every 30 seconds. Locations are approximate."
         >
           {calls.data.slice(0, 8).map((call) => (
             <Row
@@ -165,8 +142,8 @@ export default function AlertsScreen() {
       ) : (
         <EmptyState
           icon="checkmark-circle-outline"
-          title="No matching live calls"
-          body="No weapon, violence or property calls in the last two hours. Pull down to check again."
+          title="No recent calls like these"
+          body="No weapon, violence or property calls in the last six hours. Pull down to check again."
           action={<Button label="Refresh" variant="tinted" onPress={refresh} />}
         />
       )}
@@ -174,7 +151,7 @@ export default function AlertsScreen() {
       <Group header="Important">
         <Row
           title="Emergency? Call 911"
-          subtitle="Do not rely on this app when you or someone else needs immediate help."
+          subtitle="If you or someone else needs help right now, call 911. Do not wait for this app."
           tile={{ icon: 'shield-alert', color: '#B42318' }}
         />
       </Group>

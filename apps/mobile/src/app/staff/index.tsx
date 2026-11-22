@@ -15,6 +15,8 @@ import { TODAY_LIMIT, buildWorklist, type WorkItem, type WorkKind } from '@/lib/
 import { useCases } from '@/services/cases';
 import { useHandoffs, useOpenAlerts } from '@/services/oncall';
 import { useRecords } from '@/services/records';
+import { unreadLabel } from '@/lib/chat';
+import { unreadTotals, useChatChannels } from '@/services/chat';
 import { useStaffStatus } from '@/services/staff';
 import { useTasks } from '@/services/tasks';
 import { space, type, useTheme, type Theme } from '@/theme/tokens';
@@ -72,6 +74,10 @@ export default function TodayScreen() {
   const records = useRecords();
   const handoffs = useHandoffs(Boolean(myId));
   const oncall = useOncallSwitch();
+  const chat = useChatChannels();
+  const chatTotals = chat.data ? unreadTotals(chat.data) : null;
+  const chatPill = chatTotals ? unreadLabel({ unread: chatTotals.unread, rapid_unread: chatTotals.rapid }) : null;
+  const chatLine = chat.isPending ? 'Loading…' : !chat.data ? 'Couldn’t load the chat. Tap to try again.' : 'Team, On call and case chats';
   const [showAll, setShowAll] = useState(false);
   // "Overdue" and "fresh" are judged against when Today opened (or was refreshed).
   const [now, setNow] = useState(() => new Date());
@@ -168,7 +174,7 @@ export default function TodayScreen() {
         )}
       </View>
 
-      {/* Team: the shift, and (from feat/track-gaps) team chat. */}
+      {/* Team: the shift and team chat. */}
       <Group header="Team">
         <Row
           title={oncall.now.data ? oncallTitle(oncall.now.data) : 'On call'}
@@ -176,13 +182,14 @@ export default function TodayScreen() {
           icon="call-outline"
           right={oncall.now.data ? <Toggle value={oncall.on} onChange={oncall.set} disabled={oncall.busy} label="On call" /> : undefined}
         />
-        {/*
-          TEAM CHAT SLOT. feat/track-gaps adds components/staff/TeamChatCard and
-          the /staff/chat routes. At merge, drop a "Team chat" Row here (title
-          "Team chat", the unread count as `detail`, chevron, onPress →
-          router.push('/staff/chat')) instead of placing TeamChatCard above the
-          worklist, so Today keeps one list and ≤10 actions.
-        */}
+        <Row
+          title="Team chat"
+          subtitle={chatLine}
+          detail={chatPill}
+          icon="chatbubbles-outline"
+          accessory="chevron"
+          onPress={() => (chat.data ? router.push('/staff/chat') : chat.refetch())}
+        />
       </Group>
       {oncall.error ? <ErrorBanner error={oncall.error} /> : null}
     </Page>

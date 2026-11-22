@@ -3,8 +3,20 @@
  * The keys are the API's enums, so a renamed or dropped value fails the
  * typecheck. (Residents see their own wording: components/resident.tsx.)
  */
-import type { CaseCategory, CasePriority, CaseStatus, ReferralStatus } from '@/api/types';
+import type { CaseCategory, CasePriority, CaseStatus, Referral, ReferralStatus } from '@/api/types';
 import type { IconName } from '@/components/ui';
+
+/**
+ * Who delivered a completed referral's help, for staff:
+ * "Delivered by Harbor House · confirmed by Maria, Nov 22". Null until it's completed.
+ */
+export function deliveredLine(r: Referral): string | null {
+  if (r.status !== 'completed' || !r.delivered_by) return null;
+  const by = r.delivered_by === 'comforce' ? `ComForce MKE${r.delivered_by_worker_name ? ` (${r.delivered_by_worker_name})` : ''}` : r.resource_name;
+  const when = r.confirmed_at ? new Date(r.confirmed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
+  const confirmed = r.confirmed_by_name ? ` · confirmed by ${r.confirmed_by_name}${when ? `, ${when}` : ''}` : '';
+  return `Delivered by ${by}${confirmed}`;
+}
 
 export const CATEGORY_LABEL: Record<CaseCategory, string> = {
   homelessness: 'Housing & shelter',

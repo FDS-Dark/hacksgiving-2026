@@ -2,13 +2,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { REFERRAL_STATUSES, type Case, type Referral } from '@/api/types';
+import { REFERRAL_STATUSES, type Case, type DeliveredBy, type Referral } from '@/api/types';
 import { ResourcePicker } from '@/components/staff/ResourcePicker';
 import { Card, CardTitle, ChoiceRow, SampleBadge, referralColor } from '@/components/staff/kit';
 import { Button, ErrorBanner, Field } from '@/components/ui';
-import { CATEGORY_ICON, REFERRAL_LABEL } from '@/lib/cases';
+import { CATEGORY_ICON, REFERRAL_LABEL, deliveredLine } from '@/lib/cases';
 import { useUpdateReferral } from '@/services/cases';
 import { space, type, useTheme } from '@/theme/tokens';
+
+/** Completing a referral records who delivered the help: its provider by default, or ComForce. */
+const DELIVERED_BY = ['provider', 'comforce'] as const satisfies readonly DeliveredBy[];
 
 /** The case's Referrals tab: resources it's connected to, each with a status and an outcome. */
 export function CaseReferrals({ item: c, referrals }: { item: Case; referrals: Referral[] }) {
@@ -40,6 +43,7 @@ function ReferralItem({ caseId, referral: r }: { caseId: string; referral: Refer
   const theme = useTheme();
   const update = useUpdateReferral(caseId);
   const [outcome, setOutcome] = useState('');
+  const delivered = deliveredLine(r);
   return (
     <View style={[styles.referral, { borderColor: theme.separator }]}>
       <View style={styles.badges}>
@@ -51,6 +55,23 @@ function ReferralItem({ caseId, referral: r }: { caseId: string; referral: Refer
       <ChoiceRow options={REFERRAL_STATUSES} labels={REFERRAL_LABEL} value={r.status} disabled={update.isPending}
         colorOf={(s) => referralColor(theme, s)}
         onChange={(s) => s && s !== r.status && update.mutate({ referralId: r.id, body: { status: s } })} />
+      {r.status === 'completed' ? (
+        <View style={{ gap: 6 }}>
+          {delivered ? (
+            <Text style={[type.footnote, { color: theme.text, fontWeight: '600' }]} accessibilityRole="text">
+              {delivered}
+            </Text>
+          ) : null}
+          <ChoiceRow
+            label="Who delivered the help"
+            options={DELIVERED_BY}
+            labels={{ provider: r.resource_name, comforce: 'ComForce (me)' }}
+            value={r.delivered_by ?? null}
+            disabled={update.isPending}
+            onChange={(by) => by && by !== r.delivered_by && update.mutate({ referralId: r.id, body: { delivered_by: by } })}
+          />
+        </View>
+      ) : null}
       {r.outcome ? (
         <Text style={[type.footnote, { color: theme.text }]}>
           <Text style={{ fontWeight: '700' }}>Outcome: </Text>

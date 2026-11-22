@@ -55,6 +55,11 @@ class PushDatabridge(Databridge):
         row = await self._first("notification_push_facts", notification_id=notification_id)
         return PushFacts(**row) if row else None
 
+    async def chat_channel(self, notification_id: UUID) -> str | None:
+        """team, oncall or case for a chat notification; None otherwise."""
+        row = await self._first("chat_notification_channel", notification_id=notification_id)
+        return str(row["channel"]) if row else None
+
     async def claim(self, notification_id: UUID) -> list[ClaimedDelivery]:
         """The deliveries to send now, already `sending` (committed by the
         executor's own transaction before any send)."""

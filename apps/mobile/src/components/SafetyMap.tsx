@@ -63,7 +63,7 @@ function mapHtml(points: SafetyPoint[], calls: RecentCall[]) {
       label: call.nature,
       color: callColor(call.category, call.source),
       time: call.occurredAt,
-      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : `MPD · ${callCategory(call.category).label}`} dispatch${call.district ? ` · District ${call.district}` : ''} · ${call.status}`,
+      detail: `${call.source === 'mfd_calls' ? 'MFD fire/EMS' : `MPD · ${callCategory(call.category).label}`} call${call.district ? ` · District ${call.district}` : ''} · ${call.status}`,
     }));
 
   return `<!doctype html>
@@ -83,7 +83,7 @@ const map=L.map('map',{zoomControl:true,minZoom:10,maxZoom:18}).setView([${MILWA
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap · MPD public data'}).addTo(map);
 if(L.heatLayer){L.heatLayer(heat,{radius:34,blur:26,maxZoom:15,minOpacity:.28,gradient:{.12:'#2a75bb',.32:'#36b37e',.52:'#f4d03f',.72:'#f08a24',1:'#c62026'}}).addTo(map);}
 else{heat.forEach(p=>L.circle([p[0],p[1]],{radius:700,stroke:false,fillColor:'#e54b25',fillOpacity:.22}).addTo(map));}
-function addPin(pin,live){const marker=L.circleMarker([pin.lat,pin.lng],{radius:live?7:5,color:live?'#141a1d':'#fff',weight:live?3:2,fillColor:pin.color,fillOpacity:.96});marker.bindPopup('<div class="pin-title">'+escapeHtml(pin.label)+'</div><div class="pin-time">'+escapeHtml(pin.time)+'</div><div class="pin-detail">'+escapeHtml(pin.detail)+(live?' · Unconfirmed call':' · Generalized location')+'</div>');marker.addTo(map);}
+function addPin(pin,live){const marker=L.circleMarker([pin.lat,pin.lng],{radius:live?7:5,color:live?'#141a1d':'#fff',weight:live?3:2,fillColor:pin.color,fillOpacity:.96});marker.bindPopup('<div class="pin-title">'+escapeHtml(pin.label)+'</div><div class="pin-time">'+escapeHtml(pin.time)+'</div><div class="pin-detail">'+escapeHtml(pin.detail)+(live?' · Unconfirmed call':' · Approximate location')+'</div>');marker.addTo(map);}
 ${ESCAPE_HTML_JS}
 incidents.forEach(p=>addPin(p,false)); calls.forEach(p=>addPin(p,true));
 map.on('click',e=>window.ReactNativeWebView.postMessage(JSON.stringify({type:'area',latitude:e.latlng.lat,longitude:e.latlng.lng})));
