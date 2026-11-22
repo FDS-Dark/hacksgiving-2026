@@ -10,8 +10,8 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
 
 - **Resident app** (`apps/mobile/src/app/(main)`, `help/`, `place/`): Home,
   Get help (works signed out, with an access code), Requests, Nearby (map of
-  places), Me; Quick exit on every screen; 911 dials only in a production
-  build (`lib/phone.ts`).
+  places), Me; Quick exit on every screen; the app tells people to call 911 and never
+  dials it (`lib/phone.ts`).
 - **Staff app** (`apps/mobile/src/app/staff`): Today, Queue, Record, Map, Me
   (Team & roles, Insights). Cases with tasks, history, referrals, the service
   playbook, an Update sheet and a message thread with the resident.

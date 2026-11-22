@@ -1,12 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { BigButton, Card, ResidentScreen } from '@/components/resident';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import { callPhone } from '@/lib/phone';
 import { openSettings, pushSupported, shouldAskResident, subscribeToRequest } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
@@ -41,14 +40,14 @@ function QueuedScreen() {
       <Text style={[styles.lede, { color: theme.textSecondary }]}>
         You’re offline. Your request will send as soon as you have signal, even if you close this screen.
       </Text>
-      <Pressable onPress={() => callPhone('911')} accessibilityRole="button" accessibilityLabel="In danger? Call 911" style={styles.full}>
+      <View style={styles.full}>
         <Card tone="danger" style={{ paddingVertical: 12 }}>
           <Text style={{ fontSize: 14, color: theme.text }}>
-            <Text style={{ fontWeight: '700', color: theme.red }}>In danger? Call 911. </Text>
+            <Text style={{ fontWeight: '700', color: theme.red }}>In danger? Call 911 from your phone. </Text>
             It works without data.
           </Text>
         </Card>
-      </Pressable>
+      </View>
     </ResidentScreen>
   );
 }

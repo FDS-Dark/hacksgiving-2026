@@ -8,7 +8,6 @@ import { QuickExitButton } from '@/components/resident';
 import { Button, Txt, type IconName } from '@/components/ui';
 import { auth0Configured, devSignInAvailable, redirectUri, useAuth } from '@/lib/auth';
 import { radius, space, useTheme } from '@/theme/tokens';
-import { callPhone } from '@/lib/phone';
 
 const BENEFITS: { icon: IconName; title: string; detail: string }[] = [
   { icon: 'help-buoy-outline', title: 'Ask for help anytime', detail: 'Tell us what is going on. A real person follows up.' },
@@ -89,9 +88,7 @@ export default function WelcomeScreen() {
 
         <Button label="Ask for help without an account" variant="plain" onPress={() => router.push('/help')} />
 
-        <Text onPress={() => callPhone('911')} accessibilityRole="link" style={[styles.danger, { color: theme.danger }]}>
-          In danger right now? Call 911
-        </Text>
+        <Text style={[styles.danger, { color: theme.danger }]}>In danger right now? Call 911 from your phone.</Text>
 
         {devSignInAvailable ? <Button label="Continue with dev token" variant="plain" onPress={signInWithDevToken} /> : null}
         {__DEV__ && auth0Configured ? (

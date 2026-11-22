@@ -1,7 +1,7 @@
 /**
  * Urgent escalation pieces shared by Today (the red banners), S7 (the urgent
  * offer card) and the Respond screen (/staff/alerts/[id]): a ticking clock,
- * the Call 911 button and the Pass reason sheet.
+ * the call-911 reminder and the Pass reason sheet.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, type Href } from 'expo-router';
@@ -10,7 +10,6 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/staff/kit';
 import { Button, Row, Sheet, success } from '@/components/ui';
-import { callPhone } from '@/lib/phone';
 import { bannerLine, bannerTitle, offerLine } from '@/lib/urgent';
 import { PASS_REASONS, oncallAlertError, useAcceptAlert, usePassAlert, type OncallAlert, type PassReason } from '@/services/oncall';
 import { radius, space, type, useTheme } from '@/theme/tokens';
@@ -30,30 +29,16 @@ export function alertHref(id: string): Href {
   return { pathname: '/staff/alerts/[id]', params: { id } } as Href;
 }
 
-/** A red Call 911 button. It dials only in production builds (lib/phone.ts); the app never calls on its own. */
-export function Call911Button({ style }: { style?: object }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={() => callPhone('911')}
-      accessibilityRole="button"
-      accessibilityLabel="Call 911"
-      style={({ pressed }) => [styles.call, { backgroundColor: theme.red }, pressed && { opacity: 0.7 }, style]}
-    >
-      <Ionicons name="call" size={18} color="#FFFFFF" />
-      <Text style={[type.body, { color: '#FFFFFF', fontWeight: '700' }]}>Call 911</Text>
-    </Pressable>
-  );
-}
-
-/** "If anyone may be hurt or armed, call 911 first", with the button. */
+/** "If anyone may be hurt or armed, call 911 first." A reminder, not a
+ *  button: the app never dials 911; the worker calls from their phone. */
 export function Call911Line() {
   const theme = useTheme();
   return (
     <View style={[styles.line911, { backgroundColor: theme.dangerSoft }]}>
       <Ionicons name="warning-outline" size={18} color={theme.danger} />
-      <Text style={[type.footnote, { color: theme.danger, fontWeight: '600', flex: 1 }]}>If anyone may be hurt or armed, call 911 first.</Text>
-      <Call911Button style={styles.call911Small} />
+      <Text style={[type.footnote, { color: theme.danger, fontWeight: '600', flex: 1 }]}>
+        If anyone may be hurt or armed, call 911 from your phone first.
+      </Text>
     </View>
   );
 }
@@ -195,8 +180,6 @@ export function CaseLinkRow({ caseId, caseNumber }: { caseId: string; caseNumber
 }
 
 const styles = StyleSheet.create({
-  call: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, borderRadius: radius.lg, minHeight: 50, paddingHorizontal: space.lg },
-  call911Small: { minHeight: 36, paddingHorizontal: space.md },
   line911: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.lg, padding: space.md },
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderRadius: radius.lg, paddingHorizontal: space.lg, paddingVertical: space.md },
   bannerTitle: { color: '#FFFFFF', fontWeight: '700' },

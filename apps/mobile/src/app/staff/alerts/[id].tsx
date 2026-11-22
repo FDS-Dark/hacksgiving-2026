@@ -8,7 +8,7 @@ import { Page } from '@/components/Page';
 import { PinMap, hasLocation, type Pin } from '@/components/PinMap';
 import { CardSkeleton } from '@/components/Skeleton';
 import { Badge, Card, CardTitle } from '@/components/staff/kit';
-import { Call911Button, Call911Line, CaseLinkRow, OutlineButton, PassSheet, useNow } from '@/components/staff/Urgent';
+import { Call911Line, CaseLinkRow, OutlineButton, PassSheet, useNow } from '@/components/staff/Urgent';
 import { Button, ErrorBanner, Group, Notice, success } from '@/components/ui';
 import { CATEGORY_LABEL } from '@/lib/cases';
 import { locationAllowed } from '@/lib/location';
@@ -244,7 +244,6 @@ function Responding({
         </Group>
       </Page>
       <View style={[styles.actions, styles.actionsRow, { borderTopColor: theme.separator, backgroundColor: theme.bg }]}>
-        <Call911Button style={{ flex: 1 }} />
         <View style={{ flex: 1 }}>
           {a.arrived_at ? (
             <Button label={`On scene · ${clock(a.arrived_at)}`} size="lg" icon="location" variant="tinted" disabled onPress={() => undefined} />

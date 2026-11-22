@@ -190,8 +190,6 @@ export default function SafetyScreen() {
             subtitle="Immediate danger, medical emergency, or fire"
             detail="Call 911"
             tile={{ icon: 'phone-alert', color: '#B42318' }}
-            accessory="chevron"
-            onPress={() => callPhone('911')}
           />
           <Row
             title="Milwaukee 211"

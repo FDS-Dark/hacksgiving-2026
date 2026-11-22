@@ -1,15 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Alert, Linking } from 'react-native';
 
-import { IS_PRODUCTION, callPhone, isEmergencyNumber } from '@/lib/phone';
+import { callPhone, isEmergencyNumber } from '@/lib/phone';
 
-describe('callPhone outside production', () => {
+describe('callPhone', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
-  });
-
-  it('is not production in tests (a dev build)', () => {
-    expect(IS_PRODUCTION).toBe(false);
   });
 
   it('never dials 911; it explains instead', () => {

@@ -241,7 +241,7 @@ OncallStats {
   title, map (`PinMap`), distance computed on the device from
   `services/deviceLocation.ts` and the case coordinates (never sent),
   "What we know" (description), countdown from `my_offer.expires_at`
-  ("Moves to {next_name} in 4:32"), a 911 line + **Call 911** (`lib/phone.ts`),
+  ("Moves to {next_name} in 4:32"), a "call 911 from your phone" line (no dial button),
   **Accept and head there**, **Pass to next on call** (optional reason).
   **Responding** (after accept, for the acceptor) — "Accepted" badge,
   location, the service playbook's first steps if one exists, **Call 911**,

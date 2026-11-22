@@ -15,7 +15,6 @@ import { useIsStaff } from '@/services/staff';
 import { useMe } from '@/services/user';
 import { needsShelter, useWeatherAlerts } from '@/services/weather';
 import { radius, space, useTheme } from '@/theme/tokens';
-import { callPhone } from '@/lib/phone';
 
 /** The four "Find support" tiles on Home; each opens Nearby filtered to its category. */
 const SUPPORT: { category: CaseCategory; label: string; icon: IconName }[] = [
@@ -77,16 +76,10 @@ function HomeScreen() {
         </Card>
       </Pressable>
 
-      <Pressable
-        onPress={() => callPhone('911')}
-        accessibilityRole="button"
-        accessibilityLabel="In danger right now? Call 911"
-        style={({ pressed }) => [styles.danger, { backgroundColor: theme.dangerSoft }, pressed && { opacity: 0.8 }]}
-      >
-        <Ionicons name="call-outline" size={16} color={theme.danger} />
-        <Text style={[styles.dangerText, { color: theme.danger }]}>In danger right now? Call 911</Text>
-        <Text style={[styles.dangerCall, { color: theme.danger }]}>Call</Text>
-      </Pressable>
+      <View accessible accessibilityLabel="In danger right now? Call 911 from your phone." style={[styles.danger, { backgroundColor: theme.dangerSoft }]}>
+        <Ionicons name="warning-outline" size={16} color={theme.danger} />
+        <Text style={[styles.dangerText, { color: theme.danger }]}>In danger right now? Call 911 from your phone.</Text>
+      </View>
 
       <WeatherBanner />
 
@@ -232,7 +225,6 @@ const styles = StyleSheet.create({
   body: { fontSize: 15, lineHeight: 21 },
   danger: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
   dangerText: { fontSize: 14, fontWeight: '600', flex: 1 },
-  dangerCall: { fontSize: 14, fontWeight: '800' },
   weather: { gap: space.sm, paddingHorizontal: space.md, paddingVertical: 12, borderRadius: radius.md },
   weatherTitle: { flex: 1, fontSize: 14, fontWeight: '800' },
   section: { fontSize: 17, fontWeight: '800' },

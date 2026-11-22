@@ -153,9 +153,10 @@ through assignment), or the case is resolved or closed (`cancelled`).
 **911.** We are not an emergency service (`docs/voice/README.md`).
 
 - The Respond screen opens with "If anyone may be hurt or armed, call 911
-  first" and a **Call 911** button. That button dials only in production
-  builds (`lib/phone.ts`).
-- The app never calls 911 on its own.
+  from your phone first". It's a reminder, not a button.
+- The app never dials 911, in any build (`lib/phone.ts`); every screen
+  tells people to call it themselves. *Changed 2026-11-21: there used to be
+  Call 911 buttons that dialed in production builds.*
 - The resident side keeps "Call 911 first if you're in danger" (Home).
 - Paging on-call doesn't replace that advice and is never described to
   residents as a dispatch.
