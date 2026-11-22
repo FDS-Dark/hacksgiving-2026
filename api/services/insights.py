@@ -9,7 +9,7 @@ from typing import Any
 
 from databridge.insights import InsightsDatabridge
 from models.case_enums import CaseCategory
-from models.insights import Insights, Pattern, PatternKind
+from models.insights import Coverage, Insights, NeedMeasure, Pattern, PatternKind, TractCoverage
 
 # How a need reads in a sentence: "mostly housing".
 NEED_WORDS: dict[CaseCategory, str] = {
@@ -24,6 +24,52 @@ NEED_WORDS: dict[CaseCategory, str] = {
     CaseCategory.OTHER: "other needs",
 }
 MIN_CASES = 3
+
+# Each need, in words, and the ComForce service that answers it (None: all).
+NEEDS: dict[NeedMeasure, tuple[str, CaseCategory | None]] = {
+    NeedMeasure.HOUSING: ("Housing insecurity", CaseCategory.HOMELESSNESS),
+    NeedMeasure.FOOD: ("Food insecurity", CaseCategory.MEAL_PROGRAMS),
+    NeedMeasure.TRANSPORTATION: ("No reliable transportation", CaseCategory.TRANSPORTATION),
+    NeedMeasure.UTILITIES: ("Utility shut-off threat", CaseCategory.HOMELESSNESS),
+    NeedMeasure.FOOD_STAMPS: ("Received food stamps", CaseCategory.MEAL_PROGRAMS),
+    NeedMeasure.EMOTIONAL_SUPPORT: ("Lack of social and emotional support", None),
+    NeedMeasure.LONELINESS: ("Loneliness", None),
+}
+
+
+def _quantile(values: list[float], q: float) -> float:
+    """The value at quantile q (nearest rank) of a non-empty list."""
+    ordered = sorted(values)
+    return ordered[min(len(ordered) - 1, max(0, round(q * (len(ordered) - 1))))]
+
+
+def coverage_from(rows: list[dict[str, Any]], measure: NeedMeasure, days: int) -> Coverage:
+    """Tracts with the gap flag (need in the top quarter, cases in the
+    bottom quarter), the biggest gaps, and a one-line summary."""
+    label, category = NEEDS[measure]
+    with_need = [r for r in rows if r["need"] is not None]
+    need_cut = _quantile([r["need"] for r in with_need], 0.75) if with_need else None
+    case_cut = _quantile([float(r["cases"]) for r in with_need], 0.25) if with_need else 0.0
+    tracts = [
+        TractCoverage(
+            tract_geoid=r["tract_geoid"], name=r["name"], latitude=r["latitude"], longitude=r["longitude"],
+            need=r["need"], cases=int(r["cases"]), incidents=r["incidents"],
+            gap=need_cut is not None and r["need"] is not None and r["need"] >= need_cut and r["cases"] <= case_cut,
+        )
+        for r in rows
+    ]
+    gaps = sorted((t for t in tracts if t.gap), key=lambda t: (-(t.need or 0), t.cases))[:5]
+    years = [r["need_year"] for r in with_need if r["need_year"]]
+    service = f"{NEED_WORDS[category]} cases" if category else "cases"
+    if not with_need:
+        summary = f"No {label.lower()} data loaded yet (the cdc_places source)."
+    elif gaps:
+        summary = (f"{len([t for t in tracts if t.gap])} tracts have high {label.lower()} "
+                   f"(at least {need_cut:.0f}% of adults) and few or no ComForce {service} in the last {days} days.")
+    else:
+        summary = f"Every high-{label.lower()} tract had ComForce {service} in the last {days} days."
+    return Coverage(measure=measure, measure_label=label, category=category, days=days,
+                    need_year=max(years) if years else None, tracts=tracts, gaps=gaps, summary=summary)
 
 
 def _title(name: str | None) -> str | None:
@@ -84,3 +130,10 @@ class InsightsService:
             by_category=await self.insights.by_category(start, end, district),
             patterns=[word_pattern(row, days) for row in rows],
         )
+
+    async def coverage(self, measure: NeedMeasure, days: int, now: datetime | None = None) -> Coverage:
+        end = now or datetime.now(timezone.utc)
+        _, category = NEEDS[measure]
+        rows = await self.insights.coverage(measure.value, category.value if category else None,
+                                            end - timedelta(days=days), end)
+        return coverage_from(rows, measure, days)

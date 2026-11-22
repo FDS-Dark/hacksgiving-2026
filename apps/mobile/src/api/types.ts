@@ -30,6 +30,18 @@ export type CaseStats = Schemas['CaseStats'];
 export type Insights = Schemas['Insights'];
 export type InsightsDistrict = Schemas['InsightsDistrict'];
 export type Pattern = Schemas['Pattern'];
+export type Coverage = Schemas['Coverage'];
+export type TractCoverage = Schemas['TractCoverage'];
+export type NeedMeasure = Schemas['NeedMeasure'];
+
+// ── Partners and consented sharing (/v1/partners, /v1/cases/{id}/shares) ──
+export type Partner = Schemas['Partner'];
+export type PartnerBody = Schemas['PartnerBody'];
+export type CaseShare = Schemas['CaseShare'];
+export type CreateShare = Schemas['CreateShareRequest'];
+export type SharedCase = Schemas['SharedCase'];
+export type ConsentMethod = Schemas['ConsentMethod'];
+export type CaseText = Schemas['CaseText'];
 
 export type CreateCase = Schemas['CreateCaseRequest'];
 export type UpdateCase = Schemas['UpdateCaseRequest'];

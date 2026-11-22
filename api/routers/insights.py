@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from dependencies import get_current_worker, get_insights_service
-from models.insights import Insights
+from models.insights import Coverage, Insights, NeedMeasure
 from models.staff import StaffMember
 from services.insights import InsightsService
 
@@ -25,3 +25,16 @@ async def insights(
     """Cases opened in the period (in one police district, when given), by
     need, and the patterns among them. Staff only."""
     return await service.overview(days, district or None)
+
+
+@router.get("/coverage", response_model=Coverage)
+async def coverage(
+    _worker: Annotated[StaffMember, Depends(get_current_worker)],
+    service: Annotated[InsightsService, Depends(get_insights_service)],
+    measure: NeedMeasure = NeedMeasure.HOUSING,
+    days: Annotated[int, Query(ge=1, le=365)] = 90,
+) -> Coverage:
+    """Need versus coverage by census tract: a CDC PLACES need, ComForce
+    cases of the matching service placed there in the period, and reviewed
+    incidents (under 5 left out). `gaps`: high need, few cases. Staff only."""
+    return await service.coverage(measure, days)

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Linking } from 'react-native';
 
@@ -86,27 +87,19 @@ export default function AlertsScreen() {
         </Group>
       ) : null}
 
-      <Group
-        header="Your ComForce notifications"
-        footer="These private follow-ups are visible only while signed in. Connect your first call from the Account page."
-      >
-        {followUps.data?.length ? (
-          followUps.data.map((item) => (
-            <Row
-              key={item.id}
-              title={item.need_category?.replaceAll('-', ' ') ?? 'ComForce call follow-up'}
-              subtitle={item.resources.length ? `Resources: ${item.resources.join(', ')}` : 'Your call is connected; resources can be added as the response progresses.'}
-              detail={item.urgency_tier ?? 'new'}
-              tile={{ icon: 'bell-ring', color: '#247A63' }}
-            />
-          ))
-        ) : (
-          <Row
-            title="No call notifications yet"
-            subtitle="Ask the phone assistant to connect your call, then enter its code under Account."
-            tile={{ icon: 'phone-check', color: '#247A63' }}
-          />
-        )}
+      {/* Phone-call follow-ups live in one place, Me > Phone calls; this row points there. */}
+      <Group header="Your ComForce notifications">
+        <Row
+          title="Phone call follow-ups"
+          subtitle={
+            followUps.data?.length
+              ? `${followUps.data.length} connected call${followUps.data.length === 1 ? '' : 's'} · under Me > Phone calls`
+              : 'Connect a call with the phone assistant under Me > Phone calls.'
+          }
+          tile={{ icon: 'phone-check', color: '#247A63' }}
+          accessory="chevron"
+          onPress={() => router.push('/me')}
+        />
       </Group>
 
       {!device.location ? (

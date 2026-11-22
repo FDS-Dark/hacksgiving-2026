@@ -150,6 +150,21 @@ class WorkerConfig(BaseModel):
     geocode_cases: bool = Field(default=True)
 
 
+class SmsConfig(BaseModel):
+    """Texts to requesters who chose "text me" and said it's safe
+    (adapters/sms.py, services/text.py). Off unless a provider is set."""
+
+    provider: Literal["off", "fake", "twilio"] = Field(default="off")
+    twilio_account_sid: str = Field(default="")
+    twilio_auth_token: str = Field(default="")
+    # Either a number on the account (E.164) or a Messaging Service.
+    from_number: str = Field(default="")
+    twilio_messaging_service_sid: str = Field(default="")
+    # At most one text per case in this many minutes; later updates in the
+    # window are skipped (the text only says "there's an update").
+    coalesce_minutes: int = Field(default=30, ge=0, le=24 * 60)
+
+
 class VoiceConfig(BaseModel):
     """Server-only credentials for anonymous voice entry points."""
 
@@ -282,6 +297,7 @@ class AppConfig(BaseSettings):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
+    sms: SmsConfig = Field(default_factory=SmsConfig)
     worker: WorkerConfig = Field(default_factory=WorkerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     loader: LoaderConfig = Field(default_factory=LoaderConfig)

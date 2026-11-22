@@ -187,7 +187,8 @@ flowchart LR
 | Insights | admin | 3 | **built** (`/staff/insights`): period and police-district filters, "Pattern spotted" (repeat cases at one block or intersection, or a neighborhood that doubled) from case places (`GET /v1/insights`, migration 0020), Ava's phone numbers |
 | Team + roles | admin | 1 | **built** (`/staff/team`) |
 | Training | worker | 4 | archived prototype |
-| Share with partner / authority | staff | 4 | new |
+| Partners directory (P1) | staff | 4 | **built** (`/staff/partners`) |
+| Share with partner / authority (P2) | staff | 4 | **built** for partners (case Referrals tab: consent recorded, logged in `case_shares`, revocable); authorities not yet |
 
 ## Data
 
@@ -201,7 +202,7 @@ flowchart LR
 | `records` | captured text / transcript + extraction (no audio kept) | have (0011), with `jobs`, the background queue |
 | `oncall_shifts`, `notifications`, `notification_preferences` | who's on call, the in-app inbox | have (0015, 0016) |
 | `push_devices`, `notification_deliveries`, `oncall_alerts`, `oncall_offers` | where to push, what was sent, urgent offers | have (0017, 0018) |
-| `shares` | what was shared with whom, when | new |
+| `case_shares` | what was shared with whom, when, with what consent | have (0021) |
 | `training_*` | modules, completion | new |
 
 ## Open questions

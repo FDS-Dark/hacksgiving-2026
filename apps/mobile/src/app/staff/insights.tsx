@@ -7,7 +7,7 @@ import type { Pattern } from '@/api/types';
 import { CASE_STATUSES } from '@/api/types';
 import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
-import { ErrorBanner, Loading, tap } from '@/components/ui';
+import { Button, ErrorBanner, Loading, tap } from '@/components/ui';
 import { BarList, Card, CardTitle, ChoiceRow, PageTitle, StatTile, statusColor } from '@/components/staff/kit';
 import { CATEGORY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { dateTime, hours } from '@/lib/format';
@@ -94,6 +94,8 @@ export default function InsightsScreen() {
       </View>
 
       <PatternsCard patterns={patterns} days={days} />
+
+      <Button label="Need vs coverage map" icon="map-outline" variant="tinted" onPress={() => router.push('/staff/areas')} />
 
       <View style={{ gap: 10 }}>
         <View style={styles.tiles}>

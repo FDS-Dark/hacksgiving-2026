@@ -63,3 +63,42 @@ class Insights(ApiModel):
     totals: InsightsTotals
     by_category: list[CategoryCount]
     patterns: list[Pattern]
+
+
+class NeedMeasure(StrEnum):
+    """CDC PLACES health-related social needs (percent of adults), loaded
+    nightly by the cdc_places source."""
+
+    HOUSING = "HOUSINSECU"
+    FOOD = "FOODINSECU"
+    TRANSPORTATION = "LACKTRPT"
+    UTILITIES = "SHUTUTILITY"
+    FOOD_STAMPS = "FOODSTAMP"
+    EMOTIONAL_SUPPORT = "EMOTIONSPT"
+    LONELINESS = "LONELINESS"
+
+
+class TractCoverage(ApiModel):
+    tract_geoid: str
+    name: str
+    latitude: float
+    longitude: float
+    need: float | None = Field(default=None, description="Percent of adults with the need (CDC model estimate).")
+    cases: int = Field(description="ComForce cases of the matching service opened in the period, placed here.")
+    incidents: int | None = Field(
+        default=None, description="MPD-reviewed incidents in the period; null when under 5 (suppressed)."
+    )
+    gap: bool = Field(description="High need (top quarter) and few ComForce cases (bottom quarter).")
+
+
+class Coverage(ApiModel):
+    measure: NeedMeasure
+    measure_label: str
+    category: CaseCategory | None = Field(
+        default=None, description="The ComForce service the need matches; null counts every case."
+    )
+    days: int
+    need_year: int | None = None
+    tracts: list[TractCoverage]
+    gaps: list[TractCoverage] = Field(description="The biggest gaps first: highest need, fewest cases.")
+    summary: str

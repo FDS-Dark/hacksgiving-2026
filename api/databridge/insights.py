@@ -25,3 +25,8 @@ class InsightsDatabridge(Databridge):
         """Raw rows: the service words each one."""
         return await self._rows("insights_patterns", start=start, end=end, district=district,
                                 timezone=timezone, min_cases=min_cases)
+
+    async def coverage(self, measure_id: str, category: str | None, start: datetime,
+                       end: datetime) -> list[dict[str, Any]]:
+        return await self._rows("insights_coverage", measure_id=measure_id, category=category, start=start,
+                                end=end)

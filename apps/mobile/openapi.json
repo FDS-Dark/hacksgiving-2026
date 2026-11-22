@@ -525,6 +525,161 @@
         "title": "CasePriority",
         "type": "string"
       },
+      "CaseShare": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "consent_method": {
+            "$ref": "#/components/schemas/ConsentMethod"
+          },
+          "consent_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Note"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "include_contact": {
+            "title": "Include Contact",
+            "type": "boolean"
+          },
+          "include_location": {
+            "title": "Include Location",
+            "type": "boolean"
+          },
+          "partner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Email"
+          },
+          "partner_id": {
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "partner_name": {
+            "title": "Partner Name",
+            "type": "string"
+          },
+          "partner_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Phone"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By"
+          },
+          "revoked_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By Name"
+          },
+          "shared_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared By"
+          },
+          "shared_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared By Name"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "partner_id",
+          "partner_name",
+          "partner_email",
+          "partner_phone",
+          "shared_by",
+          "shared_by_name",
+          "purpose",
+          "include_contact",
+          "include_location",
+          "consent_method",
+          "consent_note",
+          "created_at",
+          "revoked_at",
+          "revoked_by",
+          "revoked_by_name"
+        ],
+        "title": "CaseShare",
+        "type": "object"
+      },
       "CaseSource": {
         "enum": [
           "public",
@@ -628,6 +783,66 @@
           "next_steps"
         ],
         "title": "CaseSummary",
+        "type": "object"
+      },
+      "CaseText": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "case_update_id": {
+            "format": "uuid",
+            "title": "Case Update Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TextStatus"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "case_update_id",
+          "status",
+          "reason",
+          "provider_id",
+          "created_at"
+        ],
+        "title": "CaseText",
         "type": "object"
       },
       "CaseUpdate": {
@@ -955,6 +1170,15 @@
         "title": "ConfirmedRecord",
         "type": "object"
       },
+      "ConsentMethod": {
+        "enum": [
+          "verbal",
+          "written",
+          "in_app"
+        ],
+        "title": "ConsentMethod",
+        "type": "string"
+      },
       "ContactMethod": {
         "description": "How a resident wants to be reached. `none`: don't reach out at all.",
         "enum": [
@@ -973,6 +1197,74 @@
         ],
         "title": "Cost",
         "type": "string"
+      },
+      "Coverage": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ComForce service the need matches; null counts every case."
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "gaps": {
+            "description": "The biggest gaps first: highest need, fewest cases.",
+            "items": {
+              "$ref": "#/components/schemas/TractCoverage"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "measure": {
+            "$ref": "#/components/schemas/NeedMeasure"
+          },
+          "measure_label": {
+            "title": "Measure Label",
+            "type": "string"
+          },
+          "need_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Year"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tracts": {
+            "items": {
+              "$ref": "#/components/schemas/TractCoverage"
+            },
+            "title": "Tracts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "measure",
+          "measure_label",
+          "category",
+          "days",
+          "need_year",
+          "tracts",
+          "gaps",
+          "summary"
+        ],
+        "title": "Coverage",
+        "type": "object"
       },
       "CreateCaseRequest": {
         "description": "A case a worker opens (a phone call, a walk-in, an incident).",
@@ -1401,6 +1693,61 @@
           "category"
         ],
         "title": "CreateResourceRequest",
+        "type": "object"
+      },
+      "CreateShareRequest": {
+        "properties": {
+          "consent": {
+            "description": "The resident agreed to this share. Must be true.",
+            "title": "Consent",
+            "type": "boolean"
+          },
+          "consent_method": {
+            "$ref": "#/components/schemas/ConsentMethod"
+          },
+          "consent_note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Note"
+          },
+          "include_contact": {
+            "default": false,
+            "description": "Also share the person's name and phone number.",
+            "title": "Include Contact",
+            "type": "boolean"
+          },
+          "include_location": {
+            "default": false,
+            "description": "Also share where they are.",
+            "title": "Include Location",
+            "type": "boolean"
+          },
+          "partner_id": {
+            "format": "uuid",
+            "title": "Partner Id",
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "required": [
+          "partner_id",
+          "purpose",
+          "consent",
+          "consent_method"
+        ],
+        "title": "CreateShareRequest",
         "type": "object"
       },
       "CreateShiftRequest": {
@@ -2092,6 +2439,20 @@
         ],
         "title": "MyOffer",
         "type": "object"
+      },
+      "NeedMeasure": {
+        "description": "CDC PLACES health-related social needs (percent of adults), loaded\nnightly by the cdc_places source.",
+        "enum": [
+          "HOUSINSECU",
+          "FOODINSECU",
+          "LACKTRPT",
+          "SHUTUTILITY",
+          "FOODSTAMP",
+          "EMOTIONSPT",
+          "LONELINESS"
+        ],
+        "title": "NeedMeasure",
+        "type": "string"
       },
       "NotificationItem": {
         "description": "One row of the inbox, ready to show. `route` is where the app goes\nwhen it's tapped.",
@@ -3041,6 +3402,251 @@
         ],
         "title": "OutcomeStatus",
         "type": "string"
+      },
+      "Partner": {
+        "properties": {
+          "accepts_shares": {
+            "description": "Has agreed to receive shared cases; only these can be shared with.",
+            "title": "Accepts Shares",
+            "type": "boolean"
+          },
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CaseCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Staff only: who to ask for, intake hours, what they need.",
+            "title": "Notes",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "categories",
+          "contact_name",
+          "phone",
+          "email",
+          "website",
+          "address",
+          "languages",
+          "accepts_shares",
+          "notes",
+          "active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Partner",
+        "type": "object"
+      },
+      "PartnerBody": {
+        "description": "A new partner, or every field of an existing one (PUT).",
+        "properties": {
+          "accepts_shares": {
+            "default": false,
+            "title": "Accepts Shares",
+            "type": "boolean"
+          },
+          "active": {
+            "default": true,
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CaseCategory"
+            },
+            "maxItems": 9,
+            "title": "Categories",
+            "type": "array"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "languages": {
+            "items": {
+              "maxLength": 12,
+              "minLength": 2,
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Languages",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Notes",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "PartnerBody",
+        "type": "object"
       },
       "PassReason": {
         "enum": [
@@ -4072,6 +4678,29 @@
         "title": "SetRoleRequest",
         "type": "object"
       },
+      "SharedCase": {
+        "description": "A new share, and the message to send the partner: the case's\nsummary plus only what the resident agreed to.",
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "share": {
+            "$ref": "#/components/schemas/CaseShare"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "share",
+          "subject",
+          "message"
+        ],
+        "title": "SharedCase",
+        "type": "object"
+      },
       "ShiftRank": {
         "enum": [
           1,
@@ -4541,6 +5170,15 @@
         "title": "TaskStatus",
         "type": "string"
       },
+      "TextStatus": {
+        "enum": [
+          "sent",
+          "skipped",
+          "failed"
+        ],
+        "title": "TextStatus",
+        "type": "string"
+      },
       "ToggleOncallRequest": {
         "description": "Switch yourself on or off. `until` (in the future, within 24 hours)\nsets when it ends; without it a new shift ends at the next 07:00, 17:00\nor 23:00 org time, and a running one keeps its end.",
         "properties": {
@@ -4595,6 +5233,72 @@
           "incidents"
         ],
         "title": "TractCount",
+        "type": "object"
+      },
+      "TractCoverage": {
+        "properties": {
+          "cases": {
+            "description": "ComForce cases of the matching service opened in the period, placed here.",
+            "title": "Cases",
+            "type": "integer"
+          },
+          "gap": {
+            "description": "High need (top quarter) and few ComForce cases (bottom quarter).",
+            "title": "Gap",
+            "type": "boolean"
+          },
+          "incidents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "MPD-reviewed incidents in the period; null when under 5 (suppressed).",
+            "title": "Incidents"
+          },
+          "latitude": {
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "title": "Longitude",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "need": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Percent of adults with the need (CDC model estimate).",
+            "title": "Need"
+          },
+          "tract_geoid": {
+            "title": "Tract Geoid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tract_geoid",
+          "name",
+          "latitude",
+          "longitude",
+          "need",
+          "cases",
+          "incidents",
+          "gap"
+        ],
+        "title": "TractCoverage",
         "type": "object"
       },
       "TransitAlert": {
@@ -6879,6 +7583,160 @@
         ]
       }
     },
+    "/v1/cases/{case_id}/shares": {
+      "get": {
+        "description": "Every share of the case, live and revoked, newest first.",
+        "operationId": "list_shares_v1_cases__case_id__shares_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CaseShare"
+                  },
+                  "title": "Response List Shares V1 Cases  Case Id  Shares Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Shares",
+        "tags": [
+          "partners"
+        ]
+      },
+      "post": {
+        "description": "Share the case with a partner that accepts shares, once the person\nagreed (`consent: true` and how). Returns the message to send them:\nthe summary, plus name, phone and location only when included.\n409 `partner_not_accepting` or `already_shared`.",
+        "operationId": "share_case_v1_cases__case_id__shares_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedCase"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Share Case",
+        "tags": [
+          "partners"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/shares/{share_id}/revoke": {
+      "post": {
+        "description": "Stop sharing (the person changed their mind, or it's no longer\nneeded). The record stays, marked revoked.",
+        "operationId": "revoke_share_v1_cases__case_id__shares__share_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "share_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Share Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseShare"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Share",
+        "tags": [
+          "partners"
+        ]
+      }
+    },
     "/v1/cases/{case_id}/tasks": {
       "post": {
         "description": "Add a task to the case, optionally due at a time and assigned to a\nworker (422 if they aren't staff). Without an assignee it follows the\ncase. Noted in the case history.",
@@ -6930,6 +7788,54 @@
         "summary": "Add Task",
         "tags": [
           "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/texts": {
+      "get": {
+        "description": "What the requester was texted about this case (sent, skipped and\nwhy, failed), newest first. Never the text itself: it's generic.",
+        "operationId": "list_texts_v1_cases__case_id__texts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CaseText"
+                  },
+                  "title": "Response List Texts V1 Cases  Case Id  Texts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Texts",
+        "tags": [
+          "partners"
         ]
       }
     },
@@ -7075,6 +7981,61 @@
           }
         },
         "summary": "Insights",
+        "tags": [
+          "insights"
+        ]
+      }
+    },
+    "/v1/insights/coverage": {
+      "get": {
+        "description": "Need versus coverage by census tract: a CDC PLACES need, ComForce\ncases of the matching service placed there in the period, and reviewed\nincidents (under 5 left out). `gaps`: high need, few cases. Staff only.",
+        "operationId": "coverage_v1_insights_coverage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "measure",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/NeedMeasure",
+              "default": "HOUSINSECU"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coverage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coverage",
         "tags": [
           "insights"
         ]
@@ -8426,6 +9387,221 @@
         "summary": "Update Opportunity",
         "tags": [
           "opportunities"
+        ]
+      }
+    },
+    "/v1/partners": {
+      "get": {
+        "description": "Partners by name. `category`: those taking cases of that service.",
+        "operationId": "list_partners_v1_partners_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Partner"
+                  },
+                  "title": "Response List Partners V1 Partners Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Partners",
+        "tags": [
+          "partners"
+        ]
+      },
+      "post": {
+        "operationId": "create_partner_v1_partners_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartnerBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Partner"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Partner",
+        "tags": [
+          "partners"
+        ]
+      }
+    },
+    "/v1/partners/{partner_id}": {
+      "get": {
+        "operationId": "get_partner_v1_partners__partner_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Partner Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Partner"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Partner",
+        "tags": [
+          "partners"
+        ]
+      },
+      "put": {
+        "description": "Replaces every field. Set `active: false` to retire a partner; its\npast shares stay on record.",
+        "operationId": "update_partner_v1_partners__partner_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Partner Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartnerBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Partner"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Partner",
+        "tags": [
+          "partners"
         ]
       }
     },
