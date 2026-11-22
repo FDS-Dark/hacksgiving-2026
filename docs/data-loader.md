@@ -6,24 +6,32 @@ and **resources** (next to the ones ComForce staff enter by hand) and
 weather alerts, community needs, crime trends). The sources and the rules
 for using them are in [real-data-sources.md](real-data-sources.md).
 
+It's its own app, [`dataloader/`](../dataloader/README.md): its own uv
+project, image and CronJobs, sharing only the database (and its stored
+functions) with the API.
+
 ```bash
-cd api
-uv run python -m loader --list            # every source, its cadence, and whether it can run
-uv run python -m loader --dry-run         # fetch and report; write nothing
-uv run python -m loader                   # every source, once
-uv run python -m loader --cadence live    # just the live ones (calls, alerts)
-uv run python -m loader --source mke_nibrs   # just one (repeatable)
-uv run python -m loader --watch           # keep going: live every 5 min, daily ones daily
+cd dataloader
+uv run python main.py --list            # every source, its cadence, and whether it can run
+uv run python main.py --dry-run         # fetch and report; write nothing
+uv run python main.py                   # every source, once
+uv run python main.py --cadence live    # just the live ones (calls, alerts)
+uv run python main.py --source mke_nibrs   # just one (repeatable)
+uv run python main.py --watch           # keep going: live every 5 min, daily ones daily
 ```
 
 `scripts/dev.sh` runs `--watch` next to the API and the worker
-(`HACKSGIVING_NO_LOADER=1` skips it). A run exits 1 when a source failed. A
-source whose key isn't set is **skipped**, not failed, and the rest run.
+(`HACKSGIVING_NO_LOADER=1` skips it); it reads `dataloader/.env`, which
+`scripts/dev-setup.sh` creates from `dataloader/example.env` with the API's
+database settings. A run exits 1 when a source failed. A source whose key
+isn't set, or that the rate gate holds back, is **skipped**, not failed,
+and the rest run.
 
 ## Sources
 
 They run in this order. Each is `daily` (nightly) or `live` (every 5
-minutes).
+minutes in production, hourly on staging; `mpd_calls` no more often than
+its rate gate allows, below).
 
 | Source | Writes | Cadence | Needs | What |
 |---|---|---|---|---|
@@ -53,12 +61,38 @@ Not loaded:
 - **CareerOneStop's** jobs and training need a key, and it stopped issuing
   new ones in November 2026.
 
-**MPD rate limit:** the calls page allows **10 requests per 30 minutes per
-IP address**. Past that it answers with a notice instead of the calls, and
-the loader reports the run as failed. The 5-minute live run uses 6 of those
-10. Two laptops polling from one network will hit the limit, so set
-`HACKSGIVING_NO_LOADER=1` on all but one. The app no longer calls the page
-itself; it reads `/v1/public-data/calls`.
+## The MPD rate gate
+
+MPD's calls page allows **10 requests per 30 minutes per IP address**. Past
+that it answers with an "unreasonable amount of requests" row instead of the
+calls, and every request it refuses counts too, so a loader that retries
+every 5 minutes never gets back in. Production, staging and every laptop on
+the home network leave from the **same IP**. So:
+
+- **Each environment has its own budget**, `APP__LOADER__MPD_MIN_INTERVAL_SECONDS`:
+  production 300 (6 requests per 30 minutes), staging 3600 (0.5), local dev
+  900 (2, the default). Together they stay under 10. A second laptop on the
+  same network uses 2 more, so still set `HACKSGIVING_NO_LOADER=1` on
+  all but one.
+- **Before asking**, `mpd_calls` reads its last attempts from
+  `app.loader_runs` (`loader_run_gate`, revision 0030). It's skipped when its
+  last attempt (successful or failed, counted from when it started, with 30
+  seconds' grace for a pod that starts early) is within the interval. So the
+  CronJob, a catch-up run and a second loader on the same database all agree.
+- **When MPD refuses**, the client raises `RateLimited`
+  (`dataloader/client/errors.py`). The run is recorded as failed with
+  `rate_limited = true`, and nobody sharing the database asks again for
+  `APP__LOADER__MPD_BACKOFF_SECONDS` (1800, MPD's window).
+- **A hold is not recorded.** It isn't an attempt (recording it would push
+  the next run back forever), and Insights keeps showing the last real
+  run's status. The log says why: `mpd_calls: skipped; ...; asked 5 minutes
+  ago; asks at most every 15 minutes`.
+- `--dry-run` has no database, so nothing holds it back: don't loop it
+  against `mpd_calls`.
+- Checking and asking aren't one atomic step: two loaders that check within
+  the same few seconds can both ask. That costs one request.
+
+The app never calls the page itself; it reads `/v1/public-data/calls`.
 
 ## Privacy rules (enforced in the database)
 
@@ -142,12 +176,15 @@ for the rest.
 - **When nothing is removed.** A fetch error, a row that failed to write,
   or an empty result removes nothing. An alert feed is different: empty
   means no alerts.
-- **Run log.** Every run, skips included, goes to `app.loader_runs`, which
-  `/v1/public-data/sources` reads.
+- **Run log.** Every run that asked a source, and every skip for missing
+  credentials, goes to `app.loader_runs`, which `/v1/public-data/sources`
+  reads and the rate gate checks. Rate-gate holds are only logged.
 
 ## Settings
 
-`APP__LOADER__*`, see `LoaderConfig` in `api/settings.py`:
+`APP__LOADER__*`, see `LoaderConfig` in `dataloader/settings.py`. The
+database and logging settings are the API's (`APP__DATABASE__*`,
+`APP__LOGGING__*`), so the same secrets work for both.
 
 | Setting | Default | What |
 |---|---|---|
@@ -163,14 +200,23 @@ for the rest.
 | `FBI_API_KEY` | none | Optional FBI key |
 | `FBI_MONTHS` | 24 | Months of FBI history |
 | `LIVE_EVERY_SECONDS` | 300 | Live-run interval in `--watch` mode |
+| `MPD_MIN_INTERVAL_SECONDS` | 900 | Least time between requests to MPD's calls page (production 300, staging 3600) |
+| `MPD_BACKOFF_SECONDS` | 1800 | How long nobody asks MPD after it refused |
 
 ## Deploying
 
-`terraform/loader.tf` creates two CronJobs from the API image:
+CI builds the loader's image from `dataloader/Dockerfile` (`build-dataloader`,
+`$CI_REGISTRY_IMAGE/dataloader:<sha>`), and `terraform/loader.tf` runs it as
+two CronJobs (`var.dataloader_image`, `python main.py --cadence ...`):
 
 - **`-loader-daily`:** `var.loader_schedule`, 3:30am Chicago time.
-- **`-loader-live`:** `var.loader_live_schedule`, every 5 minutes. Keep it
-  at 5 minutes or slower because of MPD's limit.
+- **`-loader-live`:** `var.loader_live_schedule`: every 5 minutes in
+  production, hourly on staging (`environments/staging.tfvars`).
+  `var.loader_mpd_min_interval_seconds` (production 300, staging 3600; at
+  least 300) sets `APP__LOADER__MPD_MIN_INTERVAL_SECONDS`.
+
+On staging, the live sources (calls, transit and weather alerts) and the
+daily catch-up below are therefore hourly too.
 
 There's also an optional ExternalSecret for keys. Put any of these in Vault
 at `var.loader_secret_path`; every one is optional:
@@ -184,9 +230,10 @@ APP__LOADER__FBI_API_KEY
 ```
 
 A live run also **catches up** any daily source that hasn't succeeded in
-the last 24 hours (`api/loader/schedule.py`), retrying a failing one at most
-hourly. A fresh deploy or an empty database therefore seeds itself within
-about 5 minutes, and a night a source was down fixes itself. To run the
+the last 24 hours (`dataloader/loader/schedule.py`), retrying a failing one
+at most hourly. A fresh deploy or an empty database therefore seeds itself
+within one live run (about 5 minutes; an hour on staging), and a night a
+source was down fixes itself. To run the
 daily job by hand anyway:
 
 ```bash
@@ -196,10 +243,16 @@ kubectl -n hacksgiving logs -f job/loader-now
 
 ## Adding a source
 
-1. Write the client in `api/adapters/`. Keep fetching separate from parsing,
-   and add a unit test on a recorded payload. Fail loudly on error envelopes
-   and changed pages.
-2. Add a `Source` to `api/loader/sources.py` at its place in the order, with
-   its cadence and the tables it owns.
+1. Write the client in `dataloader/client/`. Keep fetching separate from
+   parsing, and add a unit test on a recorded payload
+   (`dataloader/tests/unit`). Fail loudly on error envelopes and changed
+   pages; raise `RateLimited` when the server says you asked too often.
+2. Add a `Loader` subclass in `dataloader/loader/<system>.py`
+   (`OpportunityLoader`, `ResourceLoader` or `PublicDataLoader`) with its
+   name, description, cadence, the tables it owns, `missing()` for its
+   credentials, `min_interval()` if its server limits requests, and
+   `fetch()`. List it in `dataloader/loader/sources.py` at its place in the
+   order.
 3. A new kind of data needs a table and a `<table>_sync` function in a new
-   migration, and an entry in `TABLES` in `api/databridge/public_data.py`.
+   migration, an `Imported*` model in `dataloader/model/`, and an entry in
+   `TABLES` in `dataloader/databridge/public_data.py`.

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs the whole app locally: the API, the background worker (debriefs), the
-# data loader (public data, every few minutes) and Expo for your phone.
+# data loader (dataloader/: public data, every few minutes) and Expo for your
+# phone.
 # Ctrl+C stops all of it. Run scripts/dev-setup.sh once first (and again
 # after pulls that change env files or migrations).
 set -euo pipefail
@@ -10,7 +11,7 @@ cd "$ROOT"
 
 get() { [ -f "$1" ] && { grep -E "^$2=" "$1" | tail -1 | cut -d= -f2- | tr -d '\r'; } || true; }
 
-if [ ! -f api/.env ] || [ ! -f apps/mobile/.env.local ]; then
+if [ ! -f api/.env ] || [ ! -f dataloader/.env ] || [ ! -f apps/mobile/.env.local ]; then
   echo "Run scripts/dev-setup.sh first." >&2
   exit 1
 fi
@@ -34,11 +35,13 @@ fi
 (cd api && uv run python -m worker 2>&1 | tag "[worker]") &
 
 # Public data (docs/data-loader.md): daily sources now and every 24 hours,
-# live ones (MPD/MFD calls, alerts) every 5 minutes. HACKSGIVING_NO_LOADER=1
-# skips it, e.g. when a teammate on the same network already polls MPD (it
-# allows 10 requests per 30 minutes per address).
+# live ones (MFD calls, alerts) every 5 minutes, MPD's calls at most every 15
+# (its page allows 10 requests per 30 minutes per address, shared with
+# production and staging; the loader's rate gate holds it back).
+# HACKSGIVING_NO_LOADER=1 skips it, e.g. when a teammate on the same network
+# already runs one.
 if [ -z "${HACKSGIVING_NO_LOADER:-}" ]; then
-  (cd api && uv run python -m loader --watch 2>&1 | tag "[loader]") &
+  (cd dataloader && uv run python main.py --watch 2>&1 | tag "[loader]") &
 fi
 
 sleep 2

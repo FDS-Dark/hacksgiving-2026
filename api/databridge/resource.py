@@ -1,10 +1,8 @@
-from datetime import datetime
 from uuid import UUID
 
 from databridge.base import Databridge
 from models.assist import ResourceOutcomes
 from models.case_enums import CaseCategory
-from models.loader import ImportedResource, SyncResult
 from models.resource import CreateResourceRequest, Resource
 
 
@@ -28,23 +26,6 @@ class ResourceDatabridge(Databridge):
     async def set_beds(self, resource_id: UUID, beds: int | None, updated_by: UUID) -> Resource | None:
         row = await self._first("resource_beds_set", resource_id=resource_id, beds=beds, updated_by=updated_by)
         return Resource(**row) if row else None
-
-    # --- The data loader (api/loader) ------------------------------------------
-
-    async def sync_upsert(self, item: ImportedResource, seen_at: datetime) -> SyncResult:
-        row = await self._one(
-            "resource_sync_upsert",
-            source=item.source, external_id=item.external_id, name=item.name, category=item.category,
-            description=item.description or "", address=item.address, neighborhood=item.neighborhood,
-            phone=item.phone, website=item.website, hours=item.hours, latitude=item.latitude,
-            longitude=item.longitude, seen_at=seen_at,
-        )
-        return SyncResult(row["result"])
-
-    async def sync_retire(self, source: str, seen_before: datetime) -> int:
-        """Closes `source`'s open resources last seen before `seen_before`."""
-        row = await self._one("resource_sync_retire", source=source, seen_before=seen_before)
-        return int(row["retired"])
 
     async def outcome_stats(self) -> dict[UUID, ResourceOutcomes]:
         """Referral outcomes per resource (0026); resources never referred are absent."""

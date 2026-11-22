@@ -1,5 +1,5 @@
 """Free text to a point, with the City of Milwaukee's own locator (the MPD
-CAD locator the loader already uses for dispatch calls). It places blocks
+CAD locator the data loader also uses for dispatch calls). It places blocks
 and intersections, even loosely written ones ("27th and Center", "Fond du
 Lac & North"); it doesn't know neighborhood names or ZIP codes
 (services/place.py matches neighborhoods itself).
@@ -15,9 +15,25 @@ from typing import Protocol
 
 import httpx
 
-from adapters.milwaukee import MPD_GEOCODER, USER_AGENT, in_milwaukee
-
+USER_AGENT = "hacksgiving-api/1.0"
+# MPD's own CAD locator: the one city locator that places intersections
+# ("N 76TH ST/W GOOD HOPE RD") as well as addresses.
+MPD_GEOCODER = (
+    "https://milwaukeemaps.milwaukee.gov/arcgis/rest/services/MPDTritech/TriTechLocator/GeocodeServer/"
+    "findAddressCandidates"
+)
 MIN_SCORE = 85
+
+# Milwaukee County, generously: a point outside is a geocoding error.
+_BOUNDS = (42.8, 43.25, -88.1, -87.75)
+
+
+def in_milwaukee(latitude: float | None, longitude: float | None) -> bool:
+    if latitude is None or longitude is None:
+        return False
+    south, north, west, east = _BOUNDS
+    return south <= latitude <= north and west <= longitude <= east
+
 
 # Words that make text worth a locator lookup: a number (a block, a
 # numbered street), an intersection, or a street type.

@@ -32,6 +32,7 @@ revision runs explicit SQL. Same migrations everywhere:
 | `0003_api_functions` | Every function the API calls, `app.<domain>_<verb>` ([ADR 0007](../docs/decisions/0007-sql-in-stored-functions.md)) |
 | `0004_supabase_lockdown` | On Supabase only: no default grants to `anon`/`authenticated` in `public` |
 | `0029_voice_safety_and_follow_up` | Safe callback plans, structured call-resume checkpoints, referral check-ins and voice impact funnel |
+| `0030_loader_rate_gate` | The data loader's rate gate: `loader_runs.rate_limited`, and `loader_run_gate` (when a source last asked its server) |
 
 ## The API's functions
 
