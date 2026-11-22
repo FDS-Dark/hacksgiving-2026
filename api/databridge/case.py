@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from databridge.base import Databridge
+from databridge.executor import Row
 from models.case import (
     Case,
     CaseFilters,
@@ -89,6 +90,14 @@ class CaseDatabridge(Databridge):
     async def get(self, case_id: UUID) -> Case | None:
         row = await self._first("case_get", case_id=case_id)
         return Case(**row) if row else None
+
+    async def language(self, case_id: UUID) -> Row | None:
+        return await self._first("case_language_get", case_id=case_id)
+
+    async def set_language(self, case_id: UUID, language: str | None, source: str, actor_id: UUID | None) -> Row | None:
+        return await self._first(
+            "case_language_set", case_id=case_id, language=language, source=source, actor_id=actor_id
+        )
 
     async def person_cases(self, case_id: UUID, limit: int) -> list[Case]:
         """The case and every case that looks like the same person (0021)."""

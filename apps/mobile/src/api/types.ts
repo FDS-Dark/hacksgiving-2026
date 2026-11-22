@@ -148,3 +148,8 @@ export type HandoffBrief = Schemas['HandoffBrief'];
 
 // ── The person behind a case ─────────────────────────────────────────────
 export type Person = Schemas['Person'];
+
+// ── Reply languages ──────────────────────────────────────────────────────
+export type CaseLanguage = Schemas['CaseLanguage'];
+export type LanguageOption = Schemas['LanguageOption'];
+export type Translation = Schemas['Translation'];

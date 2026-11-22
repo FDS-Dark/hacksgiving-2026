@@ -8,9 +8,9 @@ import type { Case, CaseUpdate, Visibility } from '@/api/types';
 import { BackLink } from '@/components/BackLink';
 import { Segmented } from '@/components/Segmented';
 import { CaseListSkeleton } from '@/components/Skeleton';
-import { ErrorBanner, Notice, success } from '@/components/ui';
+import { Chip, ErrorBanner, Notice, Row, Sheet, success } from '@/components/ui';
 import { dateTime } from '@/lib/format';
-import { useAddCaseUpdate, useCase, useCaseAssist } from '@/services/cases';
+import { useAddCaseUpdate, useCase, useCaseAssist, useCaseLanguage, useReplyLanguages, useSetCaseLanguage } from '@/services/cases';
 import { space, type, useTheme } from '@/theme/tokens';
 
 /** What belongs in the conversation: messages both ways and internal notes (not status changes). */
@@ -118,7 +118,17 @@ function Composer({ item: c }: { item: Case }) {
   const canMessage = !!c.requester_id || c.source === 'public';
   const [visibility, setVisibility] = useState<Visibility>(canMessage ? 'public' : 'internal');
   const [text, setText] = useState('');
-  const aiOff = assist.draft.error && toApiError(assist.draft.error).status === 503;
+  // Reply in the resident's language: the AI draft is written in it, a reply typed in English can be
+  // translated into it, and the English version stays visible so the worker knows what they're sending.
+  const language = useCaseLanguage(c.id);
+  const code = language.data?.language ?? null;
+  const name = language.data?.language_name ?? null;
+  const foreign = code !== null && code !== 'en';
+  const [english, setEnglish] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const aiOff =
+    (assist.draft.error && toApiError(assist.draft.error).status === 503) ||
+    (assist.translate.error && toApiError(assist.translate.error).status === 503);
 
   const send = () => {
     const content = text.trim();
@@ -128,6 +138,7 @@ function Composer({ item: c }: { item: Case }) {
       {
         onSuccess: () => {
           setText('');
+          setEnglish(null);
           success();
         },
       },
@@ -151,7 +162,14 @@ function Composer({ item: c }: { item: Case }) {
           </View>
           {visibility === 'public' ? (
             <Pressable
-              onPress={() => assist.draft.mutate(undefined, { onSuccess: (d) => setText(d.message) })}
+              onPress={() =>
+                assist.draft.mutate(code, {
+                  onSuccess: (d) => {
+                    setText(d.message);
+                    setEnglish(d.english ?? null);
+                  },
+                })
+              }
               disabled={assist.draft.isPending}
               accessibilityRole="button"
               accessibilityLabel="Draft a message with AI"
@@ -165,12 +183,47 @@ function Composer({ item: c }: { item: Case }) {
       ) : (
         <Notice icon="information-circle-outline">This case wasn’t sent from the app, so there’s no one to message. Notes stay internal.</Notice>
       )}
+      {canMessage && visibility === 'public' ? (
+        <View style={styles.language}>
+          <Chip label={`Reply in: ${name ?? 'English'}`} active={foreign} onPress={() => setPicking(true)} />
+          {foreign && text.trim() && !english ? (
+            <Chip
+              label={assist.translate.isPending ? 'Translating…' : `Translate to ${name}`}
+              active={false}
+              onPress={() =>
+                assist.translate.mutate(
+                  { text: text.trim(), language: code },
+                  {
+                    onSuccess: (t) => {
+                      setEnglish(text.trim());
+                      setText(t.text);
+                    },
+                  },
+                )
+              }
+            />
+          ) : null}
+        </View>
+      ) : null}
+      {english && visibility === 'public' ? (
+        <View style={[styles.english, { backgroundColor: theme.fill }]}>
+          <Text style={[type.caption, { color: theme.textSecondary, fontWeight: '700' }]}>IN ENGLISH</Text>
+          <Text style={[type.footnote, { color: theme.text }]} selectable>
+            {english}
+          </Text>
+        </View>
+      ) : null}
+      <LanguageSheet caseId={c.id} visible={picking} current={code} onClose={() => setPicking(false)} />
       {aiOff ? <Notice icon="cloud-offline-outline">AI drafting isn’t set up on this server.</Notice> : null}
       {add.error ? <ErrorBanner error={add.error} /> : null}
       <View style={styles.inputRow}>
         <TextInput
           value={text}
-          onChangeText={setText}
+          onChangeText={(next) => {
+            setText(next);
+            // Edited by hand: the English version may no longer match.
+            if (english) setEnglish(null);
+          }}
           placeholder={visibility === 'public' ? `${c.contact_name ?? 'The resident'} will see this` : 'Only ComForce staff see notes'}
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
@@ -193,7 +246,33 @@ function Composer({ item: c }: { item: Case }) {
   );
 }
 
+
+/** Pick the language to reply in; saved on the case for the whole team. */
+function LanguageSheet({ caseId, visible, current, onClose }: { caseId: string; visible: boolean; current: string | null; onClose: () => void }) {
+  const languages = useReplyLanguages();
+  const save = useSetCaseLanguage(caseId);
+  const pick = (code: string | null) => save.mutate(code, { onSuccess: onClose });
+  return (
+    <Sheet visible={visible} onClose={onClose} title="Reply in" subtitle="Saved on the case, so the team replies in it too." dismissLabel="Cancel">
+      <ScrollView style={{ maxHeight: 420 }}>
+        {(languages.data ?? []).map((l) => (
+          <Row
+            key={l.code}
+            title={l.name}
+            accessory={(current ?? 'en') === l.code ? 'check' : undefined}
+            onPress={() => pick(l.code === 'en' ? null : l.code)}
+            disabled={save.isPending}
+          />
+        ))}
+      </ScrollView>
+      {save.error ? <ErrorBanner error={save.error} /> : null}
+    </Sheet>
+  );
+}
+
 const styles = StyleSheet.create({
+  language: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  english: { gap: 2, borderRadius: 10, padding: space.sm },
   page: { flex: 1, padding: space.lg },
   header: { paddingHorizontal: space.lg, paddingBottom: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, gap: 2 },
   name: { fontSize: 20, fontWeight: '800' },

@@ -515,6 +515,50 @@
         "title": "CaseKind",
         "type": "string"
       },
+      "CaseLanguage": {
+        "description": "The language to reply to the resident in. `language: null`: not set\n(English until someone sets it or the AI notices otherwise).",
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "language_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language Name"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LanguageSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "language",
+          "language_name",
+          "source"
+        ],
+        "title": "CaseLanguage",
+        "type": "object"
+      },
       "CasePriority": {
         "enum": [
           "low",
@@ -1613,15 +1657,54 @@
       "DraftMessage": {
         "description": "A message to the requester. Sent only if a worker posts it as a\npublic update.",
         "properties": {
+          "english": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An English version for the worker, when `message` isn't English.",
+            "title": "English"
+          },
+          "language": {
+            "default": "en",
+            "description": "The language `message` is in (ISO 639).",
+            "title": "Language",
+            "type": "string"
+          },
           "message": {
             "title": "Message",
             "type": "string"
           }
         },
         "required": [
-          "message"
+          "message",
+          "language",
+          "english"
         ],
         "title": "DraftMessage",
+        "type": "object"
+      },
+      "DraftMessageRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Write it in this language. Default: the case's language, else the resident's own.",
+            "title": "Language"
+          }
+        },
+        "title": "DraftMessageRequest",
         "type": "object"
       },
       "ExtractedTask": {
@@ -2109,6 +2192,32 @@
           "dead"
         ],
         "title": "JobStatus",
+        "type": "string"
+      },
+      "LanguageOption": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "LanguageOption",
+        "type": "object"
+      },
+      "LanguageSource": {
+        "enum": [
+          "staff",
+          "detected"
+        ],
+        "title": "LanguageSource",
         "type": "string"
       },
       "MyOffer": {
@@ -4047,6 +4156,28 @@
         "title": "Service",
         "type": "string"
       },
+      "SetCaseLanguageRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An ISO 639 code from `GET /cases/languages`; null clears it.",
+            "title": "Language"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "title": "SetCaseLanguageRequest",
+        "type": "object"
+      },
       "SetRoleRequest": {
         "properties": {
           "role": {
@@ -4871,6 +5002,52 @@
           "arrivals"
         ],
         "title": "TransitStop",
+        "type": "object"
+      },
+      "TranslateRequest": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2,3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default: the case's language.",
+            "title": "Language"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "TranslateRequest",
+        "type": "object"
+      },
+      "Translation": {
+        "properties": {
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "language"
+        ],
+        "title": "Translation",
         "type": "object"
       },
       "UnreadCount": {
@@ -6593,6 +6770,32 @@
         ]
       }
     },
+    "/v1/cases/languages": {
+      "get": {
+        "description": "The languages staff can reply to residents in.",
+        "operationId": "reply_languages_v1_cases_languages_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LanguageOption"
+                  },
+                  "title": "Response Reply Languages V1 Cases Languages Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reply Languages",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
     "/v1/cases/{case_id}": {
       "get": {
         "description": "A case with its full history and referrals.",
@@ -6705,6 +6908,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DraftMessageRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -6816,6 +7036,156 @@
           }
         },
         "summary": "Summarize Case",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/assist/translate": {
+      "post": {
+        "description": "A reply typed in English, translated into the case's language (or\n`language`). English in, English out. 503 when AI isn't configured.",
+        "operationId": "translate_message_v1_cases__case_id__assist_translate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Translation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Translate Message",
+        "tags": [
+          "cases"
+        ]
+      }
+    },
+    "/v1/cases/{case_id}/language": {
+      "get": {
+        "description": "The language staff reply to the resident in (set by a worker, or\nnoticed by the AI draft). `language: null` means not set.",
+        "operationId": "get_case_language_v1_cases__case_id__language_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseLanguage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Case Language",
+        "tags": [
+          "cases"
+        ]
+      },
+      "put": {
+        "description": "Choose the reply language (a code from `GET /cases/languages`; null\nclears it). A worker's choice is never replaced by detection.",
+        "operationId": "set_case_language_v1_cases__case_id__language_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCaseLanguageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseLanguage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Case Language",
         "tags": [
           "cases"
         ]

@@ -16,8 +16,11 @@ import type {
   CaseSummary,
   CaseUpdate,
   CreateCase,
+  CaseLanguage,
   DraftMessage,
+  LanguageOption,
   Person,
+  Translation,
   Referral,
   ResourceSuggestions,
   UpdateCase,
@@ -39,7 +42,13 @@ export const casesApi = {
     request<Referral>(`/cases/${id}/referrals/${referralId}`, { method: 'PATCH', body }),
   summarize: (id: string) => request<CaseSummary>(`/cases/${id}/assist/summary`, { method: 'POST' }),
   suggestResources: (id: string) => request<ResourceSuggestions>(`/cases/${id}/assist/resources`, { method: 'POST' }),
-  draftMessage: (id: string) => request<DraftMessage>(`/cases/${id}/assist/draft-message`, { method: 'POST' }),
+  draftMessage: (id: string, language?: string | null) =>
+    request<DraftMessage>(`/cases/${id}/assist/draft-message`, { method: 'POST', body: language ? { language } : undefined }),
+  translate: (id: string, text: string, language?: string | null) =>
+    request<Translation>(`/cases/${id}/assist/translate`, { method: 'POST', body: { text, language: language ?? null } }),
+  language: (id: string) => request<CaseLanguage>(`/cases/${id}/language`),
+  setLanguage: (id: string, language: string | null) => request<CaseLanguage>(`/cases/${id}/language`, { method: 'PUT', body: { language } }),
+  languages: () => request<LanguageOption[]>('/cases/languages'),
 };
 
 /** Everything here sits under 'cases' (tasks too), so one invalidation refreshes it all. */
@@ -102,10 +111,16 @@ export function useUpdateReferral(id: string) {
 
 /** AI help is fetched on demand (a button), never in the background. */
 export function useCaseAssist(id: string) {
+  const qc = useQueryClient();
   return {
     summary: useMutation({ mutationFn: () => casesApi.summarize(id) }),
     resources: useMutation({ mutationFn: () => casesApi.suggestResources(id) }),
-    draft: useMutation({ mutationFn: () => casesApi.draftMessage(id) }),
+    draft: useMutation({
+      mutationFn: (language?: string | null) => casesApi.draftMessage(id, language),
+      // The draft may have noticed the resident's language; the case remembers it.
+      onSuccess: () => qc.invalidateQueries({ queryKey: [...caseKeys.all, 'language', id] }),
+    }),
+    translate: useMutation({ mutationFn: ({ text, language }: { text: string; language?: string | null }) => casesApi.translate(id, text, language) }),
   };
 }
 
@@ -115,4 +130,21 @@ export function usePerson(caseId: string) {
     queryKey: [...caseKeys.all, 'person', caseId] as const,
     queryFn: () => request<Person>(`/cases/${caseId}/person`),
   });
+}
+
+/** The language staff reply to this resident in (null: not set, so English). */
+export function useCaseLanguage(id: string) {
+  return useQuery({ queryKey: [...caseKeys.all, 'language', id] as const, queryFn: () => casesApi.language(id) });
+}
+
+export function useSetCaseLanguage(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (language: string | null) => casesApi.setLanguage(id, language),
+    onSuccess: (value) => qc.setQueryData([...caseKeys.all, 'language', id], value),
+  });
+}
+
+export function useReplyLanguages() {
+  return useQuery({ queryKey: ['reply-languages'] as const, queryFn: casesApi.languages, staleTime: Infinity });
 }

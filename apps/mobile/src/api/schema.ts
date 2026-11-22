@@ -70,6 +70,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reply Languages
+         * @description The languages staff can reply to residents in.
+         */
+        get: operations["reply_languages_v1_cases_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}": {
         parameters: {
             query?: never;
@@ -152,6 +172,53 @@ export interface paths {
          * @description A short summary of the case and its history. 503 when AI isn't configured.
          */
         post: operations["summarize_case_v1_cases__case_id__assist_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/assist/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate Message
+         * @description A reply typed in English, translated into the case's language (or
+         *     `language`). English in, English out. 503 when AI isn't configured.
+         */
+        post: operations["translate_message_v1_cases__case_id__assist_translate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Case Language
+         * @description The language staff reply to the resident in (set by a worker, or
+         *     noticed by the AI draft). `language: null` means not set.
+         */
+        get: operations["get_case_language_v1_cases__case_id__language_get"];
+        /**
+         * Set Case Language
+         * @description Choose the reply language (a code from `GET /cases/languages`; null
+         *     clears it). A worker's choice is never replaced by detection.
+         */
+        put: operations["set_case_language_v1_cases__case_id__language_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1997,6 +2064,18 @@ export interface components {
          */
         CaseKind: "request" | "incident";
         /**
+         * CaseLanguage
+         * @description The language to reply to the resident in. `language: null`: not set
+         *     (English until someone sets it or the AI notices otherwise).
+         */
+        CaseLanguage: {
+            /** Language */
+            language: string | null;
+            /** Language Name */
+            language_name: string | null;
+            source: components["schemas"]["LanguageSource"] | null;
+        };
+        /**
          * CasePriority
          * @enum {string}
          */
@@ -2376,8 +2455,27 @@ export interface components {
          *     public update.
          */
         DraftMessage: {
+            /**
+             * English
+             * @description An English version for the worker, when `message` isn't English.
+             */
+            english: string | null;
+            /**
+             * Language
+             * @description The language `message` is in (ISO 639).
+             * @default en
+             */
+            language: string;
             /** Message */
             message: string;
+        };
+        /** DraftMessageRequest */
+        DraftMessageRequest: {
+            /**
+             * Language
+             * @description Write it in this language. Default: the case's language, else the resident's own.
+             */
+            language?: string | null;
         };
         /** ExtractedTask */
         ExtractedTask: {
@@ -2587,6 +2685,18 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "running" | "done" | "dead";
+        /** LanguageOption */
+        LanguageOption: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * LanguageSource
+         * @enum {string}
+         */
+        LanguageSource: "staff" | "detected";
         /**
          * MyOffer
          * @description The caller's latest offer on an alert.
@@ -3300,6 +3410,14 @@ export interface components {
          * @enum {string}
          */
         Service: "homelessness" | "missing_persons" | "meal_programs" | "violence_prevention" | "transportation" | "incident_deescalation" | "burial_assistance" | "bridge_to_employment" | "unclear";
+        /** SetCaseLanguageRequest */
+        SetCaseLanguageRequest: {
+            /**
+             * Language
+             * @description An ISO 639 code from `GET /cases/languages`; null clears it.
+             */
+            language: string | null;
+        };
         /** SetRoleRequest */
         SetRoleRequest: {
             role: components["schemas"]["Role"];
@@ -3587,6 +3705,23 @@ export interface components {
             routes: string[];
             /** Stop Id */
             stop_id: string;
+        };
+        /** TranslateRequest */
+        TranslateRequest: {
+            /**
+             * Language
+             * @description Default: the case's language.
+             */
+            language?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** Translation */
+        Translation: {
+            /** Language */
+            language: string;
+            /** Text */
+            text: string;
         };
         /** UnreadCount */
         UnreadCount: {
@@ -4182,6 +4317,26 @@ export interface operations {
             };
         };
     };
+    reply_languages_v1_cases_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguageOption"][];
+                };
+            };
+        };
+    };
     get_case_v1_cases__case_id__get: {
         parameters: {
             query?: never;
@@ -4257,7 +4412,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DraftMessageRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4328,6 +4487,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    translate_message_v1_cases__case_id__assist_translate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Translation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_language_v1_cases__case_id__language_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseLanguage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_case_language_v1_cases__case_id__language_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCaseLanguageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseLanguage"];
                 };
             };
             /** @description Validation Error */

@@ -12,7 +12,18 @@ from dependencies import (
     get_resource_service,
     get_task_service,
 )
-from models.assist import CaseSummary, DraftMessage, ResourceSuggestions
+from models.assist import (
+    LANGUAGES,
+    CaseLanguage,
+    CaseSummary,
+    DraftMessage,
+    DraftMessageRequest,
+    LanguageOption,
+    ResourceSuggestions,
+    SetCaseLanguageRequest,
+    TranslateRequest,
+    Translation,
+)
 from models.case import (
     AddCaseUpdateRequest,
     AddReferralRequest,
@@ -78,6 +89,12 @@ async def recent_activity(
 ) -> list[CaseUpdate]:
     """The latest updates across all cases, newest first."""
     return await service.recent_activity(limit)
+
+
+@router.get("/languages", response_model=list[LanguageOption])
+async def reply_languages(_: StaffMember = Depends(get_current_worker)) -> list[LanguageOption]:
+    """The languages staff can reply to residents in."""
+    return [LanguageOption(code=code, name=name) for code, name in LANGUAGES.items()]
 
 
 @router.get("/{case_id}", response_model=CaseDetail)
@@ -191,13 +208,50 @@ async def suggest_resources(
     return await case_assist.suggest_resources(service, resources, assistant, case_id)
 
 
+@router.get("/{case_id}/language", response_model=CaseLanguage)
+async def get_case_language(
+    case_id: UUID,
+    _: StaffMember = Depends(get_current_worker),
+    service: CaseService = Depends(get_case_service),
+) -> CaseLanguage:
+    """The language staff reply to the resident in (set by a worker, or
+    noticed by the AI draft). `language: null` means not set."""
+    return await case_assist.case_language(service, case_id)
+
+
+@router.put("/{case_id}/language", response_model=CaseLanguage)
+async def set_case_language(
+    case_id: UUID,
+    body: SetCaseLanguageRequest,
+    worker: StaffMember = Depends(get_current_worker),
+    service: CaseService = Depends(get_case_service),
+) -> CaseLanguage:
+    """Choose the reply language (a code from `GET /cases/languages`; null
+    clears it). A worker's choice is never replaced by detection."""
+    return await case_assist.set_case_language(service, worker, case_id, body)
+
+
+@router.post("/{case_id}/assist/translate", response_model=Translation)
+async def translate_message(
+    case_id: UUID,
+    body: TranslateRequest,
+    _: StaffMember = Depends(get_current_worker),
+    service: CaseService = Depends(get_case_service),
+    assistant: CaseAssistant | None = Depends(get_case_assistant),
+) -> Translation:
+    """A reply typed in English, translated into the case's language (or
+    `language`). English in, English out. 503 when AI isn't configured."""
+    return await case_assist.translate(service, assistant, case_id, body)
+
+
 @router.post("/{case_id}/assist/draft-message", response_model=DraftMessage)
 async def draft_message(
     case_id: UUID,
+    body: DraftMessageRequest | None = None,
     _: StaffMember = Depends(get_current_worker),
     service: CaseService = Depends(get_case_service),
     assistant: CaseAssistant | None = Depends(get_case_assistant),
 ) -> DraftMessage:
     """A draft update to the requester, for the worker to edit and send (as a
     public update). Never sent by itself. 503 when AI isn't configured."""
-    return await case_assist.draft_message(service, assistant, case_id)
+    return await case_assist.draft_message(service, assistant, case_id, body)
