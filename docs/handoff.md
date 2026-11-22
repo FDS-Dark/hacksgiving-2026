@@ -64,7 +64,7 @@ residents and runs outreach. Two apps in one Expo project, chosen by role:
 - **Ava pages on call** (same branch): `POST /v1/voice/requests` takes
   `urgency: "urgent"` (needs someone today, nobody in danger now), which
   makes the case high priority and opens an on-call alert. This reverses
-  D3's "voice never pages" and needs the team's OK;
+  D3's "voice never pages" (agreed 2026-11-21; routine requests still never page);
   `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns it off. The ElevenLabs
   `submit_comforce_request` tool needs the new `urgency` parameter
   (`docs/voice/agent-prompt.md`).

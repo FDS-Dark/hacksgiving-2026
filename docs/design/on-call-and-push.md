@@ -89,7 +89,7 @@ transaction as the case write:
 | Staff opens a case | `POST /v1/cases` |
 | A Phantom record is confirmed into a case | `POST /v1/records/{id}/confirm`. Today it assigns the case to the record's author (`services/record.py`), so it doesn't page; the check is there in case that changes |
 | Priority raised to high or critical while unassigned | `PATCH /v1/cases/{id}` (`CaseService.update`) |
-| Voice call (Ava) | **Only when Ava marks the request `urgent`** (`POST /v1/voice/requests`, `urgency: "urgent"`): needs someone today, nobody in danger now. It goes in at `high`, so `_submit` opens the alert like any other. Routine requests don't page, and the `emergency` tier still ends in `redirect_911` (`services/voice.py`) and never becomes a case. `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns this off. *Changed 2026-11-21: this row used to say "Never"; it needs the team's OK before the demo.* |
+| Voice call (Ava) | **Only when Ava marks the request `urgent`** (`POST /v1/voice/requests`, `urgency: "urgent"`): needs someone today, nobody in danger now. It goes in at `high`, so `_submit` opens the alert like any other. Routine requests don't page, and the `emergency` tier still ends in `redirect_911` (`services/voice.py`) and never becomes a case. `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns this off. *Changed 2026-11-21 (agreed): this row used to say "Never". Only urgent requests page; routine ones never do.* |
 
 A **sweeper** in the worker's upkeep opens alerts for any matching case from
 the last 24 h that has none. It is a safety net for a missed code path.
