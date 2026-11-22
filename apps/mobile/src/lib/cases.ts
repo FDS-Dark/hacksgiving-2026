@@ -53,6 +53,15 @@ export const REFERRAL_LABEL: Record<ReferralStatus, string> = {
   declined: 'Declined',
 };
 
+/**
+ * Whether a case has someone outside staff to message: a request sent from
+ * the app (signed in, or with a saved code). Staff-opened cases have no
+ * resident thread, so their only "message" is an internal note.
+ */
+export function canMessageResident(c: { requester_id?: string | null; source: string }) {
+  return !!c.requester_id || c.source === 'public';
+}
+
 /** "Family evicted today and nowhere to sleep. Two kids." → a short title for the queue. */
 export function titleFrom(description: string) {
   const first = description.trim().split(/(?<=[.!?])\s|\n/)[0] ?? '';
