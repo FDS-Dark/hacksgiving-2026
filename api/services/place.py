@@ -1,7 +1,7 @@
 """Places cases on the map for Insights (app.case_places, 0020): a point,
 the police district, census tract and neighborhood it falls in, and a
 label safe for a dashboard. Runs in the worker's upkeep, a few cases a
-round, so it covers every way a case comes in (the app, Ava, a debrief,
+round, so it covers every way a case comes in (the app, the phone agent, a debrief,
 staff) without touching any of them.
 
 For each case, in order:

@@ -133,7 +133,7 @@ class CaseService:
         request's number, is how they get back to it.
 
         `urgent_note` is for a trusted caller that has already judged the
-        request urgent (Ava, on the phone): the case goes in at high
+        request urgent (the phone agent): the case goes in at high
         priority, which pages on call, with the note in its history. A
         resident's own form can't set it."""
         code = access_code.new_code()

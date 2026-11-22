@@ -175,7 +175,7 @@ class VoiceConfig(BaseModel):
 
     elevenlabs_webhook_secret: str = Field(default="")
     tool_secret: str = Field(default="")
-    # A phone request Ava marks urgent goes in at high priority, which pages
+    # A request the phone agent marks urgent goes in at high priority, which pages
     # on call (D3). False keeps every phone request at medium: the urgency is
     # still recorded on the call, but nobody is paged.
     urgent_pages_on_call: bool = Field(default=True)

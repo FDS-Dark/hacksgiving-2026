@@ -7,7 +7,7 @@ calling, sign into the community side of the app and leave it open on **Me**.
 
 Use this caller scenario nearly verbatim:
 
-> Hi Ava. This is not an emergency and nobody is in danger. I live near the
+> Hi. This is not an emergency and nobody is in danger. I live near the
 > Near West Side, and I need help finding groceries for this week. English is
 > fine, and I do not have any mobility needs. Please find a reviewed resource,
 > save the referral, and connect this call to my app. I am ready for the app
@@ -15,13 +15,13 @@ Use this caller scenario nearly verbatim:
 
 The successful flow has six visible beats:
 
-1. Ava identifies itself as an AI assistant and explains the 911 boundary.
-2. Ava confirms there is no immediate danger before continuing.
-3. Ava routes the need to food support and looks up a reviewed resource.
-4. Ava asks before saving the referral; say **yes**.
-5. Ava reads an eight-character code. In the app, go to **Me → Phone calls**,
+1. The agent identifies itself as an AI assistant and explains the 911 boundary.
+2. The agent confirms there is no immediate danger before continuing.
+3. The agent routes the need to food support and looks up a reviewed resource.
+4. The agent asks before saving the referral; say **yes**.
+5. The agent reads an eight-character code. In the app, go to **Me → Phone calls**,
    enter the code under **Call code**, and tap **Connect call** within 15
-   minutes. Do not read a password, login code, or phone number to Ava.
+   minutes. Do not read a password, login code, or phone number to the agent.
 6. Open **Past referrals**. The resource from the call should appear with its
    reviewed details and public contact action.
 
@@ -47,7 +47,7 @@ food referral. Keep this optional if the presentation clock is tight.
   the completed call appears in the staff review list after refresh.
 - **Retry:** if the code is rejected, ask for a new one and enter it within 15
   minutes; codes are single-use and uppercase letters/numbers only.
-- **Stop:** if Ava skips the emergency boundary, claims to be human, invents a
+- **Stop:** if the agent skips the emergency boundary, claims to be human, invents a
   resource, or asks for a password/login code.
 - **Expected for now:** the seven-day district-awareness question and 24-hour
   dropped-call resume are held for the post-deployment demo; their production
@@ -75,9 +75,9 @@ switch the demo transfer to a public agency as a workaround.
 
 ## Optional standout beats
 
-- Ask for the past seven days in MPD District 5. Ava must separate reviewed
+- Ask for the past seven days in MPD District 5. The agent must separate reviewed
   incidents from delayed calls and say the counts are not a safety score.
-- Simulate a dropped call, call back, and confirm that Ava resumes only the
+- Simulate a dropped call, call back, and confirm that the agent resumes only the
   service and general area—not the caller's words.
 - Submit a synthetic callback request with "no voicemail; weekdays after 5."
   Show the structured contact plan in staff review and the linked case note.

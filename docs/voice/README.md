@@ -48,10 +48,15 @@ dial 911 without continuing intake.
      at high priority and pages whoever is on call; `urgent: true` in the
      response says it did. There is no emergency level: the schema rejects
      one. `APP__VOICE__URGENT_PAGES_ON_CALL=false` turns paging off while
-     still recording Ava's judgement on the call.
+     still recording the phone agent's judgement on the call.
    - `GET /v1/voice/opportunities` for the same active job and volunteer
      postings residents can search under Me > Volunteer and jobs.
    - `GET /v1/voice/resources`
+   - `GET /v1/voice/directory-resources?category=<service>` as
+     `lookup_directory_resources`, after routing. This returns real display
+     names and contact/location fields from the same directory as the app so
+     the agent never speaks an internal key such as `meal_programs`. Directory
+     listings do not guarantee live capacity or eligibility.
    - `POST /v1/voice/referrals`
    - `POST /v1/voice/referrals/{referral_id}/outcome`
    - `GET /v1/voice/follow-ups/due` for an approved scheduler. The endpoint

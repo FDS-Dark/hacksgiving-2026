@@ -125,19 +125,19 @@ async def test_a_submission_is_triaged_and_an_urgent_one_is_high_priority(sample
 
 
 async def test_an_urgent_note_makes_an_anonymous_request_high_priority_and_pages():
-    """Ava's urgent (not 911) phone requests: high priority, the note in the
+    """The phone agent's urgent (not 911) requests: high priority, the note in the
     history, and the on-call alert opened in the same write."""
     case = case_row(priority="high", requester_id=None)
     db = FakeFunctions(request_create=[case], case_add_update=[update_row(case)],
                        request_get_by_code=[public_row(case)], task_create=[])
     body = SubmitRequest(description="Sleeping outside tonight", category=CaseCategory.HOMELESSNESS)
 
-    receipt = await service(db).submit_anonymous_request(body, None, urgent_note="Ava marked this urgent.")
+    receipt = await service(db).submit_anonymous_request(body, None, urgent_note="Phone agent marked this urgent.")
 
     (created,) = db.called("request_create")
     assert created["priority"] == "high" and created["access_code_hash"] is not None
     (note,) = db.called("case_add_update")
-    assert (note["visibility"], note["content"]) == ("internal", "Ava marked this urgent.")
+    assert (note["visibility"], note["content"]) == ("internal", "Phone agent marked this urgent.")
     assert db.called("oncall_alert_open") == [{"case_id": case["id"]}]
     assert receipt.access_code
 
