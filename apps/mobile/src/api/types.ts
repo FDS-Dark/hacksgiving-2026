@@ -154,3 +154,9 @@ export type CaseLanguage = Schemas['CaseLanguage'];
 export type LanguageOption = Schemas['LanguageOption'];
 export type Translation = Schemas['Translation'];
 export type ResourceSuggestion = Schemas['ResourceSuggestion'];
+
+// ── Attachments and knowledge search ─────────────────────────────────────
+export type Attachment = Schemas['Attachment'];
+export type AttachmentUpload = Schemas['AttachmentUpload'];
+export type AttachmentLink = Schemas['AttachmentLink'];
+export type KnowledgeHit = Schemas['KnowledgeHit'];

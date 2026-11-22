@@ -11,6 +11,7 @@ import { Segmented } from '@/components/Segmented';
 import { ServiceGuide } from '@/components/ServiceGuide';
 import { CardSkeleton, CaseListSkeleton } from '@/components/Skeleton';
 import { CaseAssist } from '@/components/staff/case/CaseAssist';
+import { CaseAttachments } from '@/components/staff/case/CaseAttachments';
 import { CaseHistory } from '@/components/staff/case/CaseHistory';
 import { CaseReferrals } from '@/components/staff/case/CaseReferrals';
 import { CaseTasks } from '@/components/staff/case/CaseTasks';
@@ -25,7 +26,7 @@ import { useMarkCaseRead } from '@/services/notifications';
 import { useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
-type Tab = 'tasks' | 'history' | 'referrals' | 'guide';
+type Tab = 'tasks' | 'history' | 'referrals' | 'files' | 'guide';
 
 /**
  * Figma S3 "Case": status and owner at the top, the next actions as
@@ -88,6 +89,7 @@ export default function CaseScreen() {
           { value: 'tasks', label: taskCount ? `Tasks ${taskCount}` : 'Tasks' },
           { value: 'history', label: 'History' },
           { value: 'referrals', label: referrals.length ? `Referrals ${referrals.length}` : 'Referrals' },
+          { value: 'files', label: 'Files' },
           { value: 'guide', label: 'Guide' },
         ]}
       />
@@ -95,6 +97,7 @@ export default function CaseScreen() {
       {tab === 'tasks' ? <CaseTasks caseId={c.id} tasks={tasks} /> : null}
       {tab === 'history' ? <CaseHistory updates={updates} /> : null}
       {tab === 'referrals' ? <CaseReferrals item={c} referrals={referrals} /> : null}
+      {tab === 'files' ? <CaseAttachments caseId={c.id} /> : null}
       {tab === 'guide' ? (
         <View style={{ gap: space.md }}>
           {/* Re-routing the case to another service swaps in that service's guide. */}

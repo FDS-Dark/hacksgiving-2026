@@ -200,6 +200,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/{case_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Attachments */
+        get: operations["list_attachments_v1_cases__case_id__attachments_get"];
+        put?: never;
+        /**
+         * Start Attachment
+         * @description Attach a photo or PDF (up to 10 MB): returns a one-time URL to PUT the
+         *     file to. Then call `.../uploaded`. 503 when file storage isn't set up.
+         */
+        post: operations["start_attachment_v1_cases__case_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Attachment */
+        delete: operations["delete_attachment_v1_cases__case_id__attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attachment Link
+         * @description A link that opens the file for five minutes.
+         */
+        get: operations["attachment_link_v1_cases__case_id__attachments__attachment_id__link_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cases/{case_id}/attachments/{attachment_id}/uploaded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attachment Uploaded
+         * @description The file is uploaded: it's checked, marked ready and noted on the case.
+         */
+        post: operations["attachment_uploaded_v1_cases__case_id__attachments__attachment_id__uploaded_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/language": {
         parameters: {
             query?: never;
@@ -365,6 +444,28 @@ export interface paths {
          *     finished in the last day. `oldest_run_at` on queued work shows a backlog.
          */
         get: operations["job_stats_v1_jobs_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/knowledge/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Knowledge Search
+         * @description Search what the team knows: the resource directory, resolved and
+         *     closed cases, the internal notes on them, and attachment notes. Best
+         *     matches first; matching words in `snippet` are wrapped in « ».
+         */
+        get: operations["knowledge_search_v1_knowledge_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1962,6 +2063,66 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** Attachment */
+        Attachment: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Content Type */
+            content_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string;
+            /** Size Bytes */
+            size_bytes: number;
+            status: components["schemas"]["AttachmentStatus"];
+            /** Uploaded By */
+            uploaded_by: string | null;
+            /** Uploaded By Name */
+            uploaded_by_name: string | null;
+        };
+        /**
+         * AttachmentLink
+         * @description A short-lived link to open the file.
+         */
+        AttachmentLink: {
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Url */
+            url: string;
+        };
+        /**
+         * AttachmentStatus
+         * @enum {string}
+         */
+        AttachmentStatus: "pending" | "ready";
+        /**
+         * AttachmentUpload
+         * @description PUT the file to `upload_url` with this Content-Type, then call
+         *     `POST /cases/{case_id}/attachments/{id}/uploaded`.
+         */
+        AttachmentUpload: {
+            attachment: components["schemas"]["Attachment"];
+            /** Content Type */
+            content_type: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Upload Url */
+            upload_url: string;
+        };
         /**
          * Audience
          * @description Who a posting is open to, beyond everyone: staff tag their own postings,
@@ -2686,6 +2847,33 @@ export interface components {
          * @enum {string}
          */
         JobStatus: "queued" | "running" | "done" | "dead";
+        /** KnowledgeHit */
+        KnowledgeHit: {
+            /** At */
+            at: string | null;
+            /** Case Id */
+            case_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["KnowledgeKind"];
+            /** Rank */
+            rank: number;
+            /**
+             * Snippet
+             * @description Matching words are wrapped in « ».
+             */
+            snippet: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * KnowledgeKind
+         * @enum {string}
+         */
+        KnowledgeKind: "resource" | "case" | "note" | "attachment";
         /** LanguageOption */
         LanguageOption: {
             /** Code */
@@ -3543,6 +3731,27 @@ export interface components {
             /** Is Worker */
             is_worker: boolean;
             role: components["schemas"]["Role"];
+        };
+        /** StartAttachmentRequest */
+        StartAttachmentRequest: {
+            /**
+             * Content Type
+             * @description image/jpeg, image/png, image/heic, image/heif or application/pdf.
+             */
+            content_type: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Note
+             * @description What it is ('Eviction notice, dated Nov 18'): searchable by the team.
+             * @default
+             */
+            note?: string;
+            /**
+             * Size Bytes
+             * @description At most 10 MB.
+             */
+            size_bytes: number;
         };
         /** StartVoiceRecordRequest */
         StartVoiceRecordRequest: {
@@ -4570,6 +4779,166 @@ export interface operations {
             };
         };
     };
+    list_attachments_v1_cases__case_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_attachment_v1_cases__case_id__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartAttachmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_v1_cases__case_id__attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_link_v1_cases__case_id__attachments__attachment_id__link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachment_uploaded_v1_cases__case_id__attachments__attachment_id__uploaded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_case_language_v1_cases__case_id__language_get: {
         parameters: {
             query?: never;
@@ -4846,6 +5215,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobStat"][];
+                };
+            };
+        };
+    };
+    knowledge_search_v1_knowledge_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeHit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

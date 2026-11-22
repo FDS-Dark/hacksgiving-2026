@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import errors
 from dependencies import get_audio_storage, get_executor
 from logging_setup import configure_logging
+from routers.attachment import router as attachments
 from routers.case import router as cases
 from routers.health import router as health
 from routers.opportunity import router as opportunities
@@ -67,7 +68,7 @@ errors.install(app)
 for router in (
     health, user, routing, requests, public_requests, cases, tasks, resources, opportunities,
     # push before notifications: /notifications/test and /stats aren't ids.
-    staff, voice, records, jobs, public_data, oncall, push, notifications,
+    staff, voice, records, jobs, public_data, oncall, push, notifications, attachments,
 ):
     app.include_router(router, prefix="/v1")
 

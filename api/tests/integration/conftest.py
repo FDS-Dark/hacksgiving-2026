@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from databridge.case import CaseDatabridge
 from databridge.executor import PostgresExecutor
+from databridge.attachment import AttachmentDatabridge
 from databridge.handoff import HandoffDatabridge
 from databridge.public_data import PublicDataDatabridge
 from databridge.job import JobDatabridge
@@ -34,6 +35,7 @@ from databridge.opportunity import OpportunityDatabridge
 from databridge.task import TaskDatabridge
 from databridge.user import UserDatabridge
 from dependencies import (
+    get_attachment_service,
     get_case_assistant,
     get_case_service,
     get_opportunity_service,
@@ -54,6 +56,7 @@ from engine.base_engine import BaseEngine
 from engine.postgres_engine import create_postgres_engine
 from main import app
 from services.case import CaseService
+from services.attachment import AttachmentService
 from services.handoff import HandoffService
 from services.public_data import PublicDataService
 from services.opportunity import OpportunityService
@@ -172,6 +175,7 @@ async def api(database):
         jobs=JobDatabridge(executor), notifications=notifications, tasks=tasks,
     )
     cases = CaseService(CaseDatabridge(executor), resources, staff, tasks, notifications, executor, oncall)
+    attachments = AttachmentService(AttachmentDatabridge(executor), cases, None)
     handoffs = HandoffService(HandoffDatabridge(executor), OncallDatabridge(executor), cases, tasks, None)
     # Every service the routers use, so no test reaches api/.env's database.
     # No AI in integration tests: triage and the assistant are off.
@@ -191,6 +195,7 @@ async def api(database):
         get_job_service: lambda: JobService(JobDatabridge(executor)),
         get_oncall_service: lambda: oncall,
         get_handoff_service: lambda: handoffs,
+        get_attachment_service: lambda: attachments,
         get_public_data_service: lambda: PublicDataService(PublicDataDatabridge(executor)),
         get_push_service: lambda: PushService(PushDatabridge(executor), notifications, executor),
     })

@@ -31,6 +31,9 @@ class MemoryStorage:
     def __init__(self) -> None:
         self.objects: dict[str, tuple[bytes, datetime]] = {}
 
+    async def download_url(self, key: str, seconds: int) -> str:
+        return f"https://storage.test/{key}?expires={seconds}"
+
     async def upload_url(self, key: str, content_type: str) -> str:
         return f"https://storage.test/{key}?signed"
 
