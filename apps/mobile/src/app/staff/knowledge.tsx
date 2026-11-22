@@ -59,7 +59,7 @@ export default function KnowledgeScreen() {
 
   return (
     <Page contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <View style={{ gap: 4 }}>
         <Text accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
           Knowledge search

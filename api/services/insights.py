@@ -64,10 +64,11 @@ def coverage_from(rows: list[dict[str, Any]], measure: NeedMeasure, days: int) -
     if not with_need:
         summary = f"No {label.lower()} data loaded yet (the cdc_places source)."
     elif gaps:
-        summary = (f"{len([t for t in tracts if t.gap])} tracts have high {label.lower()} "
-                   f"(at least {need_cut:.0f}% of adults) and few or no ComForce {service} in the last {days} days.")
+        # Plain words for staff (cognitive-load review, section 6): "areas", not "tracts".
+        summary = (f"In the last {days} days, {len([t for t in tracts if t.gap])} areas had high {label.lower()} "
+                   f"(at least {need_cut:.0f}% of adults) and little or no ComForce help.")
     else:
-        summary = f"Every high-{label.lower()} tract had ComForce {service} in the last {days} days."
+        summary = f"Every area with high {label.lower()} had ComForce {service} in the last {days} days."
     return Coverage(measure=measure, measure_label=label, category=category, days=days,
                     need_year=max(years) if years else None, tracts=tracts, gaps=gaps, summary=summary)
 
@@ -129,6 +130,7 @@ class InsightsService:
             totals=await self.insights.totals(start, end, district),
             by_category=await self.insights.by_category(start, end, district),
             patterns=[word_pattern(row, days) for row in rows],
+            delivered_by=await self.insights.delivered_by(start, end, district),
         )
 
     async def coverage(self, measure: NeedMeasure, days: int, now: datetime | None = None) -> Coverage:

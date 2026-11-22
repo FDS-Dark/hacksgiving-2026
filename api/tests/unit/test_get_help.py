@@ -108,6 +108,7 @@ async def test_an_anonymous_request_comes_back_with_a_code_that_opens_it():
         request_create=[case],
         request_get_by_code=lambda p: [public_row(case)] if p["number"] == case["number"] else [],
         request_list_public_updates=[],
+        case_get=[case],
         task_create=[],
     )
     cases = service(db)
@@ -215,6 +216,19 @@ def test_the_contact_task_respects_how_they_asked_to_be_reached():
     assert "voicemail" in unsafe.detail
     assert text.title == "Text the requester"
     assert "no contact" in none.title
+
+
+def test_the_contact_task_carries_the_phone_number():
+    """Regression (cognitive-load review S2): a staff case's callback task
+    must show the number, and must not claim the person said it's safe."""
+    staff_case = plan_tasks(case_model(source="worker", contact_method=None, safe_to_contact=None,
+                                       contact_phone="414-555-0199"))[0]
+    no_phone = plan_tasks(case_model(source="worker", contact_method=None, safe_to_contact=None,
+                                     contact_phone=None))[0]
+
+    assert staff_case.title == "Call the requester"
+    assert "414-555-0199" in staff_case.detail and "said it's safe" not in staff_case.detail
+    assert "No phone number" in no_phone.detail
 
 
 @pytest.mark.parametrize("category", list(CaseCategory))

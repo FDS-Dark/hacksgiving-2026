@@ -21,6 +21,8 @@ export type UpdateType = Schemas['UpdateType'];
 export type Visibility = Schemas['Visibility'];
 
 export type Case = Schemas['Case'];
+/** A case the signed-in worker touched, with when and how they last did (Queue → Recently worked). */
+export type WorkedCase = Schemas['WorkedCase'];
 export type CaseDetail = Schemas['CaseDetail'];
 export type CaseUpdate = Schemas['CaseUpdate'];
 export type CaseInsights = Schemas['CaseInsights'];
@@ -189,3 +191,23 @@ export type KnowledgeHit = Schemas['KnowledgeHit'];
 
 // ── Training ─────────────────────────────────────────────────────────────
 export type TrainingProgress = Schemas['TrainingProgress'];
+
+// ── Team chat (/v1/chat) ─────────────────────────────────────────────────
+export type ChatChannelKind = Schemas['ChatChannelKind'];
+export type ChatChannel = Schemas['ChatChannel'];
+export type ChatMessage = Schemas['ChatMessage'];
+export type ChatThread = Schemas['ChatThread'];
+export type SendChatMessage = Schemas['SendChatMessageRequest'];
+export type ChatReadResult = Schemas['ChatReadResult'];
+
+// ── Asking a partner for help (/v1/cases/{id}/partner-requests) ──────────
+export type PartnerRequest = Schemas['PartnerRequest'];
+export type CreatePartnerRequest = Schemas['CreatePartnerRequest'];
+export type SentPartnerRequest = Schemas['SentPartnerRequest'];
+
+// ── Who delivered a referral's help ──────────────────────────────────────
+export type DeliveredBy = Schemas['DeliveredBy'];
+export type DeliveredByCount = Schemas['DeliveredByCount'];
+
+// ── Export my records (/v1/me/export) ────────────────────────────────────
+export type RecordsExport = Schemas['RecordsExport'];

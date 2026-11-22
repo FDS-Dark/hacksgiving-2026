@@ -5,17 +5,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toApiError } from '@/api/client';
 import { TabBar, type TabItem } from '@/components/TabBar';
+import { tabReplaceAnimation } from '@/lib/tabDirection';
 import { Button, ErrorBanner, Loading, Notice } from '@/components/ui';
 import { Card } from '@/components/staff/kit';
 import { showCommunityView } from '@/lib/viewMode';
 import { useBootstrapStaff, useStaffStatus } from '@/services/staff';
 import { space, type, useTheme } from '@/theme/tokens';
 
-/** Figma "App shell v2" staff tabs. Record (a Phantom debrief) sits raised in the middle; Team and Insights live under Me. */
+/**
+ * Figma "App shell v2" staff tabs. Record sits raised in the middle and opens
+ * a chooser: New case or Debrief. Team and Insights live under Me.
+ */
 const TABS: TabItem[] = [
-  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') || p.startsWith('/staff/alerts') || p.startsWith('/staff/tasks') || p.startsWith('/staff/handoffs') },
+  { label: 'Today', href: '/staff', icon: 'home-outline', iconActive: 'home', match: (p) => p === '/staff' || p.startsWith('/staff/notifications') || p.startsWith('/staff/alerts') || p.startsWith('/staff/tasks') || p.startsWith('/staff/handoffs') || p.startsWith('/staff/chat') },
   { label: 'Queue', href: '/staff/cases', icon: 'list-outline', iconActive: 'list', match: (p) => p.startsWith('/staff/cases') },
-  { label: 'Record', push: '/staff/records/new', icon: 'mic-outline', iconActive: 'mic', raised: true, match: (p) => p.startsWith('/staff/records') },
+  { label: 'Record', push: '/staff/record', icon: 'add', iconActive: 'add', raised: true, match: (p) => p === '/staff/record' || p.startsWith('/staff/records') },
   { label: 'Map', href: '/staff/map', icon: 'location-outline', iconActive: 'location', match: (p) => p.startsWith('/staff/map') },
   {
     label: 'Me',
@@ -36,8 +40,13 @@ export default function StaffLayout() {
   const insets = useSafeAreaInsets();
   const status = useStaffStatus();
   const pathname = usePathname();
-  // Flows with their own bottom bar (S5 composer, S6 New case, a new debrief) cover the tabs.
-  const fullScreen = pathname === '/staff/cases/new' || pathname === '/staff/records/new' || pathname.endsWith('/messages');
+  // Flows with their own bottom bar (S5 composer, S6 New case, a new debrief, the Record chooser, a chat thread) cover the tabs.
+  const fullScreen =
+    pathname === '/staff/cases/new' ||
+    pathname === '/staff/records/new' ||
+    pathname === '/staff/record' ||
+    pathname.endsWith('/messages') ||
+    (pathname.startsWith('/staff/chat/') && pathname.length > '/staff/chat/'.length);
 
   let body;
   if (status.isPending) body = <Loading label="Checking your staff access" />;
@@ -46,13 +55,20 @@ export default function StaffLayout() {
   else {
     body = (
       <>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
+        <Stack
+          screenOptions={() => ({
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.bg },
+            animationTypeForReplace: tabReplaceAnimation(),
+          })}
+        >
           <Stack.Screen name="index" />
           <Stack.Screen name="cases/index" />
           <Stack.Screen name="cases/new" />
           <Stack.Screen name="cases/[id]/index" />
           <Stack.Screen name="cases/[id]/messages" />
           <Stack.Screen name="cases/[id]/person" />
+          <Stack.Screen name="record" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }} />
           <Stack.Screen name="records/new" />
           <Stack.Screen name="records/[id]" />
           <Stack.Screen name="map" />
@@ -61,7 +77,8 @@ export default function StaffLayout() {
           <Stack.Screen name="calls/[id]" />
           <Stack.Screen name="team" />
           <Stack.Screen name="insights" />
-          <Stack.Screen name="opportunities" />
+          <Stack.Screen name="opportunities/index" />
+          <Stack.Screen name="opportunities/new" />
           <Stack.Screen name="oncall" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="alerts/[id]" />
@@ -72,6 +89,8 @@ export default function StaffLayout() {
           <Stack.Screen name="notification-settings" />
           <Stack.Screen name="handoffs/index" />
           <Stack.Screen name="handoffs/[id]" />
+          <Stack.Screen name="chat/index" />
+          <Stack.Screen name="chat/[id]" />
         </Stack>
         {fullScreen ? null : <TabBar tabs={TABS} />}
       </>

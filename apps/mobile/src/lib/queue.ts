@@ -3,7 +3,7 @@
  * functions over the loaded cases so they're tested and the chips can show
  * counts without another request.
  */
-import type { Case } from '@/api/types';
+import type { Case, UpdateType, WorkedCase } from '@/api/types';
 
 export const QUEUE_VIEWS = ['open', 'mine', 'new', 'unassigned', 'urgent', 'closed'] as const;
 export type QueueView = (typeof QUEUE_VIEWS)[number];
@@ -60,4 +60,49 @@ export function viewFromParams(params: { view?: string; status?: string; assigne
   if (params.assigned === 'unassigned') return 'unassigned';
   if (params.status === 'new') return 'new';
   return 'open';
+}
+
+// ── Recently worked (cognitive-load review S2) ─────────────────────────────
+
+/** The Queue's chips: the views above, plus the cases I touched lately. */
+export type QueueMode = QueueView | 'recent';
+
+export const RECENT_LABEL = 'Recently worked';
+
+export function modeFromParams(params: { view?: string; status?: string; assigned?: string; urgent?: string }): QueueMode {
+  return params.view === 'recent' ? 'recent' : viewFromParams(params);
+}
+
+/** Newest touch first (the API sends them so; sorting here keeps the screen honest either way). */
+export function sortRecentlyWorked<T extends Pick<WorkedCase, 'worked_at' | 'number'>>(cases: readonly T[]): T[] {
+  return [...cases].sort((a, b) => Date.parse(b.worked_at) - Date.parse(a.worked_at) || b.number - a.number);
+}
+
+const WORKED_VERB: Partial<Record<UpdateType, string>> = {
+  created: 'opened this',
+  note: 'added a note',
+  message: 'messaged the resident',
+  status_change: 'changed the status',
+  priority_change: 'changed the priority',
+  category_change: 'changed the type of help',
+  assignment: 'changed who has it',
+  referral: 'updated a referral',
+  alert: 'responded',
+};
+
+/** "You added a note 10 min ago": the last thing I did on the case, and when. */
+export function workedLabel(c: Pick<WorkedCase, 'worked_at' | 'worked_type'>, now = Date.now()) {
+  return `You ${WORKED_VERB[c.worked_type] ?? 'updated this'} ${agoInWords(c.worked_at, now)}`;
+}
+
+/** "just now", "10 min ago", "3 hours ago", "2 days ago", then the date. */
+export function agoInWords(iso: string, now = Date.now()) {
+  const minutes = Math.max(0, Math.round((now - Date.parse(iso)) / 60_000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  return `on ${new Date(iso).toLocaleDateString()}`;
 }

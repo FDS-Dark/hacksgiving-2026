@@ -241,7 +241,7 @@ def test_high_need_few_cases_is_a_gap_biggest_first():
 
     assert [t.tract_geoid for t in coverage.gaps] == ["001", "002"]
     assert coverage.category == "homelessness" and coverage.need_year == 2023
-    assert coverage.summary.startswith("2 tracts have high housing insecurity")
+    assert coverage.summary.startswith("In the last 90 days, 2 areas had high housing insecurity")
 
 
 def test_no_need_data_says_so():

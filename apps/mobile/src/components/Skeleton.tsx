@@ -53,21 +53,6 @@ export function CaseListSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
-/** Four stat tiles in a row (Today). */
-export function TilesSkeleton() {
-  const theme = useTheme();
-  return (
-    <View style={styles.tiles} accessible accessibilityLabel="Loading">
-      {Array.from({ length: 4 }, (_, i) => (
-        <View key={i} style={[styles.tile, { backgroundColor: theme.surface, borderColor: theme.separator }]}>
-          <Bone width={28} height={22} />
-          <Bone width="70%" height={9} />
-        </View>
-      ))}
-    </View>
-  );
-}
-
 /** A block of text lines inside a card (details, a place, a request). */
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {
   const theme = useTheme();
@@ -83,7 +68,5 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
 
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderWidth: 1, borderRadius: 14, padding: space.md },
-  tiles: { flexDirection: 'row', gap: 8 },
-  tile: { flex: 1, gap: 8, alignItems: 'center', borderWidth: 1, borderRadius: 14, paddingVertical: space.md },
   block: { gap: 10, borderWidth: 1, borderRadius: 16, padding: space.lg },
 });

@@ -38,6 +38,7 @@ from models.case import (
     Referral,
     UpdateCaseRequest,
     UpdateReferralRequest,
+    WorkedCase,
 )
 from models.staff import StaffMember
 from models.task import CreateTaskRequest, Task
@@ -91,6 +92,18 @@ async def recent_activity(
 ) -> list[CaseUpdate]:
     """The latest updates across all cases, newest first."""
     return await service.recent_activity(limit)
+
+
+@router.get("/recent", response_model=list[WorkedCase])
+async def recently_worked(
+    limit: Annotated[int, Query(ge=1, le=100)] = 30,
+    worker: StaffMember = Depends(get_current_worker),
+    service: CaseService = Depends(get_case_service),
+) -> list[WorkedCase]:
+    """The cases the signed-in worker touched most recently (a note, a
+    message, a change, a finished task, or opening it), newest first, each
+    with when and how they last did."""
+    return await service.recently_worked(worker, limit)
 
 
 @router.get("/languages", response_model=list[LanguageOption])

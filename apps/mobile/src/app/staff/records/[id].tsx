@@ -8,7 +8,7 @@ import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
 import { Segmented } from '@/components/Segmented';
 import { CardSkeleton } from '@/components/Skeleton';
-import { ChoiceRow, priorityColor } from '@/components/staff/kit';
+import { ChoiceRow, ConfirmSheet, MoreDetails, priorityColor } from '@/components/staff/kit';
 import { Button, ErrorBanner, Field, Notice, success, tap } from '@/components/ui';
 import { CATEGORY_LABEL, PRIORITY_LABEL } from '@/lib/cases';
 import { useConfirmRecord, useDiscardRecord, useRecord, useRetryRecord } from '@/services/records';
@@ -40,7 +40,7 @@ export default function DebriefScreen() {
 
   return (
     <Page refreshing={record.isRefetching} onRefresh={() => record.refetch()} contentStyle={{ maxWidth: 640, gap: space.lg }}>
-      <BackLink label="Today" fallback="/staff" />
+      <BackLink to="/staff" label="Today" />
       {record.isPending ? (
         <CardSkeleton lines={4} />
       ) : !record.data ? (
@@ -137,7 +137,14 @@ function Confirmed({ record: r }: { record: DebriefRecord }) {
   );
 }
 
-/** The author's version of the AI's suggestion: everything editable, tasks can be dropped. */
+/**
+ * The author's version of the AI's suggestion. The summary and the few
+ * fields that matter most come first, with Create case right under them;
+ * the rest of the classifications sit behind "Review all fields"
+ * (cognitive-load review, top 10 #9: 30 choices before the button).
+ * The callback number from what the author wrote is filled in (the AI
+ * never sees it), so it reaches the case and its call task.
+ */
 function Review({ record: r, extraction: x }: { record: DebriefRecord; extraction: Extraction }) {
   const theme = useTheme();
   const confirm = useConfirmRecord(r.id);
@@ -151,8 +158,9 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
   const [priority, setPriority] = useState(x.priority);
   const [location, setLocation] = useState(x.location ?? '');
   const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
+  const [contactPhone, setContactPhone] = useState(r.callback_phone ?? '');
   const [keep, setKeep] = useState<boolean[]>(() => x.tasks.map(() => true));
+  const kept = keep.filter(Boolean).length;
 
   const save = () => {
     const body: ConfirmRecord = {
@@ -174,18 +182,25 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
     });
   };
 
+  const hint = [
+    forCase ? null : `${kind === 'incident' ? 'Incident' : 'Request'} · ${CATEGORY_LABEL[category]}`,
+    x.tasks.length ? `${kept} of ${x.tasks.length} tasks` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <View style={{ gap: space.lg }}>
       <Title>Check before saving</Title>
       <Text style={[type.subhead, { color: theme.textSecondary }]}>
         {forCase
-          ? 'The AI’s reading of your debrief. Fix anything that’s wrong; it’s added to the case you responded to as a note, with the tasks you keep.'
-          : 'The AI’s suggestion from your debrief. Fix anything that’s wrong; nothing is saved until you create the case.'}
+          ? 'This is a draft note for the case you responded to. Fix anything wrong, then choose Add to case.'
+          : 'This is a draft. Review it, then choose Create case to save it.'}
       </Text>
 
       {x.risk_flags.length ? (
-        <View style={[styles.risks, { backgroundColor: theme.dangerSoft }]}>
-          <Text style={[styles.label, { color: theme.danger }]}>SAFETY</Text>
+        <View style={[styles.risks, { backgroundColor: theme.dangerSoft }]} accessibilityRole="alert">
+          <Text style={[styles.label, { color: theme.danger }]}>Safety</Text>
           {x.risk_flags.map((flag) => (
             <View key={flag} style={styles.risk}>
               <Ionicons name="warning" size={14} color={theme.danger} />
@@ -195,68 +210,74 @@ function Review({ record: r, extraction: x }: { record: DebriefRecord; extractio
         </View>
       ) : null}
 
-      <Field label="Title" value={title} onChangeText={setTitle} maxLength={160} />
-      <Field label="Summary" value={summary} onChangeText={setSummary} multiline maxLength={4000} style={styles.multiline} />
-      {forCase ? null : (
-      <Segmented
-        label="Kind of case"
-        value={kind}
-        onChange={setKind}
-        options={[
-          { value: 'request', label: 'Request' },
-          { value: 'incident', label: 'Incident' },
-        ]}
-      />
-      )}
-      {forCase ? null : (
-        <ChoiceRow label="Service" options={CASE_CATEGORIES} labels={CATEGORY_LABEL} value={category} onChange={(c) => c && setCategory(c)} />
-      )}
+      <Field label="Summary" value={summary} onChangeText={setSummary} multiline maxLength={4000} style={styles.multiline} accessibilityLabel="Summary" />
       <ChoiceRow label="Priority" options={CASE_PRIORITIES} labels={PRIORITY_LABEL} value={priority} onChange={(p) => p && setPriority(p)} colorOf={(p) => priorityColor(theme, p)} />
-      <Field label="Where" icon="location-outline" value={location} onChangeText={setLocation} maxLength={300} placeholder="Street, intersection or neighborhood" />
-
+      <Field label="Where" icon="location-outline" value={location} onChangeText={setLocation} maxLength={300} placeholder="Street, intersection or neighborhood" accessibilityLabel="Where" />
       {forCase ? null : (
-      <View style={{ gap: space.sm }}>
-        <Field label="Contact (staff only, optional)" icon="person-outline" placeholder="Name" value={contactName} onChangeText={setContactName} maxLength={160} />
-        <Field icon="call-outline" placeholder="Phone" value={contactPhone} onChangeText={setContactPhone} keyboardType="phone-pad" maxLength={40} />
-      </View>
+        <Field
+          label={r.callback_phone ? 'Phone to call back (from your debrief)' : 'Phone to call back (optional; staff only)'}
+          icon="call-outline"
+          placeholder="Phone"
+          value={contactPhone}
+          onChangeText={setContactPhone}
+          keyboardType="phone-pad"
+          maxLength={40}
+          accessibilityLabel="Phone to call back"
+        />
       )}
-
-      {x.tasks.length ? (
-        <View style={{ gap: 6 }}>
-          <Text style={[type.footnote, { color: theme.textSecondary, fontWeight: '600' }]}>Tasks to create</Text>
-          <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator, gap: 0, padding: 0 }]}>
-            {x.tasks.map((t, i) => (
-              <Pressable
-                key={`${t.title}-${i}`}
-                onPress={() => {
-                  tap();
-                  setKeep((k) => k.map((v, j) => (j === i ? !v : v)));
-                }}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: keep[i] }}
-                accessibilityLabel={t.title}
-                style={[styles.task, i > 0 && { borderTopColor: theme.separator, borderTopWidth: StyleSheet.hairlineWidth }]}
-              >
-                <Ionicons name={keep[i] ? 'checkbox' : 'square-outline'} size={22} color={keep[i] ? theme.accent : theme.textTertiary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[type.subhead, { color: keep[i] ? theme.text : theme.textTertiary }]}>{t.title}</Text>
-                  {t.due_in_hours ? (
-                    <Text style={[type.caption, { color: theme.textSecondary }]}>Due in {t.due_in_hours} h</Text>
-                  ) : null}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-          {forCase ? null : (
-            <Text style={[type.caption, { color: theme.textSecondary }]}>The service’s usual follow-ups are added too.</Text>
-          )}
-        </View>
-      ) : null}
-
-      <Original text={r.raw_text} spoken={r.source === 'audio'} />
 
       {confirm.error ? <ErrorBanner error={confirm.error} /> : null}
       <Button label={forCase ? 'Add to case' : 'Create case'} icon="checkmark" size="lg" disabled={!title.trim()} loading={confirm.isPending} onPress={save} />
+
+      <MoreDetails label="Review all fields" hint={hint || undefined}>
+        <Field label="Title" value={title} onChangeText={setTitle} maxLength={160} accessibilityLabel="Title" />
+        {forCase ? null : (
+          <Segmented
+            label="Kind of case"
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: 'request', label: 'Request' },
+              { value: 'incident', label: 'Incident' },
+            ]}
+          />
+        )}
+        {forCase ? null : (
+          <ChoiceRow label="Type of help" options={CASE_CATEGORIES} labels={CATEGORY_LABEL} value={category} onChange={(c) => c && setCategory(c)} />
+        )}
+        {forCase ? null : (
+          <Field label="Name (optional; staff only)" icon="person-outline" placeholder="Name" value={contactName} onChangeText={setContactName} maxLength={160} accessibilityLabel="Contact name" />
+        )}
+        {x.tasks.length ? (
+          <View style={{ gap: 6 }}>
+            <Text style={[type.footnote, { color: theme.textSecondary, fontWeight: '600' }]}>Tasks to create</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.separator, gap: 0, padding: 0 }]}>
+              {x.tasks.map((t, i) => (
+                <Pressable
+                  key={`${t.title}-${i}`}
+                  onPress={() => {
+                    tap();
+                    setKeep((k) => k.map((v, j) => (j === i ? !v : v)));
+                  }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: keep[i] }}
+                  accessibilityLabel={t.title}
+                  style={[styles.task, i > 0 && { borderTopColor: theme.separator, borderTopWidth: StyleSheet.hairlineWidth }]}
+                >
+                  <Ionicons name={keep[i] ? 'checkbox' : 'square-outline'} size={22} color={keep[i] ? theme.accent : theme.textTertiary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[type.subhead, { color: keep[i] ? theme.text : theme.textTertiary }]}>{t.title}</Text>
+                    {t.due_in_hours ? <Text style={[type.caption, { color: theme.textSecondary }]}>Due in {t.due_in_hours} h</Text> : null}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+            {forCase ? null : <Text style={[type.caption, { color: theme.textSecondary }]}>The usual follow-ups for this type of help are added too.</Text>}
+          </View>
+        ) : null}
+        <Original text={r.raw_text} spoken={r.source === 'audio'} />
+      </MoreDetails>
+
       <Discard id={r.id} />
     </View>
   );
@@ -284,15 +305,28 @@ function Original({ text, spoken = false }: { text: string | null; spoken?: bool
 
 function Discard({ id }: { id: string }) {
   const discard = useDiscardRecord(id);
+  const [asking, setAsking] = useState(false);
   return (
     <View style={{ gap: space.sm }}>
       {discard.error ? <ErrorBanner error={discard.error} /> : null}
-      <Button
-        label="Discard debrief"
-        icon="trash-outline"
-        variant="plain"
+      <Button label="Discard debrief" icon="trash-outline" variant="plain" loading={discard.isPending} onPress={() => setAsking(true)} />
+      <ConfirmSheet
+        visible={asking}
+        title="Discard this debrief?"
+        body="Its text is deleted and no case is made. This can’t be undone."
+        confirmLabel="Discard debrief"
+        destructive
         loading={discard.isPending}
-        onPress={() => discard.mutate(undefined, { onSuccess: () => router.replace('/staff') })}
+        onConfirm={() =>
+          discard.mutate(undefined, {
+            onSuccess: () => {
+              setAsking(false);
+              router.replace('/staff');
+            },
+            onError: () => setAsking(false),
+          })
+        }
+        onCancel={() => setAsking(false)}
       />
     </View>
   );
@@ -304,7 +338,7 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   risks: { borderRadius: 14, padding: space.md, gap: 6 },
   risk: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  label: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
+  label: { fontSize: 13, fontWeight: '800' },
   multiline: { minHeight: 100, textAlignVertical: 'top', paddingTop: space.sm },
   task: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },

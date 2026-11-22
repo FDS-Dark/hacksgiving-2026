@@ -38,7 +38,7 @@ export default function AlertScreen() {
   if (detail.isPending) {
     return (
       <Page contentStyle={{ maxWidth: 720, gap: space.lg }}>
-        <BackLink label="Today" fallback="/staff" />
+        <BackLink to="/staff" label="Today" />
         <CardSkeleton lines={3} />
       </Page>
     );
@@ -46,7 +46,7 @@ export default function AlertScreen() {
   if (!detail.data) {
     return (
       <Page contentStyle={{ maxWidth: 720 }}>
-        <BackLink label="Today" fallback="/staff" />
+        <BackLink to="/staff" label="Today" />
         <ErrorBanner error={detail.error} onRetry={() => detail.refetch()} />
       </Page>
     );
@@ -62,7 +62,7 @@ export default function AlertScreen() {
 
   return (
     <Page refreshing={detail.isRefetching} onRefresh={() => detail.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Today" fallback="/staff" />
+      <BackLink to="/staff" label="Today" />
       {errorBanner}
       <Text accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
         #{a.case_number} {a.case_title}
@@ -129,7 +129,7 @@ function Respond({
         <Text style={[type.subhead, styles.urgentBarText]}>Urgent · {CATEGORY_LABEL[a.category]}</Text>
       </View>
       <Page refreshing={refreshing} onRefresh={onRefresh} contentStyle={{ maxWidth: 720, gap: space.lg, paddingTop: space.md }}>
-        <BackLink label="Today" fallback="/staff" />
+        <BackLink to="/staff" label="Today" />
         <Call911Line />
         {error}
         <Text style={[styles.title, { color: theme.text }]} selectable>
@@ -210,7 +210,7 @@ function Responding({
   return (
     <View style={{ flex: 1 }}>
       <Page refreshing={refreshing} onRefresh={onRefresh} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-        <BackLink label="Today" fallback="/staff" />
+        <BackLink to="/staff" label="Today" />
         <View style={styles.respondingHead}>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.text, flex: 1 }]}>
             Responding

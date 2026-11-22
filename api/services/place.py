@@ -21,12 +21,11 @@ import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from adapters.geocoder import Geocoder, GeocoderError, street_query
-from adapters.milwaukee import in_milwaukee
+from adapters.geocoder import Geocoder, GeocoderError, in_milwaukee, street_query
 from databridge.place import PlaceDatabridge
 from databridge.public_data import PublicDataDatabridge
-from loader.geo import AreaIndex, in_geometry
 from models.place import CasePlace, PendingPlace, PlaceSource, PlaceStatus
+from services.geo import AreaIndex, in_geometry
 
 logger = logging.getLogger(__name__)
 

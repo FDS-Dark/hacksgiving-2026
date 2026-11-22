@@ -38,7 +38,7 @@ export default function MyTasksScreen() {
 
   return (
     <Page refreshing={tasks.isRefetching} onRefresh={() => tasks.refetch()} contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Today" fallback="/staff" />
+      <BackLink to="/staff" label="Today" />
       <View style={{ gap: 4 }}>
         <Text accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
           My tasks

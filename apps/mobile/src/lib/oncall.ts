@@ -40,13 +40,13 @@ export function untilLabel(shift: Pick<ShiftLike, 'ends_at'>) {
 
 /** The card's title: "You're on call", or plain "On call" while off. */
 export function oncallTitle(now: OncallNowLike) {
-  return now.me.on_call ? 'You’re on call' : 'On call';
+  return now.me.on_call ? 'You’re on call' : 'You’re off call';
 }
 
 /**
  * The line under it:
  * - on call: "Until 11 PM · Devon is next in line"
- * - off call, someone else on: "You're off call · Maria is on until 11 PM"
+ * - off call, someone else on: "Maria is on call until 11 PM" (the title says you're off)
  * - nobody: "Nobody is on call"
  */
 export function oncallSubtitle(now: OncallNowLike) {
@@ -57,7 +57,7 @@ export function oncallSubtitle(now: OncallNowLike) {
   }
   const lead = now.on_call[0];
   if (!lead) return 'Nobody is on call';
-  return `You’re off call · ${firstName(lead.display_name)} is on until ${clock(lead.ends_at)}`;
+  return `${firstName(lead.display_name)} is on call until ${clock(lead.ends_at)}`;
 }
 
 // ── Days ─────────────────────────────────────────────────────────────────

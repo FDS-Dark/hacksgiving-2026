@@ -88,7 +88,7 @@ export default function StaffMapScreen() {
             {selected ? <CaseLine item={selected} /> : null}
             {unpinned ? (
               <Text style={[type.footnote, { color: theme.textSecondary }]}>
-                {unpinned} open case{unpinned === 1 ? ' has' : 's have'} no location and only show in the queue.
+                {unpinned} open case{unpinned === 1 ? ' has' : 's have'} no location. Find {unpinned === 1 ? 'it' : 'them'} in Queue.
               </Text>
             ) : null}
           </>

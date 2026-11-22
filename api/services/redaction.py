@@ -50,6 +50,14 @@ _NOT_NAMES = {
 }
 
 
+def find_phone(text: str | None) -> str | None:
+    """The first phone number in what the author wrote, as written. The AI
+    never sees it (it's redacted); the review screen offers it as the
+    callback number so it isn't lost on the way to the case."""
+    match = _PHONE.search(text or "")
+    return match.group(0).strip() if match else None
+
+
 class Redactor(Protocol):
     def redact(self, text: str) -> str: ...
 

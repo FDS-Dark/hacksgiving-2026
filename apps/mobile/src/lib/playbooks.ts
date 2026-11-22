@@ -97,7 +97,7 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     steps: [
       "Find the nearest open pantry or meal site on Hunger Task Force's emergency food map, or through 2-1-1.",
       'Call ahead when you can: hours change. Tell them who is coming.',
-      'If they cannot travel, arrange a ride (Transportation) or a delivery program.',
+      'If they cannot travel, arrange a ride (Ride help) or a delivery program.',
       'Screen for longer-term help: FoodShare (SNAP), WIC for young children, school meals.',
       'Log the referral and check in after the first visit.',
     ],
@@ -118,15 +118,15 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     ],
     steps: [
       'Court dates and medical appointments come first: confirm the time and address.',
-      'For regular trips, check reduced-fare bus eligibility (WisGo card: seniors, kids, people with disabilities, Medicare).',
-      'For riders with disabilities, Transit Plus paratransit must be booked a day ahead.',
+      'For regular trips, check whether the rider can get a reduced-fare WisGo card.',
+      'Transit Plus serves riders with disabilities. Book at least one day ahead.',
       'If no option works in time, escalate to a lead for a ComForce ride or bus pass.',
       'Log the ride details and confirm it happened.',
     ],
     avoid: ['Booking a ride that arrives after the appointment starts: leave a buffer.'],
     contacts: [
       { name: 'MCTS reduced fare (WisGo)', detail: 'Half-price bus fare for eligible riders.', url: 'https://www.ridemcts.com/fares/reduced-fare' },
-      { name: 'MCTS Transit Plus', detail: 'Paratransit vans for riders with disabilities; book 24 hours ahead.', phone: '414-343-1700', url: 'https://www.ridemcts.com/accessibility/transit-plus' },
+      { name: 'MCTS Transit Plus', detail: 'Accessible vans are available. Book 24 hours ahead.', phone: '414-343-1700', url: 'https://www.ridemcts.com/accessibility/transit-plus' },
     ],
   },
 
@@ -258,7 +258,7 @@ export const PLAYBOOKS: Record<CaseCategory, Playbook> = {
     ask: ['What is the most important thing you need help with today?', 'Is anyone in danger?', 'What have you already tried?'],
     steps: [
       'Talk with the person and figure out the main need.',
-      'Re-route the case to the right service in Triage below; the matching guide will show up.',
+      'Change the type of help under Update; the matching guide will show up.',
       'If nothing fits, use 2-1-1 to find the right agency, and record the referral.',
     ],
     avoid: ['Closing a request because it does not fit a category: route it instead.'],

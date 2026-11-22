@@ -19,15 +19,20 @@ resource "auth0_resource_server" "api" {
 
 # ── Mobile app (Native, public client, PKCE) ─────────────────────────────
 resource "auth0_client" "mobile" {
-  name            = "Hacksgiving Mobile"
-  description     = "Hacksgiving iOS/Android app (Expo). Universal Login in the system browser, auth code + PKCE."
+  # Universal Login shows the client's name to residents, so it is the
+  # service they know, not the project's. The description says which client.
+  name            = "ComForce MKE"
+  description     = "Hacksgiving iOS/Android app builds (Expo). Universal Login in the system browser, auth code + PKCE."
   app_type        = "native"
   is_first_party  = true
   oidc_conformant = true
 
-  # Builds only. Expo Go's exp:// callbacks belong to Hacksgiving Mobile (dev).
-  callbacks   = var.native_callback_urls
-  grant_types = ["authorization_code", "refresh_token"]
+  # Builds, plus the production website (<origin>/auth, and CORS for its
+  # token exchange). Expo Go's exp:// callbacks belong to the dev client (mobile_dev).
+  callbacks       = concat(var.native_callback_urls, [for o in var.web_origins : "${o}/auth"])
+  allowed_origins = var.web_origins
+  web_origins     = var.web_origins
+  grant_types     = ["authorization_code", "refresh_token"]
 
   jwt_configuration {
     alg = "RS256"
@@ -59,8 +64,9 @@ resource "auth0_client_credentials" "mobile" {
 # machine. Same settings otherwise; .env.local uses this client's id
 # (output mobile_dev_env).
 resource "auth0_client" "mobile_dev" {
-  name            = "Hacksgiving Mobile (dev)"
-  description     = "Hacksgiving in Expo Go during development. Universal Login in the system browser, auth code + PKCE."
+  # The same name on the login page as the build client (see above).
+  name            = "ComForce MKE"
+  description     = "Hacksgiving dev client: Expo Go during development. Universal Login in the system browser, auth code + PKCE."
   app_type        = "native"
   is_first_party  = true
   oidc_conformant = true

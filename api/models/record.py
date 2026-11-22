@@ -98,6 +98,11 @@ class Record(ApiModel):
     # What the author typed or said (the transcript). Staff only.
     raw_text: str | None
     extraction: Extraction | None
+    callback_phone: str | None = Field(
+        default=None,
+        description="The first phone number in `raw_text`, for the review screen to offer as the contact phone. "
+        "Found by the API, never shown to the AI (the redacted text has no phone numbers).",
+    )
     # Before confirm: the existing case the debrief is about (None: it will
     # open a new case). After: the case it became or updated.
     case_id: UUID | None

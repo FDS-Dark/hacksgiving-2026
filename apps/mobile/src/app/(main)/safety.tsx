@@ -1,9 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { SafetyMap, type AreaSelection } from '@/components/SafetyMap';
-import { BackLink } from '@/components/BackLink';
 import { Page } from '@/components/Page';
 import { ResidentHeader } from '@/components/resident';
 import { Button, Chip, Chips, EmptyState, Field, Group, Notice, Row, Sheet, Txt, success } from '@/components/ui';
@@ -118,10 +118,17 @@ export default function SafetyScreen() {
 
   return (
     <>
-      <Page refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
-        <BackLink label="Back" fallback="/nearby" />
-        <ResidentHeader title="Neighborhood awareness" />
-        <Txt variant="subhead" tone="secondary">Recent, generalized public safety activity from official public feeds.</Txt>
+      <Page header={<ResidentHeader title="Neighborhood awareness" />} refreshing={safety.isRefetching || calls.isRefetching} onRefresh={refresh}>
+        <Txt variant="subhead" tone="secondary">Recent public safety calls. Locations are approximate.</Txt>
+        <Group>
+          <Row
+            title="Safety alerts"
+            subtitle="Weather warnings and reports near you"
+            icon="notifications-outline"
+            accessory="chevron"
+            onPress={() => router.push('/alerts')}
+          />
+        </Group>
 
         <View style={{ gap: space.md }}>
           <View style={styles.sectionHeading}>
@@ -163,7 +170,7 @@ export default function SafetyScreen() {
           </Chips>
           <SafetyMap points={visiblePoints} recentCalls={visibleCalls} windowDays={windowDays} onSelectArea={setSelectedArea} />
           <Txt variant="footnote" tone="secondary">
-            Tap anywhere on the heatmap to inspect recent reports within about 1.5 miles. Dark-ringed markers are delayed 911 calls at approximate locations—not confirmed crimes. All locations are generalized.
+            Tap the map to see reports within about 1.5 miles. Dark-ringed dots are public safety calls. They may be 30–90 minutes old, and a call does not mean a crime happened. All locations are approximate.
           </Txt>
           {safety.isUnavailable ? (
             <Notice icon="cloud-offline-outline">City incident data is unavailable right now, so the map is empty. Pull down to retry.</Notice>
@@ -190,7 +197,7 @@ export default function SafetyScreen() {
           error={calls.isError}
         />
 
-        <Button label="Report nearby activity" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />
+        <Button label="Report something nearby" icon="add-circle-outline" size="lg" onPress={() => setReportOpen(true)} />
 
         <Notice icon="warning-outline" tone="warning">
           For an emergency or immediate danger, call 911. This map is informational and is not monitored by emergency services.
@@ -198,7 +205,7 @@ export default function SafetyScreen() {
 
         <Group
           header="Get help"
-          footer="NearMKE only shows public-facing information. It does not expose case notes, identities, or internal partner records."
+          footer="NearMKE shows only public information. It never shows case notes, names or partner records."
         >
           <Row
             title="Emergency services"
@@ -222,7 +229,7 @@ export default function SafetyScreen() {
       <Sheet
         visible={reportOpen}
         onClose={() => setReportOpen(false)}
-        title="Report nearby activity"
+        title="Report something nearby"
         subtitle="Share only what neighbors need to stay aware. Reports stay on this device in the MVP."
         dismissLabel="Cancel"
       >
@@ -261,14 +268,14 @@ export default function SafetyScreen() {
           </Txt>
         </View>
 
-        <Button label="Add generalized report" icon="location-outline" size="lg" onPress={submitReport} />
+        <Button label="Add report" icon="location-outline" size="lg" onPress={submitReport} />
       </Sheet>
 
       <Sheet
         visible={selectedArea !== null}
         onClose={() => setSelectedArea(null)}
         title="Recent activity in this area"
-        subtitle="Official public reports and dispatch calls within approximately 1.5 miles."
+        subtitle="Public reports and public safety calls within about 1.5 miles."
       >
         {areaSummary?.total || selectedArea?.calls.length ? (
           <>
@@ -317,7 +324,7 @@ export default function SafetyScreen() {
               </>
             ) : null}
             {selectedArea?.calls.length ? (
-              <Group header="Recent dispatch calls" footer="Calls are delayed and unconfirmed; they are not counted in the heat intensity.">
+              <Group header="Recent public safety calls" footer="These calls may be old, and a call does not mean a crime happened. They are not part of the heat map.">
                 {selectedArea.calls.slice(0, 10).map((call) => (
                   <Row
                     key={call.id}

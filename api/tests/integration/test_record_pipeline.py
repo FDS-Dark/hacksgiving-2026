@@ -11,7 +11,7 @@ from databridge.job import JobDatabridge
 from databridge.record import RecordDatabridge
 from models.record import Extraction, ExtractedTask
 from services.extraction import ExtractionFailed
-from services.pipeline import ExtractStage, RedactStage, Stage
+from services.pipeline import EXTRACT, REDACT, TRANSCRIBE, ExtractStage, RedactStage, Stage
 from services.redaction import PatternRedactor
 from tests.helpers import auth_header
 from tests.integration.conftest import app_executor
@@ -54,7 +54,7 @@ async def worker_api(api, admin_conn):
 
 
 @pytest.fixture
-async def pipeline(database):
+async def pipeline(database, admin_conn):
     """A runner like the worker process's, with a fake AI. `run()` works the
     queue until nothing is left for these stages."""
     executor = app_executor(database)
@@ -70,6 +70,13 @@ async def pipeline(database):
         stages,
         worker_id=f"test-{uuid4().hex[:6]}",
         lease_seconds=120,
+    )
+    # The jobs table is shared across the suite: start from an empty queue for
+    # the record stages, so a job another test left queued (a delayed retry)
+    # isn't claimed here (see test_voice_records.py's fixture too).
+    await admin_conn.execute(
+        "DELETE FROM app.jobs WHERE kind = ANY($1::text[]) AND status IN ('queued', 'running')",
+        [TRANSCRIBE, REDACT, EXTRACT],
     )
 
     async def run() -> None:
@@ -129,6 +136,58 @@ async def test_a_debrief_becomes_a_case(api, worker_api, pipeline, admin_conn):
         record["id"],
     )
     assert live == 0
+
+
+async def test_the_callback_phone_in_a_debrief_reaches_the_case_and_its_task(api, worker_api, pipeline):
+    """Regression (cognitive-load review S2): the phone the worker said in the
+    debrief is redacted before the AI reads it, and used to vanish on the way
+    to the case. The review offers it, and the case and its callback task
+    keep it."""
+    created = await api.post("/v1/records", headers=worker_api, json={"text": DEBRIEF})
+    record_id = created.json()["id"]
+    await pipeline.run()
+    assert "555-0182" not in pipeline.extractor.seen[-1]
+
+    ready = (await api.get(f"/v1/records/{record_id}", headers=worker_api)).json()
+    assert ready["callback_phone"] == "414-555-0182"
+
+    review = {
+        "title": "Family evicted, needs a bed tonight",
+        "summary": "Call back at [phone] about a bed.",
+        "category": "homelessness",
+        "priority": "high",
+        "contact_phone": ready["callback_phone"],
+        "tasks": [{"title": "Call back at [phone]", "due_in_hours": 1}],
+    }
+    confirmed = await api.post(f"/v1/records/{record_id}/confirm", headers=worker_api, json=review)
+    assert confirmed.status_code == 200, confirmed.text
+    case_id = confirmed.json()["case"]["id"]
+
+    detail = (await api.get(f"/v1/cases/{case_id}", headers=worker_api)).json()
+    assert detail["case"]["contact_phone"] == "414-555-0182"
+    tasks = {t["title"]: t for t in detail["tasks"]}
+    assert "414-555-0182" in tasks["Call the requester"]["detail"]
+    # The number stays out of the title, summary and task titles: those reach
+    # the AI assistant and push notifications.
+    assert "555-0182" not in detail["case"]["title"] + detail["case"]["description"]
+    assert all("555-0182" not in t["title"] for t in detail["tasks"])
+
+
+async def test_a_debrief_confirmed_without_a_contact_field_keeps_the_phone(api, worker_api, pipeline):
+    """A client that leaves contact_phone out still gets the number the author
+    wrote; an explicit null (the author removed it) is respected."""
+    first = (await api.post("/v1/records", headers=worker_api, json={"text": DEBRIEF})).json()["id"]
+    second = (await api.post("/v1/records", headers=worker_api, json={"text": DEBRIEF})).json()["id"]
+    await pipeline.run()
+
+    review = {"title": "Family evicted", "category": "homelessness"}
+    kept = (await api.post(f"/v1/records/{first}/confirm", headers=worker_api, json=review)).json()
+    removed = (
+        await api.post(f"/v1/records/{second}/confirm", headers=worker_api, json=review | {"contact_phone": None})
+    ).json()
+
+    assert kept["case"]["contact_phone"] == "414-555-0182"
+    assert removed["case"]["contact_phone"] is None
 
 
 async def test_a_debrief_about_an_existing_case_updates_it(api, worker_api, pipeline):

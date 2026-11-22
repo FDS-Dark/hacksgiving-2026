@@ -15,6 +15,7 @@ const MUTABLE: { kind: NotificationKind; title: string; subtitle: string }[] = [
   { kind: 'reply', title: 'Resident replies', subtitle: 'New messages on your cases' },
   { kind: 'task_due', title: 'Task reminders', subtitle: 'Follow-ups coming due' },
   { kind: 'referral_update', title: 'Referral updates', subtitle: 'A partner accepted, declined or finished one' },
+  { kind: 'chat_rapid', title: 'Rapid response messages', subtitle: 'A teammate flags a chat message urgent' },
 ];
 
 /**
@@ -32,7 +33,7 @@ export default function NotificationSettingsScreen() {
 
   return (
     <Page refreshing={prefs.isRefetching} onRefresh={() => prefs.refetch()} contentStyle={{ maxWidth: 640, gap: space.lg }}>
-      <BackLink label="Me" fallback="/staff/me" />
+      <BackLink to="/staff/me" label="Me" />
       <View style={{ gap: 4 }}>
         <Text accessibilityRole="header" style={[styles.title, { color: theme.text }]}>
           Notifications

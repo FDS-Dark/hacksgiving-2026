@@ -26,6 +26,10 @@ class NotificationKind(StrEnum):
     URGENT_UNANSWERED = "urgent_unanswered"
     # A serious weather alert, to residents who opted in (services/weather_jobs.py).
     COMMUNITY_ALERT = "community_alert"
+    # New team-chat messages since you last read a channel: inbox only, never pushed.
+    CHAT_MESSAGE = "chat_message"
+    # A rapid-response chat message: pushed (generic text) to the channel's members.
+    CHAT_RAPID = "chat_rapid"
 
 
 class StoredNotification(ApiModel):
@@ -69,6 +73,8 @@ class NotificationFacts(ApiModel):
     referral_status: ReferralStatus | None = None
     resource_name: str | None = None
     alert_id: UUID | None = None
+    # chat_* rows: team, oncall or case (the case is case_id).
+    chat_channel: str | None = None
     created_at: datetime
     read_at: datetime | None = None
 

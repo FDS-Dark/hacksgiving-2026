@@ -90,6 +90,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recently Worked
+         * @description The cases the signed-in worker touched most recently (a note, a
+         *     message, a change, a finished task, or opening it), newest first, each
+         *     with when and how they last did.
+         */
+        get: operations["recently_worked_v1_cases_recent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}": {
         parameters: {
             query?: never;
@@ -305,6 +327,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cases/{case_id}/partner-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Partner Requests
+         * @description Who on staff asked which partner for what on this case, newest first.
+         */
+        get: operations["list_partner_requests_v1_cases__case_id__partner_requests_get"];
+        put?: never;
+        /**
+         * Request Partner Help
+         * @description Ask a partner for help with the case. Sends the need, your note, the
+         *     case number and your name; the person's name and phone or location only
+         *     when the case has a live consented share with that partner that included
+         *     them. `delivery: sms` is texted by the worker; `compose` returns the
+         *     message for you to send from your own email or phone. Logged on the
+         *     case's history. 409 `partner_inactive`.
+         */
+        post: operations["request_partner_help_v1_cases__case_id__partner_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/cases/{case_id}/person": {
         parameters: {
             query?: never;
@@ -474,6 +525,89 @@ export interface paths {
          *     the requester sees on their request.
          */
         post: operations["add_case_update_v1_cases__case_id__updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Channels
+         * @description Team and On call, then the case channels you belong to (assigned,
+         *     opened, or wrote in) that have messages, with unread counts.
+         */
+        get: operations["list_channels_v1_chat_channels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/channels/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Thread
+         * @description The channel and its newest messages, oldest first. Doesn't mark it
+         *     read: the app does that while the thread is on screen.
+         */
+        get: operations["get_thread_v1_chat_channels__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/channels/{key}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Message
+         * @description Post to a channel. Members get an inbox row; with `rapid: true` they
+         *     are also pushed ("New message in Team chat", never the text).
+         */
+        post: operations["send_message_v1_chat_channels__key__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/channels/{key}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Read
+         * @description You've read the channel up to now; its inbox rows are cleared.
+         */
+        post: operations["mark_read_v1_chat_channels__key__read_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -670,6 +804,29 @@ export interface paths {
          * @description Sign-out, before the session is cleared. 204 even if it wasn't there.
          */
         delete: operations["remove_device_v1_me_devices__token__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export My Records
+         * @description Your debriefs (summary and fields, never the text or audio), the cases
+         *     assigned to or opened by you, the tasks you completed and the referral
+         *     outcomes you confirmed, with a summary at the top. Only your own; never
+         *     a resident's phone, email or name.
+         */
+        get: operations["export_my_records_v1_me_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2802,6 +2959,98 @@ export interface components {
             /** Total */
             total: number;
         };
+        /**
+         * ChatChannel
+         * @description One channel as the caller sees it. `key` is how routes name it:
+         *     `team`, `oncall`, or the case's id.
+         */
+        ChatChannel: {
+            /** Case Id */
+            case_id: string | null;
+            /** Case Number */
+            case_number: number | null;
+            /** Case Title */
+            case_title: string | null;
+            channel: components["schemas"]["ChatChannelKind"];
+            /** Key */
+            key: string;
+            /** Last Author Name */
+            last_author_name: string | null;
+            /** Last Message */
+            last_message: string | null;
+            /** Last Message At */
+            last_message_at: string | null;
+            /** Last Read At */
+            last_read_at: string | null;
+            /**
+             * Name
+             * @description Team, On call, or Case #1048.
+             */
+            name: string;
+            /**
+             * Rapid Unread
+             * @description Of those, rapid-response ones.
+             */
+            rapid_unread: number;
+            /**
+             * Unread
+             * @description Messages from others since the caller last read the channel.
+             */
+            unread: number;
+        };
+        /**
+         * ChatChannelKind
+         * @enum {string}
+         */
+        ChatChannelKind: "team" | "oncall" | "case";
+        /** ChatMessage */
+        ChatMessage: {
+            /** Author Id */
+            author_id: string | null;
+            /** Author Name */
+            author_name: string | null;
+            /** Body */
+            body: string;
+            /** Case Id */
+            case_id: string | null;
+            channel: components["schemas"]["ChatChannelKind"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rapid */
+            rapid: boolean;
+            /**
+             * Read By
+             * @description People other than the author who have read it.
+             */
+            read_by: number;
+        };
+        /** ChatReadResult */
+        ChatReadResult: {
+            /**
+             * Last Read At
+             * Format: date-time
+             */
+            last_read_at: string;
+            /** Notifications Read */
+            notifications_read: number;
+        };
+        /** ChatThread */
+        ChatThread: {
+            channel: components["schemas"]["ChatChannel"];
+            /**
+             * Messages
+             * @description Oldest first.
+             */
+            messages: components["schemas"]["ChatMessage"][];
+        };
         /** ClaimHandoffRequest */
         ClaimHandoffRequest: {
             /** Code */
@@ -3013,6 +3262,21 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** CreatePartnerRequest */
+        CreatePartnerRequest: {
+            /** @description The service the help is for. */
+            need: components["schemas"]["CaseCategory"];
+            /**
+             * Note
+             * @description What you're asking for, in your words. Leave out names and numbers.
+             */
+            note: string;
+            /**
+             * Partner Id
+             * Format: uuid
+             */
+            partner_id: string;
+        };
         /**
          * CreateRecordRequest
          * @description A typed debrief. (Voice records upload audio first; see the pipeline.)
@@ -3140,6 +3404,27 @@ export interface components {
             value: number | null;
         };
         /**
+         * DeliveredBy
+         * @description Who delivered a completed referral's help: the referral's own
+         *     resource (the provider), or ComForce MKE itself (a named worker).
+         * @enum {string}
+         */
+        DeliveredBy: "provider" | "comforce";
+        /**
+         * DeliveredByCount
+         * @description Helped (completed) referrals confirmed in the period, by who delivered them.
+         */
+        DeliveredByCount: {
+            delivered_by: components["schemas"]["DeliveredBy"];
+            /** Helped */
+            helped: number;
+            /**
+             * Provider
+             * @description The resource's name, or ComForce MKE.
+             */
+            provider: string;
+        };
+        /**
          * DeliveryStatus
          * @enum {string}
          */
@@ -3198,6 +3483,29 @@ export interface components {
              * @description Write it in this language. Default: the case's language, else the resident's own.
              */
             language?: string | null;
+        };
+        /** ExportSummary */
+        ExportSummary: {
+            /** Cases */
+            cases: number;
+            /** Cases Resolved */
+            cases_resolved: number;
+            /** Debriefs */
+            debriefs: number;
+            /** Outcomes Confirmed */
+            outcomes_confirmed: number;
+            /**
+             * People Helped
+             * @description Your cases that were resolved or had a referral that helped.
+             */
+            people_helped: number;
+            /**
+             * Referrals Helped
+             * @description Your cases' referrals marked completed.
+             */
+            referrals_helped: number;
+            /** Tasks Completed */
+            tasks_completed: number;
         };
         /** ExtractedTask */
         ExtractedTask: {
@@ -3430,6 +3738,11 @@ export interface components {
             by_category: components["schemas"]["CategoryCount"][];
             /** Days */
             days: number;
+            /**
+             * Delivered By
+             * @description Most helped first.
+             */
+            delivered_by: components["schemas"]["DeliveredByCount"][];
             /** District */
             district: string | null;
             /** Districts */
@@ -3612,7 +3925,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered" | "community_alert";
+        NotificationKind: "assignment" | "reply" | "request_update" | "task_due" | "referral_update" | "test" | "urgent_offer" | "urgent_unanswered" | "community_alert" | "chat_message" | "chat_rapid";
         /**
          * NotificationPreferences
          * @description Push settings (push arrives in phase 2). The inbox ignores them: it
@@ -3983,6 +4296,72 @@ export interface components {
             /** Website */
             website?: string | null;
         };
+        /** PartnerRequest */
+        PartnerRequest: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            delivery: components["schemas"]["PartnerRequestDelivery"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Included Contact
+             * @description The person's name and phone went too (a live consented share).
+             */
+            included_contact: boolean;
+            /** Included Location */
+            included_location: boolean;
+            /**
+             * Message
+             * @description Everything the partner was sent.
+             */
+            message: string;
+            need: components["schemas"]["CaseCategory"];
+            /** Note */
+            note: string;
+            /** Partner Email */
+            partner_email: string | null;
+            /**
+             * Partner Id
+             * Format: uuid
+             */
+            partner_id: string;
+            /** Partner Name */
+            partner_name: string;
+            /** Partner Phone */
+            partner_phone: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Requested By */
+            requested_by: string | null;
+            /** Requested By Name */
+            requested_by_name: string | null;
+            /** Sent At */
+            sent_at: string | null;
+            status: components["schemas"]["PartnerRequestStatus"];
+        };
+        /**
+         * PartnerRequestDelivery
+         * @description sms: texted to the partner's phone by the worker's upkeep. compose:
+         *     the app opens the worker's own email or phone with the message.
+         * @enum {string}
+         */
+        PartnerRequestDelivery: "sms" | "compose";
+        /**
+         * PartnerRequestStatus
+         * @enum {string}
+         */
+        PartnerRequestStatus: "pending" | "sent" | "failed" | "composed";
         /**
          * PassReason
          * @enum {string}
@@ -4103,6 +4482,8 @@ export interface components {
         /** PublicRequest */
         PublicRequest: {
             category: components["schemas"]["CaseCategory"];
+            /** @description How the requester asked to be reached; null when the form didn't ask. */
+            contact_method: components["schemas"]["ContactMethod"] | null;
             /**
              * Created At
              * Format: date-time
@@ -4129,6 +4510,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Worker First Name
+             * @description First name of the ComForce worker the request is assigned to; null until someone is. Nothing else about staff reaches the requester.
+             */
+            worker_first_name: string | null;
         };
         /** PublicRequestDetail */
         PublicRequestDetail: {
@@ -4192,6 +4578,11 @@ export interface components {
              * Format: uuid
              */
             author_id: string;
+            /**
+             * Callback Phone
+             * @description The first phone number in `raw_text`, for the review screen to offer as the contact phone. Found by the API, never shown to the AI (the redacted text has no phone numbers).
+             */
+            callback_phone: string | null;
             /** Case Id */
             case_id: string | null;
             /** Confirmed At */
@@ -4242,6 +4633,23 @@ export interface components {
          * @enum {string}
          */
         RecordStatus: "processing" | "ready" | "confirming" | "confirmed" | "failed" | "discarded";
+        /**
+         * RecordsExport
+         * @description One CSV file: a summary at the top, then a section per kind of record
+         *     (debriefs, cases, tasks, referral outcomes).
+         */
+        RecordsExport: {
+            /** Csv */
+            csv: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            summary: components["schemas"]["ExportSummary"];
+        };
         /** Referral */
         Referral: {
             /**
@@ -4249,6 +4657,12 @@ export interface components {
              * Format: uuid
              */
             case_id: string;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Confirmed By */
+            confirmed_by: string | null;
+            /** Confirmed By Name */
+            confirmed_by_name: string | null;
             /**
              * Created At
              * Format: date-time
@@ -4256,6 +4670,12 @@ export interface components {
             created_at: string;
             /** Created By */
             created_by: string | null;
+            /** @description Set once the referral is completed. */
+            delivered_by: components["schemas"]["DeliveredBy"] | null;
+            /** Delivered By Worker Id */
+            delivered_by_worker_id: string | null;
+            /** Delivered By Worker Name */
+            delivered_by_worker_name: string | null;
             /**
              * Id
              * Format: uuid
@@ -4478,6 +4898,29 @@ export interface components {
             safe_to_contact: boolean;
             /** Voicemail Allowed */
             voicemail_allowed: boolean;
+        };
+        /** SendChatMessageRequest */
+        SendChatMessageRequest: {
+            /** Body */
+            body: string;
+            /**
+             * Rapid
+             * @description Rapid response: pushes the channel's members (generic lock-screen text only).
+             * @default false
+             */
+            rapid?: boolean;
+        };
+        /**
+         * SentPartnerRequest
+         * @description A new request, and (for `compose`) the message to send from the
+         *     worker's own email or phone.
+         */
+        SentPartnerRequest: {
+            /** Message */
+            message: string;
+            request: components["schemas"]["PartnerRequest"];
+            /** Subject */
+            subject: string;
         };
         /**
          * Service
@@ -4980,6 +5423,13 @@ export interface components {
         };
         /** UpdateReferralRequest */
         UpdateReferralRequest: {
+            /** @description With status completed (or on a completed referral): who delivered the help. Defaults to the provider. You are recorded as the one who confirmed it. */
+            delivered_by?: components["schemas"]["DeliveredBy"] | null;
+            /**
+             * Delivered By Worker Id
+             * @description With delivered_by comforce: which worker (default: you).
+             */
+            delivered_by_worker_id?: string | null;
             /** Outcome */
             outcome?: string | null;
             status?: components["schemas"]["ReferralStatus"] | null;
@@ -5479,6 +5929,78 @@ export interface components {
              */
             status: string;
         };
+        /**
+         * WorkedCase
+         * @description A case the current worker touched, with when and how they last did.
+         */
+        WorkedCase: {
+            /** Assigned Worker Id */
+            assigned_worker_id: string | null;
+            /** Assigned Worker Name */
+            assigned_worker_name: string | null;
+            category: components["schemas"]["CaseCategory"];
+            /** Contact Email */
+            contact_email: string | null;
+            contact_method: components["schemas"]["ContactMethod"] | null;
+            /** Contact Name */
+            contact_name: string | null;
+            /** Contact Phone */
+            contact_phone: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["CaseKind"];
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Location */
+            location: string | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Number */
+            number: number;
+            priority: components["schemas"]["CasePriority"];
+            /** Referral Count */
+            referral_count: number;
+            /** Requester Id */
+            requester_id: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Safe To Contact */
+            safe_to_contact: boolean | null;
+            source: components["schemas"]["CaseSource"];
+            status: components["schemas"]["CaseStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Worked At
+             * Format: date-time
+             * @description When this worker last wrote on the case (or opened it).
+             */
+            worked_at: string;
+            /** @description What that last entry was: a note, a status change, opening it… */
+            worked_type: components["schemas"]["UpdateType"];
+        };
         /** Worker */
         Worker: {
             /** Display Name */
@@ -5641,6 +6163,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LanguageOption"][];
+                };
+            };
+        };
+    };
+    recently_worked_v1_cases_recent_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkedCase"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6069,6 +6622,72 @@ export interface operations {
             };
         };
     };
+    list_partner_requests_v1_cases__case_id__partner_requests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PartnerRequest"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_partner_help_v1_cases__case_id__partner_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePartnerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentPartnerRequest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_case_person_v1_cases__case_id__person_get: {
         parameters: {
             query?: never;
@@ -6357,6 +6976,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseUpdate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_channels_v1_chat_channels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatChannel"][];
+                };
+            };
+        };
+    };
+    get_thread_v1_chat_channels__key__get: {
+        parameters: {
+            query?: {
+                /** @description Only messages before this (older ones) */
+                before?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatThread"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_v1_chat_channels__key__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendChatMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_read_v1_chat_channels__key__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatReadResult"];
                 };
             };
             /** @description Validation Error */
@@ -6671,6 +7411,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_my_records_v1_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordsExport"];
                 };
             };
         };

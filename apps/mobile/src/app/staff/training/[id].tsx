@@ -22,7 +22,7 @@ export default function LessonScreen() {
   if (!lesson) {
     return (
       <Page>
-        <BackLink label="Training" fallback="/staff/training" />
+        <BackLink fallback="/staff/training" />
         <EmptyState icon="school-outline" title="Lesson not found" body="It may have been renamed. Pick one from the course." />
       </Page>
     );
@@ -45,7 +45,7 @@ export default function LessonScreen() {
 
   return (
     <Page contentStyle={{ maxWidth: 720, gap: space.lg }}>
-      <BackLink label="Training" fallback="/staff/training" />
+      <BackLink fallback="/staff/training" />
       <View style={styles.head}>
         <View style={[styles.icon, { backgroundColor: theme.accentSoft }]}>
           <Ionicons name={lesson.icon} size={26} color={theme.accent} />

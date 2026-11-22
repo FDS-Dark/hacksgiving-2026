@@ -52,7 +52,7 @@ export default function StaffCallDetailScreen() {
   if (review.error || !review.data) {
     return (
       <Page>
-        <BackLink label="AI phone calls" fallback="/staff/calls/index" />
+        <BackLink fallback="/staff/calls" />
         <ErrorBanner error={review.error ?? new Error('Call review not found')} onRetry={() => review.refetch()} />
       </Page>
     );
@@ -65,7 +65,7 @@ export default function StaffCallDetailScreen() {
 
   return (
     <Page refreshing={review.isRefetching} onRefresh={() => review.refetch()} contentStyle={{ maxWidth: 720, gap: space.md }}>
-      <BackLink label="AI phone calls" fallback="/staff/calls/index" />
+      <BackLink fallback="/staff/calls" />
       <PageTitle
         title={label(call.need_category, 'Community support call')}
         subtitle={`${dateTime(when)}${ended ? ` – ${ended}` : ''}`}
@@ -73,7 +73,7 @@ export default function StaffCallDetailScreen() {
       />
 
       <Notice icon="lock-closed-outline">
-        Privacy-safe review: no caller number, recording, transcript, exact address, or AI-generated risk score is available.
+        To protect callers, we don’t keep their number, the recording, a transcript, the exact address or an AI risk score.
       </Notice>
 
       <Card style={{ gap: space.lg }}>

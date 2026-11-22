@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { PublicRequest, PublicRequestUpdate } from '@/api/types';
 import { CardSkeleton } from '@/components/Skeleton';
-import { Pill, REQUEST_STEPS, ResidentScreen, StatusChip, isOpenStatus, opened, requestStep, when } from '@/components/resident';
+import { Pill, ResidentScreen, StatusChip, WaitingOn, isOpenStatus, opened, when } from '@/components/resident';
 import { ErrorBanner, success } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { useMarkCaseRead } from '@/services/notifications';
@@ -94,7 +94,7 @@ export default function RequestThreadScreen() {
             />
           ))}
           <Text style={[styles.small, { color: theme.textSecondary, textAlign: 'center' }]}>
-            Only messages ComForce sends you appear here. Internal notes stay private.
+            You will see messages from ComForce here. Staff notes are private.
           </Text>
         </>
       )}
@@ -102,17 +102,19 @@ export default function RequestThreadScreen() {
   );
 }
 
-/** The strip under the title: status, which step it's on, and when it was opened. */
+/** The card under the title: status, who it's waiting on and what happens next, and when it was opened. */
 function Where({ request: r }: { request: PublicRequest }) {
   const theme = useTheme();
   const open = isOpenStatus(r.status);
   return (
     <View style={[styles.where, { backgroundColor: open ? theme.infoSoft : theme.accentSoft }]}>
-      <StatusChip status={r.status} />
-      <Text style={[styles.small, { color: theme.text, flex: 1 }]}>
-        #{r.number}
-        {open ? ` · step ${requestStep(r.status)} of ${REQUEST_STEPS}` : ''} · {opened(r.created_at)}
-      </Text>
+      <View style={styles.whereTop}>
+        <StatusChip status={r.status} />
+        <Text style={[styles.small, { color: theme.textSecondary, flex: 1 }]}>
+          #{r.number} · {opened(r.created_at)}
+        </Text>
+      </View>
+      <WaitingOn request={r} />
     </View>
   );
 }
@@ -159,7 +161,8 @@ function readable(update: PublicRequestUpdate) {
 }
 
 const styles = StyleSheet.create({
-  where: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.sm, borderRadius: 12 },
+  where: { gap: space.sm, padding: space.md, borderRadius: 12 },
+  whereTop: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   bubble: { maxWidth: '85%', borderRadius: 16, padding: space.md, gap: 4 },
   body: { fontSize: 15, lineHeight: 21 },
   meta: { fontSize: 12 },

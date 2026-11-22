@@ -4,11 +4,11 @@
  * apart from the community app's components so the two can change freely.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { CasePriority, CaseStatus, ReferralStatus } from '@/api/types';
-import { tap, type IconName } from '@/components/ui';
+import { Button, Sheet, tap, type IconName } from '@/components/ui';
 import { PRIORITY_LABEL, STATUS_LABEL } from '@/lib/cases';
 import { radius, space, type, useTheme, type Theme } from '@/theme/tokens';
 
@@ -189,6 +189,7 @@ export function ChoiceRow<T extends string>({
     <Pressable
       key={key}
       disabled={disabled}
+      hitSlop={{ top: 4, bottom: 4 }}
       onPress={() => {
         tap();
         onPress();
@@ -229,6 +230,87 @@ export function Detail({ label, children }: { label: string; children: ReactNode
   );
 }
 
+// ── Progressive forms ──────────────────────────────────────────────────────
+
+/**
+ * "More details" and the like: the rest of a form or page, folded away so
+ * the essentials come first (cognitive-load review, top 10 #9). Starts
+ * closed unless `initiallyOpen`.
+ */
+export function MoreDetails({ label = 'More details', hint, initiallyOpen = false, children }: { label?: string; hint?: string; initiallyOpen?: boolean; children: ReactNode }) {
+  const theme = useTheme();
+  const [open, setOpen] = useState(initiallyOpen);
+  return (
+    <View style={{ gap: space.md }}>
+      <Pressable
+        onPress={() => {
+          tap();
+          setOpen((o) => !o);
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={hint && !open ? `${label}: ${hint}` : label}
+        style={({ pressed }) => [styles.more, { borderColor: theme.separator }, pressed && { opacity: 0.6 }]}
+      >
+        <Ionicons name={open ? 'chevron-down' : 'chevron-forward'} size={18} color={theme.accent} />
+        <View style={{ flex: 1 }}>
+          <Text style={[type.subhead, { color: theme.accent, fontWeight: '600' }]}>{label}</Text>
+          {hint && !open ? <Text style={[type.caption, { color: theme.textSecondary }]} numberOfLines={1}>{hint}</Text> : null}
+        </View>
+      </Pressable>
+      {open ? children : null}
+    </View>
+  );
+}
+
+// ── Drafts ─────────────────────────────────────────────────────────────────
+
+/** "Draft restored · Discard": a form came back with what the worker typed before (lib/useDraft.ts). */
+export function DraftRestored({ savedAt, onDiscard }: { savedAt: string; onDiscard: () => void }) {
+  const theme = useTheme();
+  const when = new Date(savedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return (
+    <View style={[styles.draft, { backgroundColor: theme.accentSoft }]} accessibilityRole="alert">
+      <Ionicons name="document-text-outline" size={18} color={theme.accent} />
+      <Text style={[type.subhead, { color: theme.text, flex: 1 }]}>Draft restored · saved {when}</Text>
+      <Button label="Discard" variant="plain" onPress={onDiscard} />
+    </View>
+  );
+}
+
+// ── Confirm ────────────────────────────────────────────────────────────────
+
+/**
+ * Asks before something that can't be taken back (Mark resolved, discard a
+ * draft, throw away a recording). A sheet, not Alert.alert: the web build
+ * ignores Alert's buttons.
+ */
+export function ConfirmSheet({
+  visible,
+  title,
+  body,
+  confirmLabel,
+  destructive = false,
+  loading = false,
+  onConfirm,
+  onCancel,
+}: {
+  visible: boolean;
+  title: string;
+  body: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  loading?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Sheet visible={visible} onClose={onCancel} title={title} subtitle={body} dismissLabel="Cancel">
+      <Button label={confirmLabel} size="lg" variant={destructive ? 'destructive' : 'filled'} loading={loading} onPress={onConfirm} />
+    </Sheet>
+  );
+}
+
 const styles = StyleSheet.create({
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, alignSelf: 'flex-start' },
   badgeDot: { width: 7, height: 7, borderRadius: 4 },
@@ -244,5 +326,7 @@ const styles = StyleSheet.create({
   barTrack: { height: 8, borderRadius: 4, overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
   tokens: { gap: 6, paddingRight: space.sm },
-  token: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
+  token: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, minHeight: 36 },
+  more: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
+  draft: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.lg, paddingLeft: space.md, minHeight: 44 },
 });

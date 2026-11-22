@@ -11,6 +11,7 @@ from models.case import (
     CaseUpdate,
     CategoryCount,
     ContactMethod,
+    DeliveredBy,
     PublicRequest,
     PublicRequestUpdate,
     Referral,
@@ -19,6 +20,7 @@ from models.case import (
     UpdateCaseRequest,
     UpdateType,
     Visibility,
+    WorkedCase,
 )
 
 
@@ -132,6 +134,11 @@ class CaseDatabridge(Databridge):
         rows = await self._rows("case_list_updates_this_transaction", case_id=case_id, author_id=author_id)
         return [CaseUpdate(**row) for row in rows]
 
+    async def recently_worked(self, worker_id: UUID, limit: int) -> list[WorkedCase]:
+        """The cases `worker_id` touched, most recent first (0033)."""
+        rows = await self._rows("case_recently_worked", worker_id=worker_id, limit=limit)
+        return [WorkedCase(**row) for row in rows]
+
     async def recent_activity(self, limit: int) -> list[CaseUpdate]:
         return [CaseUpdate(**row) for row in await self._rows("case_recent_activity", limit=limit)]
 
@@ -157,10 +164,14 @@ class CaseDatabridge(Databridge):
         return Referral(**row) if row else None
 
     async def update_referral(
-        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID
+        self, case_id: UUID, referral_id: UUID, status: ReferralStatus | None, outcome: str | None, actor_id: UUID,
+        delivered_by: DeliveredBy | None = None, delivered_by_worker_id: UUID | None = None,
     ) -> Referral | None:
+        """Completing it records who delivered the help and the actor as the
+        one who confirmed it (0031)."""
         row = await self._first("referral_update", case_id=case_id, referral_id=referral_id, status=status,
-                                outcome=outcome, actor_id=actor_id)
+                                outcome=outcome, actor_id=actor_id, delivered_by=delivered_by,
+                                delivered_by_worker_id=delivered_by_worker_id)
         return Referral(**row) if row else None
 
     # --- The requester's view ----------------------------------------------------

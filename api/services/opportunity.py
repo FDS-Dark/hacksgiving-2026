@@ -1,5 +1,5 @@
 """Volunteer, job and education opportunities: staff post and close them,
-the data loader imports more (api/loader), residents search the open ones."""
+the data loader imports more (dataloader/), residents search the open ones."""
 
 from uuid import UUID
 

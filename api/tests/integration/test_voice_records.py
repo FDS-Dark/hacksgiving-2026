@@ -13,7 +13,9 @@ from databridge.job import JobDatabridge
 from databridge.record import RecordDatabridge
 from dependencies import get_record_service
 from main import app
-from services.pipeline import AudioSweeper, ExtractStage, RedactStage, Stage, TranscribeStage, audio_key
+from services.pipeline import (
+    EXTRACT, REDACT, TRANSCRIBE, AudioSweeper, ExtractStage, RedactStage, Stage, TranscribeStage, audio_key,
+)
 from services.record import RecordService
 from services.redaction import PatternRedactor
 from services.transcription import TranscriptionFailed
@@ -86,6 +88,14 @@ async def voice(api, database, admin_conn):
         ExtractStage(records, jobs, extractor),  # type: ignore[arg-type]
     ]
     runner = Runner(jobs, executor, stages, worker_id=f"test-{uuid4().hex[:6]}", lease_seconds=150)
+    # The jobs table is shared across the suite. A record job another test left
+    # queued (a retry with a delayed run_at, say) would otherwise be claimed by
+    # this runner and reach this test's fake extractor, so start from an empty
+    # queue for the record stages.
+    await admin_conn.execute(
+        "DELETE FROM app.jobs WHERE kind = ANY($1::text[]) AND status IN ('queued', 'running')",
+        [TRANSCRIBE, REDACT, EXTRACT],
+    )
 
     async def run() -> None:
         for _ in range(10):

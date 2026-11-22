@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Haptics from 'expo-haptics';
-import { Children, Fragment, isValidElement, type ComponentProps, type ReactNode } from 'react';
+import { usePathname } from 'expo-router';
+import { Children, Fragment, isValidElement, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,7 +23,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { toApiError } from '@/api/client';
+import { technicalDetails, userMessage, type Audience } from '@/lib/errors';
 import { radius, space, type, useTheme, type Theme } from '@/theme/tokens';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -397,6 +398,8 @@ export function Chip({
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       accessibilityLabel={count === undefined ? label : `${label}, ${count}`}
+      // 32 pt tall; the slop makes the touch target 44.
+      hitSlop={{ top: 6, bottom: 6 }}
       style={({ pressed }) => [styles.chip, { backgroundColor: active ? on : theme.fill }, pressed && { opacity: 0.7 }]}
     >
       {color && !active ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
@@ -435,7 +438,14 @@ export function FieldLabel({ children }: { children: ReactNode }) {
   );
 }
 
-export function Field({ label, icon, style, ...rest }: TextInputProps & { label?: string; icon?: IconName }) {
+/** The name a screen reader gives a Field: the caller's, else the visible label, else the placeholder. */
+export function fieldName(explicit?: string, label?: string, placeholder?: string) {
+  return explicit || label || placeholder || undefined;
+}
+
+/** A text input. Screen readers name it after its visible label (then the
+ *  placeholder) unless the caller passes `accessibilityLabel`. */
+export function Field({ label, icon, style, accessibilityLabel, ...rest }: TextInputProps & { label?: string; icon?: IconName }) {
   const theme = useTheme();
   return (
     <View style={{ gap: 6 }}>
@@ -445,6 +455,7 @@ export function Field({ label, icon, style, ...rest }: TextInputProps & { label?
         <TextInput
           placeholderTextColor={theme.textTertiary}
           selectionColor={theme.accent}
+          accessibilityLabel={fieldName(accessibilityLabel, label, rest.placeholder)}
           {...rest}
           style={[styles.fieldInput, { color: theme.text }, style]}
         />
@@ -489,24 +500,55 @@ export function EmptyState({ icon, title, body, action }: { icon?: IconName; tit
   );
 }
 
-/** A failed request, with the API's request id when it sent one. */
-export function ErrorBanner({ error: failure, onRetry }: { error: unknown; onRetry?: () => void }) {
+/**
+ * A failed request in plain words (lib/errors.ts). The request id, the
+ * server's own text and the address sit behind "Technical details", for
+ * whoever has to fix it. Staff screens (under /staff) get staff wording
+ * unless `audience` says otherwise; `message` replaces the main line.
+ */
+export function ErrorBanner({
+  error: failure,
+  onRetry,
+  audience,
+  message,
+}: {
+  error: unknown;
+  onRetry?: () => void;
+  audience?: Audience;
+  message?: string;
+}) {
   const theme = useTheme();
-  const error = toApiError(failure);
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const reader: Audience = audience ?? (pathname.startsWith('/staff') ? 'staff' : 'resident');
   return (
-    <View style={[styles.banner, { backgroundColor: theme.dangerSoft }]}>
+    <View style={[styles.banner, { backgroundColor: theme.dangerSoft }]} accessibilityRole="alert">
       <Ionicons name="alert-circle" size={20} color={theme.danger} />
       <View style={{ flex: 1, gap: 2 }}>
         <Txt variant="subhead" tone="danger">
-          {error.message}
+          {message ?? userMessage(failure, reader)}
         </Txt>
-        {error.requestId ? (
-          <Txt variant="caption" tone="secondary" selectable>
-            Request {error.requestId}
+        <Pressable
+          onPress={() => setOpen((on) => !on)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={open ? 'Hide technical details' : 'Technical details'}
+          hitSlop={12}
+          style={styles.detailsToggle}
+        >
+          <Txt variant="caption" tone="secondary" style={{ textDecorationLine: 'underline' }}>
+            {open ? 'Hide technical details' : 'Technical details'}
           </Txt>
-        ) : null}
+        </Pressable>
+        {open
+          ? technicalDetails(failure).map((line) => (
+              <Txt key={line} variant="caption" tone="secondary" selectable>
+                {line}
+              </Txt>
+            ))
+          : null}
       </View>
-      {onRetry ? <Button label="Retry" variant="plain" onPress={onRetry} /> : null}
+      {onRetry ? <Button label="Try again" variant="plain" onPress={onRetry} /> : null}
     </View>
   );
 }
@@ -633,6 +675,7 @@ const styles = StyleSheet.create({
   },
   stepperInput: { minWidth: 40, textAlign: 'center', padding: 0 },
   empty: { alignItems: 'center', gap: space.xs, paddingVertical: space.xl, paddingHorizontal: space.lg },
+  detailsToggle: { minHeight: 24, justifyContent: 'center', alignSelf: 'flex-start' },
   banner: { flexDirection: 'row', alignItems: 'center', gap: space.md, borderRadius: radius.lg, paddingVertical: space.sm, paddingLeft: space.md, paddingRight: space.xs, minHeight: 44 },
   loading: { alignItems: 'center', justifyContent: 'center', gap: space.sm, paddingVertical: space.xl },
   sheet: { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, paddingHorizontal: space.lg, paddingTop: space.sm, gap: space.lg, maxHeight: '90%' },

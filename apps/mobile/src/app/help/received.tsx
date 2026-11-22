@@ -7,15 +7,15 @@ import { BigButton, Card, ResidentScreen } from '@/components/resident';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { callPhone } from '@/lib/phone';
+import { firstContact } from '@/lib/requestStatus';
 import { openSettings, pushSupported, shouldAskResident, subscribeToRequest } from '@/lib/push';
 import { useSavedRequests } from '@/services/requests';
 import { useTheme } from '@/theme/tokens';
+import type { ContactMethod } from '@/api/types';
 
-const REACH: Record<string, string> = {
-  call: 'A ComForce worker will reach out by phone, usually within the hour.',
-  text: 'A ComForce worker will text you, usually within the hour.',
-  none: 'You asked us not to contact you. Check back here for updates from ComForce.',
-};
+function isContactMethod(value: string | undefined): value is ContactMethod {
+  return value === 'call' || value === 'text' || value === 'none';
+}
 
 /** Request received (Figma A3): the reference number and what happens next. */
 export default function ReceivedScreen() {
@@ -85,7 +85,7 @@ function SentScreen() {
         Request received
       </Text>
       <Text style={[styles.lede, { color: theme.textSecondary }]}>
-        Reference #{number}. {REACH[method ?? 'call'] ?? REACH.call}
+        Reference #{number}. {firstContact(isContactMethod(method) ? method : null)}
       </Text>
 
       {saved ? (
@@ -105,7 +105,7 @@ function SentScreen() {
       <Card style={[styles.full, { gap: 14 }]}>
         <Text style={[styles.cardTitle, { color: theme.text }]}>What happens next</Text>
         <Step done title="Received" detail="Just now" />
-        <Step title="Reviewed by a worker" detail="Usually within the hour" />
+        <Step title="A worker reads it" detail={firstContact(isContactMethod(method) ? method : null)} />
         <Step title="Connected with help" detail="Shelter, food, rides and more" />
       </Card>
     </ResidentScreen>

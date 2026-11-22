@@ -9,6 +9,7 @@ import { BackLink } from '@/components/BackLink';
 import { Segmented } from '@/components/Segmented';
 import { CaseListSkeleton } from '@/components/Skeleton';
 import { Chip, ErrorBanner, Notice, Row, Sheet, success } from '@/components/ui';
+import { canMessageResident } from '@/lib/cases';
 import { dateTime } from '@/lib/format';
 import { useAddCaseUpdate, useCase, useCaseAssist, useCaseLanguage, useReplyLanguages, useSetCaseLanguage } from '@/services/cases';
 import { space, type, useTheme } from '@/theme/tokens';
@@ -45,9 +46,9 @@ export default function MessagesScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { borderBottomColor: theme.separator }]}>
-        <BackLink label="Case" fallback={`/staff/cases/${c.id}`} />
-        <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
-          {c.contact_name ?? `Case #${c.number}`}
+        <BackLink fallback={`/staff/cases/${c.id}`} />
+        <Text style={[styles.name, { color: theme.text }]} numberOfLines={1} accessibilityRole="header">
+          {canMessageResident(c) ? (c.contact_name ?? `Case #${c.number}`) : 'Internal notes'}
         </Text>
         <Text style={[type.caption, { color: theme.textSecondary }]} numberOfLines={1}>
           #{c.number} · {c.title}
@@ -115,7 +116,7 @@ function Composer({ item: c }: { item: Case }) {
   const add = useAddCaseUpdate(c.id);
   const assist = useCaseAssist(c.id);
   // Only a request from someone with an account (or a saved code) can be messaged.
-  const canMessage = !!c.requester_id || c.source === 'public';
+  const canMessage = canMessageResident(c);
   const [visibility, setVisibility] = useState<Visibility>(canMessage ? 'public' : 'internal');
   const [text, setText] = useState('');
   // Reply in the resident's language: the AI draft is written in it, a reply typed in English can be
@@ -181,7 +182,9 @@ function Composer({ item: c }: { item: Case }) {
           ) : null}
         </View>
       ) : (
-        <Notice icon="information-circle-outline">This case wasn’t sent from the app, so there’s no one to message. Notes stay internal.</Notice>
+        <Notice icon="lock-closed-outline">
+          Internal note. Staff opened this case, so there’s no resident to message. Notes stay with ComForce staff and won’t reach anyone outside staff.
+        </Notice>
       )}
       {canMessage && visibility === 'public' ? (
         <View style={styles.language}>
