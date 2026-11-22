@@ -55,6 +55,11 @@ UPDATE_TITLES = {
     "referral_update": "Referral update",
 }
 UPDATE_BODY = "Open the app to see it."
+# A rapid-response chat message names only the channel: never the message
+# or the case.
+CHAT_CHANNELS = {"team": "Team chat", "oncall": "On call chat", "case": "a case chat"}
+# Inbox only: these never page anyone.
+INBOX_ONLY_KINDS = frozenset({"chat_message"})
 RESIDENT_BODY = "You have a new update."
 
 # APNs reasons that mean the token is dead for this app and environment.
@@ -101,6 +106,13 @@ def message_for(facts: PushFacts, now: datetime) -> PushMessage:
         return PushMessage(
             notification_id=facts.id, title="Weather alert", body="Open the app for details.", urgent=False,
             priority=5, expiration=expiration, thread_id="updates", interruption_level="active", sound=False,
+        )
+    if facts.kind == "chat_rapid":
+        return PushMessage(
+            notification_id=facts.id, title="Rapid response",
+            body=f"New message in {CHAT_CHANNELS.get(facts.chat_channel or '', 'a chat')}", urgent=False,
+            priority=10, expiration=expiration, thread_id="chat", interruption_level="active", sound=True,
+            badge=facts.unread_count,
         )
     if facts.kind == "request_update" or not facts.reader_is_staff:
         # A resident: no title, no sound, no badge.
@@ -163,6 +175,8 @@ def decide(facts: PushFacts, now: datetime, fallback_zone: ZoneInfo, *, after_qu
         return Decision("skip", "read")
     if facts.kind == "test":  # asked for just now: it always goes
         return SEND
+    if facts.kind in INBOX_ONLY_KINDS:
+        return Decision("skip", "inbox_only")
     if facts.kind in URGENT_KINDS:
         # Being on call (or opting in to the fallback) is the opt-in: urgent
         # pages ignore push-off, mutes, quiet hours and the caps (D3/D4).
@@ -231,6 +245,8 @@ class PushStage:
         facts = await self.push.facts(notification_id)
         if facts is None:
             return _nothing
+        if facts.kind == "chat_rapid":
+            facts = facts.model_copy(update={"chat_channel": await self.push.chat_channel(notification_id)})
         now = self.clock()
         decision = decide(facts, now, self.fallback_zone, after_quiet=bool(job.payload.get("after_quiet")))
         if decision.action == "skip":

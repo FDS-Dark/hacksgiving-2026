@@ -1,10 +1,20 @@
-"""Partners and case shares (0021_partners_and_outreach.sql)."""
+"""Partners, case shares (0021_partners_and_outreach.sql) and requests for
+help sent to partners (0031_team_chat_and_delivery.sql)."""
 
 from uuid import UUID
 
 from databridge.base import Databridge
 from models.case_enums import CaseCategory
-from models.partner import CaseShare, ConsentMethod, Partner, PartnerBody
+from models.partner import (
+    CaseShare,
+    ConsentMethod,
+    Partner,
+    PartnerBody,
+    PartnerRequest,
+    PartnerRequestDelivery,
+    PartnerRequestStatus,
+    PendingPartnerText,
+)
 
 
 def _fields(body: PartnerBody) -> dict[str, object]:
@@ -49,3 +59,30 @@ class PartnerDatabridge(Databridge):
     async def revoke(self, case_id: UUID, share_id: UUID, revoked_by: UUID) -> CaseShare | None:
         row = await self._first("case_share_revoke", case_id=case_id, share_id=share_id, revoked_by=revoked_by)
         return CaseShare(**row) if row else None
+
+    async def request_help(
+        self, *, case_id: UUID, partner_id: UUID, requested_by: UUID, need: CaseCategory, note: str, message: str,
+        delivery: PartnerRequestDelivery, included_contact: bool, included_location: bool,
+    ) -> PartnerRequest | None:
+        """The request and its line on the case's history. None when the case
+        or an active partner is missing."""
+        row = await self._first(
+            "partner_request_create", case_id=case_id, partner_id=partner_id, requested_by=requested_by, need=need,
+            note=note, message=message, delivery=delivery, included_contact=included_contact,
+            included_location=included_location,
+        )
+        return PartnerRequest(**row) if row else None
+
+    async def requests(self, case_id: UUID) -> list[PartnerRequest]:
+        return [PartnerRequest(**row) for row in await self._rows("partner_request_list", case_id=case_id)]
+
+    async def pending_texts(self, limit: int) -> list[PendingPartnerText]:
+        return [PendingPartnerText(**row) for row in await self._rows("partner_request_pending", limit=limit)]
+
+    async def mark_text(
+        self, request_id: UUID, status: PartnerRequestStatus, reason: str | None, provider_id: str | None
+    ) -> PartnerRequest | None:
+        row = await self._first(
+            "partner_request_mark", request_id=request_id, status=status, reason=reason, provider_id=provider_id
+        )
+        return PartnerRequest(**row) if row else None

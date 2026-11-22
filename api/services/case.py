@@ -30,6 +30,7 @@ from models.case import (
     PublicRequestDetail,
     PublicRequestUpdate,
     Referral,
+    ReferralStatus,
     ReplyRequest,
     SubmitRequest,
     UpdateCaseRequest,
@@ -442,12 +443,19 @@ class CaseService:
     async def update_referral(
         self, worker: StaffMember, case_id: UUID, referral_id: UUID, body: UpdateReferralRequest
     ) -> Referral:
+        if body.delivered_by_worker_id is not None and not await self.staff.is_worker(body.delivered_by_worker_id):
+            raise ApiError(422, "not_a_worker", "Help delivered by ComForce names a ComForce staff member")
         async with self.transactions.transaction() as tx:
             cases = self.cases.within(tx)
             before = None
-            if body.status is not None:
+            if body.status is not None or body.delivered_by is not None:
                 before = next((r.status for r in await cases.list_referrals(case_id) if r.id == referral_id), None)
-            referral = await cases.update_referral(case_id, referral_id, body.status, body.outcome, worker.id)
+            if body.delivered_by is not None and body.status is None and before != ReferralStatus.COMPLETED:
+                raise ApiError(422, "not_completed", "Mark the referral completed to record who delivered the help")
+            referral = await cases.update_referral(
+                case_id, referral_id, body.status, body.outcome, worker.id, body.delivered_by,
+                body.delivered_by_worker_id,
+            )
             if referral is None:
                 raise not_found("referral")
             if before is not None and referral.status != before:

@@ -1,11 +1,14 @@
-"""Text messages to requesters. Two backends, one interface (`SmsSender`):
+"""Text messages to requesters and to partners. Two backends, one interface (`SmsSender`):
 
 - `TwilioSms`: Twilio's Messages API (the account Ava's phone number is
   on), from `APP__SMS__FROM_NUMBER` or a Messaging Service.
 - `FakeSms`: logs instead of sending, for local development.
 
 Chosen by `APP__SMS__PROVIDER` (`twilio` | `fake` | `off`, the default).
-Called only from services/text.py, in the worker."""
+Called only from the worker: services/text.py (requesters) and
+services/partner.py's PartnerTexter (requests for help to partners). The
+API only asks `sms_configured`, to choose between a text and the worker's
+own email or phone."""
 
 import base64
 import logging
@@ -101,10 +104,19 @@ class TwilioSms:
         await self.http.aclose()
 
 
+def twilio_ready(config: SmsConfig) -> bool:
+    return bool(config.twilio_account_sid and config.twilio_auth_token
+                and (config.from_number or config.twilio_messaging_service_sid))
+
+
+def sms_configured(config: SmsConfig) -> bool:
+    """Texts can go out (the API asks, to choose how a partner request is sent)."""
+    return config.provider == "fake" or (config.provider == "twilio" and twilio_ready(config))
+
+
 def make_sms_sender(config: SmsConfig) -> SmsSender | None:
     if config.provider == "twilio":
-        if not (config.twilio_account_sid and config.twilio_auth_token
-                and (config.from_number or config.twilio_messaging_service_sid)):
+        if not twilio_ready(config):
             logger.warning("APP__SMS__PROVIDER=twilio but its credentials aren't set; texts are off")
             return None
         return TwilioSms(config)

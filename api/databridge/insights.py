@@ -5,7 +5,7 @@ from typing import Any
 
 from databridge.base import Databridge
 from models.case import CategoryCount
-from models.insights import InsightsDistrict, InsightsTotals
+from models.insights import DeliveredByCount, InsightsDistrict, InsightsTotals
 
 
 class InsightsDatabridge(Databridge):
@@ -19,6 +19,10 @@ class InsightsDatabridge(Databridge):
     async def by_category(self, start: datetime, end: datetime, district: str | None) -> list[CategoryCount]:
         rows = await self._rows("insights_by_category", start=start, end=end, district=district)
         return [CategoryCount(**row) for row in rows]
+
+    async def delivered_by(self, start: datetime, end: datetime, district: str | None) -> list[DeliveredByCount]:
+        rows = await self._rows("insights_delivered_by", start=start, end=end, district=district)
+        return [DeliveredByCount(**row) for row in rows]
 
     async def patterns(self, start: datetime, end: datetime, district: str | None, timezone: str,
                        min_cases: int) -> list[dict[str, Any]]:
